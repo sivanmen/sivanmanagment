@@ -11,6 +11,16 @@ import PropertyDetailPage from './pages/PropertyDetailPage';
 import PropertyFormPage from './pages/PropertyFormPage';
 import OwnersListPage from './pages/OwnersListPage';
 import OwnerDetailPage from './pages/OwnerDetailPage';
+import BookingsListPage from './pages/BookingsListPage';
+import BookingDetailPage from './pages/BookingDetailPage';
+import BookingFormPage from './pages/BookingFormPage';
+import CalendarPage from './pages/CalendarPage';
+import GuestsListPage from './pages/GuestsListPage';
+import FinanceDashboardPage from './pages/FinanceDashboardPage';
+import IncomeListPage from './pages/IncomeListPage';
+import ExpenseListPage from './pages/ExpenseListPage';
+import ExpenseFormPage from './pages/ExpenseFormPage';
+import ManagementFeesPage from './pages/ManagementFeesPage';
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
@@ -41,12 +51,21 @@ export default function App() {
           <Route path="/properties/new" element={<PropertyFormPage />} />
           <Route path="/properties/:id" element={<PropertyDetailPage />} />
           <Route path="/properties/:id/edit" element={<PropertyFormPage />} />
-          <Route path="/bookings" element={<div className="p-6 font-headline text-2xl">Bookings — Coming Soon</div>} />
+          <Route path="/bookings" element={<BookingsListPage />} />
+          <Route path="/bookings/new" element={<BookingFormPage />} />
+          <Route path="/bookings/:id" element={<BookingDetailPage />} />
+          <Route path="/bookings/:id/edit" element={<BookingFormPage />} />
           <Route path="/owners" element={<OwnersListPage />} />
           <Route path="/owners/new" element={<div className="p-6 font-headline text-2xl">New Owner — Coming Soon</div>} />
           <Route path="/owners/:id" element={<OwnerDetailPage />} />
-          <Route path="/finance" element={<div className="p-6 font-headline text-2xl">Finance — Coming Soon</div>} />
-          <Route path="/calendar" element={<div className="p-6 font-headline text-2xl">Calendar — Coming Soon</div>} />
+          <Route path="/finance" element={<FinanceDashboardPage />} />
+          <Route path="/finance/income" element={<IncomeListPage />} />
+          <Route path="/finance/expenses" element={<ExpenseListPage />} />
+          <Route path="/finance/expenses/new" element={<ExpenseFormPage />} />
+          <Route path="/finance/expenses/:id/edit" element={<ExpenseFormPage />} />
+          <Route path="/finance/fees" element={<ManagementFeesPage />} />
+          <Route path="/calendar" element={<CalendarPage />} />
+          <Route path="/guests" element={<GuestsListPage />} />
           <Route path="/maintenance" element={<div className="p-6 font-headline text-2xl">Maintenance — Coming Soon</div>} />
           <Route path="/communications" element={<div className="p-6 font-headline text-2xl">Inbox — Coming Soon</div>} />
           <Route path="/reports" element={<div className="p-6 font-headline text-2xl">Reports — Coming Soon</div>} />
