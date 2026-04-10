@@ -1,0 +1,53 @@
+{
+  "nav": {
+    "dashboard": "לוח בקרה",
+    "properties": "נכסים",
+    "bookings": "הזמנות",
+    "owners": "בעלי נכסים",
+    "finance": "פיננסים",
+    "calendar": "לוח שנה",
+    "maintenance": "תחזוקה",
+    "inbox": "תיבת דואר",
+    "reports": "דוחות",
+    "channels": "ערוצים",
+    "loyalty": "מועדון לקוחות",
+    "affiliates": "שותפים",
+    "settings": "הגדרות"
+  },
+  "auth": {
+    "login": "כניסה למערכת",
+    "email": "אימייל",
+    "password": "סיסמה",
+    "forgotPassword": "שכחת?",
+    "rememberDevice": "זכור מכשיר זה ל-30 יום",
+    "newUser": "חדש ב-Sivan?",
+    "requestAccess": "בקש גישה",
+    "loggingIn": "מאמת..."
+  },
+  "dashboard": {
+    "title": "סקירה כללית",
+    "subtitle": "מערכת ניהול נכסים",
+    "totalPortfolioValue": "שווי תיק כולל",
+    "netOperatingIncome": "הכנסה תפעולית נטו",
+    "yieldROI": "תשואה %",
+    "occupancyRate": "שיעור תפוסה",
+    "revenueTitle": "מגמות הכנסות",
+    "aiActions": "פעולות AI",
+    "topAssets": "נכסים מובילים",
+    "viewPortfolio": "צפה בתיק"
+  },
+  "common": {
+    "save": "שמור",
+    "cancel": "ביטול",
+    "delete": "מחק",
+    "edit": "ערוך",
+    "create": "צור",
+    "search": "חיפוש",
+    "filter": "סינון",
+    "export": "ייצוא",
+    "loading": "טוען...",
+    "noData": "אין נתונים",
+    "confirm": "אישור",
+    "back": "חזרה"
+  }
+}

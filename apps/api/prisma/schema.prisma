@@ -1,0 +1,1934 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// 1. USERS & AUTH
+// ==========================================
+
+enum UserRole {
+  SUPER_ADMIN
+  PROPERTY_MANAGER
+  MAINTENANCE
+  OWNER
+  VIP_STAR
+  AFFILIATE
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  PENDING_VERIFICATION
+}
+
+model User {
+  id                 String      @id @default(uuid())
+  email              String      @unique
+  phone              String?     @unique
+  passwordHash       String      @map("password_hash")
+  firstName          String      @map("first_name")
+  lastName           String      @map("last_name")
+  avatarUrl          String?     @map("avatar_url")
+  role               UserRole    @default(OWNER)
+  status             UserStatus  @default(PENDING_VERIFICATION)
+  twoFactorEnabled   Boolean     @default(false) @map("two_factor_enabled")
+  twoFactorSecret    String?     @map("two_factor_secret")
+  preferredLocale    String      @default("en") @map("preferred_locale")
+  timezone           String      @default("Europe/Athens")
+  lastLoginAt        DateTime?   @map("last_login_at")
+  emailVerifiedAt    DateTime?   @map("email_verified_at")
+  phoneVerifiedAt    DateTime?   @map("phone_verified_at")
+  metadata           Json?
+  createdAt          DateTime    @default(now()) @map("created_at")
+  updatedAt          DateTime    @updatedAt @map("updated_at")
+  deletedAt          DateTime?   @map("deleted_at")
+
+  // Relations
+  refreshTokens      RefreshToken[]
+  auditLogs          AuditLog[]
+  owner              Owner?
+  managedProperties  Property[]      @relation("PropertyManager")
+  reportedMaintenance MaintenanceRequest[] @relation("MaintenanceReporter")
+  assignedMaintenance MaintenanceRequest[] @relation("MaintenanceAssignee")
+  createdTasks       Task[]          @relation("TaskCreator")
+  taskAssignments    TaskAssignment[]
+  uploadedDocuments  Document[]      @relation("DocumentUploader")
+  approvedExpenses   ExpenseRecord[] @relation("ExpenseApprover")
+  calendarBlocks     CalendarBlock[]
+  notifications      Notification[]
+  aiConversations    AiConversation[]
+  loyaltyMember      LoyaltyMember?
+  affiliateProfile   AffiliateProfile?
+  paymentMethods     PaymentMethod[]
+  threadAssignments  MessageThread[] @relation("ThreadAssignee")
+  sentMessages       GuestMessage[]  @relation("MessageSender")
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id          String    @id @default(uuid())
+  userId      String    @map("user_id")
+  tokenHash   String    @map("token_hash")
+  deviceInfo  String?   @map("device_info")
+  ipAddress   String?   @map("ip_address")
+  expiresAt   DateTime  @map("expires_at")
+  revokedAt   DateTime? @map("revoked_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@map("refresh_tokens")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String?  @map("user_id")
+  action      String
+  entityType  String   @map("entity_type")
+  entityId    String?  @map("entity_id")
+  oldValues   Json?    @map("old_values")
+  newValues   Json?    @map("new_values")
+  ipAddress   String?  @map("ip_address")
+  userAgent   String?  @map("user_agent")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}
+
+// ==========================================
+// 2. PROPERTIES
+// ==========================================
+
+enum PropertyType {
+  VILLA
+  APARTMENT
+  STUDIO
+  HOUSE
+  BUILDING
+}
+
+enum PropertyStatus {
+  ACTIVE
+  INACTIVE
+  ONBOARDING
+  MAINTENANCE
+  ARCHIVED
+}
+
+model Property {
+  id                   String         @id @default(uuid())
+  ownerId              String         @map("owner_id")
+  managerId            String?        @map("manager_id")
+  internalCode         String         @unique @map("internal_code")
+  name                 String
+  slug                 String         @unique
+  description          Json?          // Multilingual: {en: "", he: "", ...}
+  propertyType         PropertyType   @map("property_type")
+  status               PropertyStatus @default(ONBOARDING)
+  addressLine1         String         @map("address_line1")
+  addressLine2         String?        @map("address_line2")
+  city                 String
+  stateRegion          String         @map("state_region")
+  postalCode           String         @map("postal_code")
+  country              String         @default("GR")
+  latitude             Decimal?
+  longitude            Decimal?
+  bedrooms             Int
+  bathrooms            Int
+  maxGuests            Int            @map("max_guests")
+  areaSqm              Decimal?       @map("area_sqm")
+  floor                Int?
+  amenities            Json?          // Array of strings
+  houseRules           Json?          @map("house_rules") // Multilingual
+  checkInTime          String         @default("15:00") @map("check_in_time")
+  checkOutTime         String         @default("11:00") @map("check_out_time")
+  minStayNights        Int            @default(1) @map("min_stay_nights")
+  baseNightlyRate      Decimal        @map("base_nightly_rate")
+  currency             String         @default("EUR")
+  cleaningFee          Decimal        @default(0) @map("cleaning_fee")
+  managementFeePercent Decimal        @default(25) @map("management_fee_percent")
+  minimumMonthlyFee    Decimal        @default(0) @map("minimum_monthly_fee")
+  purchasePrice        Decimal?       @map("purchase_price")
+  purchaseDate         DateTime?      @map("purchase_date")
+  propertyScore        Decimal?       @map("property_score")
+  scoreUpdatedAt       DateTime?      @map("score_updated_at")
+  icalImportUrl        String?        @map("ical_import_url")
+  icalExportToken      String         @unique @default(uuid()) @map("ical_export_token")
+  smartLockId          String?        @map("smart_lock_id")
+  wifiName             String?        @map("wifi_name")
+  wifiPassword         String?        @map("wifi_password") // Encrypted
+  parkingInstructions  Json?          @map("parking_instructions") // Multilingual
+  emergencyContacts    Json?          @map("emergency_contacts")
+  metadata             Json?
+  publishedAt          DateTime?      @map("published_at")
+  createdAt            DateTime       @default(now()) @map("created_at")
+  updatedAt            DateTime       @updatedAt @map("updated_at")
+  deletedAt            DateTime?      @map("deleted_at")
+
+  // Relations
+  owner               Owner          @relation(fields: [ownerId], references: [id])
+  manager             User?          @relation("PropertyManager", fields: [managerId], references: [id])
+  images              PropertyImage[]
+  units               PropertyUnit[]
+  bookings            Booking[]
+  calendarBlocks      CalendarBlock[]
+  icalFeeds           IcalFeed[]
+  incomeRecords       IncomeRecord[]
+  expenseRecords      ExpenseRecord[]
+  documents           Document[]
+  maintenanceRequests MaintenanceRequest[]
+  tasks               Task[]
+  customFieldValues   CustomFieldValue[]
+  channelConnections  ChannelConnection[]  @relation("PropertyChannels")
+  ratePlans           RatePlan[]
+  seasonalRates       SeasonalRate[]
+  otaRateRules        OtaRateRule[]
+  revenueRules        RevenueRule[]       @relation("PropertyRevenueRules")
+  propertyScores      PropertyScore[]
+  reportSchedules     ReportSchedule[]
+  messageThreads      MessageThread[]
+  iotDevices          IotDevice[]
+  portfolioInvestments PortfolioInvestment[]
+  directBookingSettings DirectBookingSetting?
+  managementFeeCalcs  ManagementFeeCalculation[]
+
+  @@index([ownerId, status])
+  @@index([city, status])
+  @@map("properties")
+}
+
+model PropertyImage {
+  id            String   @id @default(uuid())
+  propertyId    String   @map("property_id")
+  unitId        String?  @map("unit_id")
+  url           String
+  thumbnailUrl  String?  @map("thumbnail_url")
+  caption       Json?    // Multilingual
+  sortOrder     Int      @default(0) @map("sort_order")
+  isCover       Boolean  @default(false) @map("is_cover")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  property Property     @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  unit     PropertyUnit? @relation(fields: [unitId], references: [id])
+
+  @@index([propertyId, sortOrder])
+  @@map("property_images")
+}
+
+enum UnitType {
+  STUDIO
+  ONE_BED
+  TWO_BED
+  PENTHOUSE
+  OTHER
+}
+
+model PropertyUnit {
+  id              String     @id @default(uuid())
+  propertyId      String     @map("property_id")
+  unitNumber      String     @map("unit_number")
+  unitType        UnitType   @map("unit_type")
+  floor           Int?
+  areaSqm         Decimal?   @map("area_sqm")
+  baseNightlyRate Decimal    @map("base_nightly_rate")
+  maxGuests       Int        @map("max_guests")
+  status          PropertyStatus @default(ACTIVE)
+  metadata        Json?
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+
+  property Property        @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  images   PropertyImage[]
+  bookings Booking[]
+  calendarBlocks CalendarBlock[]
+  icalFeeds  IcalFeed[]
+  tasks    Task[]
+  maintenanceRequests MaintenanceRequest[]
+  iotDevices IotDevice[]
+  ratePlans  RatePlan[]
+  seasonalRates SeasonalRate[]
+
+  @@index([propertyId])
+  @@map("property_units")
+}
+
+// ==========================================
+// 3. CUSTOM FIELDS
+// ==========================================
+
+enum FieldType {
+  TEXT
+  NUMBER
+  DATE
+  BOOLEAN
+  SELECT
+  MULTI_SELECT
+  URL
+}
+
+model CustomFieldDefinition {
+  id          String    @id @default(uuid())
+  entityType  String    @map("entity_type") // 'property', 'owner', 'booking'
+  fieldKey    String    @map("field_key")
+  fieldLabel  Json      @map("field_label") // Multilingual
+  fieldType   FieldType @map("field_type")
+  options     Json?     // For SELECT/MULTI_SELECT
+  isRequired  Boolean   @default(false) @map("is_required")
+  sortOrder   Int       @default(0) @map("sort_order")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  values CustomFieldValue[]
+
+  @@unique([entityType, fieldKey])
+  @@map("custom_field_definitions")
+}
+
+model CustomFieldValue {
+  id           String  @id @default(uuid())
+  definitionId String  @map("definition_id")
+  entityId     String  @map("entity_id")
+  value        Json
+  propertyId   String? @map("property_id") // For quick filtering
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  definition CustomFieldDefinition @relation(fields: [definitionId], references: [id], onDelete: Cascade)
+  property   Property?             @relation(fields: [propertyId], references: [id])
+
+  @@unique([definitionId, entityId])
+  @@index([entityId])
+  @@map("custom_field_values")
+}
+
+// ==========================================
+// 4. OWNERS
+// ==========================================
+
+model Owner {
+  id                         String   @id @default(uuid())
+  userId                     String   @unique @map("user_id")
+  companyName                String?  @map("company_name")
+  taxId                      String?  @map("tax_id")
+  billingAddress             Json?    @map("billing_address")
+  defaultManagementFeePercent Decimal @default(25) @map("default_management_fee_percent")
+  defaultMinimumMonthlyFee   Decimal  @default(0) @map("default_minimum_monthly_fee")
+  expenseApprovalThreshold   Decimal  @default(100) @map("expense_approval_threshold")
+  preferredPaymentMethod     PaymentMethodType @default(BANK_TRANSFER) @map("preferred_payment_method")
+  bankDetails                Json?    @map("bank_details") // Encrypted
+  stripeAccountId            String?  @map("stripe_account_id")
+  paypalEmail                String?  @map("paypal_email")
+  contractStartDate          DateTime? @map("contract_start_date")
+  contractEndDate            DateTime? @map("contract_end_date")
+  notes                      String?
+  metadata                   Json?
+  createdAt                  DateTime @default(now()) @map("created_at")
+  updatedAt                  DateTime @updatedAt @map("updated_at")
+  deletedAt                  DateTime? @map("deleted_at")
+
+  user                       User     @relation(fields: [userId], references: [id])
+  properties                 Property[]
+  incomeRecords              IncomeRecord[]
+  expenseRecords             ExpenseRecord[]
+  documents                  Document[]
+  reportSchedules            ReportSchedule[]
+  generatedReports           GeneratedReport[]
+  affiliateReferrals         AffiliateReferral[] @relation("ReferredOwner")
+  portfolioInvestments       PortfolioInvestment[]
+  managementFeeCalcs         ManagementFeeCalculation[]
+  messageThreads             MessageThread[]
+  paymentTransactions        PaymentTransaction[] @relation("OwnerPayments")
+
+  @@map("owners")
+}
+
+// ==========================================
+// 5. BOOKINGS & CALENDAR
+// ==========================================
+
+enum BookingSource {
+  DIRECT
+  AIRBNB
+  BOOKING_COM
+  VRBO
+  ICAL
+  MANUAL
+  WIDGET
+}
+
+enum BookingStatus {
+  INQUIRY
+  PENDING
+  CONFIRMED
+  CHECKED_IN
+  CHECKED_OUT
+  CANCELLED
+  NO_SHOW
+}
+
+enum PaymentStatus {
+  PENDING
+  PARTIAL
+  PAID
+  REFUNDED
+  FAILED
+}
+
+model Booking {
+  id                 String        @id @default(uuid())
+  propertyId         String        @map("property_id")
+  unitId             String?       @map("unit_id")
+  guestId            String?       @map("guest_id")
+  source             BookingSource @default(MANUAL)
+  externalId         String?       @map("external_id")
+  status             BookingStatus @default(PENDING)
+  checkIn            DateTime      @map("check_in") @db.Date
+  checkOut           DateTime      @map("check_out") @db.Date
+  nights             Int
+  guestsCount        Int           @map("guests_count")
+  adults             Int           @default(1)
+  children           Int           @default(0)
+  infants            Int           @default(0)
+  pets               Int           @default(0)
+  nightlyRate        Decimal       @map("nightly_rate")
+  subtotal           Decimal
+  cleaningFee        Decimal       @default(0) @map("cleaning_fee")
+  serviceFee         Decimal       @default(0) @map("service_fee")
+  taxes              Decimal       @default(0)
+  totalAmount        Decimal       @map("total_amount")
+  currency           String        @default("EUR")
+  paymentStatus      PaymentStatus @default(PENDING) @map("payment_status")
+  guestName          String        @map("guest_name")
+  guestEmail         String?       @map("guest_email")
+  guestPhone         String?       @map("guest_phone")
+  specialRequests    String?       @map("special_requests")
+  internalNotes      String?       @map("internal_notes")
+  icalUid            String?       @unique @map("ical_uid")
+  confirmedAt        DateTime?     @map("confirmed_at")
+  cancelledAt        DateTime?     @map("cancelled_at")
+  cancellationReason String?       @map("cancellation_reason")
+  metadata           Json?
+  createdAt          DateTime      @default(now()) @map("created_at")
+  updatedAt          DateTime      @updatedAt @map("updated_at")
+
+  property   Property      @relation(fields: [propertyId], references: [id])
+  unit       PropertyUnit? @relation(fields: [unitId], references: [id])
+  guest      GuestProfile? @relation(fields: [guestId], references: [id])
+  incomeRecords    IncomeRecord[]
+  tasks            Task[]
+  messageThreads   MessageThread[]
+  loyaltyTransactions LoyaltyTransaction[]
+  affiliateReferrals AffiliateReferral[] @relation("ReferredBooking")
+  paymentTransactions PaymentTransaction[]
+  guestScreenings  GuestScreening[]
+
+  @@index([propertyId, checkIn, checkOut])
+  @@index([guestEmail])
+  @@index([status, checkIn])
+  @@map("bookings")
+}
+
+enum BlockType {
+  OWNER_BLOCK
+  MAINTENANCE
+  RENOVATION
+  OTHER
+}
+
+model CalendarBlock {
+  id          String    @id @default(uuid())
+  propertyId  String    @map("property_id")
+  unitId      String?   @map("unit_id")
+  startDate   DateTime  @map("start_date") @db.Date
+  endDate     DateTime  @map("end_date") @db.Date
+  blockType   BlockType @map("block_type")
+  reason      String?
+  createdById String    @map("created_by_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  property Property     @relation(fields: [propertyId], references: [id])
+  unit     PropertyUnit? @relation(fields: [unitId], references: [id])
+  createdBy User        @relation(fields: [createdById], references: [id])
+
+  @@index([propertyId, startDate, endDate])
+  @@map("calendar_blocks")
+}
+
+enum SyncStatus {
+  OK
+  ERROR
+  PENDING
+}
+
+model IcalFeed {
+  id                  String     @id @default(uuid())
+  propertyId          String     @map("property_id")
+  unitId              String?    @map("unit_id")
+  channelName         String     @map("channel_name")
+  importUrl           String     @map("import_url")
+  lastSyncedAt        DateTime?  @map("last_synced_at")
+  syncStatus          SyncStatus @default(PENDING) @map("sync_status")
+  syncError           String?    @map("sync_error")
+  syncIntervalMinutes Int        @default(15) @map("sync_interval_minutes")
+  isActive            Boolean    @default(true) @map("is_active")
+  createdAt           DateTime   @default(now()) @map("created_at")
+  updatedAt           DateTime   @updatedAt @map("updated_at")
+
+  property Property     @relation(fields: [propertyId], references: [id])
+  unit     PropertyUnit? @relation(fields: [unitId], references: [id])
+
+  @@index([propertyId])
+  @@map("ical_feeds")
+}
+
+// ==========================================
+// 6. GUESTS
+// ==========================================
+
+enum ScreeningStatus {
+  PENDING
+  APPROVED
+  FLAGGED
+  REJECTED
+}
+
+enum ScreeningType {
+  ID_VERIFICATION
+  BACKGROUND_CHECK
+  REFERENCE_CHECK
+}
+
+model GuestProfile {
+  id            String           @id @default(uuid())
+  firstName     String           @map("first_name")
+  lastName      String           @map("last_name")
+  email         String?
+  phone         String?
+  nationality   String?
+  language      String?
+  idType        String?          @map("id_type")
+  idNumber      String?          @map("id_number") // Encrypted
+  idExpiry      DateTime?        @map("id_expiry") @db.Date
+  dateOfBirth   DateTime?        @map("date_of_birth") @db.Date
+  address       Json?
+  tags          Json?            // Array of strings
+  totalStays    Int              @default(0) @map("total_stays")
+  totalRevenue  Decimal          @default(0) @map("total_revenue")
+  notes         String?
+  screeningStatus ScreeningStatus? @map("screening_status")
+  metadata      Json?
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @updatedAt @map("updated_at")
+  deletedAt     DateTime?        @map("deleted_at")
+
+  bookings     Booking[]
+  screenings   GuestScreening[]
+  messageThreads MessageThread[]
+
+  @@map("guest_profiles")
+}
+
+model GuestScreening {
+  id             String          @id @default(uuid())
+  guestId        String          @map("guest_id")
+  bookingId      String?         @map("booking_id")
+  screeningType  ScreeningType   @map("screening_type")
+  provider       String?
+  status         ScreeningStatus
+  resultData     Json?           @map("result_data") // Encrypted
+  verifiedById   String?         @map("verified_by_id")
+  verifiedAt     DateTime?       @map("verified_at")
+  notes          String?
+  createdAt      DateTime        @default(now()) @map("created_at")
+
+  guest   GuestProfile @relation(fields: [guestId], references: [id])
+  booking Booking?     @relation(fields: [bookingId], references: [id])
+
+  @@index([guestId])
+  @@map("guest_screenings")
+}
+
+// ==========================================
+// 7. FINANCE
+// ==========================================
+
+enum IncomeCategory {
+  RENTAL
+  CLEANING_FEE
+  EXTRA_SERVICES
+  DAMAGE_DEPOSIT
+  LATE_CHECKOUT
+  OTHER
+}
+
+model IncomeRecord {
+  id          String         @id @default(uuid())
+  propertyId  String         @map("property_id")
+  bookingId   String?        @map("booking_id")
+  ownerId     String         @map("owner_id")
+  category    IncomeCategory
+  amount      Decimal
+  currency    String         @default("EUR")
+  description String?
+  date        DateTime       @db.Date
+  periodMonth Int            @map("period_month")
+  periodYear  Int            @map("period_year")
+  metadata    Json?
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  property Property @relation(fields: [propertyId], references: [id])
+  booking  Booking? @relation(fields: [bookingId], references: [id])
+  owner    Owner    @relation(fields: [ownerId], references: [id])
+
+  @@index([propertyId, periodYear, periodMonth])
+  @@index([ownerId, periodYear, periodMonth])
+  @@map("income_records")
+}
+
+enum ExpenseCategory {
+  MAINTENANCE
+  UTILITIES
+  CLEANING
+  SUPPLIES
+  INSURANCE
+  TAXES
+  MANAGEMENT_FEE
+  MARKETING
+  EQUIPMENT
+  OTHER
+}
+
+enum ApprovalStatus {
+  AUTO_APPROVED
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model ExpenseRecord {
+  id                       String          @id @default(uuid())
+  propertyId               String?         @map("property_id")
+  ownerId                  String?         @map("owner_id")
+  category                 ExpenseCategory
+  amount                   Decimal
+  currency                 String          @default("EUR")
+  description              String
+  date                     DateTime        @db.Date
+  periodMonth              Int             @map("period_month")
+  periodYear               Int             @map("period_year")
+  vendor                   String?
+  receiptUrl               String?         @map("receipt_url")
+  approvalStatus           ApprovalStatus  @default(AUTO_APPROVED) @map("approval_status")
+  approvalThresholdAtTime  Decimal?        @map("approval_threshold_at_time")
+  approvedById             String?         @map("approved_by_id")
+  approvedAt               DateTime?       @map("approved_at")
+  whatsappApprovalMsgId    String?         @map("whatsapp_approval_msg_id")
+  notes                    String?
+  isRecurring              Boolean         @default(false) @map("is_recurring")
+  recurrencePattern        String?         @map("recurrence_pattern") // monthly, yearly
+  metadata                 Json?
+  createdAt                DateTime        @default(now()) @map("created_at")
+  updatedAt                DateTime        @updatedAt @map("updated_at")
+
+  property  Property?  @relation(fields: [propertyId], references: [id])
+  owner     Owner?     @relation(fields: [ownerId], references: [id])
+  approvedBy User?     @relation("ExpenseApprover", fields: [approvedById], references: [id])
+  maintenanceRequest MaintenanceRequest?
+
+  @@index([propertyId, periodYear, periodMonth])
+  @@index([approvalStatus])
+  @@map("expense_records")
+}
+
+enum FeeType {
+  PERCENTAGE
+  MINIMUM
+}
+
+enum FeeStatus {
+  DRAFT
+  APPROVED
+  INVOICED
+  PAID
+}
+
+model ManagementFeeCalculation {
+  id            String    @id @default(uuid())
+  ownerId       String    @map("owner_id")
+  propertyId    String    @map("property_id")
+  periodMonth   Int       @map("period_month")
+  periodYear    Int       @map("period_year")
+  totalIncome   Decimal   @map("total_income")
+  feePercent    Decimal   @map("fee_percent")
+  calculatedFee Decimal   @map("calculated_fee") // percent * income
+  minimumFee    Decimal   @map("minimum_fee")
+  appliedFee    Decimal   @map("applied_fee") // MAX(calculatedFee, minimumFee)
+  feeType       FeeType   @map("fee_type") // Which one was applied
+  status        FeeStatus @default(DRAFT)
+  notes         String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  owner    Owner    @relation(fields: [ownerId], references: [id])
+  property Property @relation(fields: [propertyId], references: [id])
+
+  @@unique([ownerId, propertyId, periodMonth, periodYear])
+  @@map("management_fee_calculations")
+}
+
+// ==========================================
+// 8. PAYMENTS
+// ==========================================
+
+enum PaymentMethodType {
+  BANK_TRANSFER
+  STRIPE
+  PAYPAL
+  CASH
+  APPLE_PAY
+  GOOGLE_PAY
+}
+
+enum TransactionType {
+  BOOKING_PAYMENT
+  OWNER_PAYOUT
+  REFUND
+  FEE_COLLECTION
+  AFFILIATE_PAYOUT
+}
+
+enum TransactionStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+model PaymentTransaction {
+  id                    String            @id @default(uuid())
+  bookingId             String?           @map("booking_id")
+  ownerId               String?           @map("owner_id")
+  type                  TransactionType
+  provider              PaymentMethodType
+  providerTransactionId String?           @map("provider_transaction_id")
+  amount                Decimal
+  currency              String            @default("EUR")
+  status                TransactionStatus @default(PENDING)
+  feeAmount             Decimal           @default(0) @map("fee_amount")
+  metadata              Json?
+  completedAt           DateTime?         @map("completed_at")
+  createdAt             DateTime          @default(now()) @map("created_at")
+  updatedAt             DateTime          @updatedAt @map("updated_at")
+
+  booking Booking? @relation(fields: [bookingId], references: [id])
+  owner   Owner?   @relation("OwnerPayments", fields: [ownerId], references: [id])
+
+  @@index([bookingId])
+  @@index([ownerId])
+  @@map("payment_transactions")
+}
+
+model PaymentMethod {
+  id                 String            @id @default(uuid())
+  userId             String            @map("user_id")
+  provider           PaymentMethodType
+  providerMethodId   String            @map("provider_method_id")
+  type               String            // 'card', 'bank_account', 'paypal'
+  lastFour           String?           @map("last_four")
+  brand              String?
+  isDefault          Boolean           @default(false) @map("is_default")
+  expiresAt          DateTime?         @map("expires_at")
+  createdAt          DateTime          @default(now()) @map("created_at")
+  updatedAt          DateTime          @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("payment_methods")
+}
+
+// ==========================================
+// 9. DOCUMENTS
+// ==========================================
+
+enum DocumentCategory {
+  CONTRACT
+  INVOICE
+  RECEIPT
+  LICENSE
+  INSURANCE
+  TAX
+  ID_DOCUMENT
+  PHOTO
+  REPORT
+  OTHER
+}
+
+enum AccessLevel {
+  PUBLIC
+  OWNER_VISIBLE
+  ADMIN_ONLY
+}
+
+model Document {
+  id            String           @id @default(uuid())
+  propertyId    String?          @map("property_id")
+  ownerId       String?          @map("owner_id")
+  bookingId     String?          @map("booking_id")
+  uploadedById  String           @map("uploaded_by_id")
+  title         String
+  fileUrl       String           @map("file_url")
+  fileSize      Int              @map("file_size")
+  mimeType      String           @map("mime_type")
+  category      DocumentCategory
+  tags          Json?
+  version       Int              @default(1)
+  parentId      String?          @map("parent_id")
+  accessLevel   AccessLevel      @default(OWNER_VISIBLE) @map("access_level")
+  expiresAt     DateTime?        @map("expires_at")
+  metadata      Json?
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @updatedAt @map("updated_at")
+  deletedAt     DateTime?        @map("deleted_at")
+
+  property   Property? @relation(fields: [propertyId], references: [id])
+  owner      Owner?    @relation(fields: [ownerId], references: [id])
+  uploadedBy User      @relation("DocumentUploader", fields: [uploadedById], references: [id])
+  parent     Document? @relation("DocumentVersions", fields: [parentId], references: [id])
+  versions   Document[] @relation("DocumentVersions")
+
+  @@index([propertyId])
+  @@index([ownerId])
+  @@map("documents")
+}
+
+// ==========================================
+// 10. MAINTENANCE
+// ==========================================
+
+enum MaintenancePriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum MaintenanceStatus {
+  OPEN
+  ASSIGNED
+  IN_PROGRESS
+  WAITING_PARTS
+  COMPLETED
+  CANCELLED
+}
+
+enum MaintenanceCategory {
+  PLUMBING
+  ELECTRICAL
+  HVAC
+  APPLIANCE
+  STRUCTURAL
+  PEST
+  CLEANING
+  LANDSCAPING
+  OTHER
+}
+
+model MaintenanceRequest {
+  id             String              @id @default(uuid())
+  propertyId     String              @map("property_id")
+  unitId         String?             @map("unit_id")
+  reportedById   String              @map("reported_by_id")
+  assignedToId   String?             @map("assigned_to_id")
+  title          String
+  description    String
+  priority       MaintenancePriority
+  status         MaintenanceStatus   @default(OPEN)
+  category       MaintenanceCategory
+  estimatedCost  Decimal?            @map("estimated_cost")
+  actualCost     Decimal?            @map("actual_cost")
+  expenseId      String?             @unique @map("expense_id")
+  images         Json?               // Array of URLs
+  scheduledDate  DateTime?           @map("scheduled_date")
+  completedAt    DateTime?           @map("completed_at")
+  completionNotes String?            @map("completion_notes")
+  metadata       Json?
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
+
+  property   Property      @relation(fields: [propertyId], references: [id])
+  unit       PropertyUnit? @relation(fields: [unitId], references: [id])
+  reportedBy User          @relation("MaintenanceReporter", fields: [reportedById], references: [id])
+  assignedTo User?         @relation("MaintenanceAssignee", fields: [assignedToId], references: [id])
+  expense    ExpenseRecord? @relation(fields: [expenseId], references: [id])
+
+  @@index([propertyId, status])
+  @@map("maintenance_requests")
+}
+
+// ==========================================
+// 11. TASKS
+// ==========================================
+
+enum TaskType {
+  CLEANING
+  INSPECTION
+  CHECK_IN
+  CHECK_OUT
+  TASK_MAINTENANCE
+  LAUNDRY
+  SUPPLY_RESTOCK
+  CUSTOM
+}
+
+enum TaskStatus {
+  TASK_PENDING
+  ASSIGNED
+  TASK_IN_PROGRESS
+  TASK_COMPLETED
+  TASK_CANCELLED
+  SKIPPED
+}
+
+enum TaskPriority {
+  TASK_LOW
+  TASK_MEDIUM
+  TASK_HIGH
+  TASK_URGENT
+}
+
+model Task {
+  id                  String       @id @default(uuid())
+  propertyId          String?      @map("property_id")
+  unitId              String?      @map("unit_id")
+  bookingId           String?      @map("booking_id")
+  maintenanceId       String?      @map("maintenance_id")
+  title               String
+  description         String?
+  type                TaskType
+  priority            TaskPriority @default(TASK_MEDIUM)
+  status              TaskStatus   @default(TASK_PENDING)
+  dueDate             DateTime?    @map("due_date")
+  completedAt         DateTime?    @map("completed_at")
+  estimatedDurationMin Int?        @map("estimated_duration_min")
+  actualDurationMin   Int?         @map("actual_duration_min")
+  checklist           Json?        // Array of {item: string, completed: boolean}
+  notes               String?
+  createdById         String       @map("created_by_id")
+  createdAt           DateTime     @default(now()) @map("created_at")
+  updatedAt           DateTime     @updatedAt @map("updated_at")
+
+  property    Property?     @relation(fields: [propertyId], references: [id])
+  unit        PropertyUnit? @relation(fields: [unitId], references: [id])
+  booking     Booking?      @relation(fields: [bookingId], references: [id])
+  createdBy   User          @relation("TaskCreator", fields: [createdById], references: [id])
+  assignments TaskAssignment[]
+
+  @@index([propertyId, status])
+  @@index([dueDate])
+  @@map("tasks")
+}
+
+enum AssignmentRole {
+  ASSIGNEE
+  REVIEWER
+}
+
+enum AssignmentStatus {
+  ASSIGN_PENDING
+  ACCEPTED
+  DECLINED
+}
+
+model TaskAssignment {
+  id          String           @id @default(uuid())
+  taskId      String           @map("task_id")
+  userId      String           @map("user_id")
+  role        AssignmentRole   @default(ASSIGNEE)
+  status      AssignmentStatus @default(ASSIGN_PENDING)
+  notifiedAt  DateTime?        @map("notified_at")
+  respondedAt DateTime?        @map("responded_at")
+  createdAt   DateTime         @default(now()) @map("created_at")
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([taskId, userId])
+  @@map("task_assignments")
+}
+
+// ==========================================
+// 12. COMMUNICATIONS
+// ==========================================
+
+enum CommChannel {
+  EMAIL
+  WHATSAPP
+  SMS
+  IN_APP
+  AIRBNB
+  BOOKING_COM
+}
+
+enum ThreadStatus {
+  OPEN
+  AWAITING_REPLY
+  RESOLVED
+  CLOSED
+}
+
+model MessageThread {
+  id            String       @id @default(uuid())
+  propertyId    String?      @map("property_id")
+  bookingId     String?      @map("booking_id")
+  guestId       String?      @map("guest_id")
+  ownerId       String?      @map("owner_id")
+  channel       CommChannel
+  subject       String?
+  status        ThreadStatus @default(OPEN)
+  assignedToId  String?      @map("assigned_to_id")
+  lastMessageAt DateTime?    @map("last_message_at")
+  unreadCount   Int          @default(0) @map("unread_count")
+  metadata      Json?
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  property   Property?     @relation(fields: [propertyId], references: [id])
+  booking    Booking?      @relation(fields: [bookingId], references: [id])
+  guest      GuestProfile? @relation(fields: [guestId], references: [id])
+  owner      Owner?        @relation(fields: [ownerId], references: [id])
+  assignedTo User?         @relation("ThreadAssignee", fields: [assignedToId], references: [id])
+  messages   GuestMessage[]
+
+  @@index([channel, status])
+  @@map("message_threads")
+}
+
+enum SenderType {
+  GUEST
+  STAFF
+  SYSTEM
+  AI
+}
+
+enum ContentType {
+  TEXT
+  IMAGE
+  DOCUMENT
+  LOCATION
+  TEMPLATE
+}
+
+model GuestMessage {
+  id                String      @id @default(uuid())
+  threadId          String      @map("thread_id")
+  senderType        SenderType  @map("sender_type")
+  senderId          String?     @map("sender_id")
+  content           String
+  contentType       ContentType @default(TEXT) @map("content_type")
+  attachments       Json?
+  externalMessageId String?     @map("external_message_id")
+  isRead            Boolean     @default(false) @map("is_read")
+  aiSuggestedReply  String?     @map("ai_suggested_reply")
+  metadata          Json?
+  sentAt            DateTime    @default(now()) @map("sent_at")
+  deliveredAt       DateTime?   @map("delivered_at")
+  readAt            DateTime?   @map("read_at")
+  createdAt         DateTime    @default(now()) @map("created_at")
+
+  thread MessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  sender User?         @relation("MessageSender", fields: [senderId], references: [id])
+
+  @@index([threadId, createdAt])
+  @@map("guest_messages")
+}
+
+model CommunicationTemplate {
+  id            String      @id @default(uuid())
+  name          String
+  channel       CommChannel
+  triggerEvent  String?     @map("trigger_event")
+  subject       Json?       // Multilingual for email
+  body          Json        // Multilingual with {{variable}} placeholders
+  isActive      Boolean     @default(true) @map("is_active")
+  metadata      Json?
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  variables TemplateVariable[]
+
+  @@map("communication_templates")
+}
+
+model TemplateVariable {
+  id           String  @id @default(uuid())
+  templateId   String  @map("template_id")
+  variableKey  String  @map("variable_key")
+  description  String
+  defaultValue String? @map("default_value")
+  sourcePath   String? @map("source_path")
+
+  template CommunicationTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@map("template_variables")
+}
+
+// ==========================================
+// 13. CHANNELS & OTA
+// ==========================================
+
+enum OTAChannel {
+  AIRBNB
+  BOOKING_COM
+  VRBO
+  EXPEDIA
+  DIRECT
+  CUSTOM
+}
+
+enum ChannelStatus {
+  CONNECTED
+  DISCONNECTED
+  CHANNEL_PENDING
+  CHANNEL_ERROR
+}
+
+model ChannelConnection {
+  id           String        @id @default(uuid())
+  propertyId   String        @map("property_id")
+  channel      OTAChannel
+  status       ChannelStatus @default(CHANNEL_PENDING)
+  externalListingId String?  @map("external_listing_id")
+  credentials  Json?         // Encrypted
+  settings     Json?
+  lastSyncedAt DateTime?     @map("last_synced_at")
+  syncError    String?       @map("sync_error")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  property Property @relation("PropertyChannels", fields: [propertyId], references: [id])
+
+  @@unique([propertyId, channel])
+  @@map("channel_connections")
+}
+
+enum RatePlanType {
+  STANDARD
+  WEEKEND
+  WEEKLY
+  MONTHLY
+  LAST_MINUTE
+  EARLY_BIRD
+}
+
+model RatePlan {
+  id              String       @id @default(uuid())
+  propertyId      String       @map("property_id")
+  unitId          String?      @map("unit_id")
+  name            String
+  type            RatePlanType
+  baseRate        Decimal      @map("base_rate")
+  currency        String       @default("EUR")
+  minStay         Int          @default(1) @map("min_stay")
+  maxStay         Int?         @map("max_stay")
+  isActive        Boolean      @default(true) @map("is_active")
+  validFrom       DateTime?    @map("valid_from") @db.Date
+  validTo         DateTime?    @map("valid_to") @db.Date
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  property Property      @relation(fields: [propertyId], references: [id])
+  unit     PropertyUnit? @relation(fields: [unitId], references: [id])
+  seasonalRates SeasonalRate[]
+
+  @@map("rate_plans")
+}
+
+model SeasonalRate {
+  id          String   @id @default(uuid())
+  propertyId  String   @map("property_id")
+  unitId      String?  @map("unit_id")
+  ratePlanId  String?  @map("rate_plan_id")
+  name        String
+  startDate   DateTime @map("start_date") @db.Date
+  endDate     DateTime @map("end_date") @db.Date
+  nightlyRate Decimal  @map("nightly_rate")
+  minStay     Int?     @map("min_stay")
+  priority    Int      @default(0)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  property Property      @relation(fields: [propertyId], references: [id])
+  unit     PropertyUnit? @relation(fields: [unitId], references: [id])
+  ratePlan RatePlan?     @relation(fields: [ratePlanId], references: [id])
+
+  @@map("seasonal_rates")
+}
+
+enum AdjustmentType {
+  PERCENTAGE
+  FIXED
+}
+
+model OtaRateRule {
+  id              String         @id @default(uuid())
+  propertyId      String         @map("property_id")
+  channel         OTAChannel
+  adjustmentType  AdjustmentType @map("adjustment_type")
+  adjustmentValue Decimal        @map("adjustment_value")
+  isActive        Boolean        @default(true) @map("is_active")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  property Property @relation(fields: [propertyId], references: [id])
+
+  @@unique([propertyId, channel])
+  @@map("ota_rate_rules")
+}
+
+enum RevenueRuleType {
+  DYNAMIC_PRICING
+  DISCOUNT
+  SURCHARGE
+  MIN_STAY
+  CLOSE_DATE
+}
+
+model RevenueRule {
+  id          String          @id @default(uuid())
+  propertyId  String?         @map("property_id")
+  name        String
+  ruleType    RevenueRuleType @map("rule_type")
+  conditions  Json            // e.g. {occupancy_above: 80, days_before_checkin: 7}
+  action      Json            // e.g. {adjust_rate: 15, type: 'percent'}
+  priority    Int             @default(0)
+  isActive    Boolean         @default(true) @map("is_active")
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+
+  property Property? @relation("PropertyRevenueRules", fields: [propertyId], references: [id])
+
+  @@map("revenue_rules")
+}
+
+// ==========================================
+// 14. LOYALTY & STARS
+// ==========================================
+
+model LoyaltyTier {
+  id          String    @id @default(uuid())
+  name        String
+  minPoints   Int       @map("min_points")
+  multiplier  Decimal   @default(1.0)
+  benefits    Json      // Array of benefit descriptions
+  color       String
+  iconUrl     String?   @map("icon_url")
+  sortOrder   Int       @map("sort_order")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  members     LoyaltyMember[]
+  loyaltyBenefits LoyaltyBenefit[]
+
+  @@map("loyalty_tiers")
+}
+
+model LoyaltyMember {
+  id                 String   @id @default(uuid())
+  userId             String   @unique @map("user_id")
+  tierId             String   @map("tier_id")
+  totalPointsEarned  Int      @default(0) @map("total_points_earned")
+  currentPoints      Int      @default(0) @map("current_points")
+  pointsExpiryDays   Int      @default(365) @map("points_expiry_days")
+  joinedAt           DateTime @default(now()) @map("joined_at")
+  tierAchievedAt     DateTime @default(now()) @map("tier_achieved_at")
+  metadata           Json?
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  user         User              @relation(fields: [userId], references: [id])
+  tier         LoyaltyTier       @relation(fields: [tierId], references: [id])
+  transactions LoyaltyTransaction[]
+  redemptions  LoyaltyRedemption[]
+
+  @@map("loyalty_members")
+}
+
+enum LoyaltyTransactionType {
+  EARN
+  REDEEM
+  EXPIRE
+  ADJUST
+  BONUS
+}
+
+model LoyaltyTransaction {
+  id           String                  @id @default(uuid())
+  memberId     String                  @map("member_id")
+  type         LoyaltyTransactionType
+  points       Int
+  balanceAfter Int                     @map("balance_after")
+  description  String
+  bookingId    String?                 @map("booking_id")
+  expiresAt    DateTime?               @map("expires_at")
+  createdAt    DateTime                @default(now()) @map("created_at")
+
+  member  LoyaltyMember @relation(fields: [memberId], references: [id])
+  booking Booking?      @relation(fields: [bookingId], references: [id])
+
+  @@index([memberId, createdAt])
+  @@map("loyalty_transactions")
+}
+
+enum BenefitType {
+  DISCOUNT_PERCENT
+  FREE_NIGHT
+  UPGRADE
+  EARLY_CHECKIN
+  LATE_CHECKOUT
+  PRIORITY_SUPPORT
+  CUSTOM
+}
+
+model LoyaltyBenefit {
+  id          String     @id @default(uuid())
+  tierId      String     @map("tier_id")
+  benefitType BenefitType @map("benefit_type")
+  value       Decimal?
+  description Json       // Multilingual
+  isActive    Boolean    @default(true) @map("is_active")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  tier        LoyaltyTier       @relation(fields: [tierId], references: [id])
+  redemptions LoyaltyRedemption[]
+
+  @@map("loyalty_benefits")
+}
+
+enum RedemptionStatus {
+  REDEMPTION_PENDING
+  APPLIED
+  REDEMPTION_CANCELLED
+}
+
+model LoyaltyRedemption {
+  id         String           @id @default(uuid())
+  memberId   String           @map("member_id")
+  benefitId  String           @map("benefit_id")
+  bookingId  String?          @map("booking_id")
+  pointsUsed Int              @map("points_used")
+  status     RedemptionStatus @default(REDEMPTION_PENDING)
+  createdAt  DateTime         @default(now()) @map("created_at")
+
+  member  LoyaltyMember  @relation(fields: [memberId], references: [id])
+  benefit LoyaltyBenefit @relation(fields: [benefitId], references: [id])
+
+  @@map("loyalty_redemptions")
+}
+
+// ==========================================
+// 15. AFFILIATES
+// ==========================================
+
+enum CommissionType {
+  PERCENTAGE_OF_BOOKING
+  FLAT_PER_BOOKING
+  PERCENTAGE_OF_FIRST_YEAR
+}
+
+enum AffiliateStatus {
+  AFFILIATE_ACTIVE
+  AFFILIATE_SUSPENDED
+  AFFILIATE_PENDING
+}
+
+model AffiliateProfile {
+  id                  String          @id @default(uuid())
+  userId              String          @unique @map("user_id")
+  affiliateCode       String          @unique @map("affiliate_code")
+  commissionPercent   Decimal         @default(10) @map("commission_percent")
+  commissionType      CommissionType  @default(PERCENTAGE_OF_FIRST_YEAR) @map("commission_type")
+  status              AffiliateStatus @default(AFFILIATE_PENDING)
+  totalReferrals      Int             @default(0) @map("total_referrals")
+  totalEarnings       Decimal         @default(0) @map("total_earnings")
+  payoutMethod        PaymentMethodType @default(BANK_TRANSFER) @map("payout_method")
+  payoutDetails       Json?           @map("payout_details") // Encrypted
+  minPayoutThreshold  Decimal         @default(50) @map("min_payout_threshold")
+  websiteUrl          String?         @map("website_url")
+  notes               String?
+  metadata            Json?
+  createdAt           DateTime        @default(now()) @map("created_at")
+  updatedAt           DateTime        @updatedAt @map("updated_at")
+
+  user      User                @relation(fields: [userId], references: [id])
+  referrals AffiliateReferral[]
+
+  @@map("affiliate_profiles")
+}
+
+enum ReferralType {
+  OWNER_SIGNUP
+  BOOKING
+}
+
+enum ReferralStatus {
+  REFERRAL_PENDING
+  QUALIFIED
+  REFERRAL_PAID
+  REFERRAL_REJECTED
+}
+
+model AffiliateReferral {
+  id               String         @id @default(uuid())
+  affiliateId      String         @map("affiliate_id")
+  referredOwnerId  String?        @map("referred_owner_id")
+  referredBookingId String?       @map("referred_booking_id")
+  referralType     ReferralType   @map("referral_type")
+  status           ReferralStatus @default(REFERRAL_PENDING)
+  commissionAmount Decimal?       @map("commission_amount")
+  paidAt           DateTime?      @map("paid_at")
+  createdAt        DateTime       @default(now()) @map("created_at")
+
+  affiliate     AffiliateProfile @relation(fields: [affiliateId], references: [id])
+  referredOwner Owner?           @relation("ReferredOwner", fields: [referredOwnerId], references: [id])
+  referredBooking Booking?       @relation("ReferredBooking", fields: [referredBookingId], references: [id])
+
+  @@map("affiliate_referrals")
+}
+
+// ==========================================
+// 16. MARKETING
+// ==========================================
+
+enum JourneyStatus {
+  JOURNEY_DRAFT
+  JOURNEY_ACTIVE
+  JOURNEY_PAUSED
+  JOURNEY_COMPLETED
+}
+
+model MarketingJourney {
+  id              String        @id @default(uuid())
+  name            String
+  description     String?
+  status          JourneyStatus @default(JOURNEY_DRAFT)
+  targetAudience  Json          @map("target_audience") // Filter criteria
+  startDate       DateTime?     @map("start_date")
+  endDate         DateTime?     @map("end_date")
+  createdById     String        @map("created_by_id")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  events   JourneyEvent[]
+  triggers JourneyTrigger[]
+
+  @@map("marketing_journeys")
+}
+
+enum JourneyEventType {
+  SEND_EMAIL
+  SEND_WHATSAPP
+  SEND_SMS
+  WAIT
+  CONDITION
+  SPLIT
+}
+
+model JourneyEvent {
+  id         String           @id @default(uuid())
+  journeyId  String           @map("journey_id")
+  eventType  JourneyEventType @map("event_type")
+  config     Json             // template_id, delay, conditions
+  sortOrder  Int              @map("sort_order")
+  createdAt  DateTime         @default(now()) @map("created_at")
+
+  journey MarketingJourney @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+
+  @@map("journey_events")
+}
+
+enum TriggerType {
+  BOOKING_CREATED
+  CHECKOUT_COMPLETE
+  OWNER_SIGNUP
+  DATE_BASED
+  MANUAL
+  PROPERTY_SCORE_DROP
+}
+
+model JourneyTrigger {
+  id          String      @id @default(uuid())
+  journeyId   String      @map("journey_id")
+  triggerType  TriggerType @map("trigger_type")
+  conditions  Json?
+  isActive    Boolean     @default(true) @map("is_active")
+  createdAt   DateTime    @default(now()) @map("created_at")
+
+  journey MarketingJourney @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+
+  @@map("journey_triggers")
+}
+
+// ==========================================
+// 17. DIRECT BOOKING
+// ==========================================
+
+model DirectBookingSetting {
+  id               String   @id @default(uuid())
+  propertyId       String   @unique @map("property_id")
+  isEnabled        Boolean  @default(false) @map("is_enabled")
+  widgetConfig     Json?    @map("widget_config")
+  minAdvanceDays   Int      @default(1) @map("min_advance_days")
+  maxAdvanceDays   Int      @default(365) @map("max_advance_days")
+  requireDeposit   Boolean  @default(true) @map("require_deposit")
+  depositPercent   Decimal  @default(30) @map("deposit_percent")
+  termsUrl         String?  @map("terms_url")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  property Property       @relation(fields: [propertyId], references: [id])
+  widgets  BookingWidget[]
+
+  @@map("direct_booking_settings")
+}
+
+model BookingWidget {
+  id              String  @id @default(uuid())
+  settingsId      String  @map("settings_id")
+  embedCode       String  @map("embed_code")
+  domainWhitelist Json?   @map("domain_whitelist")
+  isActive        Boolean @default(true) @map("is_active")
+  viewsCount      Int     @default(0) @map("views_count")
+  bookingsCount   Int     @default(0) @map("bookings_count")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  settings DirectBookingSetting @relation(fields: [settingsId], references: [id])
+
+  @@map("booking_widgets")
+}
+
+// ==========================================
+// 18. PORTFOLIO (ONE PORTFOLIO VIEW)
+// ==========================================
+
+enum InvestmentType {
+  PROPERTY_PURCHASE
+  RENOVATION
+  EQUIPMENT
+  EXTERNAL
+}
+
+model PortfolioInvestment {
+  id                  String         @id @default(uuid())
+  ownerId             String         @map("owner_id")
+  propertyId          String?        @map("property_id")
+  investmentType      InvestmentType @map("investment_type")
+  name                String
+  amount              Decimal
+  currency            String         @default("EUR")
+  date                DateTime       @db.Date
+  expectedAnnualReturn Decimal?      @map("expected_annual_return")
+  currentValue        Decimal?       @map("current_value")
+  valueUpdatedAt      DateTime?      @map("value_updated_at")
+  notes               String?
+  metadata            Json?
+  createdAt           DateTime       @default(now()) @map("created_at")
+  updatedAt           DateTime       @updatedAt @map("updated_at")
+
+  owner    Owner     @relation(fields: [ownerId], references: [id])
+  property Property? @relation(fields: [propertyId], references: [id])
+
+  @@index([ownerId])
+  @@map("portfolio_investments")
+}
+
+// ==========================================
+// 19. IoT
+// ==========================================
+
+enum DeviceType {
+  SMART_LOCK
+  THERMOSTAT
+  NOISE_MONITOR
+  CAMERA_OUTDOOR
+  SENSOR
+}
+
+enum DeviceStatus {
+  ONLINE
+  OFFLINE
+  LOW_BATTERY
+  DEVICE_ERROR
+}
+
+model IotDevice {
+  id            String       @id @default(uuid())
+  propertyId    String       @map("property_id")
+  unitId        String?      @map("unit_id")
+  deviceType    DeviceType   @map("device_type")
+  provider      String
+  deviceId      String       @map("device_id")
+  name          String
+  status        DeviceStatus @default(OFFLINE)
+  credentials   Json?        // Encrypted
+  lastSeenAt    DateTime?    @map("last_seen_at")
+  batteryLevel  Int?         @map("battery_level")
+  metadata      Json?
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  property Property      @relation(fields: [propertyId], references: [id])
+  unit     PropertyUnit? @relation(fields: [unitId], references: [id])
+
+  @@index([propertyId])
+  @@map("iot_devices")
+}
+
+// ==========================================
+// 20. AI
+// ==========================================
+
+enum AiProvider {
+  ANTHROPIC
+  OPENAI
+  GOOGLE
+}
+
+model AiConversation {
+  id          String     @id @default(uuid())
+  userId      String     @map("user_id")
+  contextType String?    @map("context_type")
+  contextId   String?    @map("context_id")
+  provider    AiProvider
+  model       String
+  messages    Json       // Array of {role, content, timestamp}
+  tokensUsed  Int        @default(0) @map("tokens_used")
+  costUsd     Decimal    @default(0) @map("cost_usd")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("ai_conversations")
+}
+
+model AiCache {
+  id         String   @id @default(uuid())
+  cacheKey   String   @unique @map("cache_key")
+  provider   String
+  promptHash String   @map("prompt_hash")
+  response   Json
+  tokensUsed Int      @map("tokens_used")
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([expiresAt])
+  @@map("ai_cache")
+}
+
+// ==========================================
+// 21. PROPERTY SCORING
+// ==========================================
+
+model PropertyScore {
+  id                     String   @id @default(uuid())
+  propertyId             String   @map("property_id")
+  periodMonth            Int      @map("period_month")
+  periodYear             Int      @map("period_year")
+  overallScore           Decimal  @map("overall_score")
+  occupancyScore         Decimal  @map("occupancy_score")
+  revenueScore           Decimal  @map("revenue_score")
+  maintenanceScore       Decimal  @map("maintenance_score")
+  guestSatisfactionScore Decimal  @map("guest_satisfaction_score")
+  responseTimeScore      Decimal  @map("response_time_score")
+  breakdown              Json
+  createdAt              DateTime @default(now()) @map("created_at")
+
+  property Property @relation(fields: [propertyId], references: [id])
+
+  @@unique([propertyId, periodMonth, periodYear])
+  @@map("property_scores")
+}
+
+// ==========================================
+// 22. REPORTS
+// ==========================================
+
+enum ReportType {
+  OWNER_MONTHLY
+  FINANCIAL_SUMMARY
+  OCCUPANCY
+  REVENUE
+  MAINTENANCE_REPORT
+  CUSTOM
+}
+
+enum ReportFormat {
+  PDF
+  EXCEL
+  BOTH
+}
+
+model ReportTemplate {
+  id           String       @id @default(uuid())
+  name         String
+  type         ReportType
+  config       Json         // columns, filters, grouping, charts
+  outputFormat ReportFormat @map("output_format")
+  isSystem     Boolean      @default(false) @map("is_system")
+  createdById  String?      @map("created_by_id")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  schedules ReportSchedule[]
+  generated GeneratedReport[]
+
+  @@map("report_templates")
+}
+
+enum Frequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+}
+
+model ReportSchedule {
+  id               String    @id @default(uuid())
+  templateId       String    @map("template_id")
+  ownerId          String?   @map("owner_id")
+  propertyId       String?   @map("property_id")
+  frequency        Frequency
+  deliveryChannels Json      @map("delivery_channels") // [{channel, recipients}]
+  nextRunAt        DateTime  @map("next_run_at")
+  lastRunAt        DateTime? @map("last_run_at")
+  isActive         Boolean   @default(true) @map("is_active")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  template ReportTemplate @relation(fields: [templateId], references: [id])
+  owner    Owner?         @relation(fields: [ownerId], references: [id])
+  property Property?      @relation(fields: [propertyId], references: [id])
+  generated GeneratedReport[]
+
+  @@map("report_schedules")
+}
+
+model GeneratedReport {
+  id          String       @id @default(uuid())
+  templateId  String       @map("template_id")
+  scheduleId  String?      @map("schedule_id")
+  ownerId     String?      @map("owner_id")
+  fileUrl     String       @map("file_url")
+  fileFormat  ReportFormat @map("file_format")
+  periodStart DateTime     @map("period_start") @db.Date
+  periodEnd   DateTime     @map("period_end") @db.Date
+  generatedAt DateTime     @default(now()) @map("generated_at")
+  metadata    Json?
+
+  template ReportTemplate  @relation(fields: [templateId], references: [id])
+  schedule ReportSchedule? @relation(fields: [scheduleId], references: [id])
+  owner    Owner?          @relation(fields: [ownerId], references: [id])
+
+  @@map("generated_reports")
+}
+
+// ==========================================
+// 23. NOTIFICATIONS
+// ==========================================
+
+enum NotificationChannel {
+  NOTIF_IN_APP
+  NOTIF_EMAIL
+  NOTIF_WHATSAPP
+  NOTIF_SMS
+  NOTIF_PUSH
+}
+
+model Notification {
+  id        String              @id @default(uuid())
+  userId    String              @map("user_id")
+  type      String
+  title     String
+  body      String
+  data      Json?
+  channel   NotificationChannel
+  isRead    Boolean             @default(false) @map("is_read")
+  readAt    DateTime?           @map("read_at")
+  sentAt    DateTime?           @map("sent_at")
+  createdAt DateTime            @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+model NotificationPreference {
+  id               String   @id @default(uuid())
+  userId           String   @unique @map("user_id")
+  channelEmail     Boolean  @default(true) @map("channel_email")
+  channelWhatsapp  Boolean  @default(true) @map("channel_whatsapp")
+  channelSms       Boolean  @default(false) @map("channel_sms")
+  reportMonthly    Boolean  @default(true) @map("report_monthly")
+  reportQuarterly  Boolean  @default(true) @map("report_quarterly")
+  reportAnnual     Boolean  @default(true) @map("report_annual")
+  approvalAlerts   Boolean  @default(true) @map("approval_alerts")
+  approvalThreshold Decimal? @map("approval_threshold")
+  marketingEmails  Boolean  @default(true) @map("marketing_emails")
+  quietHoursStart  String?  @map("quiet_hours_start") // "22:00"
+  quietHoursEnd    String?  @map("quiet_hours_end")   // "08:00"
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("notification_preferences")
+}
+
+// ==========================================
+// 24. WEBHOOKS
+// ==========================================
+
+enum WebhookStatus {
+  RECEIVED
+  PROCESSING
+  PROCESSED
+  WEBHOOK_FAILED
+}
+
+model WebhookEvent {
+  id          String        @id @default(uuid())
+  source      String
+  eventType   String        @map("event_type")
+  payload     Json
+  status      WebhookStatus @default(RECEIVED)
+  error       String?
+  attempts    Int           @default(0)
+  processedAt DateTime?     @map("processed_at")
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  @@index([source, eventType])
+  @@index([status])
+  @@map("webhook_events")
+}
+
+// ==========================================
+// 25. API CONNECTORS
+// ==========================================
+
+enum AuthType {
+  API_KEY
+  OAUTH2
+  BASIC
+  BEARER
+  CUSTOM
+}
+
+model ApiConnector {
+  id                   String   @id @default(uuid())
+  name                 String
+  category             String   // 'ota', 'ai', 'payment', 'crm', etc.
+  authType             AuthType @map("auth_type")
+  baseUrl              String   @map("base_url")
+  credentialsEncrypted Json?    @map("credentials_encrypted")
+  healthUrl            String?  @map("health_url")
+  isActive             Boolean  @default(true) @map("is_active")
+  lastHealthCheck      DateTime? @map("last_health_check")
+  metadata             Json?
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  @@map("api_connectors")
+}
+
+// ==========================================
+// 26. TRANSLATIONS (Dynamic Content)
+// ==========================================
+
+model Translation {
+  id                String   @id @default(uuid())
+  entityType        String   @map("entity_type")
+  entityId          String   @map("entity_id")
+  field             String
+  locale            String
+  value             String
+  isAutoTranslated  Boolean  @default(false) @map("is_auto_translated")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@unique([entityType, entityId, field, locale])
+  @@index([entityType, entityId])
+  @@map("translations")
+}
+
+// ==========================================
+// 27. ACCOUNTING
+// ==========================================
+
+enum EntryType {
+  DEBIT
+  CREDIT
+}
+
+model AccountingEntry {
+  id              String    @id @default(uuid())
+  entryType       EntryType @map("entry_type")
+  accountCode     String    @map("account_code")
+  amount          Decimal
+  currency        String    @default("EUR")
+  description     String
+  referenceType   String?   @map("reference_type")
+  referenceId     String?   @map("reference_id")
+  propertyId      String?   @map("property_id")
+  ownerId         String?   @map("owner_id")
+  periodMonth     Int       @map("period_month")
+  periodYear      Int       @map("period_year")
+  syncedToExternal Boolean  @default(false) @map("synced_to_external")
+  externalId      String?   @map("external_id")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  @@index([accountCode, periodYear, periodMonth])
+  @@map("accounting_entries")
+}
+
+enum AccountingProvider {
+  QUICKBOOKS
+  XERO
+  ACC_CUSTOM
+}
+
+enum IntegrationStatus {
+  INT_CONNECTED
+  INT_DISCONNECTED
+  INT_ERROR
+}
+
+model AccountingIntegration {
+  id           String             @id @default(uuid())
+  provider     AccountingProvider
+  status       IntegrationStatus  @default(INT_DISCONNECTED)
+  credentials  Json?              // Encrypted
+  settings     Json?
+  lastSyncedAt DateTime?          @map("last_synced_at")
+  createdAt    DateTime           @default(now()) @map("created_at")
+  updatedAt    DateTime           @updatedAt @map("updated_at")
+
+  @@map("accounting_integrations")
+}

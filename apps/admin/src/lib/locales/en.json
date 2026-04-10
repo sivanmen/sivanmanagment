@@ -1,0 +1,53 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "properties": "Properties",
+    "bookings": "Bookings",
+    "owners": "Owners",
+    "finance": "Finance",
+    "calendar": "Calendar",
+    "maintenance": "Maintenance",
+    "inbox": "Inbox",
+    "reports": "Reports",
+    "channels": "Channels",
+    "loyalty": "Loyalty",
+    "affiliates": "Affiliates",
+    "settings": "Settings"
+  },
+  "auth": {
+    "login": "Enter Platform",
+    "email": "Corporate Email",
+    "password": "Security Key",
+    "forgotPassword": "Forgot?",
+    "rememberDevice": "Recognize this device for 30 days",
+    "newUser": "New to Sivan?",
+    "requestAccess": "Request Access",
+    "loggingIn": "Authenticating..."
+  },
+  "dashboard": {
+    "title": "Executive Overview",
+    "subtitle": "Architectural Lens PMS",
+    "totalPortfolioValue": "Total Portfolio Value",
+    "netOperatingIncome": "Net Operating Income",
+    "yieldROI": "Yield % (ROI)",
+    "occupancyRate": "Occupancy Rate",
+    "revenueTitle": "Revenue Trends",
+    "aiActions": "Ambient AI Actions",
+    "topAssets": "Top Performing Assets",
+    "viewPortfolio": "View Portfolio"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "loading": "Loading...",
+    "noData": "No data available",
+    "confirm": "Confirm",
+    "back": "Back"
+  }
+}
