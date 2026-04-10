@@ -6,6 +6,11 @@ import DashboardLayout from './layouts/DashboardLayout';
 import AuthLayout from './layouts/AuthLayout';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
+import PropertiesListPage from './pages/PropertiesListPage';
+import PropertyDetailPage from './pages/PropertyDetailPage';
+import PropertyFormPage from './pages/PropertyFormPage';
+import OwnersListPage from './pages/OwnersListPage';
+import OwnerDetailPage from './pages/OwnerDetailPage';
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
@@ -32,9 +37,14 @@ export default function App() {
         </Route>
         <Route element={<AuthGuard><DashboardLayout /></AuthGuard>}>
           <Route path="/" element={<DashboardPage />} />
-          <Route path="/properties" element={<div className="p-6 font-headline text-2xl">Properties — Coming Soon</div>} />
+          <Route path="/properties" element={<PropertiesListPage />} />
+          <Route path="/properties/new" element={<PropertyFormPage />} />
+          <Route path="/properties/:id" element={<PropertyDetailPage />} />
+          <Route path="/properties/:id/edit" element={<PropertyFormPage />} />
           <Route path="/bookings" element={<div className="p-6 font-headline text-2xl">Bookings — Coming Soon</div>} />
-          <Route path="/owners" element={<div className="p-6 font-headline text-2xl">Owners — Coming Soon</div>} />
+          <Route path="/owners" element={<OwnersListPage />} />
+          <Route path="/owners/new" element={<div className="p-6 font-headline text-2xl">New Owner — Coming Soon</div>} />
+          <Route path="/owners/:id" element={<OwnerDetailPage />} />
           <Route path="/finance" element={<div className="p-6 font-headline text-2xl">Finance — Coming Soon</div>} />
           <Route path="/calendar" element={<div className="p-6 font-headline text-2xl">Calendar — Coming Soon</div>} />
           <Route path="/maintenance" element={<div className="p-6 font-headline text-2xl">Maintenance — Coming Soon</div>} />

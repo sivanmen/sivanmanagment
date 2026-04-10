@@ -6,6 +6,7 @@ import DashboardLayout from './layouts/DashboardLayout';
 import AuthLayout from './layouts/AuthLayout';
 import LoginPage from './pages/LoginPage';
 import ClientDashboardPage from './pages/ClientDashboardPage';
+import MyPropertiesPage from './pages/MyPropertiesPage';
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
@@ -32,7 +33,7 @@ export default function App() {
         </Route>
         <Route element={<AuthGuard><DashboardLayout /></AuthGuard>}>
           <Route path="/" element={<ClientDashboardPage />} />
-          <Route path="/properties" element={<div className="p-6 font-headline text-2xl">My Properties — Coming Soon</div>} />
+          <Route path="/properties" element={<MyPropertiesPage />} />
           <Route path="/financials" element={<div className="p-6 font-headline text-2xl">Financial Summary — Coming Soon</div>} />
           <Route path="/documents" element={<div className="p-6 font-headline text-2xl">My Documents — Coming Soon</div>} />
           <Route path="/maintenance" element={<div className="p-6 font-headline text-2xl">Maintenance — Coming Soon</div>} />

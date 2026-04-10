@@ -7,6 +7,8 @@ import { errorHandler } from './middleware/error-handler.middleware';
 import { localeMiddleware } from './middleware/locale.middleware';
 import { auditMiddleware } from './middleware/audit.middleware';
 import authRoutes from './modules/auth/auth.routes';
+import propertiesRoutes from './modules/properties/properties.routes';
+import ownersRoutes from './modules/owners/owners.routes';
 
 const app = express();
 
@@ -44,10 +46,10 @@ app.get('/api/v1/health', (_req, res) => {
 
 // Routes
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/properties', propertiesRoutes);
+app.use('/api/v1/owners', ownersRoutes);
 
 // TODO: Add more routes as modules are built
-// app.use('/api/v1/properties', propertiesRoutes);
-// app.use('/api/v1/owners', ownersRoutes);
 // app.use('/api/v1/bookings', bookingsRoutes);
 // app.use('/api/v1/finance', financeRoutes);
 // app.use('/api/v1/documents', documentsRoutes);
