@@ -64,7 +64,7 @@ export default function LoginPage() {
           {t('auth.login')}
         </h2>
         <p className="text-sm text-on-surface-variant">
-          Access your architectural portfolio and performance metrics.
+          Manage your properties, bookings, and team.
         </p>
       </div>
 
@@ -149,8 +149,16 @@ export default function LoginPage() {
         </button>
       </form>
 
+      {/* Demo credentials hint */}
+      <div className="mt-6 p-3 rounded-lg bg-secondary/5 border border-secondary/10">
+        <p className="text-[10px] font-semibold tracking-widest text-secondary uppercase mb-2">Demo Access</p>
+        <div className="space-y-1 text-xs text-on-surface-variant font-mono">
+          <p>admin@sivanmanagment.com / Admin123!@#</p>
+        </div>
+      </div>
+
       {/* Request access */}
-      <div className="mt-6 text-center">
+      <div className="mt-4 text-center">
         <p className="text-xs text-on-surface-variant">
           {t('auth.newUser')}{' '}
           <button className="text-secondary hover:text-secondary-container font-medium transition-colors">

@@ -64,7 +64,7 @@ export default function LoginPage() {
           {t('auth.login')}
         </h2>
         <p className="text-sm text-on-surface-variant">
-          Access your architectural portfolio and performance metrics.
+          View your property performance, revenue, and bookings.
         </p>
       </div>
 

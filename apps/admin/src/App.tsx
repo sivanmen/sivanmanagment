@@ -36,6 +36,7 @@ const AffiliatesPage = lazy(() => import('./pages/AffiliatesPage'));
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
 const PortfolioPage = lazy(() => import('./pages/PortfolioPage'));
 const AutomationsPage = lazy(() => import('./pages/AutomationsPage'));
+const MarketingPage = lazy(() => import('./pages/MarketingPage'));
 const SystemSettingsPage = lazy(() => import('./pages/SystemSettingsPage'));
 const TemplatesPage = lazy(() => import('./pages/TemplatesPage'));
 const GuestExperiencePage = lazy(() => import('./pages/GuestExperiencePage'));
@@ -50,6 +51,7 @@ const OwnerPortalConfigPage = lazy(() => import('./pages/OwnerPortalConfigPage')
 const OwnerStatementsPage = lazy(() => import('./pages/OwnerStatementsPage'));
 const WebhooksPage = lazy(() => import('./pages/WebhooksPage'));
 const OnboardingWizardPage = lazy(() => import('./pages/OnboardingWizardPage'));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 // Loading screen component - Sivan Obsidian design
 function LoadingScreen() {
@@ -124,7 +126,7 @@ export default function App() {
             <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/portfolio" element={<PortfolioPage />} />
             <Route path="/automations" element={<AutomationsPage />} />
-            <Route path="/marketing" element={<div className="p-6 font-headline text-2xl">Marketing — Coming Soon</div>} />
+            <Route path="/marketing" element={<MarketingPage />} />
             <Route path="/settings" element={<SystemSettingsPage />} />
             <Route path="/templates" element={<TemplatesPage />} />
             <Route path="/guest-experience" element={<GuestExperiencePage />} />
@@ -140,7 +142,7 @@ export default function App() {
             <Route path="/webhooks" element={<WebhooksPage />} />
             <Route path="/onboarding" element={<OnboardingWizardPage />} />
           </Route>
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Suspense>
     </div>
