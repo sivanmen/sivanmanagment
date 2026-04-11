@@ -492,13 +492,19 @@ export default function ExpenseFormPage() {
         </div>
 
         {/* ---------- Approval threshold notice ---------- */}
-        {typeof watchedAmount === 'number' && watchedAmount > 500 && (
+        {typeof watchedAmount === 'number' && watchedAmount > 300 && (
           <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
             <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-            <p className="text-sm text-amber-200">
-              Expenses over <span className="font-semibold">&euro;500</span> require WhatsApp
-              approval before they can be finalized.
-            </p>
+            <div className="space-y-1">
+              <p className="text-sm text-amber-200">
+                This expense exceeds the owner's approval threshold. It will be sent to the property
+                owner for approval via WhatsApp.
+              </p>
+              <p className="text-xs text-amber-200/60">
+                The owner can approve or reject by replying to the WhatsApp message, or through the
+                client portal. A reminder will be sent if no response is received within 24 hours.
+              </p>
+            </div>
           </div>
         )}
 
