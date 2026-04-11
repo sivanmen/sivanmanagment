@@ -46,6 +46,10 @@ import auditRoutes from './modules/audit/audit.routes';
 import translationsRoutes from './modules/translations/translations.routes';
 import integrationsRoutes from './modules/integrations/integrations.routes';
 import reviewsRoutes from './modules/reviews/reviews.routes';
+import accountingRoutes from './modules/accounting/accounting.routes';
+import directBookingRoutes from './modules/direct-booking/direct-booking.routes';
+import expensesRoutes from './modules/expenses/expenses.routes';
+import whatsappRoutes from './modules/whatsapp/whatsapp.routes';
 
 const app = express();
 
@@ -153,6 +157,10 @@ app.use('/api/v1/audit', auditRoutes);
 app.use('/api/v1/translations', translationsRoutes);
 app.use('/api/v1/integrations', integrationsRoutes);
 app.use('/api/v1/reviews', reviewsRoutes);
+app.use('/api/v1/accounting', accountingRoutes);
+app.use('/api/v1/direct-booking', directBookingRoutes);
+app.use('/api/v1/expenses', expensesRoutes);
+app.use('/api/v1/whatsapp', whatsappRoutes);
 
 // API Documentation
 const apiDocumentation = {
@@ -574,6 +582,76 @@ const apiDocumentation = {
         { method: 'POST', path: '/:id/respond', description: 'Respond to a review', auth: true, role: 'admin' },
         { method: 'PUT', path: '/:id/status', description: 'Update review status', auth: true, role: 'admin' },
         { method: 'GET', path: '/:id/suggest-response', description: 'Get AI-suggested response', auth: true },
+      ],
+    },
+    {
+      name: 'Accounting',
+      basePath: '/accounting',
+      endpoints: [
+        { method: 'GET', path: '/accounts', description: 'List chart of accounts', auth: true, params: ['type', 'subType', 'isActive', 'search', 'page', 'limit'] },
+        { method: 'GET', path: '/accounts/:id', description: 'Get account details', auth: true },
+        { method: 'POST', path: '/accounts', description: 'Create a new account', auth: true, role: 'admin' },
+        { method: 'PUT', path: '/accounts/:id', description: 'Update an account', auth: true, role: 'admin' },
+        { method: 'GET', path: '/journal', description: 'List journal entries', auth: true, params: ['propertyId', 'ownerId', 'status', 'startDate', 'endDate', 'search', 'page', 'limit'] },
+        { method: 'GET', path: '/journal/:id', description: 'Get journal entry details', auth: true },
+        { method: 'POST', path: '/journal', description: 'Create journal entry', auth: true, role: 'admin' },
+        { method: 'POST', path: '/journal/:id/post', description: 'Post a draft journal entry', auth: true, role: 'admin' },
+        { method: 'POST', path: '/journal/:id/void', description: 'Void a journal entry', auth: true, role: 'admin' },
+        { method: 'GET', path: '/trial-balance', description: 'Get trial balance report', auth: true },
+        { method: 'GET', path: '/profit-and-loss', description: 'Get P&L report', auth: true, params: ['propertyId', 'ownerId', 'startDate', 'endDate'] },
+        { method: 'GET', path: '/balance-sheet', description: 'Get balance sheet summary', auth: true },
+        { method: 'GET', path: '/tax-report', description: 'Get tax reporting data', auth: true, params: ['year'] },
+      ],
+    },
+    {
+      name: 'Direct Booking',
+      basePath: '/direct-booking',
+      endpoints: [
+        { method: 'GET', path: '/public/search', description: 'Search available properties', auth: false, params: ['city', 'checkIn', 'checkOut', 'guests', 'minPrice', 'maxPrice', 'type', 'amenities'] },
+        { method: 'GET', path: '/public/property/:propertyId', description: 'Get public property details', auth: false },
+        { method: 'GET', path: '/public/availability/:propertyId', description: 'Check availability by dates', auth: false, params: ['checkIn', 'checkOut'] },
+        { method: 'GET', path: '/public/price/:propertyId', description: 'Calculate price with fees', auth: false, params: ['checkIn', 'checkOut', 'guests'] },
+        { method: 'POST', path: '/public/book', description: 'Create a booking with guest details', auth: false },
+        { method: 'POST', path: '/public/payment/:bookingId', description: 'Create payment intent', auth: false },
+        { method: 'GET', path: '/public/confirmation/:bookingId', description: 'Get booking confirmation and receipt', auth: false },
+        { method: 'GET', path: '/bookings', description: 'List all direct bookings (admin)', auth: true, role: 'admin', params: ['propertyId', 'status', 'paymentStatus', 'search', 'page', 'limit'] },
+      ],
+    },
+    {
+      name: 'Expenses',
+      basePath: '/expenses',
+      endpoints: [
+        { method: 'GET', path: '/stats', description: 'Get expense statistics', auth: true, params: ['propertyId', 'startDate', 'endDate'] },
+        { method: 'GET', path: '/recurring', description: 'List recurring expenses', auth: true, params: ['propertyId'] },
+        { method: 'GET', path: '/budget', description: 'Get budget vs actual tracking', auth: true, params: ['propertyId', 'year', 'month'] },
+        { method: 'GET', path: '/', description: 'List expenses with filters', auth: true, params: ['propertyId', 'category', 'approvalStatus', 'isRecurring', 'startDate', 'endDate', 'vendor', 'search', 'page', 'limit'] },
+        { method: 'GET', path: '/:id', description: 'Get expense details', auth: true },
+        { method: 'POST', path: '/', description: 'Create an expense', auth: true },
+        { method: 'PUT', path: '/:id', description: 'Update an expense', auth: true },
+        { method: 'DELETE', path: '/:id', description: 'Delete an expense', auth: true, role: 'admin' },
+        { method: 'POST', path: '/:id/approve', description: 'Approve an expense', auth: true, role: 'admin' },
+        { method: 'POST', path: '/:id/reject', description: 'Reject an expense', auth: true, role: 'admin' },
+        { method: 'POST', path: '/:id/pay', description: 'Mark expense as paid', auth: true, role: 'admin' },
+      ],
+    },
+    {
+      name: 'WhatsApp',
+      basePath: '/whatsapp',
+      endpoints: [
+        { method: 'GET', path: '/stats', description: 'Get messaging statistics', auth: true },
+        { method: 'GET', path: '/contacts', description: 'List WhatsApp contacts', auth: true, params: ['tag', 'search', 'propertyId', 'isActive', 'page', 'limit'] },
+        { method: 'GET', path: '/contacts/:id', description: 'Get contact details', auth: true },
+        { method: 'POST', path: '/contacts', description: 'Create a contact', auth: true },
+        { method: 'PUT', path: '/contacts/:id', description: 'Update a contact', auth: true },
+        { method: 'GET', path: '/messages', description: 'Get message history', auth: true, params: ['bookingId', 'propertyId', 'direction', 'status', 'templateType', 'search', 'page', 'limit'] },
+        { method: 'GET', path: '/messages/thread/:contactId', description: 'Get message thread for a contact', auth: true },
+        { method: 'POST', path: '/messages/send', description: 'Send a custom message', auth: true },
+        { method: 'POST', path: '/messages/send-template', description: 'Send a template message', auth: true },
+        { method: 'PUT', path: '/messages/:id/status', description: 'Update message status', auth: true },
+        { method: 'GET', path: '/templates', description: 'List message templates', auth: true, params: ['type', 'isActive'] },
+        { method: 'GET', path: '/templates/:id', description: 'Get template details', auth: true },
+        { method: 'POST', path: '/templates', description: 'Create a message template', auth: true, role: 'admin' },
+        { method: 'PUT', path: '/templates/:id', description: 'Update a message template', auth: true, role: 'admin' },
       ],
     },
   ],
