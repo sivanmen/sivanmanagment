@@ -19,6 +19,8 @@ const LoyaltyPage = lazy(() => import('./pages/LoyaltyPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const PortfolioOverviewPage = lazy(() => import('./pages/PortfolioOverviewPage'));
 const OwnerReservationsPage = lazy(() => import('./pages/OwnerReservationsPage'));
+const StatementsPage = lazy(() => import('./pages/StatementsPage'));
+const AffiliatePage = lazy(() => import('./pages/AffiliatePage'));
 
 // Loading screen component - Sivan Obsidian design
 function LoadingScreen() {
@@ -72,6 +74,8 @@ export default function App() {
             <Route path="/calendar" element={<MyCalendarPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/owner-reservations" element={<OwnerReservationsPage />} />
+            <Route path="/statements" element={<StatementsPage />} />
+            <Route path="/affiliate" element={<AffiliatePage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

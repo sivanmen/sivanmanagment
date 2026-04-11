@@ -1,138 +1,280 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  Building2,
   Home,
-  Link2,
-  DollarSign,
-  Zap,
   Users,
-  Rocket,
+  DollarSign,
+  Link2,
+  ImagePlus,
+  ClipboardCheck,
   ChevronLeft,
   ChevronRight,
   Check,
   SkipForward,
-  Clock,
-  Mail,
+  Rocket,
+  Upload,
+  Percent,
+  Calendar,
+  Waves,
+  Mountain,
+  TreePine,
+  Wifi,
+  Car,
+  Wind,
+  UtensilsCrossed,
+  Dumbbell,
+  Tv,
+  ShowerHead,
+  Sun,
+  Snowflake,
   Plus,
   X,
+  Eye,
+  Building2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-const TOTAL_STEPS = 7;
+// ── Types ──────────────────────────────────────────────────────────────────
 
-interface TeamMember {
+const TOTAL_STEPS = 6;
+
+type PropertyType = 'VILLA' | 'APARTMENT' | 'STUDIO' | 'HOUSE' | 'PENTHOUSE' | 'BUNGALOW';
+
+interface OwnerOption {
+  id: string;
+  name: string;
   email: string;
-  role: string;
 }
+
+interface ChannelConfig {
+  enabled: boolean;
+  icalUrl: string;
+  commission: string;
+}
+
+interface SeasonalPricing {
+  summerPremium: string;
+  winterDiscount: string;
+}
+
+// ── Demo Data ──────────────────────────────────────────────────────────────
+
+const demoOwners: OwnerOption[] = [
+  { id: 'o1', name: 'Sivan Menahem', email: 'sivan@sivanmanagement.com' },
+  { id: 'o2', name: 'Alexandros Papadopoulos', email: 'alex@greekproperties.gr' },
+  { id: 'o3', name: 'Maria Katsarakis', email: 'maria@cretanvillas.gr' },
+  { id: 'o4', name: 'Nikos Stavrou', email: 'nikos@athensrentals.gr' },
+];
+
+const propertyTypes: { value: PropertyType; label: string }[] = [
+  { value: 'VILLA', label: 'Villa' },
+  { value: 'APARTMENT', label: 'Apartment' },
+  { value: 'STUDIO', label: 'Studio' },
+  { value: 'HOUSE', label: 'House' },
+  { value: 'PENTHOUSE', label: 'Penthouse' },
+  { value: 'BUNGALOW', label: 'Bungalow' },
+];
+
+const amenitiesList = [
+  { key: 'pool', label: 'Pool', icon: Waves },
+  { key: 'wifi', label: 'WiFi', icon: Wifi },
+  { key: 'parking', label: 'Parking', icon: Car },
+  { key: 'ac', label: 'Air Conditioning', icon: Wind },
+  { key: 'kitchen', label: 'Kitchen', icon: UtensilsCrossed },
+  { key: 'gym', label: 'Gym', icon: Dumbbell },
+  { key: 'tv', label: 'Smart TV', icon: Tv },
+  { key: 'shower', label: 'Rain Shower', icon: ShowerHead },
+];
+
+const featuresList = [
+  { key: 'seaView', label: 'Sea View', icon: Waves },
+  { key: 'mountainView', label: 'Mountain View', icon: Mountain },
+  { key: 'garden', label: 'Garden', icon: TreePine },
+  { key: 'balcony', label: 'Balcony', icon: Sun },
+  { key: 'terrace', label: 'Terrace', icon: Sun },
+  { key: 'privatePool', label: 'Private Pool', icon: Waves },
+];
+
+const currencies = ['EUR', 'USD', 'GBP', 'ILS'] as const;
+
+// ── Component ──────────────────────────────────────────────────────────────
 
 export default function OnboardingWizardPage() {
   const { t } = useTranslation();
   const [step, setStep] = useState(1);
-  const [isDemo, setIsDemo] = useState(false);
 
-  // Step 1: Company
-  const [companyName, setCompanyName] = useState('');
-  const [companyLogo, setCompanyLogo] = useState('');
-  const [timezone, setTimezone] = useState('Europe/Athens');
-  const [currency, setCurrency] = useState('EUR');
-
-  // Step 2: Property
+  // ── Step 1: Property Basics ────────────────────────────────────────────
   const [propertyName, setPropertyName] = useState('');
-  const [propertyType, setPropertyType] = useState('APARTMENT');
-  const [propertyCity, setPropertyCity] = useState('');
-  const [propertyCountry, setPropertyCountry] = useState('Greece');
+  const [propertyType, setPropertyType] = useState<PropertyType>('VILLA');
+  const [address, setAddress] = useState('');
+  const [city, setCity] = useState('');
+  const [country, setCountry] = useState('Greece');
+  const [bedrooms, setBedrooms] = useState(2);
+  const [bathrooms, setBathrooms] = useState(1);
+  const [maxGuests, setMaxGuests] = useState(4);
+  const [description, setDescription] = useState('');
 
-  // Step 3: Channels
-  const [airbnbConnected, setAirbnbConnected] = useState(false);
-  const [bookingConnected, setBookingConnected] = useState(false);
+  // ── Step 2: Owner Assignment ───────────────────────────────────────────
+  const [ownerMode, setOwnerMode] = useState<'existing' | 'new'>('existing');
+  const [selectedOwnerId, setSelectedOwnerId] = useState('');
+  const [newOwnerName, setNewOwnerName] = useState('');
+  const [newOwnerEmail, setNewOwnerEmail] = useState('');
+  const [managementFeePercent, setManagementFeePercent] = useState('20');
+  const [managementFeeMin, setManagementFeeMin] = useState('');
+  const [contractStart, setContractStart] = useState('');
+  const [contractEnd, setContractEnd] = useState('');
 
-  // Step 4: Pricing
-  const [baseRate, setBaseRate] = useState('');
+  // ── Step 3: Pricing Setup ──────────────────────────────────────────────
+  const [nightlyRate, setNightlyRate] = useState('');
+  const [weeklyRate, setWeeklyRate] = useState('');
+  const [monthlyRate, setMonthlyRate] = useState('');
   const [cleaningFee, setCleaningFee] = useState('');
+  const [securityDeposit, setSecurityDeposit] = useState('');
+  const [currency, setCurrency] = useState<string>('EUR');
+  const [seasonal, setSeasonal] = useState<SeasonalPricing>({
+    summerPremium: '20',
+    winterDiscount: '15',
+  });
 
-  // Step 5: Automations
-  const [autoClean, setAutoClean] = useState(true);
-  const [autoCheckin, setAutoCheckin] = useState(true);
-  const [autoReview, setAutoReview] = useState(false);
+  // ── Step 4: Channel Setup ─────────────────────────────────────────────
+  const [channels, setChannels] = useState<Record<string, ChannelConfig>>({
+    airbnb: { enabled: false, icalUrl: '', commission: '15' },
+    booking: { enabled: false, icalUrl: '', commission: '18' },
+    vrbo: { enabled: false, icalUrl: '', commission: '12' },
+    direct: { enabled: false, icalUrl: '', commission: '0' },
+  });
 
-  // Step 6: Team
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
-  const [newEmail, setNewEmail] = useState('');
-  const [newRole, setNewRole] = useState('PROPERTY_MANAGER');
+  // ── Step 5: Photos & Amenities ────────────────────────────────────────
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
+  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
 
-  const addTeamMember = () => {
-    if (newEmail.trim()) {
-      setTeamMembers([...teamMembers, { email: newEmail, role: newRole }]);
-      setNewEmail('');
-    }
-  };
-
-  const removeTeamMember = (index: number) => {
-    setTeamMembers(teamMembers.filter((_, i) => i !== index));
-  };
+  // ── Helpers ────────────────────────────────────────────────────────────
 
   const progress = (step / TOTAL_STEPS) * 100;
 
+  const toggleChannel = (key: string) => {
+    setChannels((prev) => ({
+      ...prev,
+      [key]: { ...prev[key], enabled: !prev[key].enabled },
+    }));
+  };
+
+  const updateChannel = (key: string, field: 'icalUrl' | 'commission', value: string) => {
+    setChannels((prev) => ({
+      ...prev,
+      [key]: { ...prev[key], [field]: value },
+    }));
+  };
+
+  const toggleAmenity = (key: string) => {
+    setSelectedAmenities((prev) =>
+      prev.includes(key) ? prev.filter((a) => a !== key) : [...prev, key]
+    );
+  };
+
+  const toggleFeature = (key: string) => {
+    setSelectedFeatures((prev) =>
+      prev.includes(key) ? prev.filter((f) => f !== key) : [...prev, key]
+    );
+  };
+
+  const addPhotoPlaceholder = () => {
+    setPhotos((prev) => [...prev, `photo-${prev.length + 1}.jpg`]);
+  };
+
+  const removePhoto = (index: number) => {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const canContinue = () => {
-    if (isDemo) return true;
     switch (step) {
-      case 1: return companyName.trim().length > 0;
-      case 2: return propertyName.trim().length > 0;
-      default: return true;
+      case 1:
+        return propertyName.trim().length > 0;
+      case 2:
+        return ownerMode === 'existing' ? selectedOwnerId !== '' : newOwnerName.trim().length > 0;
+      default:
+        return true;
     }
   };
 
-  const handleFinish = () => {
-    toast.success(t('onboarding.setupComplete'));
+  const handlePublish = () => {
+    toast.success('Property published successfully! Redirecting to dashboard...');
   };
 
-  const stepIcons = [Building2, Home, Link2, DollarSign, Zap, Users, Rocket];
+  const getOwnerDisplayName = () => {
+    if (ownerMode === 'existing') {
+      const owner = demoOwners.find((o) => o.id === selectedOwnerId);
+      return owner?.name || 'Not selected';
+    }
+    return newOwnerName || 'Not set';
+  };
+
+  const getEnabledChannels = () => {
+    return Object.entries(channels)
+      .filter(([, c]) => c.enabled)
+      .map(([key]) => {
+        const names: Record<string, string> = {
+          airbnb: 'Airbnb',
+          booking: 'Booking.com',
+          vrbo: 'VRBO',
+          direct: 'Direct Website',
+        };
+        return names[key];
+      });
+  };
+
+  const currencySymbol: Record<string, string> = {
+    EUR: '\u20AC',
+    USD: '$',
+    GBP: '\u00A3',
+    ILS: '\u20AA',
+  };
+
+  const sym = currencySymbol[currency] || currency;
+
+  // ── Step config ────────────────────────────────────────────────────────
+
+  const stepIcons = [Home, Users, DollarSign, Link2, ImagePlus, ClipboardCheck];
   const stepLabels = [
-    t('onboarding.step1'),
-    t('onboarding.step2'),
-    t('onboarding.step3'),
-    t('onboarding.step4'),
-    t('onboarding.step5'),
-    t('onboarding.step6'),
-    t('onboarding.step7'),
+    'Property Basics',
+    'Owner',
+    'Pricing',
+    'Channels',
+    'Photos',
+    'Review',
   ];
+
+  // ── Render ─────────────────────────────────────────────────────────────
 
   return (
     <div className="p-4 lg:p-6 max-w-3xl mx-auto space-y-6">
       {/* Header */}
       <div className="text-center">
         <p className="text-[10px] font-semibold tracking-[0.2em] text-on-surface-variant uppercase mb-1">
-          {t('onboarding.label')}
+          Property Onboarding
         </p>
         <h1 className="font-headline text-2xl lg:text-3xl font-bold text-on-surface">
-          {t('onboarding.title')}
+          Add New Property
         </h1>
-        <p className="text-sm text-on-surface-variant mt-1">{t('onboarding.subtitle')}</p>
-      </div>
-
-      {/* Demo mode toggle */}
-      <div className="flex justify-center">
-        <button
-          onClick={() => setIsDemo(!isDemo)}
-          className={`px-4 py-2 rounded-lg text-xs font-medium transition-all ${
-            isDemo ? 'bg-warning/10 text-warning border border-warning/30' : 'bg-surface-container-lowest ambient-shadow text-on-surface-variant'
-          }`}
-        >
-          {isDemo ? t('onboarding.demoActive') : t('onboarding.enableDemo')}
-        </button>
+        <p className="text-sm text-on-surface-variant mt-1">
+          Complete each step to onboard a new property into the system
+        </p>
       </div>
 
       {/* Progress Bar */}
       <div className="bg-surface-container-lowest rounded-xl p-5 ambient-shadow">
         <div className="flex items-center justify-between mb-3">
           <span className="text-xs font-semibold text-on-surface-variant">
-            {t('onboarding.stepOf', { current: step, total: TOTAL_STEPS })}
+            Step {step} of {TOTAL_STEPS}
           </span>
           <span className="text-xs font-semibold text-secondary">{Math.round(progress)}%</span>
         </div>
         <div className="w-full h-2 bg-surface-container-high rounded-full overflow-hidden">
-          <div className="h-full gradient-accent rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
+          <div
+            className="h-full gradient-accent rounded-full transition-all duration-500"
+            style={{ width: `${progress}%` }}
+          />
         </div>
         {/* Step indicators */}
         <div className="flex items-center justify-between mt-4">
@@ -148,14 +290,22 @@ export default function OnboardingWizardPage() {
                   isActive ? 'scale-110' : ''
                 } ${i + 1 <= step ? 'cursor-pointer' : 'cursor-default'}`}
               >
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                  isActive ? 'gradient-accent text-white' :
-                  isComplete ? 'bg-success/10 text-success' :
-                  'bg-surface-container-high text-on-surface-variant'
-                }`}>
+                <div
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                    isActive
+                      ? 'gradient-accent text-white'
+                      : isComplete
+                        ? 'bg-success/10 text-success'
+                        : 'bg-surface-container-high text-on-surface-variant'
+                  }`}
+                >
                   {isComplete ? <Check className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
                 </div>
-                <span className={`text-[9px] font-medium hidden sm:block ${isActive ? 'text-secondary' : 'text-on-surface-variant'}`}>
+                <span
+                  className={`text-[9px] font-medium hidden sm:block ${
+                    isActive ? 'text-secondary' : 'text-on-surface-variant'
+                  }`}
+                >
                   {label}
                 </span>
               </button>
@@ -165,278 +315,1025 @@ export default function OnboardingWizardPage() {
       </div>
 
       {/* Step Content */}
-      <div className="bg-surface-container-lowest rounded-xl p-6 ambient-shadow min-h-[320px]">
-        {/* Step 1: Company Setup */}
+      <div className="bg-surface-container-lowest rounded-xl p-6 ambient-shadow min-h-[400px]">
+        {/* ──────────────────────────────────────────────────────────────── */}
+        {/* Step 1: Property Basics                                         */}
+        {/* ──────────────────────────────────────────────────────────────── */}
         {step === 1 && (
           <div className="space-y-5">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-10 h-10 rounded-xl gradient-accent flex items-center justify-center">
-                <Building2 className="w-5 h-5 text-white" />
+                <Home className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h2 className="font-headline text-lg font-semibold text-on-surface">{t('onboarding.companySetup')}</h2>
-                <p className="text-xs text-on-surface-variant">{t('onboarding.companySetupDesc')}</p>
+                <h2 className="font-headline text-lg font-semibold text-on-surface">
+                  Property Basics
+                </h2>
+                <p className="text-xs text-on-surface-variant">
+                  Enter the fundamental details of the property
+                </p>
               </div>
             </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Name */}
               <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">{t('settings.companyName')} *</label>
-                <input type="text" value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="Sivan Management" className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-secondary/30" />
+                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                  Property Name *
+                </label>
+                <input
+                  type="text"
+                  value={propertyName}
+                  onChange={(e) => setPropertyName(e.target.value)}
+                  placeholder="e.g. Villa Elounda Royale"
+                  className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                />
               </div>
+
+              {/* Type */}
               <div>
-                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">{t('settings.timezone')}</label>
-                <div className="relative">
-                  <select value={timezone} onChange={(e) => setTimezone(e.target.value)} className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface appearance-none focus:outline-none focus:ring-2 focus:ring-secondary/30">
-                    <option value="Europe/Athens">Europe/Athens</option>
-                    <option value="Europe/London">Europe/London</option>
-                    <option value="America/New_York">America/New York</option>
-                    <option value="Asia/Jerusalem">Asia/Jerusalem</option>
-                  </select>
-                  <Clock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant pointer-events-none" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">{t('properties.currency')}</label>
-                <select value={currency} onChange={(e) => setCurrency(e.target.value)} className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface appearance-none focus:outline-none focus:ring-2 focus:ring-secondary/30">
-                  <option value="EUR">EUR</option>
-                  <option value="USD">USD</option>
-                  <option value="GBP">GBP</option>
-                  <option value="ILS">ILS</option>
+                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                  Property Type
+                </label>
+                <select
+                  value={propertyType}
+                  onChange={(e) => setPropertyType(e.target.value as PropertyType)}
+                  className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface appearance-none focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                >
+                  {propertyTypes.map((pt) => (
+                    <option key={pt.value} value={pt.value}>
+                      {pt.label}
+                    </option>
+                  ))}
                 </select>
               </div>
+
+              {/* Address */}
+              <div>
+                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                  Address
+                </label>
+                <input
+                  type="text"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="123 Coastal Road"
+                  className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                />
+              </div>
+
+              {/* City */}
+              <div>
+                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                  City
+                </label>
+                <input
+                  type="text"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  placeholder="Elounda"
+                  className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                />
+              </div>
+
+              {/* Country */}
+              <div>
+                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                  Country
+                </label>
+                <input
+                  type="text"
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                  placeholder="Greece"
+                  className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                />
+              </div>
+
+              {/* Bedrooms / Bathrooms / Max Guests */}
+              <div>
+                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                  Bedrooms
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  value={bedrooms}
+                  onChange={(e) => setBedrooms(Number(e.target.value))}
+                  className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                  Bathrooms
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  value={bathrooms}
+                  onChange={(e) => setBathrooms(Number(e.target.value))}
+                  className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                  Max Guests
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  value={maxGuests}
+                  onChange={(e) => setMaxGuests(Number(e.target.value))}
+                  className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                />
+              </div>
+
+              {/* Description */}
               <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">{t('settings.logoUrl')}</label>
-                <input type="text" value={companyLogo} onChange={(e) => setCompanyLogo(e.target.value)} placeholder="https://..." className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-secondary/30" />
+                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                  Description
+                </label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={3}
+                  placeholder="A stunning beachfront villa with panoramic sea views..."
+                  className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 resize-none"
+                />
               </div>
             </div>
           </div>
         )}
 
-        {/* Step 2: Add First Property */}
+        {/* ──────────────────────────────────────────────────────────────── */}
+        {/* Step 2: Owner Assignment                                        */}
+        {/* ──────────────────────────────────────────────────────────────── */}
         {step === 2 && (
           <div className="space-y-5">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center">
-                <Home className="w-5 h-5 text-success" />
+                <Users className="w-5 h-5 text-success" />
               </div>
               <div>
-                <h2 className="font-headline text-lg font-semibold text-on-surface">{t('onboarding.addProperty')}</h2>
-                <p className="text-xs text-on-surface-variant">{t('onboarding.addPropertyDesc')}</p>
+                <h2 className="font-headline text-lg font-semibold text-on-surface">
+                  Owner Assignment
+                </h2>
+                <p className="text-xs text-on-surface-variant">
+                  Assign an owner and configure the management agreement
+                </p>
               </div>
             </div>
+
+            {/* Toggle: Existing / New */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setOwnerMode('existing')}
+                className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                  ownerMode === 'existing'
+                    ? 'gradient-accent text-white'
+                    : 'bg-surface-container-low text-on-surface-variant hover:text-on-surface'
+                }`}
+              >
+                Select Existing Owner
+              </button>
+              <button
+                onClick={() => setOwnerMode('new')}
+                className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                  ownerMode === 'new'
+                    ? 'gradient-accent text-white'
+                    : 'bg-surface-container-low text-on-surface-variant hover:text-on-surface'
+                }`}
+              >
+                Create New Owner
+              </button>
+            </div>
+
+            {ownerMode === 'existing' ? (
+              <div className="space-y-2">
+                {demoOwners.map((owner) => (
+                  <button
+                    key={owner.id}
+                    onClick={() => setSelectedOwnerId(owner.id)}
+                    className={`w-full text-start p-4 rounded-xl border-2 transition-all flex items-center justify-between ${
+                      selectedOwnerId === owner.id
+                        ? 'border-secondary bg-secondary/5'
+                        : 'border-outline-variant/20 hover:border-secondary/50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-secondary/20 flex items-center justify-center text-xs font-bold text-secondary">
+                        {owner.name
+                          .split(' ')
+                          .map((n) => n[0])
+                          .join('')}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-on-surface">{owner.name}</p>
+                        <p className="text-xs text-on-surface-variant">{owner.email}</p>
+                      </div>
+                    </div>
+                    {selectedOwnerId === owner.id && (
+                      <Check className="w-5 h-5 text-secondary flex-shrink-0" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                    Owner Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={newOwnerName}
+                    onChange={(e) => setNewOwnerName(e.target.value)}
+                    placeholder="Full name"
+                    className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                    Owner Email
+                  </label>
+                  <input
+                    type="email"
+                    value={newOwnerEmail}
+                    onChange={(e) => setNewOwnerEmail(e.target.value)}
+                    placeholder="owner@example.com"
+                    className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Management Fee */}
+            <div className="pt-2 border-t border-outline-variant/20">
+              <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-3">
+                Management Fee Configuration
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                    Fee Percentage
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={managementFeePercent}
+                      onChange={(e) => setManagementFeePercent(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30 pe-10"
+                    />
+                    <Percent className="absolute end-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant pointer-events-none" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                    Minimum Amount ({sym})
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={managementFeeMin}
+                    onChange={(e) => setManagementFeeMin(e.target.value)}
+                    placeholder="e.g. 500"
+                    className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Contract Dates */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">{t('properties.propertyName')} *</label>
-                <input type="text" value={propertyName} onChange={(e) => setPropertyName(e.target.value)} placeholder={t('properties.propertyNamePlaceholder')} className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-secondary/30" />
+              <div>
+                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                  Contract Start
+                </label>
+                <div className="relative">
+                  <input
+                    type="date"
+                    value={contractStart}
+                    onChange={(e) => setContractStart(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                  />
+                  <Calendar className="absolute end-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant pointer-events-none" />
+                </div>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">{t('properties.propertyType')}</label>
-                <select value={propertyType} onChange={(e) => setPropertyType(e.target.value)} className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface appearance-none focus:outline-none focus:ring-2 focus:ring-secondary/30">
-                  <option value="APARTMENT">{t('properties.typeApartment')}</option>
-                  <option value="HOUSE">{t('properties.typeHouse')}</option>
-                  <option value="HOTEL">{t('properties.typeHotel')}</option>
-                  <option value="COMMERCIAL">{t('properties.typeCommercial')}</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">{t('properties.city')}</label>
-                <input type="text" value={propertyCity} onChange={(e) => setPropertyCity(e.target.value)} placeholder={t('properties.cityPlaceholder')} className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-secondary/30" />
-              </div>
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">{t('properties.country')}</label>
-                <input type="text" value={propertyCountry} onChange={(e) => setPropertyCountry(e.target.value)} placeholder={t('properties.countryPlaceholder')} className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-secondary/30" />
+                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                  Contract End
+                </label>
+                <div className="relative">
+                  <input
+                    type="date"
+                    value={contractEnd}
+                    onChange={(e) => setContractEnd(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                  />
+                  <Calendar className="absolute end-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant pointer-events-none" />
+                </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* Step 3: Connect Channels */}
+        {/* ──────────────────────────────────────────────────────────────── */}
+        {/* Step 3: Pricing Setup                                           */}
+        {/* ──────────────────────────────────────────────────────────────── */}
         {step === 3 && (
-          <div className="space-y-5">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-xl bg-warning/10 flex items-center justify-center">
-                <Link2 className="w-5 h-5 text-warning" />
-              </div>
-              <div>
-                <h2 className="font-headline text-lg font-semibold text-on-surface">{t('onboarding.connectChannels')}</h2>
-                <p className="text-xs text-on-surface-variant">{t('onboarding.connectChannelsDesc')}</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <button
-                onClick={() => setAirbnbConnected(!airbnbConnected)}
-                className={`p-5 rounded-xl border-2 transition-all text-start ${
-                  airbnbConnected ? 'border-secondary bg-secondary/5' : 'border-outline-variant/20 hover:border-secondary/50'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-lg font-bold text-on-surface">Airbnb</span>
-                  {airbnbConnected && <Check className="w-5 h-5 text-secondary" />}
-                </div>
-                <p className="text-xs text-on-surface-variant">{t('onboarding.airbnbDesc')}</p>
-              </button>
-              <button
-                onClick={() => setBookingConnected(!bookingConnected)}
-                className={`p-5 rounded-xl border-2 transition-all text-start ${
-                  bookingConnected ? 'border-secondary bg-secondary/5' : 'border-outline-variant/20 hover:border-secondary/50'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-lg font-bold text-on-surface">Booking.com</span>
-                  {bookingConnected && <Check className="w-5 h-5 text-secondary" />}
-                </div>
-                <p className="text-xs text-on-surface-variant">{t('onboarding.bookingDesc')}</p>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Step 4: Set Pricing */}
-        {step === 4 && (
           <div className="space-y-5">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center">
                 <DollarSign className="w-5 h-5 text-secondary" />
               </div>
               <div>
-                <h2 className="font-headline text-lg font-semibold text-on-surface">{t('onboarding.setPricing')}</h2>
-                <p className="text-xs text-on-surface-variant">{t('onboarding.setPricingDesc')}</p>
+                <h2 className="font-headline text-lg font-semibold text-on-surface">
+                  Pricing Setup
+                </h2>
+                <p className="text-xs text-on-surface-variant">
+                  Configure rates, fees, and seasonal adjustments
+                </p>
               </div>
             </div>
+
+            {/* Currency */}
+            <div className="max-w-xs">
+              <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                Currency
+              </label>
+              <select
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface appearance-none focus:outline-none focus:ring-2 focus:ring-secondary/30"
+              >
+                {currencies.map((c) => (
+                  <option key={c} value={c}>
+                    {c} ({currencySymbol[c]})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Rates */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                  Nightly Rate
+                </label>
+                <div className="relative">
+                  <span className="absolute start-3 top-1/2 -translate-y-1/2 text-sm text-on-surface-variant">
+                    {sym}
+                  </span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={nightlyRate}
+                    onChange={(e) => setNightlyRate(e.target.value)}
+                    placeholder="150"
+                    className="w-full ps-8 pe-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                  />
+                </div>
+                <p className="text-[10px] text-on-surface-variant mt-1">per night</p>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                  Weekly Rate
+                </label>
+                <div className="relative">
+                  <span className="absolute start-3 top-1/2 -translate-y-1/2 text-sm text-on-surface-variant">
+                    {sym}
+                  </span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={weeklyRate}
+                    onChange={(e) => setWeeklyRate(e.target.value)}
+                    placeholder="900"
+                    className="w-full ps-8 pe-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                  />
+                </div>
+                <p className="text-[10px] text-on-surface-variant mt-1">per week</p>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                  Monthly Rate
+                </label>
+                <div className="relative">
+                  <span className="absolute start-3 top-1/2 -translate-y-1/2 text-sm text-on-surface-variant">
+                    {sym}
+                  </span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={monthlyRate}
+                    onChange={(e) => setMonthlyRate(e.target.value)}
+                    placeholder="3000"
+                    className="w-full ps-8 pe-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                  />
+                </div>
+                <p className="text-[10px] text-on-surface-variant mt-1">per month</p>
+              </div>
+            </div>
+
+            {/* Fees */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">{t('onboarding.baseRate')}</label>
+                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                  Cleaning Fee
+                </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-on-surface-variant">{'\u20AC'}</span>
-                  <input type="number" value={baseRate} onChange={(e) => setBaseRate(e.target.value)} placeholder="150" className="w-full pl-8 pr-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30" />
+                  <span className="absolute start-3 top-1/2 -translate-y-1/2 text-sm text-on-surface-variant">
+                    {sym}
+                  </span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={cleaningFee}
+                    onChange={(e) => setCleaningFee(e.target.value)}
+                    placeholder="65"
+                    className="w-full ps-8 pe-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                  />
                 </div>
-                <p className="text-[10px] text-on-surface-variant mt-1">{t('onboarding.perNight')}</p>
+                <p className="text-[10px] text-on-surface-variant mt-1">per stay</p>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">{t('onboarding.cleaningFee')}</label>
+                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                  Security Deposit
+                </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-on-surface-variant">{'\u20AC'}</span>
-                  <input type="number" value={cleaningFee} onChange={(e) => setCleaningFee(e.target.value)} placeholder="65" className="w-full pl-8 pr-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30" />
+                  <span className="absolute start-3 top-1/2 -translate-y-1/2 text-sm text-on-surface-variant">
+                    {sym}
+                  </span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={securityDeposit}
+                    onChange={(e) => setSecurityDeposit(e.target.value)}
+                    placeholder="300"
+                    className="w-full ps-8 pe-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                  />
                 </div>
-                <p className="text-[10px] text-on-surface-variant mt-1">{t('onboarding.perStay')}</p>
+                <p className="text-[10px] text-on-surface-variant mt-1">refundable</p>
+              </div>
+            </div>
+
+            {/* Seasonal Pricing */}
+            <div className="pt-2 border-t border-outline-variant/20">
+              <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-3">
+                Seasonal Pricing Quick Setup
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 rounded-xl border-2 border-outline-variant/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Sun className="w-4 h-4 text-warning" />
+                    <span className="text-sm font-medium text-on-surface">Summer Premium</span>
+                  </div>
+                  <p className="text-xs text-on-surface-variant mb-2">
+                    Increase applied June - September
+                  </p>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={seasonal.summerPremium}
+                      onChange={(e) =>
+                        setSeasonal((s) => ({ ...s, summerPremium: e.target.value }))
+                      }
+                      className="w-full px-4 py-2 rounded-lg bg-surface-container-low text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30 pe-10"
+                    />
+                    <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-on-surface-variant">
+                      %
+                    </span>
+                  </div>
+                </div>
+                <div className="p-4 rounded-xl border-2 border-outline-variant/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Snowflake className="w-4 h-4 text-blue-400" />
+                    <span className="text-sm font-medium text-on-surface">Winter Discount</span>
+                  </div>
+                  <p className="text-xs text-on-surface-variant mb-2">
+                    Reduction applied November - March
+                  </p>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={seasonal.winterDiscount}
+                      onChange={(e) =>
+                        setSeasonal((s) => ({ ...s, winterDiscount: e.target.value }))
+                      }
+                      className="w-full px-4 py-2 rounded-lg bg-surface-container-low text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30 pe-10"
+                    />
+                    <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-on-surface-variant">
+                      %
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* Step 5: Configure Automations */}
-        {step === 5 && (
-          <div className="space-y-5">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center">
-                <Zap className="w-5 h-5 text-success" />
-              </div>
-              <div>
-                <h2 className="font-headline text-lg font-semibold text-on-surface">{t('onboarding.configAutomations')}</h2>
-                <p className="text-xs text-on-surface-variant">{t('onboarding.configAutomationsDesc')}</p>
-              </div>
-            </div>
-            <div className="space-y-3">
-              {[
-                { key: 'autoClean', label: t('onboarding.autoCleaningTask'), desc: t('onboarding.autoCleaningTaskDesc'), checked: autoClean, toggle: setAutoClean },
-                { key: 'autoCheckin', label: t('onboarding.autoCheckinMsg'), desc: t('onboarding.autoCheckinMsgDesc'), checked: autoCheckin, toggle: setAutoCheckin },
-                { key: 'autoReview', label: t('onboarding.autoReviewRequest'), desc: t('onboarding.autoReviewRequestDesc'), checked: autoReview, toggle: setAutoReview },
-              ].map(({ key, label, desc, checked, toggle }) => (
-                <button
-                  key={key}
-                  onClick={() => toggle(!checked)}
-                  className={`w-full p-4 rounded-xl border-2 transition-all text-start flex items-center justify-between ${
-                    checked ? 'border-secondary bg-secondary/5' : 'border-outline-variant/20 hover:border-secondary/50'
-                  }`}
-                >
-                  <div>
-                    <p className="text-sm font-medium text-on-surface">{label}</p>
-                    <p className="text-xs text-on-surface-variant mt-0.5">{desc}</p>
-                  </div>
-                  <div className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                    checked ? 'gradient-accent' : 'bg-surface-container-high'
-                  }`}>
-                    {checked && <Check className="w-4 h-4 text-white" />}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Step 6: Invite Team */}
-        {step === 6 && (
+        {/* ──────────────────────────────────────────────────────────────── */}
+        {/* Step 4: Channel Setup                                           */}
+        {/* ──────────────────────────────────────────────────────────────── */}
+        {step === 4 && (
           <div className="space-y-5">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-10 h-10 rounded-xl bg-warning/10 flex items-center justify-center">
-                <Users className="w-5 h-5 text-warning" />
+                <Link2 className="w-5 h-5 text-warning" />
               </div>
               <div>
-                <h2 className="font-headline text-lg font-semibold text-on-surface">{t('onboarding.inviteTeam')}</h2>
-                <p className="text-xs text-on-surface-variant">{t('onboarding.inviteTeamDesc')}</p>
+                <h2 className="font-headline text-lg font-semibold text-on-surface">
+                  Channel Setup
+                </h2>
+                <p className="text-xs text-on-surface-variant">
+                  Connect booking channels and configure iCal syncing
+                </p>
               </div>
             </div>
-            <div className="flex items-end gap-3">
-              <div className="flex-1">
-                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">{t('auth.email')}</label>
-                <input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="team@example.com" className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-secondary/30" />
-              </div>
-              <div className="w-44">
-                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">{t('onboarding.role')}</label>
-                <select value={newRole} onChange={(e) => setNewRole(e.target.value)} className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface appearance-none focus:outline-none focus:ring-2 focus:ring-secondary/30">
-                  <option value="PROPERTY_MANAGER">{t('onboarding.roleManager')}</option>
-                  <option value="MAINTENANCE">{t('onboarding.roleMaintenance')}</option>
-                </select>
-              </div>
-              <button onClick={addTeamMember} className="px-4 py-2.5 rounded-lg gradient-accent text-white">
-                <Plus className="w-4 h-4" />
-              </button>
-            </div>
-            {teamMembers.length > 0 && (
-              <div className="space-y-2">
-                {teamMembers.map((m, i) => (
-                  <div key={i} className="flex items-center justify-between py-2 px-3 rounded-lg bg-surface-container-low">
-                    <div className="flex items-center gap-3">
-                      <Mail className="w-4 h-4 text-on-surface-variant" />
-                      <span className="text-sm text-on-surface">{m.email}</span>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-secondary/10 text-secondary uppercase">{m.role}</span>
-                    </div>
-                    <button onClick={() => removeTeamMember(i)} className="p-1 rounded hover:bg-error/10 text-on-surface-variant hover:text-error">
-                      <X className="w-3.5 h-3.5" />
+
+            <div className="space-y-4">
+              {[
+                { key: 'airbnb', name: 'Airbnb', color: '#FF5A5F', desc: 'Sync listings, calendars, and pricing with Airbnb' },
+                { key: 'booking', name: 'Booking.com', color: '#003580', desc: 'Connect your Booking.com property and manage availability' },
+                { key: 'vrbo', name: 'VRBO', color: '#3B5998', desc: 'List on VRBO / HomeAway and sync calendars' },
+                { key: 'direct', name: 'Direct Website', color: '#6b38d4', desc: 'Accept bookings directly through your own website' },
+              ].map((ch) => {
+                const config = channels[ch.key];
+                return (
+                  <div
+                    key={ch.key}
+                    className={`rounded-xl border-2 transition-all overflow-hidden ${
+                      config.enabled
+                        ? 'border-secondary bg-secondary/5'
+                        : 'border-outline-variant/20'
+                    }`}
+                  >
+                    <button
+                      onClick={() => toggleChannel(ch.key)}
+                      className="w-full p-4 text-start flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-9 h-9 rounded-lg flex items-center justify-center text-white text-sm font-bold"
+                          style={{ backgroundColor: ch.color }}
+                        >
+                          {ch.name[0]}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-on-surface">{ch.name}</p>
+                          <p className="text-xs text-on-surface-variant">{ch.desc}</p>
+                        </div>
+                      </div>
+                      <div
+                        className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                          config.enabled ? 'gradient-accent' : 'bg-surface-container-high'
+                        }`}
+                      >
+                        {config.enabled && <Check className="w-4 h-4 text-white" />}
+                      </div>
                     </button>
+
+                    {config.enabled && (
+                      <div className="px-4 pb-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                            iCal URL
+                          </label>
+                          <input
+                            type="url"
+                            value={config.icalUrl}
+                            onChange={(e) => updateChannel(ch.key, 'icalUrl', e.target.value)}
+                            placeholder="https://ical.example.com/calendar.ics"
+                            className="w-full px-3 py-2 rounded-lg bg-surface-container-low text-xs text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                            Commission Rate
+                          </label>
+                          <div className="relative">
+                            <input
+                              type="number"
+                              min={0}
+                              max={100}
+                              value={config.commission}
+                              onChange={(e) =>
+                                updateChannel(ch.key, 'commission', e.target.value)
+                              }
+                              className="w-full px-3 py-2 rounded-lg bg-surface-container-low text-xs text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30 pe-8"
+                            />
+                            <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-on-surface-variant">
+                              %
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                ))}
-              </div>
-            )}
+                );
+              })}
+            </div>
           </div>
         )}
 
-        {/* Step 7: Launch */}
-        {step === 7 && (
-          <div className="text-center py-8 space-y-6">
-            <div className="w-20 h-20 rounded-2xl gradient-accent flex items-center justify-center mx-auto">
-              <Rocket className="w-10 h-10 text-white" />
+        {/* ──────────────────────────────────────────────────────────────── */}
+        {/* Step 5: Photos & Amenities                                      */}
+        {/* ──────────────────────────────────────────────────────────────── */}
+        {step === 5 && (
+          <div className="space-y-5">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center">
+                <ImagePlus className="w-5 h-5 text-secondary" />
+              </div>
+              <div>
+                <h2 className="font-headline text-lg font-semibold text-on-surface">
+                  Photos & Amenities
+                </h2>
+                <p className="text-xs text-on-surface-variant">
+                  Upload property photos and select available amenities
+                </p>
+              </div>
             </div>
+
+            {/* Photo Upload Area */}
             <div>
-              <h2 className="font-headline text-2xl font-bold text-on-surface mb-2">{t('onboarding.readyToLaunch')}</h2>
-              <p className="text-sm text-on-surface-variant max-w-md mx-auto">{t('onboarding.readyToLaunchDesc')}</p>
+              <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-2">
+                Property Photos
+              </p>
+              <button
+                onClick={addPhotoPlaceholder}
+                className="w-full border-2 border-dashed border-outline-variant/30 rounded-xl p-8 text-center hover:border-secondary/50 transition-colors group"
+              >
+                <Upload className="w-8 h-8 text-on-surface-variant/40 mx-auto mb-2 group-hover:text-secondary/60 transition-colors" />
+                <p className="text-sm text-on-surface-variant group-hover:text-on-surface transition-colors">
+                  Drag & drop photos here or click to browse
+                </p>
+                <p className="text-xs text-on-surface-variant/60 mt-1">
+                  JPG, PNG, WebP up to 10MB each
+                </p>
+              </button>
+
+              {photos.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {photos.map((photo, i) => (
+                    <div
+                      key={i}
+                      className="relative w-20 h-20 rounded-lg bg-surface-container-high flex items-center justify-center group"
+                    >
+                      <ImagePlus className="w-6 h-6 text-on-surface-variant/30" />
+                      <span className="absolute bottom-1 start-1 text-[9px] text-on-surface-variant">
+                        {photo}
+                      </span>
+                      <button
+                        onClick={() => removePhoto(i)}
+                        className="absolute -top-1.5 -end-1.5 w-5 h-5 rounded-full bg-error text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    onClick={addPhotoPlaceholder}
+                    className="w-20 h-20 rounded-lg border-2 border-dashed border-outline-variant/30 flex items-center justify-center hover:border-secondary/50 transition-colors"
+                  >
+                    <Plus className="w-5 h-5 text-on-surface-variant/40" />
+                  </button>
+                </div>
+              )}
             </div>
-            <div className="bg-surface-container-low rounded-xl p-4 max-w-sm mx-auto text-start space-y-2">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant mb-2">{t('onboarding.setupSummary')}</p>
-              {companyName && <p className="text-xs text-on-surface-variant"><span className="font-medium text-on-surface">{t('onboarding.company')}:</span> {companyName}</p>}
-              {propertyName && <p className="text-xs text-on-surface-variant"><span className="font-medium text-on-surface">{t('onboarding.property')}:</span> {propertyName}</p>}
-              <p className="text-xs text-on-surface-variant"><span className="font-medium text-on-surface">{t('onboarding.channels')}:</span> {[airbnbConnected && 'Airbnb', bookingConnected && 'Booking.com'].filter(Boolean).join(', ') || 'None'}</p>
-              {baseRate && <p className="text-xs text-on-surface-variant"><span className="font-medium text-on-surface">{t('onboarding.pricing')}:</span> {'\u20AC'}{baseRate}/night</p>}
-              <p className="text-xs text-on-surface-variant"><span className="font-medium text-on-surface">{t('onboarding.automations')}:</span> {[autoClean, autoCheckin, autoReview].filter(Boolean).length} active</p>
-              <p className="text-xs text-on-surface-variant"><span className="font-medium text-on-surface">{t('onboarding.teamMembers')}:</span> {teamMembers.length} invited</p>
+
+            {/* Amenities */}
+            <div className="pt-2 border-t border-outline-variant/20">
+              <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-3">
+                Amenities
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {amenitiesList.map((am) => {
+                  const Icon = am.icon;
+                  const selected = selectedAmenities.includes(am.key);
+                  return (
+                    <button
+                      key={am.key}
+                      onClick={() => toggleAmenity(am.key)}
+                      className={`p-3 rounded-xl border-2 transition-all text-center ${
+                        selected
+                          ? 'border-secondary bg-secondary/5'
+                          : 'border-outline-variant/20 hover:border-secondary/50'
+                      }`}
+                    >
+                      <Icon
+                        className={`w-5 h-5 mx-auto mb-1 ${
+                          selected ? 'text-secondary' : 'text-on-surface-variant'
+                        }`}
+                      />
+                      <span
+                        className={`text-xs font-medium ${
+                          selected ? 'text-secondary' : 'text-on-surface-variant'
+                        }`}
+                      >
+                        {am.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            <button
-              onClick={handleFinish}
-              className="inline-flex items-center gap-2 px-8 py-3 rounded-xl text-sm font-semibold text-white gradient-accent hover:shadow-ambient-lg transition-all"
-            >
-              <Rocket className="w-4 h-4" />
-              {t('onboarding.goToDashboard')}
-            </button>
+
+            {/* Features */}
+            <div className="pt-2 border-t border-outline-variant/20">
+              <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-3">
+                Property Features
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {featuresList.map((ft) => {
+                  const Icon = ft.icon;
+                  const selected = selectedFeatures.includes(ft.key);
+                  return (
+                    <button
+                      key={ft.key}
+                      onClick={() => toggleFeature(ft.key)}
+                      className={`p-3 rounded-xl border-2 transition-all flex items-center gap-2 ${
+                        selected
+                          ? 'border-secondary bg-secondary/5'
+                          : 'border-outline-variant/20 hover:border-secondary/50'
+                      }`}
+                    >
+                      <Icon
+                        className={`w-4 h-4 flex-shrink-0 ${
+                          selected ? 'text-secondary' : 'text-on-surface-variant'
+                        }`}
+                      />
+                      <span
+                        className={`text-xs font-medium ${
+                          selected ? 'text-secondary' : 'text-on-surface-variant'
+                        }`}
+                      >
+                        {ft.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ──────────────────────────────────────────────────────────────── */}
+        {/* Step 6: Review & Publish                                        */}
+        {/* ──────────────────────────────────────────────────────────────── */}
+        {step === 6 && (
+          <div className="space-y-6">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-xl gradient-accent flex items-center justify-center">
+                <ClipboardCheck className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h2 className="font-headline text-lg font-semibold text-on-surface">
+                  Review & Publish
+                </h2>
+                <p className="text-xs text-on-surface-variant">
+                  Review all details before publishing the property
+                </p>
+              </div>
+            </div>
+
+            {/* Summary Cards */}
+            <div className="space-y-4">
+              {/* Property Basics */}
+              <div className="p-4 rounded-xl bg-surface-container-low">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Home className="w-4 h-4 text-secondary" />
+                    <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">
+                      Property Basics
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setStep(1)}
+                    className="text-xs text-secondary hover:text-secondary/80 flex items-center gap-1"
+                  >
+                    <Eye className="w-3 h-3" />
+                    Edit
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
+                  <p className="text-xs text-on-surface-variant">
+                    <span className="font-medium text-on-surface">Name:</span> {propertyName || '-'}
+                  </p>
+                  <p className="text-xs text-on-surface-variant">
+                    <span className="font-medium text-on-surface">Type:</span>{' '}
+                    {propertyTypes.find((pt) => pt.value === propertyType)?.label}
+                  </p>
+                  <p className="text-xs text-on-surface-variant">
+                    <span className="font-medium text-on-surface">Location:</span>{' '}
+                    {[address, city, country].filter(Boolean).join(', ') || '-'}
+                  </p>
+                  <p className="text-xs text-on-surface-variant">
+                    <span className="font-medium text-on-surface">Capacity:</span>{' '}
+                    {bedrooms} bed, {bathrooms} bath, {maxGuests} guests
+                  </p>
+                  {description && (
+                    <p className="text-xs text-on-surface-variant col-span-2 line-clamp-2">
+                      <span className="font-medium text-on-surface">Description:</span>{' '}
+                      {description}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Owner */}
+              <div className="p-4 rounded-xl bg-surface-container-low">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-success" />
+                    <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">
+                      Owner Assignment
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setStep(2)}
+                    className="text-xs text-secondary hover:text-secondary/80 flex items-center gap-1"
+                  >
+                    <Eye className="w-3 h-3" />
+                    Edit
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
+                  <p className="text-xs text-on-surface-variant">
+                    <span className="font-medium text-on-surface">Owner:</span>{' '}
+                    {getOwnerDisplayName()}
+                  </p>
+                  <p className="text-xs text-on-surface-variant">
+                    <span className="font-medium text-on-surface">Fee:</span>{' '}
+                    {managementFeePercent}%
+                    {managementFeeMin ? ` (min ${sym}${managementFeeMin})` : ''}
+                  </p>
+                  {(contractStart || contractEnd) && (
+                    <p className="text-xs text-on-surface-variant col-span-2">
+                      <span className="font-medium text-on-surface">Contract:</span>{' '}
+                      {contractStart || '...'} to {contractEnd || '...'}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Pricing */}
+              <div className="p-4 rounded-xl bg-surface-container-low">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="w-4 h-4 text-secondary" />
+                    <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">
+                      Pricing
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setStep(3)}
+                    className="text-xs text-secondary hover:text-secondary/80 flex items-center gap-1"
+                  >
+                    <Eye className="w-3 h-3" />
+                    Edit
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-1.5">
+                  <p className="text-xs text-on-surface-variant">
+                    <span className="font-medium text-on-surface">Nightly:</span>{' '}
+                    {nightlyRate ? `${sym}${nightlyRate}` : '-'}
+                  </p>
+                  <p className="text-xs text-on-surface-variant">
+                    <span className="font-medium text-on-surface">Weekly:</span>{' '}
+                    {weeklyRate ? `${sym}${weeklyRate}` : '-'}
+                  </p>
+                  <p className="text-xs text-on-surface-variant">
+                    <span className="font-medium text-on-surface">Monthly:</span>{' '}
+                    {monthlyRate ? `${sym}${monthlyRate}` : '-'}
+                  </p>
+                  <p className="text-xs text-on-surface-variant">
+                    <span className="font-medium text-on-surface">Cleaning:</span>{' '}
+                    {cleaningFee ? `${sym}${cleaningFee}` : '-'}
+                  </p>
+                  <p className="text-xs text-on-surface-variant">
+                    <span className="font-medium text-on-surface">Deposit:</span>{' '}
+                    {securityDeposit ? `${sym}${securityDeposit}` : '-'}
+                  </p>
+                  <p className="text-xs text-on-surface-variant">
+                    <span className="font-medium text-on-surface">Currency:</span> {currency}
+                  </p>
+                  <p className="text-xs text-on-surface-variant">
+                    <span className="font-medium text-on-surface">Summer:</span>{' '}
+                    +{seasonal.summerPremium || 0}%
+                  </p>
+                  <p className="text-xs text-on-surface-variant">
+                    <span className="font-medium text-on-surface">Winter:</span>{' '}
+                    -{seasonal.winterDiscount || 0}%
+                  </p>
+                </div>
+              </div>
+
+              {/* Channels */}
+              <div className="p-4 rounded-xl bg-surface-container-low">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Link2 className="w-4 h-4 text-warning" />
+                    <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">
+                      Channels
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setStep(4)}
+                    className="text-xs text-secondary hover:text-secondary/80 flex items-center gap-1"
+                  >
+                    <Eye className="w-3 h-3" />
+                    Edit
+                  </button>
+                </div>
+                {getEnabledChannels().length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {Object.entries(channels)
+                      .filter(([, c]) => c.enabled)
+                      .map(([key, config]) => {
+                        const names: Record<string, string> = {
+                          airbnb: 'Airbnb',
+                          booking: 'Booking.com',
+                          vrbo: 'VRBO',
+                          direct: 'Direct Website',
+                        };
+                        return (
+                          <span
+                            key={key}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary/10 text-xs font-medium text-secondary"
+                          >
+                            <Building2 className="w-3 h-3" />
+                            {names[key]} ({config.commission}%)
+                          </span>
+                        );
+                      })}
+                  </div>
+                ) : (
+                  <p className="text-xs text-on-surface-variant">No channels connected</p>
+                )}
+              </div>
+
+              {/* Photos & Amenities */}
+              <div className="p-4 rounded-xl bg-surface-container-low">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <ImagePlus className="w-4 h-4 text-secondary" />
+                    <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">
+                      Photos & Amenities
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setStep(5)}
+                    className="text-xs text-secondary hover:text-secondary/80 flex items-center gap-1"
+                  >
+                    <Eye className="w-3 h-3" />
+                    Edit
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-xs text-on-surface-variant">
+                    <span className="font-medium text-on-surface">Photos:</span>{' '}
+                    {photos.length > 0 ? `${photos.length} uploaded` : 'None'}
+                  </p>
+                  <p className="text-xs text-on-surface-variant">
+                    <span className="font-medium text-on-surface">Amenities:</span>{' '}
+                    {selectedAmenities.length > 0
+                      ? selectedAmenities
+                          .map((k) => amenitiesList.find((a) => a.key === k)?.label)
+                          .join(', ')
+                      : 'None selected'}
+                  </p>
+                  <p className="text-xs text-on-surface-variant">
+                    <span className="font-medium text-on-surface">Features:</span>{' '}
+                    {selectedFeatures.length > 0
+                      ? selectedFeatures
+                          .map((k) => featuresList.find((f) => f.key === k)?.label)
+                          .join(', ')
+                      : 'None selected'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Publish Button */}
+            <div className="text-center pt-2">
+              <button
+                onClick={handlePublish}
+                className="inline-flex items-center gap-2 px-8 py-3 rounded-xl text-sm font-semibold text-white gradient-accent hover:shadow-ambient-lg transition-all"
+              >
+                <Rocket className="w-4 h-4" />
+                Publish Property
+              </button>
+              <p className="text-xs text-on-surface-variant mt-2">
+                You can always edit the property details later
+              </p>
+            </div>
           </div>
         )}
       </div>
@@ -449,7 +1346,7 @@ export default function OnboardingWizardPage() {
           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-on-surface-variant hover:text-on-surface disabled:opacity-30 disabled:cursor-not-allowed transition-all"
         >
           <ChevronLeft className="w-4 h-4" />
-          {t('common.back')}
+          Back
         </button>
 
         <div className="flex items-center gap-3">
@@ -459,7 +1356,7 @@ export default function OnboardingWizardPage() {
               className="inline-flex items-center gap-1 px-4 py-2 rounded-lg text-xs text-on-surface-variant hover:text-on-surface transition-all"
             >
               <SkipForward className="w-3.5 h-3.5" />
-              {t('onboarding.skip')}
+              Skip
             </button>
           )}
           {step < TOTAL_STEPS && (
@@ -468,7 +1365,7 @@ export default function OnboardingWizardPage() {
               disabled={!canContinue()}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium text-white gradient-accent hover:shadow-ambient-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
-              {t('onboarding.continue')}
+              Continue
               <ChevronRight className="w-4 h-4" />
             </button>
           )}
