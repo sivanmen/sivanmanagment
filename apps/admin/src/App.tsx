@@ -54,7 +54,13 @@ const BookingEnginePage = lazy(() => import('./pages/BookingEnginePage'));
 const OwnerPortalConfigPage = lazy(() => import('./pages/OwnerPortalConfigPage'));
 const OwnerStatementsPage = lazy(() => import('./pages/OwnerStatementsPage'));
 const WebhooksPage = lazy(() => import('./pages/WebhooksPage'));
+const IntegrationsPage = lazy(() => import('./pages/IntegrationsPage'));
 const OnboardingWizardPage = lazy(() => import('./pages/OnboardingWizardPage'));
+const NotificationTemplatesPage = lazy(() => import('./pages/NotificationTemplatesPage'));
+const TemplateEditorPage = lazy(() => import('./pages/TemplateEditorPage'));
+const AiProvidersPage = lazy(() => import('./pages/AiProvidersPage'));
+const UsersManagementPage = lazy(() => import('./pages/UsersManagementPage'));
+const UserProfilePage = lazy(() => import('./pages/UserProfilePage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 // Loading screen component - Sivan Obsidian design
@@ -150,7 +156,14 @@ export default function App() {
             <Route path="/owner-portal-config" element={<OwnerPortalConfigPage />} />
             <Route path="/owner-statements" element={<OwnerStatementsPage />} />
             <Route path="/webhooks" element={<WebhooksPage />} />
+            <Route path="/integrations" element={<IntegrationsPage />} />
             <Route path="/onboarding" element={<OnboardingWizardPage />} />
+            <Route path="/notification-templates" element={<NotificationTemplatesPage />} />
+            <Route path="/notification-templates/new" element={<TemplateEditorPage />} />
+            <Route path="/notification-templates/:id/edit" element={<TemplateEditorPage />} />
+            <Route path="/settings/ai-providers" element={<AiProvidersPage />} />
+            <Route path="/users" element={<UsersManagementPage />} />
+            <Route path="/users/:id" element={<UserProfilePage />} />
           </Route>
           <Route path="*" element={<NotFoundPage />} />
         </Routes>

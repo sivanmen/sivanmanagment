@@ -46,11 +46,13 @@ const pathLabels: Record<string, string> = {
   edit: 'Edit',
   marketing: 'Marketing',
   automations: 'Automations',
+  integrations: 'Integrations',
   templates: 'Templates',
   'guest-experience': 'Guest Experience',
   'guest-portal-preview': 'Guest Portal Preview',
   pricing: 'Revenue Management',
   'booking-extras': 'Booking Extras',
+  users: 'User Management',
 };
 
 function Breadcrumbs() {

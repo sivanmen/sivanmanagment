@@ -19,6 +19,7 @@ import {
   Wrench,
   FileText,
   Radio,
+  Plug,
   Megaphone,
   Heart,
   UserPlus,
@@ -40,6 +41,8 @@ import {
   Target,
   Shield,
   LineChart,
+  FileStack,
+  Brain,
 } from 'lucide-react';
 import { useAuthStore } from '../store/auth.store';
 import { useUIStore } from '../store/ui.store';
@@ -85,6 +88,7 @@ const navGroups: NavGroup[] = [
     key: 'people',
     label: 'People',
     items: [
+      { key: 'users', label: 'Users', path: '/users', icon: Shield },
       { key: 'owners', label: 'Owners', path: '/owners', icon: Users },
       { key: 'guests', label: 'Guests', path: '/guests', icon: UserCheck },
     ],
@@ -106,6 +110,7 @@ const navGroups: NavGroup[] = [
     items: [
       { key: 'messages', label: 'Messages', path: '/messages', icon: Mail, badge: 2 },
       { key: 'notifications', label: 'Notifications', path: '/notifications', icon: Bell },
+      { key: 'notificationTemplates', label: 'Templates', path: '/notification-templates', icon: FileStack },
     ],
   },
   {
@@ -134,8 +139,10 @@ const navGroups: NavGroup[] = [
     items: [
       { key: 'reports', label: 'Reports', path: '/reports', icon: BarChart3 },
       { key: 'automations', label: 'Automations', path: '/automations', icon: Zap },
+      { key: 'integrations', label: 'Integrations', path: '/integrations', icon: Plug },
       { key: 'templates', label: 'Templates', path: '/templates', icon: MessageSquareText },
       { key: 'teams', label: 'Teams', path: '/teams', icon: Shield },
+      { key: 'aiProviders', label: 'AI Providers', path: '/settings/ai-providers', icon: Brain },
       { key: 'settings', label: 'Settings', path: '/settings', icon: Settings },
     ],
   },

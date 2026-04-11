@@ -67,6 +67,7 @@ model User {
   paymentMethods     PaymentMethod[]
   threadAssignments  MessageThread[] @relation("ThreadAssignee")
   sentMessages       GuestMessage[]  @relation("MessageSender")
+  notificationSettings UserNotificationSetting[]
 
   @@map("users")
 }
@@ -1803,6 +1804,51 @@ model NotificationPreference {
 }
 
 // ==========================================
+// 23b. NOTIFICATION CHANNELS & SETTINGS
+// ==========================================
+
+enum NotificationChannelType {
+  EMAIL
+  WHATSAPP
+  SMS
+  PUSH
+}
+
+model NotificationChannelConfig {
+  id            String                  @id @default(uuid())
+  type          NotificationChannelType
+  name          String                  // e.g. "Main Email", "WhatsApp Business"
+  isActive      Boolean                 @default(false) @map("is_active")
+  isDefault     Boolean                 @default(false) @map("is_default")
+  config        Json                    // Encrypted credentials/settings
+  lastTestedAt  DateTime?               @map("last_tested_at")
+  testStatus    String?                 @map("test_status") // 'success' | 'failed'
+  testError     String?                 @map("test_error")
+  metadata      Json?
+  createdAt     DateTime                @default(now()) @map("created_at")
+  updatedAt     DateTime                @updatedAt @map("updated_at")
+
+  @@map("notification_channel_configs")
+}
+
+model UserNotificationSetting {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  category    String   // 'booking', 'maintenance', 'payment', 'system', 'marketing'
+  email       Boolean  @default(true)
+  whatsapp    Boolean  @default(false)
+  sms         Boolean  @default(false)
+  push        Boolean  @default(false)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, category])
+  @@map("user_notification_settings")
+}
+
+// ==========================================
 // 24. WEBHOOKS
 // ==========================================
 
@@ -1931,4 +1977,57 @@ model AccountingIntegration {
   updatedAt    DateTime           @updatedAt @map("updated_at")
 
   @@map("accounting_integrations")
+}
+
+// ==========================================
+// 28. NOTIFICATION TEMPLATES
+// ==========================================
+
+model NotificationTemplate {
+  id            String   @id @default(uuid())
+  slug          String   @unique          // e.g. "booking_confirmation", "payment_receipt"
+  category      String                    // "booking", "payment", "maintenance", "system", "marketing", "guest"
+  name          Json                      // { en: "Booking Confirmation", he: "אישור הזמנה", ... }
+  description   String?
+
+  // Content per channel — all multilingual JSON { en: "...", he: "...", de: "...", es: "...", fr: "...", ru: "..." }
+  emailSubject  Json?    @map("email_subject")
+  emailBody     Json?    @map("email_body")     // HTML content
+  whatsappBody  Json?    @map("whatsapp_body")  // Plain text with variables
+  smsBody       Json?    @map("sms_body")       // Short plain text
+
+  // Variables available for this template
+  variables     Json?                     // ["guestName", "propertyName", "checkIn", "checkOut", "amount"]
+
+  isActive      Boolean  @default(true) @map("is_active")
+  isSystem      Boolean  @default(false) @map("is_system")  // System templates can't be deleted
+
+  version       Int      @default(1)
+  lastEditedBy  String?  @map("last_edited_by")
+
+  metadata      Json?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("notification_templates")
+}
+
+// ==========================================
+// 29. AI PROVIDER CONFIGURATION
+// ==========================================
+
+model AiProviderConfig {
+  id          String         @id @default(uuid())
+  provider    AiProvider
+  name        String                    // "Claude Sonnet", "GPT-4o", "Gemini Pro"
+  apiKey      String         @map("api_key") // Encrypted
+  model       String                    // "claude-sonnet-4-20250514", "gpt-4o", "gemini-1.5-pro"
+  isActive    Boolean        @default(false) @map("is_active")
+  isDefault   Boolean        @default(false) @map("is_default")
+  config      Json?                     // Additional config (temperature, etc.)
+  lastUsedAt  DateTime?      @map("last_used_at")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  @@map("ai_provider_configs")
 }

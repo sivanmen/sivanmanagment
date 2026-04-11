@@ -1,4 +1,108 @@
 import { ApiError } from '../../utils/api-error';
+import { prisma } from '../../prisma/client';
+
+// ── Dashboard Types ────────────────────────────────────────────────────────
+
+export interface DashboardData {
+  kpis: {
+    totalProperties: number;
+    activeProperties: number;
+    totalBookings: number;
+    activeBookings: number;
+    occupancyRate: number;
+    totalRevenue: number;
+    monthlyRevenue: number;
+    pendingPayments: number;
+    totalGuests: number;
+    averageRating: number;
+    maintenanceOpen: number;
+    totalOwners: number;
+  };
+  revenueByMonth: { month: string; revenue: number; expenses: number }[];
+  bookingsBySource: { source: string; count: number }[];
+  recentBookings: {
+    id: string;
+    guestName: string;
+    propertyName: string;
+    checkIn: string;
+    checkOut: string;
+    totalAmount: number;
+    status: string;
+    source: string;
+  }[];
+  upcomingCheckIns: {
+    id: string;
+    guestName: string;
+    propertyName: string;
+    checkIn: string;
+    checkOut: string;
+    nights: number;
+    guestsCount: number;
+  }[];
+  propertyPerformance: {
+    propertyId: string;
+    propertyName: string;
+    city: string;
+    revenue: number;
+    bookingsCount: number;
+    occupancyRate: number;
+  }[];
+  maintenanceStats: {
+    open: number;
+    inProgress: number;
+    completed: number;
+    urgent: number;
+  };
+}
+
+export interface OwnerDashboardData {
+  kpis: {
+    totalProperties: number;
+    activeProperties: number;
+    monthlyIncome: number;
+    monthlyExpenses: number;
+    netIncome: number;
+    occupancyRate: number;
+    totalBookings: number;
+    activeBookings: number;
+    pendingApprovals: number;
+    averageRating: number;
+  };
+  revenueByMonth: { month: string; revenue: number; expenses: number }[];
+  recentBookings: {
+    id: string;
+    guestName: string;
+    propertyName: string;
+    checkIn: string;
+    checkOut: string;
+    totalAmount: number;
+    status: string;
+  }[];
+  pendingExpenseApprovals: {
+    id: string;
+    title: string;
+    description: string;
+    amount: number;
+    category: string;
+    propertyName: string;
+    createdAt: string;
+    urgency: string;
+  }[];
+  propertyPerformance: {
+    propertyId: string;
+    propertyName: string;
+    city: string;
+    revenue: number;
+    bookingsCount: number;
+    occupancyRate: number;
+  }[];
+  maintenanceStats: {
+    open: number;
+    inProgress: number;
+    completed: number;
+    urgent: number;
+  };
+}
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -719,6 +823,499 @@ export class AnalyticsService {
       pendingPayouts: Math.round(totalPendingPayouts),
       maintenanceOpen: 4,
       guestSatisfaction: Math.round(avgRating * 10) / 10,
+    };
+  }
+
+  // ── Dashboard (Prisma-based) ───────────────────────────────────────────
+
+  async getDashboard(): Promise<DashboardData> {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // --- KPIs (parallel) ---
+    const [
+      totalProperties,
+      activeProperties,
+      totalBookings,
+      activeBookings,
+      totalGuests,
+      totalOwners,
+      maintenanceOpen,
+      maintenanceInProgress,
+      maintenanceCompleted,
+      maintenanceUrgent,
+      revenueAgg,
+      monthlyRevenueAgg,
+      pendingPaymentsAgg,
+    ] = await Promise.all([
+      prisma.property.count({ where: { deletedAt: null } }),
+      prisma.property.count({ where: { deletedAt: null, status: 'ACTIVE' } }),
+      prisma.booking.count(),
+      prisma.booking.count({
+        where: {
+          status: { in: ['CONFIRMED', 'CHECKED_IN'] },
+          checkIn: { lte: today },
+          checkOut: { gte: today },
+        },
+      }),
+      prisma.guestProfile.count({ where: { deletedAt: null } }),
+      prisma.owner.count({ where: { deletedAt: null } }),
+      prisma.maintenanceRequest.count({ where: { status: 'OPEN' } }),
+      prisma.maintenanceRequest.count({ where: { status: 'IN_PROGRESS' } }),
+      prisma.maintenanceRequest.count({ where: { status: 'COMPLETED' } }),
+      prisma.maintenanceRequest.count({ where: { priority: 'URGENT', status: { not: 'COMPLETED' } } }),
+      prisma.incomeRecord.aggregate({ _sum: { amount: true } }),
+      prisma.incomeRecord.aggregate({
+        _sum: { amount: true },
+        where: {
+          periodMonth: now.getMonth() + 1,
+          periodYear: now.getFullYear(),
+        },
+      }),
+      prisma.booking.aggregate({
+        _sum: { totalAmount: true },
+        where: { paymentStatus: 'PENDING' },
+      }),
+    ]);
+
+    // Occupancy rate: ratio of occupied nights to total possible nights this month
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const totalPossibleNights = activeProperties * daysInMonth;
+    const occupiedBookings = await prisma.booking.findMany({
+      where: {
+        status: { in: ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT'] },
+        checkIn: { lt: new Date(now.getFullYear(), now.getMonth() + 1, 1) },
+        checkOut: { gt: startOfMonth },
+      },
+      select: { checkIn: true, checkOut: true },
+    });
+    let occupiedNights = 0;
+    for (const b of occupiedBookings) {
+      const start = b.checkIn > startOfMonth ? b.checkIn : startOfMonth;
+      const end = b.checkOut < new Date(now.getFullYear(), now.getMonth() + 1, 1)
+        ? b.checkOut
+        : new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      const diff = Math.max(0, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+      occupiedNights += diff;
+    }
+    const occupancyRate = totalPossibleNights > 0
+      ? Math.round((occupiedNights / totalPossibleNights) * 100 * 10) / 10
+      : 0;
+
+    // Average rating from guest profiles
+    const ratingAgg = await prisma.guestProfile.aggregate({
+      _avg: { totalRevenue: true },
+    });
+    // Note: schema doesn't have a review/rating model, so we use property score average
+    const propertyScores = await prisma.property.aggregate({
+      _avg: { propertyScore: true },
+      where: { deletedAt: null, propertyScore: { not: null } },
+    });
+    const averageRating = propertyScores._avg.propertyScore
+      ? Math.round(Number(propertyScores._avg.propertyScore) * 10) / 10
+      : 0;
+
+    // --- Revenue by month (last 12 months) ---
+    const twelveMonthsAgo = new Date(now.getFullYear() - 1, now.getMonth() + 1, 1);
+    const incomeByMonth = await prisma.incomeRecord.groupBy({
+      by: ['periodYear', 'periodMonth'],
+      _sum: { amount: true },
+      where: {
+        date: { gte: twelveMonthsAgo },
+      },
+      orderBy: [{ periodYear: 'asc' }, { periodMonth: 'asc' }],
+    });
+    const expenseByMonth = await prisma.expenseRecord.groupBy({
+      by: ['periodYear', 'periodMonth'],
+      _sum: { amount: true },
+      where: {
+        date: { gte: twelveMonthsAgo },
+      },
+      orderBy: [{ periodYear: 'asc' }, { periodMonth: 'asc' }],
+    });
+
+    // Build a map for expenses
+    const expenseMap = new Map<string, number>();
+    for (const e of expenseByMonth) {
+      const key = `${e.periodYear}-${String(e.periodMonth).padStart(2, '0')}`;
+      expenseMap.set(key, Number(e._sum.amount || 0));
+    }
+
+    const revenueByMonth = incomeByMonth.map((r) => {
+      const key = `${r.periodYear}-${String(r.periodMonth).padStart(2, '0')}`;
+      return {
+        month: key,
+        revenue: Math.round(Number(r._sum.amount || 0) * 100) / 100,
+        expenses: Math.round((expenseMap.get(key) || 0) * 100) / 100,
+      };
+    });
+
+    // --- Bookings by source ---
+    const bookingsBySourceRaw = await prisma.booking.groupBy({
+      by: ['source'],
+      _count: { id: true },
+    });
+    const bookingsBySource = bookingsBySourceRaw.map((b) => ({
+      source: b.source,
+      count: b._count.id,
+    })).sort((a, b) => b.count - a.count);
+
+    // --- Recent bookings ---
+    const recentBookingsRaw = await prisma.booking.findMany({
+      take: 5,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        property: { select: { name: true } },
+      },
+    });
+    const recentBookings = recentBookingsRaw.map((b) => ({
+      id: b.id,
+      guestName: b.guestName,
+      propertyName: b.property.name,
+      checkIn: b.checkIn.toISOString().split('T')[0],
+      checkOut: b.checkOut.toISOString().split('T')[0],
+      totalAmount: Number(b.totalAmount),
+      status: b.status,
+      source: b.source,
+    }));
+
+    // --- Upcoming check-ins ---
+    const upcomingCheckInsRaw = await prisma.booking.findMany({
+      where: {
+        checkIn: { gte: today },
+        status: { in: ['CONFIRMED', 'PENDING'] },
+      },
+      take: 5,
+      orderBy: { checkIn: 'asc' },
+      include: {
+        property: { select: { name: true } },
+      },
+    });
+    const upcomingCheckIns = upcomingCheckInsRaw.map((b) => ({
+      id: b.id,
+      guestName: b.guestName,
+      propertyName: b.property.name,
+      checkIn: b.checkIn.toISOString().split('T')[0],
+      checkOut: b.checkOut.toISOString().split('T')[0],
+      nights: b.nights,
+      guestsCount: b.guestsCount,
+    }));
+
+    // --- Property performance (top properties by revenue) ---
+    const propertyRevenueRaw = await prisma.incomeRecord.groupBy({
+      by: ['propertyId'],
+      _sum: { amount: true },
+      _count: { id: true },
+      orderBy: { _sum: { amount: 'desc' } },
+      take: 10,
+    });
+    const propertyIds = propertyRevenueRaw.map((p) => p.propertyId);
+    const propertiesMap = new Map<string, { name: string; city: string }>();
+    if (propertyIds.length > 0) {
+      const props = await prisma.property.findMany({
+        where: { id: { in: propertyIds } },
+        select: { id: true, name: true, city: true },
+      });
+      for (const p of props) {
+        propertiesMap.set(p.id, { name: p.name, city: p.city });
+      }
+    }
+
+    // Get booking counts per property for occupancy
+    const propertyBookingCounts = await prisma.booking.groupBy({
+      by: ['propertyId'],
+      _count: { id: true },
+      where: { propertyId: { in: propertyIds } },
+    });
+    const bookingCountMap = new Map<string, number>();
+    for (const bc of propertyBookingCounts) {
+      bookingCountMap.set(bc.propertyId, bc._count.id);
+    }
+
+    const propertyPerformance = propertyRevenueRaw.map((p) => {
+      const info = propertiesMap.get(p.propertyId) || { name: 'Unknown', city: '' };
+      return {
+        propertyId: p.propertyId,
+        propertyName: info.name,
+        city: info.city,
+        revenue: Math.round(Number(p._sum.amount || 0) * 100) / 100,
+        bookingsCount: bookingCountMap.get(p.propertyId) || 0,
+        occupancyRate: 0, // would need per-property calculation
+      };
+    });
+
+    return {
+      kpis: {
+        totalProperties,
+        activeProperties,
+        totalBookings,
+        activeBookings,
+        occupancyRate,
+        totalRevenue: Math.round(Number(revenueAgg._sum.amount || 0) * 100) / 100,
+        monthlyRevenue: Math.round(Number(monthlyRevenueAgg._sum.amount || 0) * 100) / 100,
+        pendingPayments: Math.round(Number(pendingPaymentsAgg._sum.totalAmount || 0) * 100) / 100,
+        totalGuests,
+        averageRating,
+        maintenanceOpen,
+        totalOwners,
+      },
+      revenueByMonth,
+      bookingsBySource,
+      recentBookings,
+      upcomingCheckIns,
+      propertyPerformance,
+      maintenanceStats: {
+        open: maintenanceOpen,
+        inProgress: maintenanceInProgress,
+        completed: maintenanceCompleted,
+        urgent: maintenanceUrgent,
+      },
+    };
+  }
+
+  // ── Owner Dashboard (Prisma-based, filtered by ownerId) ───────────────
+
+  async getOwnerDashboard(ownerId: string): Promise<OwnerDashboardData> {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // Get owner's properties
+    const ownerProperties = await prisma.property.findMany({
+      where: { ownerId, deletedAt: null },
+      select: { id: true, name: true, city: true, status: true },
+    });
+    const propertyIds = ownerProperties.map((p) => p.id);
+    const totalProperties = ownerProperties.length;
+    const activeProperties = ownerProperties.filter((p) => p.status === 'ACTIVE').length;
+
+    if (propertyIds.length === 0) {
+      return {
+        kpis: {
+          totalProperties: 0,
+          activeProperties: 0,
+          monthlyIncome: 0,
+          monthlyExpenses: 0,
+          netIncome: 0,
+          occupancyRate: 0,
+          totalBookings: 0,
+          activeBookings: 0,
+          pendingApprovals: 0,
+          averageRating: 0,
+        },
+        revenueByMonth: [],
+        recentBookings: [],
+        pendingExpenseApprovals: [],
+        propertyPerformance: [],
+        maintenanceStats: { open: 0, inProgress: 0, completed: 0, urgent: 0 },
+      };
+    }
+
+    const [
+      totalBookings,
+      activeBookings,
+      monthlyIncomeAgg,
+      monthlyExpenseAgg,
+      pendingApprovals,
+      maintenanceOpen,
+      maintenanceInProgress,
+      maintenanceCompleted,
+      maintenanceUrgent,
+    ] = await Promise.all([
+      prisma.booking.count({ where: { propertyId: { in: propertyIds } } }),
+      prisma.booking.count({
+        where: {
+          propertyId: { in: propertyIds },
+          status: { in: ['CONFIRMED', 'CHECKED_IN'] },
+          checkIn: { lte: today },
+          checkOut: { gte: today },
+        },
+      }),
+      prisma.incomeRecord.aggregate({
+        _sum: { amount: true },
+        where: {
+          ownerId,
+          periodMonth: now.getMonth() + 1,
+          periodYear: now.getFullYear(),
+        },
+      }),
+      prisma.expenseRecord.aggregate({
+        _sum: { amount: true },
+        where: {
+          ownerId,
+          periodMonth: now.getMonth() + 1,
+          periodYear: now.getFullYear(),
+        },
+      }),
+      prisma.expenseRecord.count({
+        where: {
+          ownerId,
+          approvalStatus: 'PENDING',
+        },
+      }),
+      prisma.maintenanceRequest.count({ where: { propertyId: { in: propertyIds }, status: 'OPEN' } }),
+      prisma.maintenanceRequest.count({ where: { propertyId: { in: propertyIds }, status: 'IN_PROGRESS' } }),
+      prisma.maintenanceRequest.count({ where: { propertyId: { in: propertyIds }, status: 'COMPLETED' } }),
+      prisma.maintenanceRequest.count({ where: { propertyId: { in: propertyIds }, priority: 'URGENT', status: { not: 'COMPLETED' } } }),
+    ]);
+
+    const monthlyIncome = Math.round(Number(monthlyIncomeAgg._sum.amount || 0) * 100) / 100;
+    const monthlyExpenses = Math.round(Number(monthlyExpenseAgg._sum.amount || 0) * 100) / 100;
+    const netIncome = Math.round((monthlyIncome - monthlyExpenses) * 100) / 100;
+
+    // Occupancy rate
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const totalPossibleNights = activeProperties * daysInMonth;
+    const occupiedBookings = await prisma.booking.findMany({
+      where: {
+        propertyId: { in: propertyIds },
+        status: { in: ['CONFIRMED', 'CHECKED_IN', 'CHECKED_OUT'] },
+        checkIn: { lt: new Date(now.getFullYear(), now.getMonth() + 1, 1) },
+        checkOut: { gt: startOfMonth },
+      },
+      select: { checkIn: true, checkOut: true },
+    });
+    let occupiedNights = 0;
+    for (const b of occupiedBookings) {
+      const start = b.checkIn > startOfMonth ? b.checkIn : startOfMonth;
+      const end = b.checkOut < new Date(now.getFullYear(), now.getMonth() + 1, 1)
+        ? b.checkOut
+        : new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      const diff = Math.max(0, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+      occupiedNights += diff;
+    }
+    const occupancyRate = totalPossibleNights > 0
+      ? Math.round((occupiedNights / totalPossibleNights) * 100 * 10) / 10
+      : 0;
+
+    // Average property score
+    const propertyScores = await prisma.property.aggregate({
+      _avg: { propertyScore: true },
+      where: { id: { in: propertyIds }, propertyScore: { not: null } },
+    });
+    const averageRating = propertyScores._avg.propertyScore
+      ? Math.round(Number(propertyScores._avg.propertyScore) * 10) / 10
+      : 0;
+
+    // Revenue by month (last 12 months)
+    const twelveMonthsAgo = new Date(now.getFullYear() - 1, now.getMonth() + 1, 1);
+    const incomeByMonth = await prisma.incomeRecord.groupBy({
+      by: ['periodYear', 'periodMonth'],
+      _sum: { amount: true },
+      where: { ownerId, date: { gte: twelveMonthsAgo } },
+      orderBy: [{ periodYear: 'asc' }, { periodMonth: 'asc' }],
+    });
+    const expenseByMonth = await prisma.expenseRecord.groupBy({
+      by: ['periodYear', 'periodMonth'],
+      _sum: { amount: true },
+      where: { ownerId, date: { gte: twelveMonthsAgo } },
+      orderBy: [{ periodYear: 'asc' }, { periodMonth: 'asc' }],
+    });
+    const expenseMap = new Map<string, number>();
+    for (const e of expenseByMonth) {
+      const key = `${e.periodYear}-${String(e.periodMonth).padStart(2, '0')}`;
+      expenseMap.set(key, Number(e._sum.amount || 0));
+    }
+    const revenueByMonth = incomeByMonth.map((r) => {
+      const key = `${r.periodYear}-${String(r.periodMonth).padStart(2, '0')}`;
+      return {
+        month: key,
+        revenue: Math.round(Number(r._sum.amount || 0) * 100) / 100,
+        expenses: Math.round((expenseMap.get(key) || 0) * 100) / 100,
+      };
+    });
+
+    // Recent bookings
+    const recentBookingsRaw = await prisma.booking.findMany({
+      where: { propertyId: { in: propertyIds } },
+      take: 5,
+      orderBy: { createdAt: 'desc' },
+      include: { property: { select: { name: true } } },
+    });
+    const recentBookings = recentBookingsRaw.map((b) => ({
+      id: b.id,
+      guestName: b.guestName,
+      propertyName: b.property.name,
+      checkIn: b.checkIn.toISOString().split('T')[0],
+      checkOut: b.checkOut.toISOString().split('T')[0],
+      totalAmount: Number(b.totalAmount),
+      status: b.status,
+    }));
+
+    // Pending expense approvals
+    const pendingExpensesRaw = await prisma.expenseRecord.findMany({
+      where: { ownerId, approvalStatus: 'PENDING' },
+      take: 5,
+      orderBy: { createdAt: 'desc' },
+      include: { property: { select: { name: true } } },
+    });
+    const pendingExpenseApprovals = pendingExpensesRaw.map((e) => ({
+      id: e.id,
+      title: e.description,
+      description: `${e.category} - ${e.vendor || 'No vendor'}`,
+      amount: Number(e.amount),
+      category: e.category,
+      propertyName: e.property?.name || 'General',
+      createdAt: e.createdAt.toISOString(),
+      urgency: Number(e.amount) > 500 ? 'high' : 'medium',
+    }));
+
+    // Property performance
+    const propertyRevenueRaw = await prisma.incomeRecord.groupBy({
+      by: ['propertyId'],
+      _sum: { amount: true },
+      where: { ownerId },
+      orderBy: { _sum: { amount: 'desc' } },
+    });
+    const propBookingCounts = await prisma.booking.groupBy({
+      by: ['propertyId'],
+      _count: { id: true },
+      where: { propertyId: { in: propertyIds } },
+    });
+    const bookingCountMap = new Map<string, number>();
+    for (const bc of propBookingCounts) {
+      bookingCountMap.set(bc.propertyId, bc._count.id);
+    }
+    const propNameMap = new Map<string, { name: string; city: string }>();
+    for (const p of ownerProperties) {
+      propNameMap.set(p.id, { name: p.name, city: p.city });
+    }
+    const propertyPerformance = propertyRevenueRaw.map((p) => {
+      const info = propNameMap.get(p.propertyId) || { name: 'Unknown', city: '' };
+      return {
+        propertyId: p.propertyId,
+        propertyName: info.name,
+        city: info.city,
+        revenue: Math.round(Number(p._sum.amount || 0) * 100) / 100,
+        bookingsCount: bookingCountMap.get(p.propertyId) || 0,
+        occupancyRate: 0,
+      };
+    });
+
+    return {
+      kpis: {
+        totalProperties,
+        activeProperties,
+        monthlyIncome,
+        monthlyExpenses,
+        netIncome,
+        occupancyRate,
+        totalBookings,
+        activeBookings,
+        pendingApprovals,
+        averageRating,
+      },
+      revenueByMonth,
+      recentBookings,
+      pendingExpenseApprovals,
+      propertyPerformance,
+      maintenanceStats: {
+        open: maintenanceOpen,
+        inProgress: maintenanceInProgress,
+        completed: maintenanceCompleted,
+        urgent: maintenanceUrgent,
+      },
     };
   }
 

@@ -61,9 +61,36 @@ const exportQuerySchema = z.object({
   ownerId: z.string().optional(),
 });
 
+const dashboardQuerySchema = z.object({
+  ownerId: z.string().optional(),
+});
+
 // ── Controller ───────────────────────────────────────────────────────────────
 
 export class AnalyticsController {
+  async getDashboard(_req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await analyticsService.getDashboard();
+      sendSuccess(res, data);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getOwnerDashboard(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { ownerId } = dashboardQuerySchema.parse(req.query);
+      const ownerIdToUse = ownerId || (req as any).user?.owner?.id;
+      if (!ownerIdToUse) {
+        return res.status(400).json({ success: false, error: { code: 'MISSING_OWNER_ID', message: 'Owner ID is required' } });
+      }
+      const data = await analyticsService.getOwnerDashboard(ownerIdToUse);
+      sendSuccess(res, data);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async getOverview(req: Request, res: Response, next: NextFunction) {
     try {
       const filters = overviewQuerySchema.parse(req.query);

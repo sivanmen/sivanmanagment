@@ -1,10 +1,10 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({ log: ['warn', 'error'] });
 
 async function main() {
-  console.log('Seeding database...');
+  console.log(`[SEED] Starting database seed at ${new Date().toISOString()}`);
 
   // ══════════════════════════════════════════════════════════════
   // 1. USERS
@@ -1767,19 +1767,627 @@ async function main() {
 
   console.log('3 Message threads created/verified');
 
+  // ══════════════════════════════════════════════════════════════
+  // NOTIFICATION TEMPLATES
+  // ══════════════════════════════════════════════════════════════
+
+  const emailWrap = (bodyContent: string) =>
+    `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:0;background:#f5f5f5;font-family:Arial,Helvetica,sans-serif}a{color:#6b38d4}</style></head><body><div style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:8px;overflow:hidden"><div style="background:#030303;padding:24px 32px;text-align:center"><h1 style="color:#ffffff;margin:0;font-size:22px">Sivan <span style="color:#6b38d4">Management</span></h1></div><div style="padding:32px">${bodyContent}</div><div style="background:#030303;padding:16px 32px;text-align:center;font-size:12px;color:#999999">&copy; Sivan Management | Vacation Rentals in Greece</div></div></body></html>`;
+
+  const notificationTemplates = [
+    {
+      slug: 'booking_confirmation',
+      category: 'booking',
+      name: {
+        en: 'Booking Confirmation',
+        he: 'אישור הזמנה',
+        de: 'Buchungsbestätigung',
+        es: 'Confirmación de Reserva',
+        fr: 'Confirmation de Réservation',
+        ru: 'Подтверждение бронирования',
+      },
+      description: 'Sent to guest when a booking is confirmed',
+      emailSubject: {
+        en: 'Your booking at {{propertyName}} is confirmed!',
+        he: 'ההזמנה שלך ב-{{propertyName}} אושרה!',
+        de: 'Ihre Buchung bei {{propertyName}} ist bestätigt!',
+        es: '¡Tu reserva en {{propertyName}} está confirmada!',
+        fr: 'Votre réservation à {{propertyName}} est confirmée !',
+        ru: 'Ваше бронирование в {{propertyName}} подтверждено!',
+      },
+      emailBody: {
+        en: emailWrap('<p>Dear {{guestName}},</p><p>Your booking at <strong>{{propertyName}}</strong> is confirmed!</p><p><strong>Check-in:</strong> {{checkIn}}<br><strong>Check-out:</strong> {{checkOut}}<br><strong>Total:</strong> &euro;{{totalAmount}}</p><p>We look forward to welcoming you!</p><p>Best regards,<br>Sivan Management</p>'),
+        he: emailWrap('<div dir="rtl"><p>{{guestName}} שלום,</p><p>ההזמנה שלך ב-<strong>{{propertyName}}</strong> אושרה!</p><p><strong>צ\'ק-אין:</strong> {{checkIn}}<br><strong>צ\'ק-אאוט:</strong> {{checkOut}}<br><strong>סה"כ:</strong> &euro;{{totalAmount}}</p><p>מצפים לארח אותך!</p><p>בברכה,<br>Sivan Management</p></div>'),
+        de: emailWrap('<p>Liebe/r {{guestName}},</p><p>Ihre Buchung bei <strong>{{propertyName}}</strong> ist bestätigt!</p><p><strong>Check-in:</strong> {{checkIn}}<br><strong>Check-out:</strong> {{checkOut}}<br><strong>Gesamt:</strong> &euro;{{totalAmount}}</p><p>Wir freuen uns auf Ihren Besuch!</p><p>Mit freundlichen Grüßen,<br>Sivan Management</p>'),
+        es: emailWrap('<p>Estimado/a {{guestName}},</p><p>¡Tu reserva en <strong>{{propertyName}}</strong> está confirmada!</p><p><strong>Check-in:</strong> {{checkIn}}<br><strong>Check-out:</strong> {{checkOut}}<br><strong>Total:</strong> &euro;{{totalAmount}}</p><p>¡Esperamos darte la bienvenida!</p><p>Saludos cordiales,<br>Sivan Management</p>'),
+        fr: emailWrap('<p>Cher/Chère {{guestName}},</p><p>Votre réservation à <strong>{{propertyName}}</strong> est confirmée !</p><p><strong>Arrivée :</strong> {{checkIn}}<br><strong>Départ :</strong> {{checkOut}}<br><strong>Total :</strong> &euro;{{totalAmount}}</p><p>Nous avons hâte de vous accueillir !</p><p>Cordialement,<br>Sivan Management</p>'),
+        ru: emailWrap('<p>Уважаемый(ая) {{guestName}},</p><p>Ваше бронирование в <strong>{{propertyName}}</strong> подтверждено!</p><p><strong>Заезд:</strong> {{checkIn}}<br><strong>Выезд:</strong> {{checkOut}}<br><strong>Итого:</strong> &euro;{{totalAmount}}</p><p>Ждём Вас с нетерпением!</p><p>С уважением,<br>Sivan Management</p>'),
+      },
+      whatsappBody: {
+        en: 'Hi {{guestName}}! Your booking at {{propertyName}} is confirmed. Check-in: {{checkIn}}, Check-out: {{checkOut}}. Total: EUR {{totalAmount}}. We look forward to welcoming you!',
+        he: 'שלום {{guestName}}! ההזמנה שלך ב-{{propertyName}} אושרה. צ\'ק-אין: {{checkIn}}, צ\'ק-אאוט: {{checkOut}}. סה"כ: EUR {{totalAmount}}. מצפים לראותך!',
+        de: 'Hallo {{guestName}}! Ihre Buchung bei {{propertyName}} ist bestätigt. Check-in: {{checkIn}}, Check-out: {{checkOut}}. Gesamt: EUR {{totalAmount}}. Wir freuen uns auf Sie!',
+        es: 'Hola {{guestName}}! Tu reserva en {{propertyName}} está confirmada. Check-in: {{checkIn}}, Check-out: {{checkOut}}. Total: EUR {{totalAmount}}. ¡Te esperamos!',
+        fr: 'Bonjour {{guestName}} ! Votre réservation à {{propertyName}} est confirmée. Arrivée : {{checkIn}}, Départ : {{checkOut}}. Total : EUR {{totalAmount}}. À bientôt !',
+        ru: 'Здравствуйте, {{guestName}}! Ваше бронирование в {{propertyName}} подтверждено. Заезд: {{checkIn}}, Выезд: {{checkOut}}. Итого: EUR {{totalAmount}}. Ждём Вас!',
+      },
+      smsBody: {
+        en: 'Booking confirmed at {{propertyName}}. {{checkIn}}-{{checkOut}}. Total: EUR {{totalAmount}}. Sivan Management',
+        he: 'הזמנה אושרה ב-{{propertyName}}. {{checkIn}}-{{checkOut}}. סה"כ: EUR {{totalAmount}}. Sivan Management',
+        de: 'Buchung bestätigt: {{propertyName}}. {{checkIn}}-{{checkOut}}. Gesamt: EUR {{totalAmount}}. Sivan Management',
+        es: 'Reserva confirmada en {{propertyName}}. {{checkIn}}-{{checkOut}}. Total: EUR {{totalAmount}}. Sivan Management',
+        fr: 'Réservation confirmée: {{propertyName}}. {{checkIn}}-{{checkOut}}. Total: EUR {{totalAmount}}. Sivan Management',
+        ru: 'Бронирование подтверждено: {{propertyName}}. {{checkIn}}-{{checkOut}}. Итого: EUR {{totalAmount}}. Sivan Management',
+      },
+      variables: ['guestName', 'propertyName', 'checkIn', 'checkOut', 'totalAmount'],
+      isSystem: true,
+    },
+    {
+      slug: 'booking_cancellation',
+      category: 'booking',
+      name: {
+        en: 'Booking Cancellation',
+        he: 'ביטול הזמנה',
+        de: 'Buchungsstornierung',
+        es: 'Cancelación de Reserva',
+        fr: 'Annulation de Réservation',
+        ru: 'Отмена бронирования',
+      },
+      description: 'Sent to guest when a booking is cancelled',
+      emailSubject: {
+        en: 'Booking at {{propertyName}} has been cancelled',
+        he: 'ההזמנה ב-{{propertyName}} בוטלה',
+        de: 'Buchung bei {{propertyName}} wurde storniert',
+        es: 'La reserva en {{propertyName}} ha sido cancelada',
+        fr: 'La réservation à {{propertyName}} a été annulée',
+        ru: 'Бронирование в {{propertyName}} отменено',
+      },
+      emailBody: {
+        en: emailWrap('<p>Dear {{guestName}},</p><p>We regret to inform you that your booking at <strong>{{propertyName}}</strong> ({{checkIn}} - {{checkOut}}) has been cancelled.</p><p><strong>Cancellation reason:</strong> {{cancellationReason}}</p><p>If a refund applies, it will be processed within 5-10 business days.</p><p>If you have questions, please contact us.</p><p>Best regards,<br>Sivan Management</p>'),
+        he: emailWrap('<div dir="rtl"><p>{{guestName}} שלום,</p><p>אנו מצטערים להודיעך כי ההזמנה שלך ב-<strong>{{propertyName}}</strong> ({{checkIn}} - {{checkOut}}) בוטלה.</p><p><strong>סיבת הביטול:</strong> {{cancellationReason}}</p><p>אם מגיע לך החזר, הוא יעובד תוך 5-10 ימי עסקים.</p><p>בברכה,<br>Sivan Management</p></div>'),
+        de: emailWrap('<p>Liebe/r {{guestName}},</p><p>Wir bedauern Ihnen mitteilen zu müssen, dass Ihre Buchung bei <strong>{{propertyName}}</strong> ({{checkIn}} - {{checkOut}}) storniert wurde.</p><p><strong>Stornierungsgrund:</strong> {{cancellationReason}}</p><p>Eine eventuelle Rückerstattung wird innerhalb von 5-10 Werktagen bearbeitet.</p><p>Mit freundlichen Grüßen,<br>Sivan Management</p>'),
+        es: emailWrap('<p>Estimado/a {{guestName}},</p><p>Lamentamos informarte que tu reserva en <strong>{{propertyName}}</strong> ({{checkIn}} - {{checkOut}}) ha sido cancelada.</p><p><strong>Motivo de cancelación:</strong> {{cancellationReason}}</p><p>Si aplica un reembolso, se procesará en 5-10 días hábiles.</p><p>Saludos cordiales,<br>Sivan Management</p>'),
+        fr: emailWrap('<p>Cher/Chère {{guestName}},</p><p>Nous avons le regret de vous informer que votre réservation à <strong>{{propertyName}}</strong> ({{checkIn}} - {{checkOut}}) a été annulée.</p><p><strong>Raison :</strong> {{cancellationReason}}</p><p>Si un remboursement s\'applique, il sera traité sous 5 à 10 jours ouvrables.</p><p>Cordialement,<br>Sivan Management</p>'),
+        ru: emailWrap('<p>Уважаемый(ая) {{guestName}},</p><p>Сожалеем, но Ваше бронирование в <strong>{{propertyName}}</strong> ({{checkIn}} - {{checkOut}}) было отменено.</p><p><strong>Причина:</strong> {{cancellationReason}}</p><p>Если предусмотрен возврат средств, он будет обработан в течение 5-10 рабочих дней.</p><p>С уважением,<br>Sivan Management</p>'),
+      },
+      whatsappBody: {
+        en: 'Hi {{guestName}}, your booking at {{propertyName}} ({{checkIn}} - {{checkOut}}) has been cancelled. Reason: {{cancellationReason}}. Contact us if you have questions.',
+        he: 'שלום {{guestName}}, ההזמנה שלך ב-{{propertyName}} ({{checkIn}} - {{checkOut}}) בוטלה. סיבה: {{cancellationReason}}. צור קשר אם יש שאלות.',
+        de: 'Hallo {{guestName}}, Ihre Buchung bei {{propertyName}} ({{checkIn}} - {{checkOut}}) wurde storniert. Grund: {{cancellationReason}}. Kontaktieren Sie uns bei Fragen.',
+        es: 'Hola {{guestName}}, tu reserva en {{propertyName}} ({{checkIn}} - {{checkOut}}) ha sido cancelada. Motivo: {{cancellationReason}}. Contáctanos si tienes preguntas.',
+        fr: 'Bonjour {{guestName}}, votre réservation à {{propertyName}} ({{checkIn}} - {{checkOut}}) a été annulée. Raison : {{cancellationReason}}. Contactez-nous si besoin.',
+        ru: 'Здравствуйте, {{guestName}}, Ваше бронирование в {{propertyName}} ({{checkIn}} - {{checkOut}}) отменено. Причина: {{cancellationReason}}. Свяжитесь с нами при вопросах.',
+      },
+      smsBody: {
+        en: 'Booking cancelled: {{propertyName}} ({{checkIn}}-{{checkOut}}). Contact us for details. Sivan Management',
+        he: 'הזמנה בוטלה: {{propertyName}} ({{checkIn}}-{{checkOut}}). צרו קשר לפרטים. Sivan Management',
+        de: 'Buchung storniert: {{propertyName}} ({{checkIn}}-{{checkOut}}). Kontaktieren Sie uns. Sivan Management',
+        es: 'Reserva cancelada: {{propertyName}} ({{checkIn}}-{{checkOut}}). Contáctenos. Sivan Management',
+        fr: 'Réservation annulée: {{propertyName}} ({{checkIn}}-{{checkOut}}). Contactez-nous. Sivan Management',
+        ru: 'Бронирование отменено: {{propertyName}} ({{checkIn}}-{{checkOut}}). Свяжитесь с нами. Sivan Management',
+      },
+      variables: ['guestName', 'propertyName', 'checkIn', 'checkOut', 'cancellationReason'],
+      isSystem: true,
+    },
+    {
+      slug: 'payment_receipt',
+      category: 'payment',
+      name: {
+        en: 'Payment Receipt',
+        he: 'קבלה על תשלום',
+        de: 'Zahlungsbeleg',
+        es: 'Recibo de Pago',
+        fr: 'Reçu de Paiement',
+        ru: 'Квитанция об оплате',
+      },
+      description: 'Sent when a payment is received',
+      emailSubject: {
+        en: 'Payment of EUR {{amount}} received - Receipt #{{receiptNumber}}',
+        he: 'התקבל תשלום בסך EUR {{amount}} - קבלה מס\' {{receiptNumber}}',
+        de: 'Zahlung von EUR {{amount}} erhalten - Beleg Nr. {{receiptNumber}}',
+        es: 'Pago de EUR {{amount}} recibido - Recibo #{{receiptNumber}}',
+        fr: 'Paiement de EUR {{amount}} reçu - Reçu #{{receiptNumber}}',
+        ru: 'Получена оплата EUR {{amount}} - Квитанция №{{receiptNumber}}',
+      },
+      emailBody: {
+        en: emailWrap('<p>Dear {{guestName}},</p><p>We have received your payment.</p><table style="width:100%;border-collapse:collapse;margin:16px 0"><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Amount:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">&euro;{{amount}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Property:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{propertyName}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Payment Method:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{paymentMethod}}</td></tr><tr><td style="padding:8px"><strong>Receipt #:</strong></td><td style="padding:8px">{{receiptNumber}}</td></tr></table><p>Thank you for your payment!</p><p>Best regards,<br>Sivan Management</p>'),
+        he: emailWrap('<div dir="rtl"><p>{{guestName}} שלום,</p><p>התשלום שלך התקבל.</p><table style="width:100%;border-collapse:collapse;margin:16px 0"><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>סכום:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">&euro;{{amount}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>נכס:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{propertyName}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>אמצעי תשלום:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{paymentMethod}}</td></tr><tr><td style="padding:8px"><strong>מס\' קבלה:</strong></td><td style="padding:8px">{{receiptNumber}}</td></tr></table><p>תודה על התשלום!</p><p>בברכה,<br>Sivan Management</p></div>'),
+        de: emailWrap('<p>Liebe/r {{guestName}},</p><p>Wir haben Ihre Zahlung erhalten.</p><table style="width:100%;border-collapse:collapse;margin:16px 0"><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Betrag:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">&euro;{{amount}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Objekt:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{propertyName}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Zahlungsmethode:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{paymentMethod}}</td></tr><tr><td style="padding:8px"><strong>Beleg Nr.:</strong></td><td style="padding:8px">{{receiptNumber}}</td></tr></table><p>Vielen Dank!</p><p>Mit freundlichen Grüßen,<br>Sivan Management</p>'),
+        es: emailWrap('<p>Estimado/a {{guestName}},</p><p>Hemos recibido tu pago.</p><table style="width:100%;border-collapse:collapse;margin:16px 0"><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Monto:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">&euro;{{amount}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Propiedad:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{propertyName}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Método de pago:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{paymentMethod}}</td></tr><tr><td style="padding:8px"><strong>Recibo #:</strong></td><td style="padding:8px">{{receiptNumber}}</td></tr></table><p>¡Gracias por tu pago!</p><p>Saludos cordiales,<br>Sivan Management</p>'),
+        fr: emailWrap('<p>Cher/Chère {{guestName}},</p><p>Nous avons bien reçu votre paiement.</p><table style="width:100%;border-collapse:collapse;margin:16px 0"><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Montant :</strong></td><td style="padding:8px;border-bottom:1px solid #eee">&euro;{{amount}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Propriété :</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{propertyName}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Mode de paiement :</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{paymentMethod}}</td></tr><tr><td style="padding:8px"><strong>Reçu # :</strong></td><td style="padding:8px">{{receiptNumber}}</td></tr></table><p>Merci pour votre paiement !</p><p>Cordialement,<br>Sivan Management</p>'),
+        ru: emailWrap('<p>Уважаемый(ая) {{guestName}},</p><p>Мы получили Ваш платёж.</p><table style="width:100%;border-collapse:collapse;margin:16px 0"><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Сумма:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">&euro;{{amount}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Объект:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{propertyName}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Способ оплаты:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{paymentMethod}}</td></tr><tr><td style="padding:8px"><strong>Квитанция №:</strong></td><td style="padding:8px">{{receiptNumber}}</td></tr></table><p>Спасибо за оплату!</p><p>С уважением,<br>Sivan Management</p>'),
+      },
+      whatsappBody: {
+        en: 'Hi {{guestName}}, we received your payment of EUR {{amount}} for {{propertyName}}. Receipt #{{receiptNumber}}. Thank you!',
+        he: 'שלום {{guestName}}, התקבל התשלום שלך בסך EUR {{amount}} עבור {{propertyName}}. קבלה מס\' {{receiptNumber}}. תודה!',
+        de: 'Hallo {{guestName}}, wir haben Ihre Zahlung von EUR {{amount}} für {{propertyName}} erhalten. Beleg Nr. {{receiptNumber}}. Danke!',
+        es: 'Hola {{guestName}}, recibimos tu pago de EUR {{amount}} por {{propertyName}}. Recibo #{{receiptNumber}}. ¡Gracias!',
+        fr: 'Bonjour {{guestName}}, nous avons reçu votre paiement de EUR {{amount}} pour {{propertyName}}. Reçu #{{receiptNumber}}. Merci !',
+        ru: 'Здравствуйте, {{guestName}}, получена оплата EUR {{amount}} за {{propertyName}}. Квитанция №{{receiptNumber}}. Спасибо!',
+      },
+      smsBody: {
+        en: 'Payment EUR {{amount}} received for {{propertyName}}. Receipt #{{receiptNumber}}. Sivan Management',
+        he: 'התקבל תשלום EUR {{amount}} עבור {{propertyName}}. קבלה {{receiptNumber}}. Sivan Management',
+        de: 'Zahlung EUR {{amount}} erhalten: {{propertyName}}. Beleg {{receiptNumber}}. Sivan Management',
+        es: 'Pago EUR {{amount}} recibido: {{propertyName}}. Recibo {{receiptNumber}}. Sivan Management',
+        fr: 'Paiement EUR {{amount}} reçu: {{propertyName}}. Reçu {{receiptNumber}}. Sivan Management',
+        ru: 'Оплата EUR {{amount}} получена: {{propertyName}}. Квитанция {{receiptNumber}}. Sivan Management',
+      },
+      variables: ['guestName', 'propertyName', 'amount', 'paymentMethod', 'receiptNumber'],
+      isSystem: true,
+    },
+    {
+      slug: 'payment_reminder',
+      category: 'payment',
+      name: {
+        en: 'Payment Reminder',
+        he: 'תזכורת תשלום',
+        de: 'Zahlungserinnerung',
+        es: 'Recordatorio de Pago',
+        fr: 'Rappel de Paiement',
+        ru: 'Напоминание об оплате',
+      },
+      description: 'Sent to guest when a payment is due',
+      emailSubject: {
+        en: 'Payment reminder: EUR {{amount}} due for {{propertyName}}',
+        he: 'תזכורת תשלום: EUR {{amount}} לתשלום עבור {{propertyName}}',
+        de: 'Zahlungserinnerung: EUR {{amount}} fällig für {{propertyName}}',
+        es: 'Recordatorio de pago: EUR {{amount}} pendiente para {{propertyName}}',
+        fr: 'Rappel de paiement : EUR {{amount}} dû pour {{propertyName}}',
+        ru: 'Напоминание: оплата EUR {{amount}} за {{propertyName}}',
+      },
+      emailBody: {
+        en: emailWrap('<p>Dear {{guestName}},</p><p>This is a friendly reminder that a payment of <strong>&euro;{{amount}}</strong> is due for your stay at <strong>{{propertyName}}</strong>.</p><p><strong>Due date:</strong> {{dueDate}}</p><p>Please complete the payment at your earliest convenience.</p><p>If you have already made this payment, please disregard this message.</p><p>Best regards,<br>Sivan Management</p>'),
+        he: emailWrap('<div dir="rtl"><p>{{guestName}} שלום,</p><p>זוהי תזכורת ידידותית כי תשלום בסך <strong>&euro;{{amount}}</strong> ממתין עבור שהותך ב-<strong>{{propertyName}}</strong>.</p><p><strong>תאריך יעד:</strong> {{dueDate}}</p><p>אנא בצע/י את התשלום בהקדם.</p><p>אם כבר שילמת, אנא התעלם/י מהודעה זו.</p><p>בברכה,<br>Sivan Management</p></div>'),
+        de: emailWrap('<p>Liebe/r {{guestName}},</p><p>Wir möchten Sie freundlich daran erinnern, dass eine Zahlung von <strong>&euro;{{amount}}</strong> für Ihren Aufenthalt bei <strong>{{propertyName}}</strong> fällig ist.</p><p><strong>Fälligkeitsdatum:</strong> {{dueDate}}</p><p>Bitte tätigen Sie die Zahlung so bald wie möglich.</p><p>Mit freundlichen Grüßen,<br>Sivan Management</p>'),
+        es: emailWrap('<p>Estimado/a {{guestName}},</p><p>Le recordamos que tiene un pago pendiente de <strong>&euro;{{amount}}</strong> para su estancia en <strong>{{propertyName}}</strong>.</p><p><strong>Fecha de vencimiento:</strong> {{dueDate}}</p><p>Por favor, realice el pago lo antes posible.</p><p>Saludos cordiales,<br>Sivan Management</p>'),
+        fr: emailWrap('<p>Cher/Chère {{guestName}},</p><p>Nous vous rappelons qu\'un paiement de <strong>&euro;{{amount}}</strong> est dû pour votre séjour à <strong>{{propertyName}}</strong>.</p><p><strong>Date d\'échéance :</strong> {{dueDate}}</p><p>Veuillez effectuer le paiement dès que possible.</p><p>Cordialement,<br>Sivan Management</p>'),
+        ru: emailWrap('<p>Уважаемый(ая) {{guestName}},</p><p>Напоминаем, что платёж в размере <strong>&euro;{{amount}}</strong> за проживание в <strong>{{propertyName}}</strong> ожидает оплаты.</p><p><strong>Срок оплаты:</strong> {{dueDate}}</p><p>Пожалуйста, произведите оплату в ближайшее время.</p><p>С уважением,<br>Sivan Management</p>'),
+      },
+      whatsappBody: {
+        en: 'Hi {{guestName}}, friendly reminder: EUR {{amount}} is due for your stay at {{propertyName}} by {{dueDate}}. Please complete the payment at your convenience.',
+        he: 'שלום {{guestName}}, תזכורת: תשלום בסך EUR {{amount}} ממתין עבור {{propertyName}} עד {{dueDate}}. אנא שלם/י בהקדם.',
+        de: 'Hallo {{guestName}}, Erinnerung: EUR {{amount}} fällig für {{propertyName}} bis {{dueDate}}. Bitte zahlen Sie so bald wie möglich.',
+        es: 'Hola {{guestName}}, recordatorio: EUR {{amount}} pendiente para {{propertyName}} hasta {{dueDate}}. Por favor, realice el pago.',
+        fr: 'Bonjour {{guestName}}, rappel : EUR {{amount}} dû pour {{propertyName}} avant le {{dueDate}}. Merci d\'effectuer le paiement.',
+        ru: 'Здравствуйте, {{guestName}}, напоминание: оплата EUR {{amount}} за {{propertyName}} до {{dueDate}}. Пожалуйста, произведите оплату.',
+      },
+      smsBody: {
+        en: 'Reminder: EUR {{amount}} due for {{propertyName}} by {{dueDate}}. Sivan Management',
+        he: 'תזכורת: EUR {{amount}} לתשלום עבור {{propertyName}} עד {{dueDate}}. Sivan Management',
+        de: 'Erinnerung: EUR {{amount}} fällig für {{propertyName}} bis {{dueDate}}. Sivan Management',
+        es: 'Recordatorio: EUR {{amount}} pendiente para {{propertyName}} hasta {{dueDate}}. Sivan Management',
+        fr: 'Rappel: EUR {{amount}} dû pour {{propertyName}} avant le {{dueDate}}. Sivan Management',
+        ru: 'Напоминание: EUR {{amount}} за {{propertyName}} до {{dueDate}}. Sivan Management',
+      },
+      variables: ['guestName', 'propertyName', 'amount', 'dueDate'],
+      isSystem: true,
+    },
+    {
+      slug: 'maintenance_created',
+      category: 'maintenance',
+      name: {
+        en: 'Maintenance Request Created',
+        he: 'בקשת תחזוקה נוצרה',
+        de: 'Wartungsanfrage erstellt',
+        es: 'Solicitud de Mantenimiento Creada',
+        fr: 'Demande de Maintenance Créée',
+        ru: 'Заявка на обслуживание создана',
+      },
+      description: 'Sent when a new maintenance request is submitted',
+      emailSubject: {
+        en: 'New maintenance request: {{title}} at {{propertyName}}',
+        he: 'בקשת תחזוקה חדשה: {{title}} ב-{{propertyName}}',
+        de: 'Neue Wartungsanfrage: {{title}} bei {{propertyName}}',
+        es: 'Nueva solicitud de mantenimiento: {{title}} en {{propertyName}}',
+        fr: 'Nouvelle demande de maintenance : {{title}} à {{propertyName}}',
+        ru: 'Новая заявка на обслуживание: {{title}} в {{propertyName}}',
+      },
+      emailBody: {
+        en: emailWrap('<p>A new maintenance request has been submitted.</p><table style="width:100%;border-collapse:collapse;margin:16px 0"><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Title:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{title}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Property:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{propertyName}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Priority:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{priority}}</td></tr><tr><td style="padding:8px"><strong>Description:</strong></td><td style="padding:8px">{{description}}</td></tr></table><p>Please review and assign this request.</p><p>Sivan Management</p>'),
+        he: emailWrap('<div dir="rtl"><p>בקשת תחזוקה חדשה הוגשה.</p><table style="width:100%;border-collapse:collapse;margin:16px 0"><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>כותרת:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{title}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>נכס:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{propertyName}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>עדיפות:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{priority}}</td></tr><tr><td style="padding:8px"><strong>תיאור:</strong></td><td style="padding:8px">{{description}}</td></tr></table><p>אנא בדוק/י ושייכ/י את הבקשה.</p><p>Sivan Management</p></div>'),
+        de: emailWrap('<p>Eine neue Wartungsanfrage wurde eingereicht.</p><table style="width:100%;border-collapse:collapse;margin:16px 0"><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Titel:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{title}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Objekt:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{propertyName}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Priorität:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{priority}}</td></tr><tr><td style="padding:8px"><strong>Beschreibung:</strong></td><td style="padding:8px">{{description}}</td></tr></table><p>Bitte überprüfen und zuweisen.</p><p>Sivan Management</p>'),
+        es: emailWrap('<p>Se ha enviado una nueva solicitud de mantenimiento.</p><table style="width:100%;border-collapse:collapse;margin:16px 0"><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Título:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{title}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Propiedad:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{propertyName}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Prioridad:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{priority}}</td></tr><tr><td style="padding:8px"><strong>Descripción:</strong></td><td style="padding:8px">{{description}}</td></tr></table><p>Por favor, revise y asigne esta solicitud.</p><p>Sivan Management</p>'),
+        fr: emailWrap('<p>Une nouvelle demande de maintenance a été soumise.</p><table style="width:100%;border-collapse:collapse;margin:16px 0"><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Titre :</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{title}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Propriété :</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{propertyName}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Priorité :</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{priority}}</td></tr><tr><td style="padding:8px"><strong>Description :</strong></td><td style="padding:8px">{{description}}</td></tr></table><p>Veuillez examiner et assigner cette demande.</p><p>Sivan Management</p>'),
+        ru: emailWrap('<p>Подана новая заявка на обслуживание.</p><table style="width:100%;border-collapse:collapse;margin:16px 0"><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Заголовок:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{title}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Объект:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{propertyName}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Приоритет:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{priority}}</td></tr><tr><td style="padding:8px"><strong>Описание:</strong></td><td style="padding:8px">{{description}}</td></tr></table><p>Пожалуйста, проверьте и назначьте ответственного.</p><p>Sivan Management</p>'),
+      },
+      whatsappBody: {
+        en: 'New maintenance request at {{propertyName}}: "{{title}}" (Priority: {{priority}}). Please review.',
+        he: 'בקשת תחזוקה חדשה ב-{{propertyName}}: "{{title}}" (עדיפות: {{priority}}). אנא בדוק.',
+        de: 'Neue Wartungsanfrage bei {{propertyName}}: "{{title}}" (Priorität: {{priority}}). Bitte prüfen.',
+        es: 'Nueva solicitud de mantenimiento en {{propertyName}}: "{{title}}" (Prioridad: {{priority}}). Por favor, revise.',
+        fr: 'Nouvelle demande de maintenance à {{propertyName}} : "{{title}}" (Priorité : {{priority}}). Veuillez vérifier.',
+        ru: 'Новая заявка в {{propertyName}}: "{{title}}" (Приоритет: {{priority}}). Проверьте, пожалуйста.',
+      },
+      smsBody: {
+        en: 'Maintenance: {{title}} at {{propertyName}} ({{priority}}). Sivan Management',
+        he: 'תחזוקה: {{title}} ב-{{propertyName}} ({{priority}}). Sivan Management',
+        de: 'Wartung: {{title}} bei {{propertyName}} ({{priority}}). Sivan Management',
+        es: 'Mantenimiento: {{title}} en {{propertyName}} ({{priority}}). Sivan Management',
+        fr: 'Maintenance: {{title}} à {{propertyName}} ({{priority}}). Sivan Management',
+        ru: 'Обслуживание: {{title}} в {{propertyName}} ({{priority}}). Sivan Management',
+      },
+      variables: ['title', 'propertyName', 'priority', 'description'],
+      isSystem: true,
+    },
+    {
+      slug: 'maintenance_completed',
+      category: 'maintenance',
+      name: {
+        en: 'Maintenance Completed',
+        he: 'תחזוקה הושלמה',
+        de: 'Wartung abgeschlossen',
+        es: 'Mantenimiento Completado',
+        fr: 'Maintenance Terminée',
+        ru: 'Обслуживание завершено',
+      },
+      description: 'Sent when a maintenance request is marked as completed',
+      emailSubject: {
+        en: 'Maintenance completed: {{title}} at {{propertyName}}',
+        he: 'תחזוקה הושלמה: {{title}} ב-{{propertyName}}',
+        de: 'Wartung abgeschlossen: {{title}} bei {{propertyName}}',
+        es: 'Mantenimiento completado: {{title}} en {{propertyName}}',
+        fr: 'Maintenance terminée : {{title}} à {{propertyName}}',
+        ru: 'Обслуживание завершено: {{title}} в {{propertyName}}',
+      },
+      emailBody: {
+        en: emailWrap('<p>The following maintenance request has been completed:</p><table style="width:100%;border-collapse:collapse;margin:16px 0"><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Title:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{title}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Property:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{propertyName}}</td></tr><tr><td style="padding:8px"><strong>Completed by:</strong></td><td style="padding:8px">{{completedBy}}</td></tr></table><p>If you notice any remaining issues, please submit a new request.</p><p>Sivan Management</p>'),
+        he: emailWrap('<div dir="rtl"><p>בקשת התחזוקה הבאה הושלמה:</p><table style="width:100%;border-collapse:collapse;margin:16px 0"><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>כותרת:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{title}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>נכס:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{propertyName}}</td></tr><tr><td style="padding:8px"><strong>בוצע על ידי:</strong></td><td style="padding:8px">{{completedBy}}</td></tr></table><p>אם יש בעיות נוספות, אנא הגש/י בקשה חדשה.</p><p>Sivan Management</p></div>'),
+        de: emailWrap('<p>Die folgende Wartungsanfrage wurde abgeschlossen:</p><table style="width:100%;border-collapse:collapse;margin:16px 0"><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Titel:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{title}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Objekt:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{propertyName}}</td></tr><tr><td style="padding:8px"><strong>Erledigt von:</strong></td><td style="padding:8px">{{completedBy}}</td></tr></table><p>Bei weiteren Problemen erstellen Sie bitte eine neue Anfrage.</p><p>Sivan Management</p>'),
+        es: emailWrap('<p>La siguiente solicitud de mantenimiento se ha completado:</p><table style="width:100%;border-collapse:collapse;margin:16px 0"><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Título:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{title}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Propiedad:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{propertyName}}</td></tr><tr><td style="padding:8px"><strong>Completado por:</strong></td><td style="padding:8px">{{completedBy}}</td></tr></table><p>Si nota algún problema restante, envíe una nueva solicitud.</p><p>Sivan Management</p>'),
+        fr: emailWrap('<p>La demande de maintenance suivante a été complétée :</p><table style="width:100%;border-collapse:collapse;margin:16px 0"><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Titre :</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{title}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Propriété :</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{propertyName}}</td></tr><tr><td style="padding:8px"><strong>Complété par :</strong></td><td style="padding:8px">{{completedBy}}</td></tr></table><p>Si vous remarquez d\'autres problèmes, veuillez soumettre une nouvelle demande.</p><p>Sivan Management</p>'),
+        ru: emailWrap('<p>Следующая заявка на обслуживание выполнена:</p><table style="width:100%;border-collapse:collapse;margin:16px 0"><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Заголовок:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{title}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Объект:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{propertyName}}</td></tr><tr><td style="padding:8px"><strong>Выполнил:</strong></td><td style="padding:8px">{{completedBy}}</td></tr></table><p>Если остались проблемы, подайте новую заявку.</p><p>Sivan Management</p>'),
+      },
+      whatsappBody: {
+        en: 'Maintenance completed: "{{title}}" at {{propertyName}} by {{completedBy}}. If issues remain, please let us know.',
+        he: 'תחזוקה הושלמה: "{{title}}" ב-{{propertyName}} על ידי {{completedBy}}. אם יש עוד בעיות, ספרו לנו.',
+        de: 'Wartung erledigt: "{{title}}" bei {{propertyName}} von {{completedBy}}. Bei weiteren Problemen melden Sie sich.',
+        es: 'Mantenimiento completado: "{{title}}" en {{propertyName}} por {{completedBy}}. Si hay más problemas, avísenos.',
+        fr: 'Maintenance terminée : "{{title}}" à {{propertyName}} par {{completedBy}}. Si d\'autres problèmes persistent, contactez-nous.',
+        ru: 'Обслуживание завершено: "{{title}}" в {{propertyName}}, выполнил {{completedBy}}. При проблемах свяжитесь с нами.',
+      },
+      smsBody: {
+        en: 'Maintenance done: {{title}} at {{propertyName}}. Sivan Management',
+        he: 'תחזוקה הושלמה: {{title}} ב-{{propertyName}}. Sivan Management',
+        de: 'Wartung erledigt: {{title}} bei {{propertyName}}. Sivan Management',
+        es: 'Mantenimiento completado: {{title}} en {{propertyName}}. Sivan Management',
+        fr: 'Maintenance terminée: {{title}} à {{propertyName}}. Sivan Management',
+        ru: 'Обслуживание завершено: {{title}} в {{propertyName}}. Sivan Management',
+      },
+      variables: ['title', 'propertyName', 'completedBy'],
+      isSystem: true,
+    },
+    {
+      slug: 'guest_checkin_instructions',
+      category: 'guest',
+      name: {
+        en: 'Guest Check-in Instructions',
+        he: 'הוראות צ\'ק-אין לאורח',
+        de: 'Check-in Anweisungen',
+        es: 'Instrucciones de Check-in',
+        fr: 'Instructions d\'Arrivée',
+        ru: 'Инструкции по заселению',
+      },
+      description: 'Sent to guest with check-in details before arrival',
+      emailSubject: {
+        en: 'Check-in instructions for {{propertyName}}',
+        he: 'הוראות צ\'ק-אין עבור {{propertyName}}',
+        de: 'Check-in Anweisungen für {{propertyName}}',
+        es: 'Instrucciones de check-in para {{propertyName}}',
+        fr: 'Instructions d\'arrivée pour {{propertyName}}',
+        ru: 'Инструкции по заселению в {{propertyName}}',
+      },
+      emailBody: {
+        en: emailWrap('<p>Dear {{guestName}},</p><p>Welcome! Here are your check-in details for <strong>{{propertyName}}</strong>:</p><table style="width:100%;border-collapse:collapse;margin:16px 0"><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Check-in time:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{checkInTime}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Address:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{address}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>WiFi Name:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{wifiName}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>WiFi Password:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{wifiPassword}}</td></tr><tr><td style="padding:8px"><strong>Access Code:</strong></td><td style="padding:8px">{{accessCode}}</td></tr></table><p>If you need assistance, contact us anytime.</p><p>Best regards,<br>Sivan Management</p>'),
+        he: emailWrap('<div dir="rtl"><p>{{guestName}} שלום,</p><p>ברוכים הבאים! הנה פרטי הצ\'ק-אין עבור <strong>{{propertyName}}</strong>:</p><table style="width:100%;border-collapse:collapse;margin:16px 0"><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>שעת צ\'ק-אין:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{checkInTime}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>כתובת:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{address}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>שם WiFi:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{wifiName}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>סיסמת WiFi:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{wifiPassword}}</td></tr><tr><td style="padding:8px"><strong>קוד כניסה:</strong></td><td style="padding:8px">{{accessCode}}</td></tr></table><p>לכל שאלה, צרו קשר בכל עת.</p><p>בברכה,<br>Sivan Management</p></div>'),
+        de: emailWrap('<p>Liebe/r {{guestName}},</p><p>Willkommen! Hier sind Ihre Check-in-Details für <strong>{{propertyName}}</strong>:</p><table style="width:100%;border-collapse:collapse;margin:16px 0"><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Check-in Zeit:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{checkInTime}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Adresse:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{address}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>WLAN Name:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{wifiName}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>WLAN Passwort:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{wifiPassword}}</td></tr><tr><td style="padding:8px"><strong>Zugangscode:</strong></td><td style="padding:8px">{{accessCode}}</td></tr></table><p>Bei Fragen kontaktieren Sie uns jederzeit.</p><p>Mit freundlichen Grüßen,<br>Sivan Management</p>'),
+        es: emailWrap('<p>Estimado/a {{guestName}},</p><p>¡Bienvenido/a! Aquí están los detalles de check-in para <strong>{{propertyName}}</strong>:</p><table style="width:100%;border-collapse:collapse;margin:16px 0"><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Hora de check-in:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{checkInTime}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Dirección:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{address}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>WiFi:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{wifiName}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Contraseña WiFi:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{wifiPassword}}</td></tr><tr><td style="padding:8px"><strong>Código de acceso:</strong></td><td style="padding:8px">{{accessCode}}</td></tr></table><p>Si necesita ayuda, contáctenos en cualquier momento.</p><p>Saludos cordiales,<br>Sivan Management</p>'),
+        fr: emailWrap('<p>Cher/Chère {{guestName}},</p><p>Bienvenue ! Voici vos détails d\'arrivée pour <strong>{{propertyName}}</strong> :</p><table style="width:100%;border-collapse:collapse;margin:16px 0"><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Heure d\'arrivée :</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{checkInTime}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Adresse :</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{address}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>WiFi :</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{wifiName}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Mot de passe WiFi :</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{wifiPassword}}</td></tr><tr><td style="padding:8px"><strong>Code d\'accès :</strong></td><td style="padding:8px">{{accessCode}}</td></tr></table><p>N\'hésitez pas à nous contacter pour toute question.</p><p>Cordialement,<br>Sivan Management</p>'),
+        ru: emailWrap('<p>Уважаемый(ая) {{guestName}},</p><p>Добро пожаловать! Вот данные для заселения в <strong>{{propertyName}}</strong>:</p><table style="width:100%;border-collapse:collapse;margin:16px 0"><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Время заезда:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{checkInTime}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Адрес:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{address}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>WiFi:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{wifiName}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Пароль WiFi:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{wifiPassword}}</td></tr><tr><td style="padding:8px"><strong>Код доступа:</strong></td><td style="padding:8px">{{accessCode}}</td></tr></table><p>Свяжитесь с нами в любое время при необходимости.</p><p>С уважением,<br>Sivan Management</p>'),
+      },
+      whatsappBody: {
+        en: 'Hi {{guestName}}! Here are your check-in details for {{propertyName}}:\n\nCheck-in: {{checkInTime}}\nAddress: {{address}}\nWiFi: {{wifiName}} / {{wifiPassword}}\nAccess code: {{accessCode}}\n\nSee you soon!',
+        he: 'שלום {{guestName}}! הנה פרטי הצ\'ק-אין עבור {{propertyName}}:\n\nצ\'ק-אין: {{checkInTime}}\nכתובת: {{address}}\nWiFi: {{wifiName}} / {{wifiPassword}}\nקוד כניסה: {{accessCode}}\n\nנתראה בקרוב!',
+        de: 'Hallo {{guestName}}! Hier sind Ihre Check-in-Details für {{propertyName}}:\n\nCheck-in: {{checkInTime}}\nAdresse: {{address}}\nWLAN: {{wifiName}} / {{wifiPassword}}\nZugangscode: {{accessCode}}\n\nBis bald!',
+        es: 'Hola {{guestName}}! Aquí están tus detalles de check-in para {{propertyName}}:\n\nCheck-in: {{checkInTime}}\nDirección: {{address}}\nWiFi: {{wifiName}} / {{wifiPassword}}\nCódigo: {{accessCode}}\n\n¡Hasta pronto!',
+        fr: 'Bonjour {{guestName}} ! Voici vos détails pour {{propertyName}} :\n\nArrivée : {{checkInTime}}\nAdresse : {{address}}\nWiFi : {{wifiName}} / {{wifiPassword}}\nCode : {{accessCode}}\n\nÀ bientôt !',
+        ru: 'Здравствуйте, {{guestName}}! Данные для заселения в {{propertyName}}:\n\nЗаезд: {{checkInTime}}\nАдрес: {{address}}\nWiFi: {{wifiName}} / {{wifiPassword}}\nКод: {{accessCode}}\n\nДо встречи!',
+      },
+      smsBody: {
+        en: 'Check-in {{propertyName}}: {{checkInTime}}, code: {{accessCode}}, WiFi: {{wifiName}}/{{wifiPassword}}. Sivan Mgmt',
+        he: 'צ\'ק-אין {{propertyName}}: {{checkInTime}}, קוד: {{accessCode}}, WiFi: {{wifiName}}/{{wifiPassword}}. Sivan Mgmt',
+        de: 'Check-in {{propertyName}}: {{checkInTime}}, Code: {{accessCode}}, WLAN: {{wifiName}}/{{wifiPassword}}. Sivan Mgmt',
+        es: 'Check-in {{propertyName}}: {{checkInTime}}, código: {{accessCode}}, WiFi: {{wifiName}}/{{wifiPassword}}. Sivan Mgmt',
+        fr: 'Arrivée {{propertyName}}: {{checkInTime}}, code: {{accessCode}}, WiFi: {{wifiName}}/{{wifiPassword}}. Sivan Mgmt',
+        ru: 'Заезд {{propertyName}}: {{checkInTime}}, код: {{accessCode}}, WiFi: {{wifiName}}/{{wifiPassword}}. Sivan Mgmt',
+      },
+      variables: ['guestName', 'propertyName', 'checkInTime', 'address', 'wifiName', 'wifiPassword', 'accessCode'],
+      isSystem: true,
+    },
+    {
+      slug: 'guest_checkout_reminder',
+      category: 'guest',
+      name: {
+        en: 'Guest Check-out Reminder',
+        he: 'תזכורת צ\'ק-אאוט',
+        de: 'Check-out Erinnerung',
+        es: 'Recordatorio de Check-out',
+        fr: 'Rappel de Départ',
+        ru: 'Напоминание о выезде',
+      },
+      description: 'Sent to guest on checkout day',
+      emailSubject: {
+        en: 'Check-out reminder for {{propertyName}}',
+        he: 'תזכורת צ\'ק-אאוט עבור {{propertyName}}',
+        de: 'Check-out Erinnerung für {{propertyName}}',
+        es: 'Recordatorio de check-out para {{propertyName}}',
+        fr: 'Rappel de départ pour {{propertyName}}',
+        ru: 'Напоминание о выезде из {{propertyName}}',
+      },
+      emailBody: {
+        en: emailWrap('<p>Dear {{guestName}},</p><p>Today is your check-out day at <strong>{{propertyName}}</strong>.</p><p><strong>Check-out time:</strong> {{checkOutTime}}</p><p>Please remember to:</p><ul><li>Return all keys/access cards</li><li>Close all windows and doors</li><li>Turn off lights and A/C</li></ul><p>Thank you for staying with us! We hope you enjoyed your visit and would love to welcome you back.</p><p>Best regards,<br>Sivan Management</p>'),
+        he: emailWrap('<div dir="rtl"><p>{{guestName}} שלום,</p><p>היום הוא יום הצ\'ק-אאוט שלך ב-<strong>{{propertyName}}</strong>.</p><p><strong>שעת צ\'ק-אאוט:</strong> {{checkOutTime}}</p><p>אנא זכור/י:</p><ul><li>להחזיר את כל המפתחות</li><li>לסגור חלונות ודלתות</li><li>לכבות אורות ומזגן</li></ul><p>תודה ששהית איתנו! מקווים שנהנית ונשמח לארח שוב.</p><p>בברכה,<br>Sivan Management</p></div>'),
+        de: emailWrap('<p>Liebe/r {{guestName}},</p><p>Heute ist Ihr Check-out-Tag bei <strong>{{propertyName}}</strong>.</p><p><strong>Check-out Zeit:</strong> {{checkOutTime}}</p><p>Bitte denken Sie daran:</p><ul><li>Alle Schlüssel zurückgeben</li><li>Fenster und Türen schließen</li><li>Licht und Klimaanlage ausschalten</li></ul><p>Vielen Dank für Ihren Aufenthalt! Wir freuen uns auf ein Wiedersehen.</p><p>Mit freundlichen Grüßen,<br>Sivan Management</p>'),
+        es: emailWrap('<p>Estimado/a {{guestName}},</p><p>Hoy es tu día de check-out en <strong>{{propertyName}}</strong>.</p><p><strong>Hora de check-out:</strong> {{checkOutTime}}</p><p>Por favor recuerda:</p><ul><li>Devolver todas las llaves</li><li>Cerrar ventanas y puertas</li><li>Apagar luces y aire acondicionado</li></ul><p>¡Gracias por hospedarte con nosotros! Esperamos verte pronto.</p><p>Saludos cordiales,<br>Sivan Management</p>'),
+        fr: emailWrap('<p>Cher/Chère {{guestName}},</p><p>Aujourd\'hui est votre jour de départ de <strong>{{propertyName}}</strong>.</p><p><strong>Heure de départ :</strong> {{checkOutTime}}</p><p>N\'oubliez pas de :</p><ul><li>Rendre toutes les clés</li><li>Fermer les fenêtres et portes</li><li>Éteindre les lumières et la climatisation</li></ul><p>Merci pour votre séjour ! Nous espérons vous revoir bientôt.</p><p>Cordialement,<br>Sivan Management</p>'),
+        ru: emailWrap('<p>Уважаемый(ая) {{guestName}},</p><p>Сегодня день Вашего выезда из <strong>{{propertyName}}</strong>.</p><p><strong>Время выезда:</strong> {{checkOutTime}}</p><p>Пожалуйста, не забудьте:</p><ul><li>Вернуть все ключи</li><li>Закрыть окна и двери</li><li>Выключить свет и кондиционер</li></ul><p>Спасибо, что были нашим гостем! Надеемся увидеть Вас снова.</p><p>С уважением,<br>Sivan Management</p>'),
+      },
+      whatsappBody: {
+        en: 'Hi {{guestName}}, check-out today at {{propertyName}} by {{checkOutTime}}. Please return keys and close windows. Thank you for staying with us!',
+        he: 'שלום {{guestName}}, צ\'ק-אאוט היום ב-{{propertyName}} עד {{checkOutTime}}. אנא החזר/י מפתחות וסגור/י חלונות. תודה ששהית איתנו!',
+        de: 'Hallo {{guestName}}, Check-out heute bei {{propertyName}} bis {{checkOutTime}}. Bitte Schlüssel zurückgeben und Fenster schließen. Danke für Ihren Aufenthalt!',
+        es: 'Hola {{guestName}}, check-out hoy en {{propertyName}} hasta las {{checkOutTime}}. Por favor devuelve las llaves. ¡Gracias por tu estancia!',
+        fr: 'Bonjour {{guestName}}, départ aujourd\'hui de {{propertyName}} avant {{checkOutTime}}. Merci de rendre les clés. Merci pour votre séjour !',
+        ru: 'Здравствуйте, {{guestName}}, выезд сегодня из {{propertyName}} до {{checkOutTime}}. Верните ключи и закройте окна. Спасибо за визит!',
+      },
+      smsBody: {
+        en: 'Check-out today {{propertyName}} by {{checkOutTime}}. Return keys. Thank you! Sivan Management',
+        he: 'צ\'ק-אאוט היום {{propertyName}} עד {{checkOutTime}}. החזר מפתחות. תודה! Sivan Management',
+        de: 'Check-out heute {{propertyName}} bis {{checkOutTime}}. Schlüssel zurück. Danke! Sivan Management',
+        es: 'Check-out hoy {{propertyName}} hasta {{checkOutTime}}. Devolver llaves. ¡Gracias! Sivan Management',
+        fr: 'Départ aujourd\'hui {{propertyName}} avant {{checkOutTime}}. Rendre les clés. Merci ! Sivan Management',
+        ru: 'Выезд сегодня {{propertyName}} до {{checkOutTime}}. Вернуть ключи. Спасибо! Sivan Management',
+      },
+      variables: ['guestName', 'propertyName', 'checkOutTime'],
+      isSystem: true,
+    },
+    {
+      slug: 'owner_monthly_report',
+      category: 'payment',
+      name: {
+        en: 'Owner Monthly Report',
+        he: 'דוח חודשי לבעלים',
+        de: 'Monatlicher Eigentümerbericht',
+        es: 'Informe Mensual del Propietario',
+        fr: 'Rapport Mensuel Propriétaire',
+        ru: 'Ежемесячный отчёт владельца',
+      },
+      description: 'Monthly financial summary sent to property owners',
+      emailSubject: {
+        en: '{{month}} Monthly Report for {{propertyName}}',
+        he: 'דוח חודשי ל-{{month}} עבור {{propertyName}}',
+        de: 'Monatsbericht {{month}} für {{propertyName}}',
+        es: 'Informe mensual de {{month}} para {{propertyName}}',
+        fr: 'Rapport mensuel {{month}} pour {{propertyName}}',
+        ru: 'Ежемесячный отчёт за {{month}} по {{propertyName}}',
+      },
+      emailBody: {
+        en: emailWrap('<p>Dear {{ownerName}},</p><p>Here is your monthly report for <strong>{{propertyName}}</strong> - {{month}}:</p><table style="width:100%;border-collapse:collapse;margin:16px 0"><tr style="background:#f9f9f9"><td style="padding:12px;border-bottom:1px solid #eee"><strong>Total Income:</strong></td><td style="padding:12px;border-bottom:1px solid #eee;text-align:right">&euro;{{totalIncome}}</td></tr><tr><td style="padding:12px;border-bottom:1px solid #eee"><strong>Total Expenses:</strong></td><td style="padding:12px;border-bottom:1px solid #eee;text-align:right">&euro;{{totalExpenses}}</td></tr><tr><td style="padding:12px;border-bottom:1px solid #eee"><strong>Management Fee:</strong></td><td style="padding:12px;border-bottom:1px solid #eee;text-align:right">&euro;{{managementFee}}</td></tr><tr style="background:#f0ebfa"><td style="padding:12px;font-size:16px"><strong>Net Payout:</strong></td><td style="padding:12px;text-align:right;font-size:16px;color:#6b38d4"><strong>&euro;{{netPayout}}</strong></td></tr></table><p><strong>Occupancy Rate:</strong> {{occupancyRate}}%<br><strong>Total Nights Booked:</strong> {{nightsBooked}}</p><p>Log in to your portal for the full report.</p><p>Best regards,<br>Sivan Management</p>'),
+        he: emailWrap('<div dir="rtl"><p>{{ownerName}} שלום,</p><p>הנה הדוח החודשי שלך עבור <strong>{{propertyName}}</strong> - {{month}}:</p><table style="width:100%;border-collapse:collapse;margin:16px 0"><tr style="background:#f9f9f9"><td style="padding:12px;border-bottom:1px solid #eee"><strong>הכנסות:</strong></td><td style="padding:12px;border-bottom:1px solid #eee;text-align:left">&euro;{{totalIncome}}</td></tr><tr><td style="padding:12px;border-bottom:1px solid #eee"><strong>הוצאות:</strong></td><td style="padding:12px;border-bottom:1px solid #eee;text-align:left">&euro;{{totalExpenses}}</td></tr><tr><td style="padding:12px;border-bottom:1px solid #eee"><strong>עמלת ניהול:</strong></td><td style="padding:12px;border-bottom:1px solid #eee;text-align:left">&euro;{{managementFee}}</td></tr><tr style="background:#f0ebfa"><td style="padding:12px;font-size:16px"><strong>תשלום נטו:</strong></td><td style="padding:12px;text-align:left;font-size:16px;color:#6b38d4"><strong>&euro;{{netPayout}}</strong></td></tr></table><p><strong>שיעור תפוסה:</strong> {{occupancyRate}}%<br><strong>לילות שהוזמנו:</strong> {{nightsBooked}}</p><p>היכנס לפורטל שלך לדוח המלא.</p><p>בברכה,<br>Sivan Management</p></div>'),
+        de: emailWrap('<p>Liebe/r {{ownerName}},</p><p>Hier ist Ihr Monatsbericht für <strong>{{propertyName}}</strong> - {{month}}:</p><table style="width:100%;border-collapse:collapse;margin:16px 0"><tr style="background:#f9f9f9"><td style="padding:12px;border-bottom:1px solid #eee"><strong>Gesamteinnahmen:</strong></td><td style="padding:12px;border-bottom:1px solid #eee;text-align:right">&euro;{{totalIncome}}</td></tr><tr><td style="padding:12px;border-bottom:1px solid #eee"><strong>Gesamtausgaben:</strong></td><td style="padding:12px;border-bottom:1px solid #eee;text-align:right">&euro;{{totalExpenses}}</td></tr><tr><td style="padding:12px;border-bottom:1px solid #eee"><strong>Verwaltungsgebühr:</strong></td><td style="padding:12px;border-bottom:1px solid #eee;text-align:right">&euro;{{managementFee}}</td></tr><tr style="background:#f0ebfa"><td style="padding:12px;font-size:16px"><strong>Nettobetrag:</strong></td><td style="padding:12px;text-align:right;font-size:16px;color:#6b38d4"><strong>&euro;{{netPayout}}</strong></td></tr></table><p><strong>Auslastung:</strong> {{occupancyRate}}%<br><strong>Gebuchte Nächte:</strong> {{nightsBooked}}</p><p>Melden Sie sich im Portal für den vollständigen Bericht an.</p><p>Mit freundlichen Grüßen,<br>Sivan Management</p>'),
+        es: emailWrap('<p>Estimado/a {{ownerName}},</p><p>Aquí está su informe mensual para <strong>{{propertyName}}</strong> - {{month}}:</p><table style="width:100%;border-collapse:collapse;margin:16px 0"><tr style="background:#f9f9f9"><td style="padding:12px;border-bottom:1px solid #eee"><strong>Ingresos totales:</strong></td><td style="padding:12px;border-bottom:1px solid #eee;text-align:right">&euro;{{totalIncome}}</td></tr><tr><td style="padding:12px;border-bottom:1px solid #eee"><strong>Gastos totales:</strong></td><td style="padding:12px;border-bottom:1px solid #eee;text-align:right">&euro;{{totalExpenses}}</td></tr><tr><td style="padding:12px;border-bottom:1px solid #eee"><strong>Comisión de gestión:</strong></td><td style="padding:12px;border-bottom:1px solid #eee;text-align:right">&euro;{{managementFee}}</td></tr><tr style="background:#f0ebfa"><td style="padding:12px;font-size:16px"><strong>Pago neto:</strong></td><td style="padding:12px;text-align:right;font-size:16px;color:#6b38d4"><strong>&euro;{{netPayout}}</strong></td></tr></table><p><strong>Tasa de ocupación:</strong> {{occupancyRate}}%<br><strong>Noches reservadas:</strong> {{nightsBooked}}</p><p>Inicie sesión en su portal para el informe completo.</p><p>Saludos cordiales,<br>Sivan Management</p>'),
+        fr: emailWrap('<p>Cher/Chère {{ownerName}},</p><p>Voici votre rapport mensuel pour <strong>{{propertyName}}</strong> - {{month}} :</p><table style="width:100%;border-collapse:collapse;margin:16px 0"><tr style="background:#f9f9f9"><td style="padding:12px;border-bottom:1px solid #eee"><strong>Revenus totaux :</strong></td><td style="padding:12px;border-bottom:1px solid #eee;text-align:right">&euro;{{totalIncome}}</td></tr><tr><td style="padding:12px;border-bottom:1px solid #eee"><strong>Dépenses totales :</strong></td><td style="padding:12px;border-bottom:1px solid #eee;text-align:right">&euro;{{totalExpenses}}</td></tr><tr><td style="padding:12px;border-bottom:1px solid #eee"><strong>Frais de gestion :</strong></td><td style="padding:12px;border-bottom:1px solid #eee;text-align:right">&euro;{{managementFee}}</td></tr><tr style="background:#f0ebfa"><td style="padding:12px;font-size:16px"><strong>Paiement net :</strong></td><td style="padding:12px;text-align:right;font-size:16px;color:#6b38d4"><strong>&euro;{{netPayout}}</strong></td></tr></table><p><strong>Taux d\'occupation :</strong> {{occupancyRate}}%<br><strong>Nuits réservées :</strong> {{nightsBooked}}</p><p>Connectez-vous à votre portail pour le rapport complet.</p><p>Cordialement,<br>Sivan Management</p>'),
+        ru: emailWrap('<p>Уважаемый(ая) {{ownerName}},</p><p>Вот Ваш ежемесячный отчёт по <strong>{{propertyName}}</strong> за {{month}}:</p><table style="width:100%;border-collapse:collapse;margin:16px 0"><tr style="background:#f9f9f9"><td style="padding:12px;border-bottom:1px solid #eee"><strong>Общий доход:</strong></td><td style="padding:12px;border-bottom:1px solid #eee;text-align:right">&euro;{{totalIncome}}</td></tr><tr><td style="padding:12px;border-bottom:1px solid #eee"><strong>Общие расходы:</strong></td><td style="padding:12px;border-bottom:1px solid #eee;text-align:right">&euro;{{totalExpenses}}</td></tr><tr><td style="padding:12px;border-bottom:1px solid #eee"><strong>Комиссия за управление:</strong></td><td style="padding:12px;border-bottom:1px solid #eee;text-align:right">&euro;{{managementFee}}</td></tr><tr style="background:#f0ebfa"><td style="padding:12px;font-size:16px"><strong>Чистая выплата:</strong></td><td style="padding:12px;text-align:right;font-size:16px;color:#6b38d4"><strong>&euro;{{netPayout}}</strong></td></tr></table><p><strong>Заполняемость:</strong> {{occupancyRate}}%<br><strong>Забронировано ночей:</strong> {{nightsBooked}}</p><p>Войдите в портал для полного отчёта.</p><p>С уважением,<br>Sivan Management</p>'),
+      },
+      whatsappBody: {
+        en: 'Hi {{ownerName}}, your {{month}} report for {{propertyName}}: Income EUR {{totalIncome}}, Expenses EUR {{totalExpenses}}, Net Payout EUR {{netPayout}}. Occupancy: {{occupancyRate}}%. Log in for details.',
+        he: 'שלום {{ownerName}}, דוח {{month}} עבור {{propertyName}}: הכנסות EUR {{totalIncome}}, הוצאות EUR {{totalExpenses}}, נטו EUR {{netPayout}}. תפוסה: {{occupancyRate}}%. היכנס לפרטים.',
+        de: 'Hallo {{ownerName}}, Ihr {{month}}-Bericht für {{propertyName}}: Einnahmen EUR {{totalIncome}}, Ausgaben EUR {{totalExpenses}}, Netto EUR {{netPayout}}. Auslastung: {{occupancyRate}}%.',
+        es: 'Hola {{ownerName}}, informe de {{month}} para {{propertyName}}: Ingresos EUR {{totalIncome}}, Gastos EUR {{totalExpenses}}, Neto EUR {{netPayout}}. Ocupación: {{occupancyRate}}%.',
+        fr: 'Bonjour {{ownerName}}, rapport {{month}} pour {{propertyName}} : Revenus EUR {{totalIncome}}, Dépenses EUR {{totalExpenses}}, Net EUR {{netPayout}}. Occupation : {{occupancyRate}}%.',
+        ru: 'Здравствуйте, {{ownerName}}, отчёт за {{month}} по {{propertyName}}: Доход EUR {{totalIncome}}, Расходы EUR {{totalExpenses}}, Нетто EUR {{netPayout}}. Заполняемость: {{occupancyRate}}%.',
+      },
+      smsBody: {
+        en: '{{month}} report {{propertyName}}: Income EUR {{totalIncome}}, Net EUR {{netPayout}}. Sivan Management',
+        he: 'דוח {{month}} {{propertyName}}: הכנסות EUR {{totalIncome}}, נטו EUR {{netPayout}}. Sivan Management',
+        de: '{{month}} Bericht {{propertyName}}: Einnahmen EUR {{totalIncome}}, Netto EUR {{netPayout}}. Sivan Management',
+        es: 'Informe {{month}} {{propertyName}}: Ingresos EUR {{totalIncome}}, Neto EUR {{netPayout}}. Sivan Management',
+        fr: 'Rapport {{month}} {{propertyName}} : Revenus EUR {{totalIncome}}, Net EUR {{netPayout}}. Sivan Management',
+        ru: 'Отчёт {{month}} {{propertyName}}: Доход EUR {{totalIncome}}, Нетто EUR {{netPayout}}. Sivan Management',
+      },
+      variables: ['ownerName', 'propertyName', 'month', 'totalIncome', 'totalExpenses', 'managementFee', 'netPayout', 'occupancyRate', 'nightsBooked'],
+      isSystem: true,
+    },
+    {
+      slug: 'welcome_new_user',
+      category: 'system',
+      name: {
+        en: 'Welcome New User',
+        he: 'ברוכים הבאים למשתמש חדש',
+        de: 'Willkommen Neuer Benutzer',
+        es: 'Bienvenido Nuevo Usuario',
+        fr: 'Bienvenue Nouvel Utilisateur',
+        ru: 'Добро пожаловать',
+      },
+      description: 'Sent when a new user account is created',
+      emailSubject: {
+        en: 'Welcome to Sivan Management, {{userName}}!',
+        he: 'ברוכים הבאים ל-Sivan Management, {{userName}}!',
+        de: 'Willkommen bei Sivan Management, {{userName}}!',
+        es: '¡Bienvenido a Sivan Management, {{userName}}!',
+        fr: 'Bienvenue chez Sivan Management, {{userName}} !',
+        ru: 'Добро пожаловать в Sivan Management, {{userName}}!',
+      },
+      emailBody: {
+        en: emailWrap('<p>Dear {{userName}},</p><p>Welcome to <strong>Sivan Management</strong>! Your account has been created successfully.</p><p>You can now log in to your portal to:</p><ul><li>View your properties and bookings</li><li>Access financial reports</li><li>Manage maintenance requests</li><li>Communicate with guests and staff</li></ul><p><a href="{{portalUrl}}" style="display:inline-block;padding:12px 24px;background:#6b38d4;color:#ffffff;text-decoration:none;border-radius:6px;margin:16px 0">Log In to Your Portal</a></p><p>Best regards,<br>Sivan Management Team</p>'),
+        he: emailWrap('<div dir="rtl"><p>{{userName}} שלום,</p><p>ברוכים הבאים ל-<strong>Sivan Management</strong>! החשבון שלך נוצר בהצלחה.</p><p>כעת תוכל/י להיכנס לפורטל כדי:</p><ul><li>לצפות בנכסים והזמנות</li><li>לגשת לדוחות כספיים</li><li>לנהל בקשות תחזוקה</li><li>לתקשר עם אורחים וצוות</li></ul><p><a href="{{portalUrl}}" style="display:inline-block;padding:12px 24px;background:#6b38d4;color:#ffffff;text-decoration:none;border-radius:6px;margin:16px 0">כניסה לפורטל</a></p><p>בברכה,<br>צוות Sivan Management</p></div>'),
+        de: emailWrap('<p>Liebe/r {{userName}},</p><p>Willkommen bei <strong>Sivan Management</strong>! Ihr Konto wurde erfolgreich erstellt.</p><p>Sie können sich jetzt in Ihrem Portal anmelden um:</p><ul><li>Immobilien und Buchungen einzusehen</li><li>Finanzberichte abzurufen</li><li>Wartungsanfragen zu verwalten</li><li>Mit Gästen und Personal zu kommunizieren</li></ul><p><a href="{{portalUrl}}" style="display:inline-block;padding:12px 24px;background:#6b38d4;color:#ffffff;text-decoration:none;border-radius:6px;margin:16px 0">Zum Portal</a></p><p>Mit freundlichen Grüßen,<br>Sivan Management Team</p>'),
+        es: emailWrap('<p>Estimado/a {{userName}},</p><p>¡Bienvenido/a a <strong>Sivan Management</strong>! Tu cuenta ha sido creada exitosamente.</p><p>Ahora puedes iniciar sesión en tu portal para:</p><ul><li>Ver tus propiedades y reservas</li><li>Acceder a informes financieros</li><li>Gestionar solicitudes de mantenimiento</li><li>Comunicarte con huéspedes y personal</li></ul><p><a href="{{portalUrl}}" style="display:inline-block;padding:12px 24px;background:#6b38d4;color:#ffffff;text-decoration:none;border-radius:6px;margin:16px 0">Iniciar Sesión</a></p><p>Saludos cordiales,<br>Equipo Sivan Management</p>'),
+        fr: emailWrap('<p>Cher/Chère {{userName}},</p><p>Bienvenue chez <strong>Sivan Management</strong> ! Votre compte a été créé avec succès.</p><p>Vous pouvez maintenant vous connecter à votre portail pour :</p><ul><li>Voir vos propriétés et réservations</li><li>Accéder aux rapports financiers</li><li>Gérer les demandes de maintenance</li><li>Communiquer avec les invités et le personnel</li></ul><p><a href="{{portalUrl}}" style="display:inline-block;padding:12px 24px;background:#6b38d4;color:#ffffff;text-decoration:none;border-radius:6px;margin:16px 0">Se Connecter</a></p><p>Cordialement,<br>L\'équipe Sivan Management</p>'),
+        ru: emailWrap('<p>Уважаемый(ая) {{userName}},</p><p>Добро пожаловать в <strong>Sivan Management</strong>! Ваш аккаунт успешно создан.</p><p>Теперь Вы можете войти в портал, чтобы:</p><ul><li>Просматривать объекты и бронирования</li><li>Получать финансовые отчёты</li><li>Управлять заявками на обслуживание</li><li>Общаться с гостями и персоналом</li></ul><p><a href="{{portalUrl}}" style="display:inline-block;padding:12px 24px;background:#6b38d4;color:#ffffff;text-decoration:none;border-radius:6px;margin:16px 0">Войти в Портал</a></p><p>С уважением,<br>Команда Sivan Management</p>'),
+      },
+      whatsappBody: {
+        en: 'Welcome to Sivan Management, {{userName}}! Your account is ready. Log in at {{portalUrl}} to get started.',
+        he: 'ברוכים הבאים ל-Sivan Management, {{userName}}! החשבון מוכן. היכנס ב-{{portalUrl}} להתחלה.',
+        de: 'Willkommen bei Sivan Management, {{userName}}! Ihr Konto ist bereit. Melden Sie sich an: {{portalUrl}}',
+        es: '¡Bienvenido a Sivan Management, {{userName}}! Tu cuenta está lista. Inicia sesión en {{portalUrl}}',
+        fr: 'Bienvenue chez Sivan Management, {{userName}} ! Votre compte est prêt. Connectez-vous : {{portalUrl}}',
+        ru: 'Добро пожаловать в Sivan Management, {{userName}}! Ваш аккаунт готов. Войдите: {{portalUrl}}',
+      },
+      smsBody: {
+        en: 'Welcome to Sivan Management, {{userName}}! Log in at {{portalUrl}}',
+        he: 'ברוכים הבאים ל-Sivan Management, {{userName}}! היכנס ב-{{portalUrl}}',
+        de: 'Willkommen bei Sivan Management, {{userName}}! Anmelden: {{portalUrl}}',
+        es: '¡Bienvenido a Sivan Management, {{userName}}! Inicia sesión: {{portalUrl}}',
+        fr: 'Bienvenue chez Sivan Management, {{userName}} ! Connexion : {{portalUrl}}',
+        ru: 'Добро пожаловать, {{userName}}! Войти: {{portalUrl}}',
+      },
+      variables: ['userName', 'portalUrl'],
+      isSystem: true,
+    },
+    {
+      slug: 'password_reset',
+      category: 'system',
+      name: {
+        en: 'Password Reset',
+        he: 'איפוס סיסמה',
+        de: 'Passwort zurücksetzen',
+        es: 'Restablecimiento de Contraseña',
+        fr: 'Réinitialisation du Mot de Passe',
+        ru: 'Сброс пароля',
+      },
+      description: 'Sent when a password reset is requested',
+      emailSubject: {
+        en: 'Reset your password - Sivan Management',
+        he: 'איפוס סיסמה - Sivan Management',
+        de: 'Passwort zurücksetzen - Sivan Management',
+        es: 'Restablecer contraseña - Sivan Management',
+        fr: 'Réinitialiser votre mot de passe - Sivan Management',
+        ru: 'Сброс пароля - Sivan Management',
+      },
+      emailBody: {
+        en: emailWrap('<p>Dear {{userName}},</p><p>We received a request to reset your password.</p><p>Click the button below to set a new password. This link expires in {{expiryHours}} hours.</p><p><a href="{{resetUrl}}" style="display:inline-block;padding:12px 24px;background:#6b38d4;color:#ffffff;text-decoration:none;border-radius:6px;margin:16px 0">Reset Password</a></p><p>If you did not request this, you can safely ignore this email.</p><p>Best regards,<br>Sivan Management</p>'),
+        he: emailWrap('<div dir="rtl"><p>{{userName}} שלום,</p><p>קיבלנו בקשה לאיפוס הסיסמה שלך.</p><p>לחץ/י על הכפתור למטה כדי להגדיר סיסמה חדשה. הקישור תקף ל-{{expiryHours}} שעות.</p><p><a href="{{resetUrl}}" style="display:inline-block;padding:12px 24px;background:#6b38d4;color:#ffffff;text-decoration:none;border-radius:6px;margin:16px 0">איפוס סיסמה</a></p><p>אם לא ביקשת זאת, ניתן להתעלם מהודעה זו.</p><p>בברכה,<br>Sivan Management</p></div>'),
+        de: emailWrap('<p>Liebe/r {{userName}},</p><p>Wir haben eine Anfrage zum Zurücksetzen Ihres Passworts erhalten.</p><p>Klicken Sie auf die Schaltfläche unten, um ein neues Passwort festzulegen. Der Link ist {{expiryHours}} Stunden gültig.</p><p><a href="{{resetUrl}}" style="display:inline-block;padding:12px 24px;background:#6b38d4;color:#ffffff;text-decoration:none;border-radius:6px;margin:16px 0">Passwort Zurücksetzen</a></p><p>Wenn Sie dies nicht angefordert haben, können Sie diese E-Mail ignorieren.</p><p>Mit freundlichen Grüßen,<br>Sivan Management</p>'),
+        es: emailWrap('<p>Estimado/a {{userName}},</p><p>Recibimos una solicitud para restablecer tu contraseña.</p><p>Haz clic en el botón de abajo para establecer una nueva contraseña. Este enlace expira en {{expiryHours}} horas.</p><p><a href="{{resetUrl}}" style="display:inline-block;padding:12px 24px;background:#6b38d4;color:#ffffff;text-decoration:none;border-radius:6px;margin:16px 0">Restablecer Contraseña</a></p><p>Si no solicitaste esto, puedes ignorar este correo.</p><p>Saludos cordiales,<br>Sivan Management</p>'),
+        fr: emailWrap('<p>Cher/Chère {{userName}},</p><p>Nous avons reçu une demande de réinitialisation de votre mot de passe.</p><p>Cliquez sur le bouton ci-dessous pour définir un nouveau mot de passe. Ce lien expire dans {{expiryHours}} heures.</p><p><a href="{{resetUrl}}" style="display:inline-block;padding:12px 24px;background:#6b38d4;color:#ffffff;text-decoration:none;border-radius:6px;margin:16px 0">Réinitialiser</a></p><p>Si vous n\'êtes pas à l\'origine de cette demande, ignorez cet e-mail.</p><p>Cordialement,<br>Sivan Management</p>'),
+        ru: emailWrap('<p>Уважаемый(ая) {{userName}},</p><p>Мы получили запрос на сброс Вашего пароля.</p><p>Нажмите кнопку ниже, чтобы установить новый пароль. Ссылка действительна {{expiryHours}} часов.</p><p><a href="{{resetUrl}}" style="display:inline-block;padding:12px 24px;background:#6b38d4;color:#ffffff;text-decoration:none;border-radius:6px;margin:16px 0">Сбросить Пароль</a></p><p>Если Вы не запрашивали сброс, проигнорируйте это письмо.</p><p>С уважением,<br>Sivan Management</p>'),
+      },
+      whatsappBody: {
+        en: 'Password reset requested for your Sivan Management account. Reset here: {{resetUrl}} (expires in {{expiryHours}} hours). Ignore if not requested.',
+        he: 'התבקש איפוס סיסמה לחשבון Sivan Management שלך. איפוס כאן: {{resetUrl}} (תקף {{expiryHours}} שעות). התעלם אם לא ביקשת.',
+        de: 'Passwort-Reset für Ihr Sivan Management Konto angefordert. Zurücksetzen: {{resetUrl}} (gültig {{expiryHours}} Std). Ignorieren falls nicht angefordert.',
+        es: 'Se solicitó restablecer la contraseña de tu cuenta Sivan Management. Restablecer: {{resetUrl}} (expira en {{expiryHours}} horas). Ignora si no lo solicitaste.',
+        fr: 'Réinitialisation demandée pour votre compte Sivan Management. Réinitialiser : {{resetUrl}} (expire dans {{expiryHours}} h). Ignorez si non demandé.',
+        ru: 'Запрошен сброс пароля для аккаунта Sivan Management. Сбросить: {{resetUrl}} (действует {{expiryHours}} ч). Игнорируйте, если не запрашивали.',
+      },
+      smsBody: {
+        en: 'Sivan Management password reset: {{resetUrl}} (expires {{expiryHours}}h)',
+        he: 'איפוס סיסמה Sivan Management: {{resetUrl}} (תקף {{expiryHours}} שעות)',
+        de: 'Sivan Management Passwort-Reset: {{resetUrl}} (gültig {{expiryHours}}h)',
+        es: 'Restablecer contraseña Sivan Management: {{resetUrl}} (expira {{expiryHours}}h)',
+        fr: 'Réinitialisation Sivan Management: {{resetUrl}} (expire {{expiryHours}}h)',
+        ru: 'Сброс пароля Sivan Management: {{resetUrl}} (действует {{expiryHours}}ч)',
+      },
+      variables: ['userName', 'resetUrl', 'expiryHours'],
+      isSystem: true,
+    },
+    {
+      slug: 'expense_approval_request',
+      category: 'payment',
+      name: {
+        en: 'Expense Approval Request',
+        he: 'בקשת אישור הוצאה',
+        de: 'Ausgabengenehmigungsanfrage',
+        es: 'Solicitud de Aprobación de Gasto',
+        fr: 'Demande d\'Approbation de Dépense',
+        ru: 'Запрос на одобрение расходов',
+      },
+      description: 'Sent when an expense requires approval',
+      emailSubject: {
+        en: 'Expense approval needed: EUR {{amount}} for {{propertyName}}',
+        he: 'נדרש אישור הוצאה: EUR {{amount}} עבור {{propertyName}}',
+        de: 'Ausgabengenehmigung erforderlich: EUR {{amount}} für {{propertyName}}',
+        es: 'Aprobación de gasto necesaria: EUR {{amount}} para {{propertyName}}',
+        fr: 'Approbation de dépense requise : EUR {{amount}} pour {{propertyName}}',
+        ru: 'Требуется одобрение расходов: EUR {{amount}} для {{propertyName}}',
+      },
+      emailBody: {
+        en: emailWrap('<p>Dear {{approverName}},</p><p>An expense requires your approval:</p><table style="width:100%;border-collapse:collapse;margin:16px 0"><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Amount:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">&euro;{{amount}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Property:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{propertyName}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Category:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{expenseCategory}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Description:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{description}}</td></tr><tr><td style="padding:8px"><strong>Submitted by:</strong></td><td style="padding:8px">{{submittedBy}}</td></tr></table><p><a href="{{approvalUrl}}" style="display:inline-block;padding:12px 24px;background:#6b38d4;color:#ffffff;text-decoration:none;border-radius:6px;margin:16px 0">Review & Approve</a></p><p>Sivan Management</p>'),
+        he: emailWrap('<div dir="rtl"><p>{{approverName}} שלום,</p><p>הוצאה דורשת את אישורך:</p><table style="width:100%;border-collapse:collapse;margin:16px 0"><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>סכום:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">&euro;{{amount}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>נכס:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{propertyName}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>קטגוריה:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{expenseCategory}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>תיאור:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{description}}</td></tr><tr><td style="padding:8px"><strong>הוגש על ידי:</strong></td><td style="padding:8px">{{submittedBy}}</td></tr></table><p><a href="{{approvalUrl}}" style="display:inline-block;padding:12px 24px;background:#6b38d4;color:#ffffff;text-decoration:none;border-radius:6px;margin:16px 0">בדיקה ואישור</a></p><p>Sivan Management</p></div>'),
+        de: emailWrap('<p>Liebe/r {{approverName}},</p><p>Eine Ausgabe erfordert Ihre Genehmigung:</p><table style="width:100%;border-collapse:collapse;margin:16px 0"><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Betrag:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">&euro;{{amount}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Objekt:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{propertyName}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Kategorie:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{expenseCategory}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Beschreibung:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{description}}</td></tr><tr><td style="padding:8px"><strong>Eingereicht von:</strong></td><td style="padding:8px">{{submittedBy}}</td></tr></table><p><a href="{{approvalUrl}}" style="display:inline-block;padding:12px 24px;background:#6b38d4;color:#ffffff;text-decoration:none;border-radius:6px;margin:16px 0">Prüfen & Genehmigen</a></p><p>Sivan Management</p>'),
+        es: emailWrap('<p>Estimado/a {{approverName}},</p><p>Un gasto requiere su aprobación:</p><table style="width:100%;border-collapse:collapse;margin:16px 0"><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Monto:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">&euro;{{amount}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Propiedad:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{propertyName}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Categoría:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{expenseCategory}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Descripción:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{description}}</td></tr><tr><td style="padding:8px"><strong>Enviado por:</strong></td><td style="padding:8px">{{submittedBy}}</td></tr></table><p><a href="{{approvalUrl}}" style="display:inline-block;padding:12px 24px;background:#6b38d4;color:#ffffff;text-decoration:none;border-radius:6px;margin:16px 0">Revisar y Aprobar</a></p><p>Sivan Management</p>'),
+        fr: emailWrap('<p>Cher/Chère {{approverName}},</p><p>Une dépense nécessite votre approbation :</p><table style="width:100%;border-collapse:collapse;margin:16px 0"><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Montant :</strong></td><td style="padding:8px;border-bottom:1px solid #eee">&euro;{{amount}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Propriété :</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{propertyName}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Catégorie :</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{expenseCategory}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Description :</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{description}}</td></tr><tr><td style="padding:8px"><strong>Soumis par :</strong></td><td style="padding:8px">{{submittedBy}}</td></tr></table><p><a href="{{approvalUrl}}" style="display:inline-block;padding:12px 24px;background:#6b38d4;color:#ffffff;text-decoration:none;border-radius:6px;margin:16px 0">Examiner & Approuver</a></p><p>Sivan Management</p>'),
+        ru: emailWrap('<p>Уважаемый(ая) {{approverName}},</p><p>Расход требует Вашего одобрения:</p><table style="width:100%;border-collapse:collapse;margin:16px 0"><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Сумма:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">&euro;{{amount}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Объект:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{propertyName}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Категория:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{expenseCategory}}</td></tr><tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Описание:</strong></td><td style="padding:8px;border-bottom:1px solid #eee">{{description}}</td></tr><tr><td style="padding:8px"><strong>Подал:</strong></td><td style="padding:8px">{{submittedBy}}</td></tr></table><p><a href="{{approvalUrl}}" style="display:inline-block;padding:12px 24px;background:#6b38d4;color:#ffffff;text-decoration:none;border-radius:6px;margin:16px 0">Проверить и Одобрить</a></p><p>Sivan Management</p>'),
+      },
+      whatsappBody: {
+        en: 'Expense approval needed: EUR {{amount}} for {{propertyName}} ({{expenseCategory}}). Submitted by {{submittedBy}}. Review: {{approvalUrl}}',
+        he: 'נדרש אישור הוצאה: EUR {{amount}} עבור {{propertyName}} ({{expenseCategory}}). הוגש ע"י {{submittedBy}}. בדיקה: {{approvalUrl}}',
+        de: 'Ausgabengenehmigung: EUR {{amount}} für {{propertyName}} ({{expenseCategory}}). Von {{submittedBy}}. Prüfen: {{approvalUrl}}',
+        es: 'Aprobación de gasto: EUR {{amount}} para {{propertyName}} ({{expenseCategory}}). Por {{submittedBy}}. Revisar: {{approvalUrl}}',
+        fr: 'Approbation de dépense : EUR {{amount}} pour {{propertyName}} ({{expenseCategory}}). Par {{submittedBy}}. Examiner : {{approvalUrl}}',
+        ru: 'Одобрение расходов: EUR {{amount}} за {{propertyName}} ({{expenseCategory}}). От {{submittedBy}}. Проверить: {{approvalUrl}}',
+      },
+      smsBody: {
+        en: 'Approve expense: EUR {{amount}} for {{propertyName}}. Review: {{approvalUrl}}. Sivan Mgmt',
+        he: 'אשר הוצאה: EUR {{amount}} עבור {{propertyName}}. בדיקה: {{approvalUrl}}. Sivan Mgmt',
+        de: 'Ausgabe genehmigen: EUR {{amount}} für {{propertyName}}. Prüfen: {{approvalUrl}}. Sivan Mgmt',
+        es: 'Aprobar gasto: EUR {{amount}} para {{propertyName}}. Revisar: {{approvalUrl}}. Sivan Mgmt',
+        fr: 'Approuver dépense: EUR {{amount}} pour {{propertyName}}. Examiner: {{approvalUrl}}. Sivan Mgmt',
+        ru: 'Одобрить расход: EUR {{amount}} за {{propertyName}}. Проверить: {{approvalUrl}}. Sivan Mgmt',
+      },
+      variables: ['approverName', 'amount', 'propertyName', 'expenseCategory', 'description', 'submittedBy', 'approvalUrl'],
+      isSystem: true,
+    },
+  ];
+
+  for (const tpl of notificationTemplates) {
+    await prisma.notificationTemplate.upsert({
+      where: { slug: tpl.slug },
+      update: {
+        category: tpl.category,
+        name: tpl.name,
+        description: tpl.description,
+        emailSubject: tpl.emailSubject,
+        emailBody: tpl.emailBody,
+        whatsappBody: tpl.whatsappBody,
+        smsBody: tpl.smsBody,
+        variables: tpl.variables,
+        isSystem: tpl.isSystem,
+      },
+      create: {
+        slug: tpl.slug,
+        category: tpl.category,
+        name: tpl.name,
+        description: tpl.description,
+        emailSubject: tpl.emailSubject,
+        emailBody: tpl.emailBody,
+        whatsappBody: tpl.whatsappBody,
+        smsBody: tpl.smsBody,
+        variables: tpl.variables,
+        isActive: true,
+        isSystem: tpl.isSystem,
+      },
+    });
+  }
+
+  console.log(`${notificationTemplates.length} Notification templates created/updated`);
+
   console.log('\nSeeding completed successfully!');
-  console.log('Summary: 12 properties, 20 guests, 29 bookings, 35 income records, 28 expense records, 12 maintenance requests');
+  console.log('Summary: 12 properties, 20 guests, 29 bookings, 35 income records, 28 expense records, 12 maintenance requests, 12 notification templates');
 }
 
 main()
   .then(async () => {
+    console.log('[SEED] Disconnecting from database...');
     await prisma.$disconnect();
+    console.log('[SEED] Done.');
   })
   .catch(async (e) => {
-    console.error('Seeding error:', e);
+    console.error('[SEED] Fatal seeding error:', e);
+    console.error('[SEED] Error name:', e?.name);
+    console.error('[SEED] Error message:', e?.message);
+    if (e?.meta) console.error('[SEED] Prisma meta:', JSON.stringify(e.meta));
     await prisma.$disconnect();
     // Don't exit with error code - allow server to start even if seed fails
-    if (require.main === module) {
-      process.exit(1);
-    }
   });

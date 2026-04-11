@@ -328,8 +328,18 @@ const apiDocumentation = {
       basePath: '/notifications',
       endpoints: [
         { method: 'GET', path: '/', description: 'List notifications', auth: true },
+        { method: 'GET', path: '/unread-count', description: 'Get unread count', auth: true },
         { method: 'PUT', path: '/:id/read', description: 'Mark notification as read', auth: true },
         { method: 'PUT', path: '/read-all', description: 'Mark all as read', auth: true },
+        { method: 'DELETE', path: '/:id', description: 'Delete a notification', auth: true },
+        { method: 'GET', path: '/channels', description: 'List configured notification channels', auth: true, role: 'admin' },
+        { method: 'POST', path: '/channels', description: 'Create/configure a notification channel', auth: true, role: 'admin' },
+        { method: 'PUT', path: '/channels/:id', description: 'Update channel config', auth: true, role: 'admin' },
+        { method: 'DELETE', path: '/channels/:id', description: 'Remove a channel', auth: true, role: 'admin' },
+        { method: 'POST', path: '/channels/:id/test', description: 'Test a channel connection', auth: true, role: 'admin' },
+        { method: 'GET', path: '/users/:userId/preferences', description: 'Get user notification preferences', auth: true, role: 'admin' },
+        { method: 'PUT', path: '/users/:userId/preferences', description: 'Update user notification preferences', auth: true, role: 'admin' },
+        { method: 'POST', path: '/send', description: 'Send a notification via configured channels', auth: true, role: 'admin' },
       ],
     },
     {

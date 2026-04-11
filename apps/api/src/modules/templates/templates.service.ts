@@ -1,243 +1,318 @@
-import { v4 as uuid } from 'uuid';
+import { Prisma } from '@prisma/client';
+import { prisma } from '../../prisma/client';
+import { ApiError } from '../../utils/api-error';
 
 // ── Types ────────────────────────────────────────────────────────
-export type TemplateChannel = 'EMAIL' | 'WHATSAPP' | 'SMS';
-export type TemplateCategory = 'BOOKING' | 'PAYMENT' | 'MAINTENANCE' | 'MARKETING' | 'SYSTEM';
+export type TemplateChannel = 'email' | 'whatsapp' | 'sms';
+export type TemplateCategory = 'booking' | 'payment' | 'maintenance' | 'system' | 'marketing' | 'guest';
+export type Locale = 'en' | 'he' | 'de' | 'es' | 'fr' | 'ru';
 
-export interface MessageTemplate {
-  id: string;
-  name: string;
-  slug: string;
-  channel: TemplateChannel;
-  subject?: string;
-  body: string;
-  variables: string[];
-  category: TemplateCategory;
-  language: string;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+export const ALL_LOCALES: Locale[] = ['en', 'he', 'de', 'es', 'fr', 'ru'];
+
+interface TemplateFilters {
+  search?: string;
+  category?: string;
+  isActive?: boolean;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }
 
-// ── In-Memory Store with Seed Data ───────────────────────────────
-const templates: Map<string, MessageTemplate> = new Map();
-
-function seed() {
-  const now = new Date();
-  const seedData: Omit<MessageTemplate, 'id' | 'createdAt' | 'updatedAt'>[] = [
-    {
-      name: 'Booking Confirmed',
-      slug: 'booking_confirmed',
-      channel: 'EMAIL',
-      subject: 'Your booking at {{property_name}} is confirmed!',
-      body: 'Dear {{guest_name}},\n\nYour booking at {{property_name}} is confirmed!\n\nCheck-in: {{check_in_date}}\nCheck-out: {{check_out_date}}\nTotal: €{{total_amount}}\n\nWe look forward to welcoming you!\n\nBest regards,\nSivan Management',
-      variables: ['guest_name', 'property_name', 'check_in_date', 'check_out_date', 'total_amount'],
-      category: 'BOOKING',
-      language: 'en',
-      isActive: true,
-    },
-    {
-      name: 'Booking Cancelled',
-      slug: 'booking_cancelled',
-      channel: 'EMAIL',
-      subject: 'Booking at {{property_name}} has been cancelled',
-      body: 'Dear {{guest_name}},\n\nWe are sorry to inform you that your booking at {{property_name}} ({{check_in_date}} - {{check_out_date}}) has been cancelled.\n\nIf you have any questions about the refund, please contact us.\n\nBest regards,\nSivan Management',
-      variables: ['guest_name', 'property_name', 'check_in_date', 'check_out_date'],
-      category: 'BOOKING',
-      language: 'en',
-      isActive: true,
-    },
-    {
-      name: 'Check-in Reminder',
-      slug: 'check_in_reminder',
-      channel: 'WHATSAPP',
-      body: 'Hi {{guest_name}}! 👋 Your stay at {{property_name}} starts tomorrow. Check-in: {{check_in_time}}. WiFi: {{wifi_name}}/{{wifi_password}}',
-      variables: ['guest_name', 'property_name', 'check_in_time', 'wifi_name', 'wifi_password'],
-      category: 'BOOKING',
-      language: 'en',
-      isActive: true,
-    },
-    {
-      name: 'Check-out Reminder',
-      slug: 'check_out_reminder',
-      channel: 'WHATSAPP',
-      body: 'Hi {{guest_name}}, checkout is today by {{check_out_time}}. Thank you for staying at {{property_name}}!',
-      variables: ['guest_name', 'check_out_time', 'property_name'],
-      category: 'BOOKING',
-      language: 'en',
-      isActive: true,
-    },
-    {
-      name: 'Welcome Back Guest',
-      slug: 'welcome_back',
-      channel: 'WHATSAPP',
-      body: 'Welcome back, {{guest_name}}! 🌟 As a returning guest, enjoy a special rate at {{property_name}}. Contact us for exclusive offers!',
-      variables: ['guest_name', 'property_name'],
-      category: 'MARKETING',
-      language: 'en',
-      isActive: true,
-    },
-    {
-      name: 'Payment Received',
-      slug: 'payment_received',
-      channel: 'EMAIL',
-      subject: 'Payment of €{{amount}} received',
-      body: 'Dear {{guest_name}},\n\nWe have received your payment of €{{amount}} for your booking at {{property_name}}.\n\nThank you!\nSivan Management',
-      variables: ['guest_name', 'amount', 'property_name'],
-      category: 'PAYMENT',
-      language: 'en',
-      isActive: true,
-    },
-    {
-      name: 'Owner Payout',
-      slug: 'owner_payout',
-      channel: 'EMAIL',
-      subject: 'Your monthly payout of €{{net_amount}} has been processed',
-      body: 'Dear {{owner_name}},\n\nYour monthly payout of €{{net_amount}} for {{property_name}} has been processed and should arrive within 2-3 business days.\n\nBest regards,\nSivan Management',
-      variables: ['owner_name', 'net_amount', 'property_name'],
-      category: 'PAYMENT',
-      language: 'en',
-      isActive: true,
-    },
-    {
-      name: 'Maintenance Reported',
-      slug: 'maintenance_reported',
-      channel: 'EMAIL',
-      subject: 'New maintenance request: {{title}}',
-      body: 'A new maintenance request has been submitted:\n\nTitle: {{title}}\nProperty: {{property_name}}\n\nPlease review and assign this request.',
-      variables: ['title', 'property_name'],
-      category: 'MAINTENANCE',
-      language: 'en',
-      isActive: true,
-    },
-    {
-      name: 'Maintenance Completed',
-      slug: 'maintenance_completed',
-      channel: 'WHATSAPP',
-      body: 'Maintenance for "{{title}}" at {{property_name}} has been completed. If you have further issues, please let us know.',
-      variables: ['title', 'property_name'],
-      category: 'MAINTENANCE',
-      language: 'en',
-      isActive: true,
-    },
-    {
-      name: 'Welcome Owner',
-      slug: 'welcome_owner',
-      channel: 'EMAIL',
-      subject: 'Welcome to Sivan Management, {{owner_name}}!',
-      body: 'Dear {{owner_name}},\n\nWelcome to Sivan Management! Your portal is ready.\n\nYou can log in at any time to view your properties, financial reports, and booking calendar.\n\nBest regards,\nThe Sivan Team',
-      variables: ['owner_name'],
-      category: 'SYSTEM',
-      language: 'en',
-      isActive: true,
-    },
-  ];
-
-  for (const data of seedData) {
-    const id = uuid();
-    templates.set(id, { id, ...data, createdAt: now, updatedAt: now });
-  }
-}
-
-// Seed on module load
-seed();
-
-// ── Service Class ────────────────────────────────────────────────
+// ── Service ──────────────────────────────────────────────────────
 export class TemplatesService {
-  getAllTemplates(filters?: {
-    channel?: TemplateChannel;
-    category?: TemplateCategory;
-    language?: string;
+  async getAll(filters: TemplateFilters = {}) {
+    const {
+      search,
+      category,
+      isActive,
+      page = 1,
+      limit = 50,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+    } = filters;
+
+    const where: Prisma.NotificationTemplateWhereInput = {};
+
+    if (category) {
+      where.category = category;
+    }
+
+    if (isActive !== undefined) {
+      where.isActive = isActive;
+    }
+
+    if (search) {
+      where.OR = [
+        { slug: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const allowedSortFields: Record<string, string> = {
+      createdAt: 'createdAt',
+      updatedAt: 'updatedAt',
+      slug: 'slug',
+      category: 'category',
+    };
+
+    const orderByField = allowedSortFields[sortBy] || 'createdAt';
+
+    const [templates, total] = await Promise.all([
+      prisma.notificationTemplate.findMany({
+        where,
+        orderBy: { [orderByField]: sortOrder },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.notificationTemplate.count({ where }),
+    ]);
+
+    return { templates, total, page, limit };
+  }
+
+  async getById(id: string) {
+    const template = await prisma.notificationTemplate.findUnique({
+      where: { id },
+    });
+
+    if (!template) {
+      throw ApiError.notFound('NotificationTemplate');
+    }
+
+    return template;
+  }
+
+  async getBySlug(slug: string) {
+    const template = await prisma.notificationTemplate.findUnique({
+      where: { slug },
+    });
+
+    if (!template) {
+      throw ApiError.notFound('NotificationTemplate');
+    }
+
+    return template;
+  }
+
+  async create(data: {
+    slug: string;
+    category: string;
+    name: Record<string, string>;
+    description?: string;
+    emailSubject?: Record<string, string>;
+    emailBody?: Record<string, string>;
+    whatsappBody?: Record<string, string>;
+    smsBody?: Record<string, string>;
+    variables?: string[];
     isActive?: boolean;
-  }): MessageTemplate[] {
-    let result = Array.from(templates.values());
+    isSystem?: boolean;
+    metadata?: any;
+    lastEditedBy?: string;
+  }) {
+    // Check slug uniqueness
+    const existing = await prisma.notificationTemplate.findUnique({
+      where: { slug: data.slug },
+    });
 
-    if (filters?.channel) {
-      result = result.filter((t) => t.channel === filters.channel);
-    }
-    if (filters?.category) {
-      result = result.filter((t) => t.category === filters.category);
-    }
-    if (filters?.language) {
-      result = result.filter((t) => t.language === filters.language);
-    }
-    if (filters?.isActive !== undefined) {
-      result = result.filter((t) => t.isActive === filters.isActive);
+    if (existing) {
+      throw ApiError.conflict(`Template with slug "${data.slug}" already exists`);
     }
 
-    return result.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+    const template = await prisma.notificationTemplate.create({
+      data: {
+        slug: data.slug,
+        category: data.category,
+        name: data.name as any,
+        description: data.description,
+        emailSubject: data.emailSubject as any,
+        emailBody: data.emailBody as any,
+        whatsappBody: data.whatsappBody as any,
+        smsBody: data.smsBody as any,
+        variables: data.variables as any,
+        isActive: data.isActive ?? true,
+        isSystem: data.isSystem ?? false,
+        metadata: data.metadata,
+        lastEditedBy: data.lastEditedBy,
+      },
+    });
+
+    return template;
   }
 
-  getTemplateById(id: string): MessageTemplate | undefined {
-    return templates.get(id);
-  }
-
-  getTemplateBySlug(slug: string): MessageTemplate | undefined {
-    return Array.from(templates.values()).find((t) => t.slug === slug);
-  }
-
-  createTemplate(
-    data: Omit<MessageTemplate, 'id' | 'createdAt' | 'updatedAt'>,
-  ): MessageTemplate {
-    const id = uuid();
-    const now = new Date();
-    const tpl: MessageTemplate = { id, ...data, createdAt: now, updatedAt: now };
-    templates.set(id, tpl);
-    return tpl;
-  }
-
-  updateTemplate(
+  async update(
     id: string,
-    data: Partial<Omit<MessageTemplate, 'id' | 'createdAt' | 'updatedAt'>>,
-  ): MessageTemplate | undefined {
-    const existing = templates.get(id);
-    if (!existing) return undefined;
+    data: {
+      slug?: string;
+      category?: string;
+      name?: Record<string, string>;
+      description?: string;
+      emailSubject?: Record<string, string>;
+      emailBody?: Record<string, string>;
+      whatsappBody?: Record<string, string>;
+      smsBody?: Record<string, string>;
+      variables?: string[];
+      isActive?: boolean;
+      metadata?: any;
+      lastEditedBy?: string;
+    },
+  ) {
+    const existing = await prisma.notificationTemplate.findUnique({ where: { id } });
+    if (!existing) {
+      throw ApiError.notFound('NotificationTemplate');
+    }
 
-    const updated: MessageTemplate = {
-      ...existing,
-      ...data,
-      updatedAt: new Date(),
-    };
-    templates.set(id, updated);
-    return updated;
+    // If slug is being changed, check uniqueness
+    if (data.slug && data.slug !== existing.slug) {
+      const slugExists = await prisma.notificationTemplate.findUnique({
+        where: { slug: data.slug },
+      });
+      if (slugExists) {
+        throw ApiError.conflict(`Template with slug "${data.slug}" already exists`);
+      }
+    }
+
+    const template = await prisma.notificationTemplate.update({
+      where: { id },
+      data: {
+        ...(data.slug !== undefined && { slug: data.slug }),
+        ...(data.category !== undefined && { category: data.category }),
+        ...(data.name !== undefined && { name: data.name as any }),
+        ...(data.description !== undefined && { description: data.description }),
+        ...(data.emailSubject !== undefined && { emailSubject: data.emailSubject as any }),
+        ...(data.emailBody !== undefined && { emailBody: data.emailBody as any }),
+        ...(data.whatsappBody !== undefined && { whatsappBody: data.whatsappBody as any }),
+        ...(data.smsBody !== undefined && { smsBody: data.smsBody as any }),
+        ...(data.variables !== undefined && { variables: data.variables as any }),
+        ...(data.isActive !== undefined && { isActive: data.isActive }),
+        ...(data.metadata !== undefined && { metadata: data.metadata }),
+        ...(data.lastEditedBy !== undefined && { lastEditedBy: data.lastEditedBy }),
+        version: { increment: 1 },
+      },
+    });
+
+    return template;
   }
 
-  deleteTemplate(id: string): boolean {
-    return templates.delete(id);
+  async remove(id: string) {
+    const existing = await prisma.notificationTemplate.findUnique({ where: { id } });
+    if (!existing) {
+      throw ApiError.notFound('NotificationTemplate');
+    }
+
+    if (existing.isSystem) {
+      throw ApiError.badRequest('System templates cannot be deleted', 'SYSTEM_TEMPLATE');
+    }
+
+    await prisma.notificationTemplate.delete({ where: { id } });
+    return true;
   }
 
-  previewTemplate(
-    id: string,
-    sampleData: Record<string, string>,
-  ): { subject?: string; body: string } | undefined {
-    const tpl = templates.get(id);
-    if (!tpl) return undefined;
+  async duplicate(id: string) {
+    const existing = await prisma.notificationTemplate.findUnique({ where: { id } });
+    if (!existing) {
+      throw ApiError.notFound('NotificationTemplate');
+    }
 
-    const replace = (text: string) =>
-      text.replace(/\{\{(\w+)\}\}/g, (_, key) => sampleData[key] || `{{${key}}}`);
+    const newSlug = `${existing.slug}_copy_${Date.now()}`;
 
-    return {
-      subject: tpl.subject ? replace(tpl.subject) : undefined,
-      body: replace(tpl.body),
-    };
+    // Modify name to add (Copy) suffix
+    const nameObj = (existing.name as Record<string, string>) || {};
+    const newName: Record<string, string> = {};
+    for (const [locale, value] of Object.entries(nameObj)) {
+      newName[locale] = `${value} (Copy)`;
+    }
+
+    const template = await prisma.notificationTemplate.create({
+      data: {
+        slug: newSlug,
+        category: existing.category,
+        name: newName as any,
+        description: existing.description,
+        emailSubject: existing.emailSubject as any,
+        emailBody: existing.emailBody as any,
+        whatsappBody: existing.whatsappBody as any,
+        smsBody: existing.smsBody as any,
+        variables: existing.variables as any,
+        isActive: false,
+        isSystem: false,
+        metadata: existing.metadata as any,
+      },
+    });
+
+    return template;
   }
 
-  duplicateTemplate(id: string): MessageTemplate | undefined {
-    const existing = templates.get(id);
-    if (!existing) return undefined;
+  /**
+   * Render a template with variable substitution for a specific locale and channel.
+   */
+  renderTemplate(
+    template: {
+      emailSubject?: any;
+      emailBody?: any;
+      whatsappBody?: any;
+      smsBody?: any;
+    },
+    locale: Locale,
+    channel: TemplateChannel,
+    variables: Record<string, string>,
+  ): { subject?: string; body: string } | null {
+    const replace = (text: string): string =>
+      text.replace(/\{\{(\w+)\}\}/g, (_, key) => variables[key] || `{{${key}}}`);
 
-    const newId = uuid();
-    const now = new Date();
-    const duplicate: MessageTemplate = {
-      ...existing,
-      id: newId,
-      name: `${existing.name} (Copy)`,
-      slug: `${existing.slug}_copy_${Date.now()}`,
-      createdAt: now,
-      updatedAt: now,
-    };
-    templates.set(newId, duplicate);
-    return duplicate;
+    if (channel === 'email') {
+      const subjectObj = template.emailSubject as Record<string, string> | null;
+      const bodyObj = template.emailBody as Record<string, string> | null;
+
+      if (!bodyObj || !bodyObj[locale]) return null;
+
+      return {
+        subject: subjectObj?.[locale] ? replace(subjectObj[locale]) : undefined,
+        body: replace(bodyObj[locale]),
+      };
+    }
+
+    if (channel === 'whatsapp') {
+      const bodyObj = template.whatsappBody as Record<string, string> | null;
+      if (!bodyObj || !bodyObj[locale]) return null;
+      return { body: replace(bodyObj[locale]) };
+    }
+
+    if (channel === 'sms') {
+      const bodyObj = template.smsBody as Record<string, string> | null;
+      if (!bodyObj || !bodyObj[locale]) return null;
+      return { body: replace(bodyObj[locale]) };
+    }
+
+    return null;
+  }
+
+  /**
+   * Render a template by slug with full lookup.
+   */
+  async renderBySlug(
+    slug: string,
+    locale: Locale,
+    channel: TemplateChannel,
+    variables: Record<string, string>,
+  ) {
+    const template = await prisma.notificationTemplate.findUnique({
+      where: { slug },
+    });
+
+    if (!template) {
+      throw ApiError.notFound('NotificationTemplate');
+    }
+
+    const rendered = this.renderTemplate(template, locale, channel, variables);
+    if (!rendered) {
+      throw ApiError.badRequest(
+        `No content found for locale "${locale}" and channel "${channel}"`,
+        'NO_CONTENT',
+      );
+    }
+
+    return rendered;
   }
 }
 

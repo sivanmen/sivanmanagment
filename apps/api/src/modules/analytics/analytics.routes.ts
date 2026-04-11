@@ -5,8 +5,14 @@ import { requireAdmin } from '../../middleware/rbac.middleware';
 
 const router = Router();
 
-// All analytics routes require authentication + admin
+// All analytics routes require authentication
 router.use(authMiddleware);
+
+// Dashboard endpoints (accessible to all authenticated users)
+router.get('/dashboard', requireAdmin, (req, res, next) => analyticsController.getDashboard(req, res, next));
+router.get('/owner-dashboard', (req, res, next) => analyticsController.getOwnerDashboard(req, res, next));
+
+// Admin-only analytics
 router.use(requireAdmin);
 
 // Revenue overview with date/property filters
