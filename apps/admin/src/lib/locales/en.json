@@ -230,5 +230,37 @@
     "monthlyRevenue": "Monthly Revenue Trend",
     "propertiesOwned": "Properties Owned",
     "noProperties": "No properties assigned to this owner"
+  },
+  "documents": {
+    "title": "Documents",
+    "upload": "Upload Document",
+    "category": "Category",
+    "accessLevel": "Access Level",
+    "fileSize": "File Size"
+  },
+  "maintenance": {
+    "title": "Maintenance",
+    "newRequest": "New Request",
+    "priority": "Priority",
+    "assignedTo": "Assigned To",
+    "estimatedCost": "Est. Cost",
+    "actualCost": "Actual Cost",
+    "completionNotes": "Notes"
+  },
+  "tasks": {
+    "title": "Tasks",
+    "newTask": "New Task",
+    "type": "Type",
+    "dueDate": "Due Date",
+    "overdue": "Overdue",
+    "dueToday": "Due Today"
+  },
+  "messages": {
+    "title": "Messages",
+    "newThread": "New Thread",
+    "subject": "Subject",
+    "channel": "Channel",
+    "compose": "Type a message...",
+    "send": "Send"
   }
 }

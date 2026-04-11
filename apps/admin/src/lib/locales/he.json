@@ -230,5 +230,37 @@
     "monthlyRevenue": "מגמת הכנסה חודשית",
     "propertiesOwned": "נכסים בבעלות",
     "noProperties": "אין נכסים משויכים לבעלים זה"
+  },
+  "documents": {
+    "title": "מסמכים",
+    "upload": "העלה מסמך",
+    "category": "קטגוריה",
+    "accessLevel": "רמת גישה",
+    "fileSize": "גודל קובץ"
+  },
+  "maintenance": {
+    "title": "תחזוקה",
+    "newRequest": "בקשה חדשה",
+    "priority": "עדיפות",
+    "assignedTo": "מוקצה ל",
+    "estimatedCost": "עלות משוערת",
+    "actualCost": "עלות בפועל",
+    "completionNotes": "הערות"
+  },
+  "tasks": {
+    "title": "משימות",
+    "newTask": "משימה חדשה",
+    "type": "סוג",
+    "dueDate": "תאריך יעד",
+    "overdue": "באיחור",
+    "dueToday": "היום"
+  },
+  "messages": {
+    "title": "הודעות",
+    "newThread": "שיחה חדשה",
+    "subject": "נושא",
+    "channel": "ערוץ",
+    "compose": "כתוב הודעה...",
+    "send": "שלח"
   }
 }

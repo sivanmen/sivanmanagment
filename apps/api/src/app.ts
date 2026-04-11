@@ -14,6 +14,10 @@ import calendarRoutes from './modules/calendar/calendar.routes';
 import guestsRoutes from './modules/guests/guests.routes';
 import financeRoutes from './modules/finance/finance.routes';
 import feesRoutes from './modules/fees/fees.routes';
+import documentsRoutes from './modules/documents/documents.routes';
+import maintenanceRoutes from './modules/maintenance/maintenance.routes';
+import tasksRoutes from './modules/tasks/tasks.routes';
+import communicationsRoutes from './modules/communications/communications.routes';
 
 const app = express();
 
@@ -58,12 +62,12 @@ app.use('/api/v1/calendar', calendarRoutes);
 app.use('/api/v1/guests', guestsRoutes);
 app.use('/api/v1/finance', financeRoutes);
 app.use('/api/v1/fees', feesRoutes);
+app.use('/api/v1/documents', documentsRoutes);
+app.use('/api/v1/maintenance', maintenanceRoutes);
+app.use('/api/v1/tasks', tasksRoutes);
+app.use('/api/v1/communications', communicationsRoutes);
 
 // TODO: Add more routes as modules are built
-// app.use('/api/v1/documents', documentsRoutes);
-// app.use('/api/v1/maintenance', maintenanceRoutes);
-// app.use('/api/v1/tasks', tasksRoutes);
-// app.use('/api/v1/communications', communicationsRoutes);
 // app.use('/api/v1/channels', channelsRoutes);
 // app.use('/api/v1/reports', reportsRoutes);
 // app.use('/api/v1/ai', aiRoutes);

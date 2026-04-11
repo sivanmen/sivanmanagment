@@ -10,6 +10,10 @@ import MyPropertiesPage from './pages/MyPropertiesPage';
 import MyBookingsPage from './pages/MyBookingsPage';
 import MyCalendarPage from './pages/MyCalendarPage';
 import FinancialSummaryPage from './pages/FinancialSummaryPage';
+import MyDocumentsPage from './pages/MyDocumentsPage';
+import MaintenanceRequestsPage from './pages/MaintenanceRequestsPage';
+import LoyaltyPage from './pages/LoyaltyPage';
+import SettingsPage from './pages/SettingsPage';
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
@@ -39,13 +43,13 @@ export default function App() {
           <Route path="/properties" element={<MyPropertiesPage />} />
           <Route path="/bookings" element={<MyBookingsPage />} />
           <Route path="/financials" element={<FinancialSummaryPage />} />
-          <Route path="/documents" element={<div className="p-6 font-headline text-2xl">My Documents — Coming Soon</div>} />
-          <Route path="/maintenance" element={<div className="p-6 font-headline text-2xl">Maintenance — Coming Soon</div>} />
-          <Route path="/loyalty" element={<div className="p-6 font-headline text-2xl">My Loyalty — Coming Soon</div>} />
+          <Route path="/documents" element={<MyDocumentsPage />} />
+          <Route path="/maintenance" element={<MaintenanceRequestsPage />} />
+          <Route path="/loyalty" element={<LoyaltyPage />} />
           <Route path="/messages" element={<div className="p-6 font-headline text-2xl">Messages — Coming Soon</div>} />
           <Route path="/portfolio" element={<div className="p-6 font-headline text-2xl">Portfolio — Coming Soon</div>} />
           <Route path="/calendar" element={<MyCalendarPage />} />
-          <Route path="/settings" element={<div className="p-6 font-headline text-2xl">Settings — Coming Soon</div>} />
+          <Route path="/settings" element={<SettingsPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
