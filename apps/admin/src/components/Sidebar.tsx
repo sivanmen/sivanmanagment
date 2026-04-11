@@ -26,6 +26,9 @@ import {
   Zap,
   MessageSquareText,
   Settings,
+  Star,
+  BadgeDollarSign,
+  Layers,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
@@ -34,6 +37,9 @@ import {
   Moon,
   Sun,
   X,
+  Target,
+  Shield,
+  LineChart,
 } from 'lucide-react';
 import { useAuthStore } from '../store/auth.store';
 import { useUIStore } from '../store/ui.store';
@@ -60,6 +66,8 @@ const navGroups: NavGroup[] = [
     items: [
       { key: 'dashboard', label: 'Dashboard', path: '/', icon: LayoutDashboard, end: true },
       { key: 'portfolio', label: 'Portfolio', path: '/portfolio', icon: Briefcase },
+      { key: 'analytics', label: 'Analytics', path: '/analytics', icon: LineChart },
+      { key: 'scoring', label: 'Property Scoring', path: '/scoring', icon: Target },
     ],
   },
   {
@@ -70,6 +78,7 @@ const navGroups: NavGroup[] = [
       { key: 'bookings', label: 'Bookings', path: '/bookings', icon: CalendarCheck, badge: 3 },
       { key: 'calendar', label: 'Calendar', path: '/calendar', icon: Calendar },
       { key: 'tasks', label: 'Tasks', path: '/tasks', icon: ClipboardList, badge: 5 },
+      { key: 'bookingExtras', label: 'Booking Extras', path: '/booking-extras', icon: Layers },
     ],
   },
   {
@@ -88,6 +97,7 @@ const navGroups: NavGroup[] = [
       { key: 'income', label: 'Income', path: '/finance/income', icon: TrendingUp },
       { key: 'expenses', label: 'Expenses', path: '/finance/expenses', icon: TrendingDown },
       { key: 'fees', label: 'Management Fees', path: '/finance/fees', icon: Receipt },
+      { key: 'pricing', label: 'Revenue Management', path: '/pricing', icon: BadgeDollarSign },
     ],
   },
   {
@@ -114,6 +124,8 @@ const navGroups: NavGroup[] = [
       { key: 'marketing', label: 'Marketing', path: '/marketing', icon: Megaphone },
       { key: 'loyalty', label: 'Loyalty', path: '/loyalty', icon: Heart },
       { key: 'affiliates', label: 'Affiliates', path: '/affiliates', icon: UserPlus },
+      { key: 'guestExperience', label: 'Guest Experience', path: '/guest-experience', icon: Star },
+      { key: 'bookingEngine', label: 'Booking Engine', path: '/booking-engine', icon: Globe },
     ],
   },
   {
@@ -123,6 +135,7 @@ const navGroups: NavGroup[] = [
       { key: 'reports', label: 'Reports', path: '/reports', icon: BarChart3 },
       { key: 'automations', label: 'Automations', path: '/automations', icon: Zap },
       { key: 'templates', label: 'Templates', path: '/templates', icon: MessageSquareText },
+      { key: 'teams', label: 'Teams', path: '/teams', icon: Shield },
       { key: 'settings', label: 'Settings', path: '/settings', icon: Settings },
     ],
   },

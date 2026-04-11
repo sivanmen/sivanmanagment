@@ -220,5 +220,28 @@
     "propertyComparison": "השוואת נכסים",
     "property": "נכס",
     "totals": "סה\"כ"
+  },
+  "ownerReservations": {
+    "label": "הזמנות בעלים",
+    "title": "ההזמנות שלי",
+    "bookForMyself": "הזמן לעצמי",
+    "bookForFF": "חברים ומשפחה",
+    "newReservation": "הזמנה חדשה",
+    "totalReservations": "סה\"כ הזמנות",
+    "pendingApproval": "ממתינות לאישור",
+    "approved": "מאושרות",
+    "blockedNights": "לילות חסומים",
+    "guestName": "שם האורח",
+    "guestNamePlaceholder": "הכנס שם אורח",
+    "guestRelation": "קרבה",
+    "guestRelationPlaceholder": "לדוגמה: אח, חבר",
+    "notes": "הערות",
+    "notesPlaceholder": "הערות מיוחדות...",
+    "submitRequest": "שלח בקשה",
+    "created": "בקשת ההזמנה הוגשה",
+    "cancelled": "ההזמנה בוטלה",
+    "datesRequired": "נדרשים תאריכי צ'ק-אין וצ'ק-אאוט",
+    "guestNameRequired": "שם אורח נדרש עבור הזמנות חברים ומשפחה",
+    "noReservations": "לא נמצאו הזמנות"
   }
 }

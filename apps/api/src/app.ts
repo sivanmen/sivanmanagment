@@ -29,6 +29,16 @@ import marketingRoutes from './modules/marketing/marketing.routes';
 import adminRoutes from './modules/admin/admin.routes';
 import templatesRoutes from './modules/templates/templates.routes';
 import automationsRoutes from './modules/automations/automations.routes';
+import guestExperienceRoutes from './modules/guest-experience/guest-experience.routes';
+import pricingRoutes from './modules/pricing/pricing.routes';
+import bookingExtrasRoutes from './modules/bookings/booking-extras.routes';
+import ownerPortalRoutes from './modules/owner-portal/owner-portal.routes';
+import webhooksRoutes from './modules/webhooks/webhooks.routes';
+import bulkRoutes from './modules/bulk/bulk.routes';
+import teamsRoutes from './modules/teams/teams.routes';
+import bookingEngineRoutes from './modules/booking-engine/booking-engine.routes';
+import analyticsRoutes from './modules/analytics/analytics.routes';
+import scoringRoutes from './modules/scoring/scoring.routes';
 
 const app = express();
 
@@ -88,6 +98,363 @@ app.use('/api/v1/marketing', marketingRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/templates', templatesRoutes);
 app.use('/api/v1/automations', automationsRoutes);
+app.use('/api/v1/guest-experience', guestExperienceRoutes);
+app.use('/api/v1/pricing', pricingRoutes);
+app.use('/api/v1/booking-extras', bookingExtrasRoutes);
+app.use('/api/v1/owner-portal', ownerPortalRoutes);
+app.use('/api/v1/webhooks', webhooksRoutes);
+app.use('/api/v1/bulk', bulkRoutes);
+app.use('/api/v1/teams', teamsRoutes);
+app.use('/api/v1/booking-engine', bookingEngineRoutes);
+app.use('/api/v1/analytics', analyticsRoutes);
+app.use('/api/v1/scoring', scoringRoutes);
+
+// API Documentation
+const apiDocumentation = {
+  title: 'Sivan Management PMS API',
+  version: '1.0.0',
+  description: 'Complete Property Management System API for Sivan Management',
+  baseUrl: '/api/v1',
+  modules: [
+    {
+      name: 'Auth',
+      basePath: '/auth',
+      endpoints: [
+        { method: 'POST', path: '/login', description: 'Authenticate user and get JWT token', auth: false },
+        { method: 'POST', path: '/register', description: 'Register a new user', auth: false },
+        { method: 'POST', path: '/refresh', description: 'Refresh JWT token', auth: true },
+        { method: 'POST', path: '/logout', description: 'Log out and invalidate token', auth: true },
+        { method: 'GET', path: '/me', description: 'Get current user profile', auth: true },
+      ],
+    },
+    {
+      name: 'Properties',
+      basePath: '/properties',
+      endpoints: [
+        { method: 'GET', path: '/', description: 'List all properties with filters', auth: true, params: ['search', 'status', 'type', 'ownerId', 'page', 'limit'] },
+        { method: 'GET', path: '/:id', description: 'Get property details', auth: true },
+        { method: 'POST', path: '/', description: 'Create a new property', auth: true, role: 'admin' },
+        { method: 'PUT', path: '/:id', description: 'Update a property', auth: true },
+        { method: 'DELETE', path: '/:id', description: 'Soft-delete a property', auth: true, role: 'admin' },
+      ],
+    },
+    {
+      name: 'Owners',
+      basePath: '/owners',
+      endpoints: [
+        { method: 'GET', path: '/', description: 'List all owners', auth: true, role: 'admin' },
+        { method: 'GET', path: '/:id', description: 'Get owner details', auth: true },
+        { method: 'POST', path: '/', description: 'Create a new owner', auth: true, role: 'admin' },
+        { method: 'PUT', path: '/:id', description: 'Update an owner', auth: true },
+        { method: 'DELETE', path: '/:id', description: 'Soft-delete an owner', auth: true, role: 'admin' },
+        { method: 'GET', path: '/:id/financial-summary', description: 'Get owner financial summary', auth: true },
+      ],
+    },
+    {
+      name: 'Bookings',
+      basePath: '/bookings',
+      endpoints: [
+        { method: 'GET', path: '/', description: 'List bookings with filters', auth: true, params: ['status', 'propertyId', 'source', 'page', 'limit'] },
+        { method: 'GET', path: '/:id', description: 'Get booking details', auth: true },
+        { method: 'POST', path: '/', description: 'Create a new booking', auth: true },
+        { method: 'PUT', path: '/:id', description: 'Update a booking', auth: true },
+        { method: 'PUT', path: '/:id/status', description: 'Update booking status', auth: true },
+        { method: 'DELETE', path: '/:id', description: 'Cancel a booking', auth: true },
+      ],
+    },
+    {
+      name: 'Calendar',
+      basePath: '/calendar',
+      endpoints: [
+        { method: 'GET', path: '/', description: 'Get calendar events for date range', auth: true, params: ['start', 'end', 'propertyId'] },
+      ],
+    },
+    {
+      name: 'Guests',
+      basePath: '/guests',
+      endpoints: [
+        { method: 'GET', path: '/', description: 'List all guests', auth: true },
+        { method: 'GET', path: '/:id', description: 'Get guest details', auth: true },
+        { method: 'POST', path: '/', description: 'Create a guest', auth: true },
+        { method: 'PUT', path: '/:id', description: 'Update a guest', auth: true },
+      ],
+    },
+    {
+      name: 'Finance',
+      basePath: '/finance',
+      endpoints: [
+        { method: 'GET', path: '/income', description: 'List income records', auth: true },
+        { method: 'POST', path: '/income', description: 'Create income record', auth: true },
+        { method: 'GET', path: '/expenses', description: 'List expense records', auth: true },
+        { method: 'POST', path: '/expenses', description: 'Create expense record', auth: true },
+        { method: 'GET', path: '/summary', description: 'Get financial summary', auth: true },
+      ],
+    },
+    {
+      name: 'Fees',
+      basePath: '/fees',
+      endpoints: [
+        { method: 'GET', path: '/', description: 'List management fee calculations', auth: true },
+        { method: 'POST', path: '/calculate', description: 'Calculate fees for period', auth: true, role: 'admin' },
+      ],
+    },
+    {
+      name: 'Documents',
+      basePath: '/documents',
+      endpoints: [
+        { method: 'GET', path: '/', description: 'List documents', auth: true },
+        { method: 'POST', path: '/', description: 'Upload a document', auth: true },
+        { method: 'DELETE', path: '/:id', description: 'Delete a document', auth: true },
+      ],
+    },
+    {
+      name: 'Maintenance',
+      basePath: '/maintenance',
+      endpoints: [
+        { method: 'GET', path: '/', description: 'List maintenance requests', auth: true },
+        { method: 'GET', path: '/:id', description: 'Get request details', auth: true },
+        { method: 'POST', path: '/', description: 'Create maintenance request', auth: true },
+        { method: 'PUT', path: '/:id', description: 'Update maintenance request', auth: true },
+      ],
+    },
+    {
+      name: 'Tasks',
+      basePath: '/tasks',
+      endpoints: [
+        { method: 'GET', path: '/', description: 'List tasks', auth: true },
+        { method: 'POST', path: '/', description: 'Create a task', auth: true },
+        { method: 'PUT', path: '/:id', description: 'Update a task', auth: true },
+      ],
+    },
+    {
+      name: 'Communications',
+      basePath: '/communications',
+      endpoints: [
+        { method: 'GET', path: '/threads', description: 'List message threads', auth: true },
+        { method: 'POST', path: '/threads', description: 'Create a thread', auth: true },
+        { method: 'POST', path: '/threads/:id/messages', description: 'Send a message', auth: true },
+      ],
+    },
+    {
+      name: 'Channels',
+      basePath: '/channels',
+      endpoints: [
+        { method: 'GET', path: '/', description: 'List connected channels', auth: true },
+        { method: 'POST', path: '/:id/sync', description: 'Trigger channel sync', auth: true, role: 'admin' },
+      ],
+    },
+    {
+      name: 'Reports',
+      basePath: '/reports',
+      endpoints: [
+        { method: 'GET', path: '/occupancy', description: 'Get occupancy report', auth: true },
+        { method: 'GET', path: '/revenue', description: 'Get revenue report', auth: true },
+        { method: 'GET', path: '/bookings', description: 'Get bookings report', auth: true },
+        { method: 'GET', path: '/maintenance', description: 'Get maintenance report', auth: true },
+        { method: 'GET', path: '/owner-statement', description: 'Get owner statement report', auth: true },
+      ],
+    },
+    {
+      name: 'Loyalty',
+      basePath: '/loyalty',
+      endpoints: [
+        { method: 'GET', path: '/members', description: 'List loyalty members', auth: true },
+        { method: 'POST', path: '/points', description: 'Award or deduct points', auth: true, role: 'admin' },
+      ],
+    },
+    {
+      name: 'Affiliates',
+      basePath: '/affiliates',
+      endpoints: [
+        { method: 'GET', path: '/', description: 'List affiliates', auth: true },
+        { method: 'POST', path: '/', description: 'Create an affiliate', auth: true, role: 'admin' },
+      ],
+    },
+    {
+      name: 'Notifications',
+      basePath: '/notifications',
+      endpoints: [
+        { method: 'GET', path: '/', description: 'List notifications', auth: true },
+        { method: 'PUT', path: '/:id/read', description: 'Mark notification as read', auth: true },
+        { method: 'PUT', path: '/read-all', description: 'Mark all as read', auth: true },
+      ],
+    },
+    {
+      name: 'Payments',
+      basePath: '/payments',
+      endpoints: [
+        { method: 'GET', path: '/', description: 'List payments', auth: true },
+        { method: 'POST', path: '/', description: 'Record a payment', auth: true },
+      ],
+    },
+    {
+      name: 'Portfolio',
+      basePath: '/portfolio',
+      endpoints: [
+        { method: 'GET', path: '/overview', description: 'Get portfolio overview', auth: true },
+        { method: 'GET', path: '/performance', description: 'Get property performance metrics', auth: true },
+      ],
+    },
+    {
+      name: 'Templates',
+      basePath: '/templates',
+      endpoints: [
+        { method: 'GET', path: '/', description: 'List message templates', auth: true },
+        { method: 'POST', path: '/', description: 'Create a template', auth: true },
+        { method: 'PUT', path: '/:id', description: 'Update a template', auth: true },
+        { method: 'DELETE', path: '/:id', description: 'Delete a template', auth: true },
+      ],
+    },
+    {
+      name: 'Automations',
+      basePath: '/automations',
+      endpoints: [
+        { method: 'GET', path: '/', description: 'List automation rules', auth: true },
+        { method: 'POST', path: '/', description: 'Create automation rule', auth: true },
+        { method: 'PUT', path: '/:id', description: 'Update automation rule', auth: true },
+        { method: 'DELETE', path: '/:id', description: 'Delete automation rule', auth: true },
+        { method: 'POST', path: '/:id/toggle', description: 'Toggle rule active state', auth: true },
+        { method: 'POST', path: '/:id/test', description: 'Test automation rule', auth: true },
+      ],
+    },
+    {
+      name: 'Owner Portal',
+      basePath: '/owner-portal',
+      endpoints: [
+        { method: 'GET', path: '/config/:ownerId', description: 'Get owner portal configuration', auth: true },
+        { method: 'PUT', path: '/config/:ownerId', description: 'Update owner portal configuration', auth: true, role: 'admin' },
+        { method: 'GET', path: '/reservations', description: 'List owner reservations (RLS for owners)', auth: true },
+        { method: 'POST', path: '/reservations', description: 'Create an owner/F&F reservation', auth: true },
+        { method: 'PUT', path: '/reservations/:id/approve', description: 'Approve an owner reservation', auth: true, role: 'admin' },
+        { method: 'PUT', path: '/reservations/:id/reject', description: 'Reject an owner reservation', auth: true, role: 'admin' },
+        { method: 'PUT', path: '/reservations/:id/cancel', description: 'Cancel an owner reservation', auth: true },
+        { method: 'POST', path: '/statements/generate', description: 'Generate owner statement for period', auth: true, role: 'admin' },
+        { method: 'GET', path: '/statements', description: 'List owner statements (RLS for owners)', auth: true },
+        { method: 'GET', path: '/statements/:id', description: 'Get statement details', auth: true },
+        { method: 'POST', path: '/statements/:id/approve', description: 'Approve a statement', auth: true, role: 'admin' },
+        { method: 'POST', path: '/statements/:id/send', description: 'Send statement to owner', auth: true, role: 'admin' },
+        { method: 'GET', path: '/export/:ownerId', description: 'Export all owner data (CSV/JSON)', auth: true, role: 'admin', params: ['format'] },
+      ],
+    },
+    {
+      name: 'Webhooks',
+      basePath: '/webhooks',
+      endpoints: [
+        { method: 'GET', path: '/', description: 'List all webhook endpoints', auth: true, role: 'admin' },
+        { method: 'POST', path: '/', description: 'Create a webhook endpoint', auth: true, role: 'admin' },
+        { method: 'PUT', path: '/:id', description: 'Update a webhook endpoint', auth: true, role: 'admin' },
+        { method: 'DELETE', path: '/:id', description: 'Delete a webhook endpoint', auth: true, role: 'admin' },
+        { method: 'POST', path: '/:id/toggle', description: 'Toggle webhook active state', auth: true, role: 'admin' },
+        { method: 'POST', path: '/:id/test', description: 'Send test webhook delivery', auth: true, role: 'admin' },
+        { method: 'GET', path: '/deliveries', description: 'Get webhook delivery log', auth: true, role: 'admin', params: ['endpointId'] },
+      ],
+    },
+    {
+      name: 'Bulk Actions',
+      basePath: '/bulk',
+      endpoints: [
+        { method: 'POST', path: '/actions', description: 'Execute a bulk action', auth: true, role: 'admin' },
+        { method: 'GET', path: '/actions', description: 'List bulk action history', auth: true, role: 'admin', params: ['entity', 'status'] },
+        { method: 'GET', path: '/actions/:id', description: 'Get bulk action details', auth: true, role: 'admin' },
+        { method: 'POST', path: '/export', description: 'Export entity data as CSV/JSON', auth: true, role: 'admin' },
+      ],
+    },
+    {
+      name: 'Pricing',
+      basePath: '/pricing',
+      endpoints: [
+        { method: 'GET', path: '/:propertyId', description: 'Get pricing rules for property', auth: true },
+        { method: 'PUT', path: '/:propertyId', description: 'Update pricing rules', auth: true },
+      ],
+    },
+    {
+      name: 'Guest Experience',
+      basePath: '/guest-experience',
+      endpoints: [
+        { method: 'GET', path: '/checkin/:bookingId', description: 'Get online check-in data', auth: false },
+        { method: 'POST', path: '/checkin/:bookingId', description: 'Submit online check-in', auth: false },
+      ],
+    },
+    {
+      name: 'Teams',
+      basePath: '/teams',
+      endpoints: [
+        { method: 'GET', path: '/', description: 'List all teams', auth: true, role: 'admin' },
+        { method: 'GET', path: '/:id', description: 'Get team details', auth: true, role: 'admin' },
+        { method: 'POST', path: '/', description: 'Create a team', auth: true, role: 'super_admin' },
+        { method: 'PUT', path: '/:id', description: 'Update a team', auth: true, role: 'admin' },
+        { method: 'DELETE', path: '/:id', description: 'Delete a team', auth: true, role: 'super_admin' },
+        { method: 'POST', path: '/:id/members', description: 'Add team member', auth: true, role: 'admin' },
+        { method: 'DELETE', path: '/:id/members/:userId', description: 'Remove team member', auth: true, role: 'admin' },
+        { method: 'PUT', path: '/:id/members/:userId', description: 'Update member role', auth: true, role: 'admin' },
+        { method: 'PUT', path: '/:id/properties', description: 'Assign properties to team', auth: true, role: 'admin' },
+        { method: 'GET', path: '/user/:userId', description: 'Get teams by user', auth: true },
+      ],
+    },
+    {
+      name: 'Booking Engine',
+      basePath: '/booking-engine',
+      endpoints: [
+        { method: 'GET', path: '/config/:propertyId', description: 'Get booking engine config', auth: true, role: 'admin' },
+        { method: 'PUT', path: '/config/:propertyId', description: 'Update booking engine config', auth: true, role: 'admin' },
+        { method: 'GET', path: '/promotions/:propertyId', description: 'List promotions for property', auth: true, role: 'admin' },
+        { method: 'POST', path: '/promotions/:propertyId', description: 'Create a promotion', auth: true, role: 'admin' },
+        { method: 'PUT', path: '/promotions/:promoId', description: 'Update a promotion', auth: true, role: 'admin' },
+        { method: 'DELETE', path: '/promotions/:promoId', description: 'Delete a promotion', auth: true, role: 'admin' },
+        { method: 'GET', path: '/public/search', description: 'Search available properties', auth: false, params: ['city', 'checkIn', 'checkOut', 'guests', 'minPrice', 'maxPrice'] },
+        { method: 'GET', path: '/public/property/:propertyId', description: 'Get public property info', auth: false },
+        { method: 'GET', path: '/public/availability/:propertyId', description: 'Check availability', auth: false, params: ['checkIn', 'checkOut'] },
+        { method: 'POST', path: '/public/quote', description: 'Calculate booking quote', auth: false },
+        { method: 'POST', path: '/public/book', description: 'Create a direct booking', auth: false },
+        { method: 'POST', path: '/public/validate-promo', description: 'Validate promotion code', auth: false },
+      ],
+    },
+    {
+      name: 'Analytics',
+      basePath: '/analytics',
+      endpoints: [
+        { method: 'GET', path: '/overview', description: 'Revenue overview with date/property filters', auth: true, params: ['startDate', 'endDate', 'propertyId', 'groupBy'] },
+        { method: 'GET', path: '/properties', description: 'Property performance ranking', auth: true },
+        { method: 'GET', path: '/channels', description: 'Channel distribution analytics', auth: true },
+        { method: 'GET', path: '/occupancy/:propertyId', description: 'Occupancy heatmap for property', auth: true },
+        { method: 'GET', path: '/forecast', description: 'Revenue forecast', auth: true },
+        { method: 'GET', path: '/owners', description: 'Owner financial reports', auth: true },
+        { method: 'GET', path: '/kpi', description: 'KPI dashboard summary', auth: true },
+        { method: 'GET', path: '/comparison', description: 'Side-by-side property comparison', auth: true, params: ['propertyIds'] },
+        { method: 'GET', path: '/seasonal', description: 'Seasonal trend analysis', auth: true },
+        { method: 'GET', path: '/export', description: 'Export report data', auth: true, params: ['type', 'format'] },
+      ],
+    },
+    {
+      name: 'Property Scoring',
+      basePath: '/scoring',
+      endpoints: [
+        { method: 'GET', path: '/', description: 'Get all property scores', auth: true },
+        { method: 'GET', path: '/portfolio', description: 'Portfolio score summary', auth: true },
+        { method: 'GET', path: '/config', description: 'Get scoring configuration', auth: true, role: 'admin' },
+        { method: 'PUT', path: '/config', description: 'Update scoring configuration', auth: true, role: 'admin' },
+        { method: 'GET', path: '/:propertyId', description: 'Get single property score', auth: true },
+        { method: 'POST', path: '/:propertyId/recalculate', description: 'Trigger score recalculation', auth: true },
+        { method: 'GET', path: '/:propertyId/history', description: 'Get score history', auth: true },
+        { method: 'GET', path: '/:propertyId/recommendations', description: 'Get improvement recommendations', auth: true },
+        { method: 'PUT', path: '/:propertyId/recommendations/:recId', description: 'Update recommendation status', auth: true },
+        { method: 'POST', path: '/compare', description: 'Compare property scores', auth: true, params: ['propertyIds'] },
+      ],
+    },
+  ],
+  webhookEvents: [
+    'booking.created', 'booking.confirmed', 'booking.cancelled', 'booking.updated',
+    'guest.created', 'guest.updated',
+    'payment.received', 'payment.failed',
+    'checkin.submitted', 'checkout.completed',
+    'maintenance.created', 'maintenance.completed',
+    'owner.statement.generated',
+  ],
+};
+
+app.get('/api/v1/docs', (_req, res) => {
+  res.json(apiDocumentation);
+});
 
 // Error handler (must be last)
 app.use(errorHandler);

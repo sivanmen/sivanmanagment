@@ -38,6 +38,18 @@ const PortfolioPage = lazy(() => import('./pages/PortfolioPage'));
 const AutomationsPage = lazy(() => import('./pages/AutomationsPage'));
 const SystemSettingsPage = lazy(() => import('./pages/SystemSettingsPage'));
 const TemplatesPage = lazy(() => import('./pages/TemplatesPage'));
+const GuestExperiencePage = lazy(() => import('./pages/GuestExperiencePage'));
+const GuestPortalPreviewPage = lazy(() => import('./pages/GuestPortalPreviewPage'));
+const PricingPage = lazy(() => import('./pages/PricingPage'));
+const BookingExtrasPage = lazy(() => import('./pages/BookingExtrasPage'));
+const AnalyticsDashboardPage = lazy(() => import('./pages/AnalyticsDashboardPage'));
+const PropertyScoringPage = lazy(() => import('./pages/PropertyScoringPage'));
+const TeamManagementPage = lazy(() => import('./pages/TeamManagementPage'));
+const BookingEnginePage = lazy(() => import('./pages/BookingEnginePage'));
+const OwnerPortalConfigPage = lazy(() => import('./pages/OwnerPortalConfigPage'));
+const OwnerStatementsPage = lazy(() => import('./pages/OwnerStatementsPage'));
+const WebhooksPage = lazy(() => import('./pages/WebhooksPage'));
+const OnboardingWizardPage = lazy(() => import('./pages/OnboardingWizardPage'));
 
 // Loading screen component - Sivan Obsidian design
 function LoadingScreen() {
@@ -115,6 +127,18 @@ export default function App() {
             <Route path="/marketing" element={<div className="p-6 font-headline text-2xl">Marketing — Coming Soon</div>} />
             <Route path="/settings" element={<SystemSettingsPage />} />
             <Route path="/templates" element={<TemplatesPage />} />
+            <Route path="/guest-experience" element={<GuestExperiencePage />} />
+            <Route path="/guest-portal-preview" element={<GuestPortalPreviewPage />} />
+            <Route path="/pricing" element={<PricingPage />} />
+            <Route path="/booking-extras" element={<BookingExtrasPage />} />
+            <Route path="/analytics" element={<AnalyticsDashboardPage />} />
+            <Route path="/scoring" element={<PropertyScoringPage />} />
+            <Route path="/teams" element={<TeamManagementPage />} />
+            <Route path="/booking-engine" element={<BookingEnginePage />} />
+            <Route path="/owner-portal-config" element={<OwnerPortalConfigPage />} />
+            <Route path="/owner-statements" element={<OwnerStatementsPage />} />
+            <Route path="/webhooks" element={<WebhooksPage />} />
+            <Route path="/onboarding" element={<OnboardingWizardPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

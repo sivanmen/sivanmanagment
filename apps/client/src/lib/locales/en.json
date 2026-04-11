@@ -220,5 +220,28 @@
     "propertyComparison": "Property Comparison",
     "property": "Property",
     "totals": "Totals"
+  },
+  "ownerReservations": {
+    "label": "Owner Reservations",
+    "title": "My Reservations",
+    "bookForMyself": "Book for Myself",
+    "bookForFF": "Friends & Family",
+    "newReservation": "New Reservation",
+    "totalReservations": "Total Reservations",
+    "pendingApproval": "Pending Approval",
+    "approved": "Approved",
+    "blockedNights": "Blocked Nights",
+    "guestName": "Guest Name",
+    "guestNamePlaceholder": "Enter guest name",
+    "guestRelation": "Relation",
+    "guestRelationPlaceholder": "e.g. Brother, Friend",
+    "notes": "Notes",
+    "notesPlaceholder": "Any special notes...",
+    "submitRequest": "Submit Request",
+    "created": "Reservation request submitted",
+    "cancelled": "Reservation cancelled",
+    "datesRequired": "Check-in and check-out dates are required",
+    "guestNameRequired": "Guest name is required for Friends & Family bookings",
+    "noReservations": "No reservations found"
   }
 }
