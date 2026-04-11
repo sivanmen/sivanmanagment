@@ -1,10 +1,20 @@
 import { Router } from 'express';
+import multer from 'multer';
 import { propertiesController } from './properties.controller';
 import { unitsController } from './units.controller';
 import { authMiddleware } from '../../middleware/auth.middleware';
 import { requireAdmin } from '../../middleware/rbac.middleware';
 
 const router = Router();
+
+// Configure multer for memory storage (images uploaded to R2)
+const imageUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10 MB
+    files: 20,
+  },
+});
 
 // All property routes require authentication
 router.use(authMiddleware);
@@ -18,6 +28,9 @@ router.get('/:id', (req, res, next) => propertiesController.getById(req, res, ne
 router.post('/', requireAdmin, (req, res, next) => propertiesController.create(req, res, next));
 router.put('/:id', requireAdmin, (req, res, next) => propertiesController.update(req, res, next));
 router.delete('/:id', requireAdmin, (req, res, next) => propertiesController.delete(req, res, next));
+
+// Property image upload
+router.post('/:id/images', requireAdmin, imageUpload.array('files', 20), (req, res, next) => propertiesController.uploadImages(req, res, next));
 
 // Property Units (nested under property)
 router.get('/:propertyId/units', (req, res, next) => unitsController.getAll(req, res, next));

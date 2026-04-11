@@ -2,6 +2,13 @@ import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { propertiesService } from './properties.service';
 import { sendSuccess, sendPaginated } from '../../utils/response';
+import { prisma } from '../../prisma/client';
+import { ApiError } from '../../utils/api-error';
+import {
+  uploadService,
+  ALLOWED_IMAGE_TYPES,
+  MAX_IMAGE_SIZE,
+} from '../uploads/upload.service';
 
 const createPropertySchema = z.object({
   ownerId: z.string().uuid(),
@@ -128,6 +135,92 @@ export class PropertiesController {
 
       const stats = await propertiesService.getPropertyStats(userOwnerId);
       sendSuccess(res, stats);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * POST /api/v1/properties/:id/images
+   * Upload images for a property using multer + R2 upload service.
+   */
+  async uploadImages(req: Request, res: Response, next: NextFunction) {
+    try {
+      const propertyId = req.params.id as string;
+
+      // Verify property exists
+      const property = await prisma.property.findUnique({
+        where: { id: propertyId },
+        select: { id: true, deletedAt: true },
+      });
+
+      if (!property || property.deletedAt) {
+        throw ApiError.notFound('Property');
+      }
+
+      // Extract files from multer
+      const files: Express.Multer.File[] = [];
+      if (req.files && Array.isArray(req.files)) {
+        files.push(...req.files);
+      } else if (req.file) {
+        files.push(req.file);
+      }
+
+      if (files.length === 0) {
+        throw ApiError.badRequest('No image files provided', 'NO_FILES');
+      }
+
+      // Parse optional body params
+      const unitId = req.body.unitId as string | undefined;
+      const captionJson = req.body.caption ? JSON.parse(req.body.caption) : undefined;
+
+      // Get current max sort order for this property
+      const lastImage = await prisma.propertyImage.findFirst({
+        where: { propertyId },
+        orderBy: { sortOrder: 'desc' },
+        select: { sortOrder: true },
+      });
+      let sortOrder = (lastImage?.sortOrder ?? -1) + 1;
+
+      const results = [];
+
+      for (const file of files) {
+        // Validate type
+        if (!uploadService.validateFileType(file.mimetype, ALLOWED_IMAGE_TYPES)) {
+          throw ApiError.badRequest(
+            `Invalid image type: ${file.mimetype}. Allowed: ${ALLOWED_IMAGE_TYPES.join(', ')}`,
+            'INVALID_FILE_TYPE',
+          );
+        }
+
+        // Validate size
+        if (file.size > MAX_IMAGE_SIZE) {
+          throw ApiError.badRequest(
+            `Image too large: ${(file.size / 1024 / 1024).toFixed(1)}MB. Maximum: ${MAX_IMAGE_SIZE / 1024 / 1024}MB`,
+            'FILE_TOO_LARGE',
+          );
+        }
+
+        // Upload to R2
+        const key = uploadService.generateKey(`properties/${propertyId}`, file.originalname);
+        const uploaded = await uploadService.uploadFile(file.buffer, key, file.mimetype);
+
+        // Create PropertyImage record
+        const image = await prisma.propertyImage.create({
+          data: {
+            propertyId,
+            unitId: unitId || null,
+            url: uploaded.url,
+            caption: captionJson,
+            sortOrder: sortOrder++,
+            isCover: sortOrder === 1, // First image is cover by default
+          },
+        });
+
+        results.push(image);
+      }
+
+      sendSuccess(res, results, 201);
     } catch (error) {
       next(error);
     }

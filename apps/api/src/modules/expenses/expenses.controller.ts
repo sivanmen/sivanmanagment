@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { expensesService } from './expenses.service';
+import { expenseApprovalService } from './expense-approval.service';
 import { sendSuccess, sendPaginated } from '../../utils/response';
 
 const querySchema = z.object({
@@ -95,7 +96,21 @@ export class ExpensesController {
     try {
       const data = createSchema.parse(req.body);
       const expense = await expensesService.createExpense(data as any, req.user!.userId);
-      sendSuccess(res, expense, 201);
+
+      // Check if expense needs owner approval via WhatsApp
+      let approvalRequest = null;
+      if (expenseApprovalService.needsApproval(expense.propertyId, expense.amount)) {
+        try {
+          // Update the expense status to PENDING (it's already PENDING by default,
+          // but this makes the intent explicit for the approval workflow)
+          approvalRequest = await expenseApprovalService.requestApproval(expense.id);
+        } catch (err: any) {
+          // Log but don't fail the expense creation
+          console.error('[Expenses] Failed to send approval request:', err.message);
+        }
+      }
+
+      sendSuccess(res, { ...expense, approvalRequest }, 201);
     } catch (error) {
       next(error);
     }
@@ -177,6 +192,122 @@ export class ExpensesController {
       next(error);
     }
   }
+
+  // ── Approval workflow ──
+
+  async requestApproval(req: Request, res: Response, next: NextFunction) {
+    try {
+      const approvalRequest = await expenseApprovalService.requestApproval(req.params.id as string);
+      sendSuccess(res, approvalRequest, 201);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getApprovalRequests(req: Request, res: Response, next: NextFunction) {
+    try {
+      const filters = approvalQuerySchema.parse(req.query);
+      const result = expenseApprovalService.getApprovalRequests(filters);
+      sendPaginated(res, result.approvalRequests, result.total, result.page, result.limit);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getApprovalThreshold(req: Request, res: Response, next: NextFunction) {
+    try {
+      const propertyId = req.params.propertyId as string;
+      const threshold = expenseApprovalService.getApprovalThreshold(propertyId);
+      sendSuccess(res, { propertyId, threshold });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getPendingApprovalsForOwner(req: Request, res: Response, next: NextFunction) {
+    try {
+      const ownerId = req.params.ownerId as string;
+      const pending = expenseApprovalService.getPendingForOwner(ownerId);
+
+      // Enrich with expense details
+      const enriched = [];
+      for (const req of pending) {
+        try {
+          const expense = await expensesService.getExpenseById(req.expenseId);
+          enriched.push({ ...req, expense });
+        } catch {
+          enriched.push(req);
+        }
+      }
+
+      sendSuccess(res, enriched);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getApprovalHistoryForOwner(req: Request, res: Response, next: NextFunction) {
+    try {
+      const ownerId = req.params.ownerId as string;
+      const history = expenseApprovalService.getHistoryForOwner(ownerId);
+
+      const enriched = [];
+      for (const req of history) {
+        try {
+          const expense = await expensesService.getExpenseById(req.expenseId);
+          enriched.push({ ...req, expense });
+        } catch {
+          enriched.push(req);
+        }
+      }
+
+      sendSuccess(res, enriched);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async approveViaWeb(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await expenseApprovalService.processApproval(
+        req.params.id as string,
+        true,
+        req.user!.userId,
+      );
+      sendSuccess(res, result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async rejectViaWeb(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await expenseApprovalService.processApproval(
+        req.params.id as string,
+        false,
+        req.user!.userId,
+      );
+      sendSuccess(res, result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async sendApprovalReminder(req: Request, res: Response, next: NextFunction) {
+    try {
+      await expenseApprovalService.sendReminder(req.params.requestId as string);
+      sendSuccess(res, { message: 'Reminder sent' });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
+
+const approvalQuerySchema = z.object({
+  status: z.enum(['PENDING', 'APPROVED', 'REJECTED', 'EXPIRED']).optional(),
+  ownerId: z.string().optional(),
+  page: z.coerce.number().int().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional(),
+});
 
 export const expensesController = new ExpensesController();

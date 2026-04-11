@@ -17,9 +17,23 @@ const revenueQuerySchema = z.object({
   groupBy: z.enum(['day', 'week', 'month']).optional(),
 });
 
+const bookingsQuerySchema = z.object({
+  startDate: z.string().min(1),
+  endDate: z.string().min(1),
+  propertyId: z.string().uuid().optional(),
+  source: z.string().optional(),
+});
+
 const ownerStatementSchema = z.object({
-  month: z.coerce.number().int().min(1).max(12),
-  year: z.coerce.number().int().min(2000).max(2100),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  month: z.coerce.number().int().min(1).max(12).optional(),
+  year: z.coerce.number().int().min(2000).max(2100).optional(),
+});
+
+const guestAnalyticsSchema = z.object({
+  startDate: z.string().min(1),
+  endDate: z.string().min(1),
 });
 
 export class ReportsController {
@@ -65,7 +79,7 @@ export class ReportsController {
 
   async getBookings(req: Request, res: Response, next: NextFunction) {
     try {
-      const { startDate, endDate } = dateRangeSchema.parse(req.query);
+      const { startDate, endDate, propertyId, source } = bookingsQuerySchema.parse(req.query);
       const userOwnerId = req.user!.role === 'OWNER' || req.user!.role === 'VIP_STAR'
         ? req.user!.ownerId
         : undefined;
@@ -73,6 +87,8 @@ export class ReportsController {
       const report = await reportsService.getBookingsReport({
         startDate,
         endDate,
+        propertyId,
+        source,
         userOwnerId,
       });
       sendSuccess(res, report);
@@ -102,15 +118,35 @@ export class ReportsController {
 
   async getOwnerStatement(req: Request, res: Response, next: NextFunction) {
     try {
-      const { month, year } = ownerStatementSchema.parse(req.query);
+      const { startDate, endDate, month, year } = ownerStatementSchema.parse(req.query);
       const userOwnerId = req.user!.role === 'OWNER' || req.user!.role === 'VIP_STAR'
         ? req.user!.ownerId
         : undefined;
 
       const report = await reportsService.getOwnerStatement({
         ownerId: req.params.ownerId as string,
+        startDate,
+        endDate,
         periodMonth: month,
         periodYear: year,
+        userOwnerId,
+      });
+      sendSuccess(res, report);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getGuestAnalytics(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { startDate, endDate } = guestAnalyticsSchema.parse(req.query);
+      const userOwnerId = req.user!.role === 'OWNER' || req.user!.role === 'VIP_STAR'
+        ? req.user!.ownerId
+        : undefined;
+
+      const report = await reportsService.getGuestAnalytics({
+        startDate,
+        endDate,
         userOwnerId,
       });
       sendSuccess(res, report);

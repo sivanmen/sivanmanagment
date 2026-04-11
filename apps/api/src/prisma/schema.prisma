@@ -654,6 +654,26 @@ model ExpenseRecord {
   @@map("expense_records")
 }
 
+model ExpenseApprovalRequest {
+  id             String    @id @default(uuid())
+  expenseId      String    @map("expense_id")
+  ownerId        String    @map("owner_id")
+  ownerPhone     String    @map("owner_phone")
+  status         String    @default("PENDING") // PENDING, APPROVED, REJECTED, EXPIRED
+  sentAt         DateTime  @default(now()) @map("sent_at")
+  respondedAt    DateTime? @map("responded_at")
+  reminderSentAt DateTime? @map("reminder_sent_at")
+  expiresAt      DateTime  @map("expires_at")
+  metadata       Json?
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  @@index([expenseId])
+  @@index([ownerId, status])
+  @@index([ownerPhone, status])
+  @@map("expense_approval_requests")
+}
+
 enum FeeType {
   PERCENTAGE
   MINIMUM

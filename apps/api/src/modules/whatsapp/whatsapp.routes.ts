@@ -5,6 +5,10 @@ import { requireAdmin } from '../../middleware/rbac.middleware';
 
 const router = Router();
 
+// ── Webhook (no auth -- called by Evolution API) ──
+router.post('/webhook', (req, res, next) => whatsAppController.webhook(req, res, next));
+
+// All other routes require authentication
 router.use(authMiddleware);
 
 // Stats

@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { whatsAppService } from './whatsapp.service';
 import { sendSuccess, sendPaginated } from '../../utils/response';
+import { expenseApprovalService } from '../expenses/expense-approval.service';
 
 const contactsQuerySchema = z.object({
   tag: z.string().optional(),
@@ -232,6 +233,100 @@ export class WhatsAppController {
       const stats = await whatsAppService.getStats();
       sendSuccess(res, stats);
     } catch (error) {
+      next(error);
+    }
+  }
+
+  // ── Webhook (Evolution API) ──
+
+  /**
+   * POST /api/v1/whatsapp/webhook
+   *
+   * Receives incoming WhatsApp messages from Evolution API.
+   * Parses the message text and checks for expense approval responses.
+   *
+   * Accepted responses:
+   *   Approve: "approve", "approved", "yes", "1", Hebrew: "\u05D0\u05E9\u05E8"
+   *   Reject:  "reject", "rejected", "no", "2", Hebrew: "\u05D3\u05D7\u05D4"
+   */
+  async webhook(req: Request, res: Response, next: NextFunction) {
+    try {
+      const body = req.body;
+
+      // Evolution API sends different event types; we only care about messages
+      const event = body.event || body.type;
+      if (event && event !== 'messages.upsert' && event !== 'message') {
+        // Acknowledge non-message events silently
+        return sendSuccess(res, { acknowledged: true, event });
+      }
+
+      // Extract the message text from Evolution API payload
+      // Evolution API v2 format:
+      //   body.data.message.conversation (plain text)
+      //   body.data.message.extendedTextMessage.text (quoted reply / extended)
+      //   body.data.key.remoteJid (sender's phone@s.whatsapp.net)
+      const data = body.data || body;
+      const messageObj = data.message || {};
+      const messageText: string =
+        messageObj.conversation ||
+        messageObj.extendedTextMessage?.text ||
+        data.body ||
+        '';
+
+      const remoteJid: string = data.key?.remoteJid || data.from || '';
+      const senderPhone = remoteJid.replace(/@.*$/, ''); // Strip @s.whatsapp.net
+
+      if (!messageText || !senderPhone) {
+        return sendSuccess(res, { acknowledged: true, reason: 'no_text_or_sender' });
+      }
+
+      // Normalize the message for matching
+      const normalized = messageText.trim().toLowerCase();
+
+      // Define approval/rejection patterns
+      const approvePatterns = ['1', 'approve', 'approved', 'yes', '\u05D0\u05E9\u05E8'];
+      const rejectPatterns = ['2', 'reject', 'rejected', 'no', '\u05D3\u05D7\u05D4'];
+
+      let isApproval: boolean | null = null;
+      if (approvePatterns.includes(normalized)) {
+        isApproval = true;
+      } else if (rejectPatterns.includes(normalized)) {
+        isApproval = false;
+      }
+
+      if (isApproval === null) {
+        // Not an approval response -- could be a regular conversation message
+        return sendSuccess(res, { acknowledged: true, reason: 'not_approval_response' });
+      }
+
+      // Look up a pending approval request for this phone number
+      const pendingRequest = expenseApprovalService.findPendingByPhone(senderPhone);
+
+      if (!pendingRequest) {
+        return sendSuccess(res, {
+          acknowledged: true,
+          reason: 'no_pending_approval',
+          phone: senderPhone,
+        });
+      }
+
+      // Process the approval/rejection
+      const result = await expenseApprovalService.processApproval(
+        pendingRequest.expenseId,
+        isApproval,
+        `whatsapp:${senderPhone}`,
+      );
+
+      return sendSuccess(res, {
+        acknowledged: true,
+        processed: true,
+        expenseId: pendingRequest.expenseId,
+        action: isApproval ? 'APPROVED' : 'REJECTED',
+        expense: result.expense,
+      });
+    } catch (error) {
+      // Always acknowledge webhooks to prevent retries
+      console.error('[WhatsApp Webhook] Error processing webhook:', error);
       next(error);
     }
   }

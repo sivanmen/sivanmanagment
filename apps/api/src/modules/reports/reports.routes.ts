@@ -11,6 +11,7 @@ router.get('/occupancy', (req, res, next) => reportsController.getOccupancy(req,
 router.get('/revenue', (req, res, next) => reportsController.getRevenue(req, res, next));
 router.get('/bookings', (req, res, next) => reportsController.getBookings(req, res, next));
 router.get('/maintenance', (req, res, next) => reportsController.getMaintenance(req, res, next));
+router.get('/guests', (req, res, next) => reportsController.getGuestAnalytics(req, res, next));
 router.get('/owner-statement/:ownerId', (req, res, next) => reportsController.getOwnerStatement(req, res, next));
 router.get('/portfolio', (req, res, next) => reportsController.getPortfolio(req, res, next));
 

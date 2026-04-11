@@ -50,6 +50,7 @@ import accountingRoutes from './modules/accounting/accounting.routes';
 import directBookingRoutes from './modules/direct-booking/direct-booking.routes';
 import expensesRoutes from './modules/expenses/expenses.routes';
 import whatsappRoutes from './modules/whatsapp/whatsapp.routes';
+import uploadsRoutes from './modules/uploads/uploads.routes';
 
 const app = express();
 
@@ -161,6 +162,7 @@ app.use('/api/v1/accounting', accountingRoutes);
 app.use('/api/v1/direct-booking', directBookingRoutes);
 app.use('/api/v1/expenses', expensesRoutes);
 app.use('/api/v1/whatsapp', whatsappRoutes);
+app.use('/api/v1/uploads', uploadsRoutes);
 
 // API Documentation
 const apiDocumentation = {
