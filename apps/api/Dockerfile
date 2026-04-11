@@ -43,4 +43,11 @@ COPY --from=base /app/apps/api/prisma/ apps/api/prisma/
 COPY --from=base /app/node_modules/.pnpm/@prisma+client*/node_modules/@prisma/client/ node_modules/.pnpm/@prisma+client/node_modules/@prisma/client/ 2>/dev/null || true
 
 EXPOSE ${PORT:-3001}
-CMD ["node", "apps/api/dist/index.js"]
+
+# Copy Prisma client to production
+COPY --from=base /app/apps/api/node_modules/.prisma/ apps/api/node_modules/.prisma/ 2>/dev/null || true
+COPY --from=base /app/node_modules/.prisma/ node_modules/.prisma/ 2>/dev/null || true
+
+# Entrypoint: run migrations then start server
+COPY --from=base /app/apps/api/prisma/ apps/api/prisma/
+CMD ["sh", "-c", "cd apps/api && npx prisma migrate deploy && node dist/index.js"]
