@@ -26,6 +26,12 @@ import MaintenanceListPage from './pages/MaintenanceListPage';
 import MaintenanceDetailPage from './pages/MaintenanceDetailPage';
 import TasksListPage from './pages/TasksListPage';
 import MessagesPage from './pages/MessagesPage';
+import ChannelsPage from './pages/ChannelsPage';
+import ReportsPage from './pages/ReportsPage';
+import LoyaltyAdminPage from './pages/LoyaltyAdminPage';
+import AffiliatesPage from './pages/AffiliatesPage';
+import NotificationsPage from './pages/NotificationsPage';
+import PortfolioPage from './pages/PortfolioPage';
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
@@ -77,10 +83,12 @@ export default function App() {
           <Route path="/tasks" element={<TasksListPage />} />
           <Route path="/messages" element={<MessagesPage />} />
           <Route path="/communications" element={<MessagesPage />} />
-          <Route path="/reports" element={<div className="p-6 font-headline text-2xl">Reports — Coming Soon</div>} />
-          <Route path="/channels" element={<div className="p-6 font-headline text-2xl">Channels — Coming Soon</div>} />
-          <Route path="/loyalty" element={<div className="p-6 font-headline text-2xl">Loyalty — Coming Soon</div>} />
-          <Route path="/affiliates" element={<div className="p-6 font-headline text-2xl">Affiliates — Coming Soon</div>} />
+          <Route path="/reports" element={<ReportsPage />} />
+          <Route path="/channels" element={<ChannelsPage />} />
+          <Route path="/loyalty" element={<LoyaltyAdminPage />} />
+          <Route path="/affiliates" element={<AffiliatesPage />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
+          <Route path="/portfolio" element={<PortfolioPage />} />
           <Route path="/settings" element={<div className="p-6 font-headline text-2xl">Settings — Coming Soon</div>} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -18,6 +18,15 @@ import documentsRoutes from './modules/documents/documents.routes';
 import maintenanceRoutes from './modules/maintenance/maintenance.routes';
 import tasksRoutes from './modules/tasks/tasks.routes';
 import communicationsRoutes from './modules/communications/communications.routes';
+import channelsRoutes from './modules/channels/channels.routes';
+import reportsRoutes from './modules/reports/reports.routes';
+import loyaltyRoutes from './modules/loyalty/loyalty.routes';
+import affiliatesRoutes from './modules/affiliates/affiliates.routes';
+import notificationsRoutes from './modules/notifications/notifications.routes';
+import paymentsRoutes from './modules/payments/payments.routes';
+import portfolioRoutes from './modules/portfolio/portfolio.routes';
+import marketingRoutes from './modules/marketing/marketing.routes';
+import adminRoutes from './modules/admin/admin.routes';
 
 const app = express();
 
@@ -66,20 +75,15 @@ app.use('/api/v1/documents', documentsRoutes);
 app.use('/api/v1/maintenance', maintenanceRoutes);
 app.use('/api/v1/tasks', tasksRoutes);
 app.use('/api/v1/communications', communicationsRoutes);
-
-// TODO: Add more routes as modules are built
-// app.use('/api/v1/channels', channelsRoutes);
-// app.use('/api/v1/reports', reportsRoutes);
-// app.use('/api/v1/ai', aiRoutes);
-// app.use('/api/v1/whatsapp', whatsappRoutes);
-// app.use('/api/v1/loyalty', loyaltyRoutes);
-// app.use('/api/v1/affiliates', affiliatesRoutes);
-// app.use('/api/v1/marketing', marketingRoutes);
-// app.use('/api/v1/portfolio', portfolioRoutes);
-// app.use('/api/v1/payments', paymentsRoutes);
-// app.use('/api/v1/iot', iotRoutes);
-// app.use('/api/v1/notifications', notificationsRoutes);
-// app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1/channels', channelsRoutes);
+app.use('/api/v1/reports', reportsRoutes);
+app.use('/api/v1/loyalty', loyaltyRoutes);
+app.use('/api/v1/affiliates', affiliatesRoutes);
+app.use('/api/v1/notifications', notificationsRoutes);
+app.use('/api/v1/payments', paymentsRoutes);
+app.use('/api/v1/portfolio', portfolioRoutes);
+app.use('/api/v1/marketing', marketingRoutes);
+app.use('/api/v1/admin', adminRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);

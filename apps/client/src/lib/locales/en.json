@@ -202,5 +202,23 @@
     "noData": "No data available",
     "confirm": "Confirm",
     "back": "Back"
+  },
+  "portfolio": {
+    "title": "My Portfolio",
+    "subtitle": "Portfolio Overview",
+    "totalValue": "Portfolio Value",
+    "monthlyIncome": "Monthly Income",
+    "netYield": "Net Yield",
+    "occupancy": "Occupancy",
+    "myProperties": "My Properties",
+    "income": "Income",
+    "expenses": "Expenses",
+    "net": "Net",
+    "score": "Score",
+    "monthlyTrend": "Monthly Trend",
+    "totalIncome": "Total Income",
+    "propertyComparison": "Property Comparison",
+    "property": "Property",
+    "totals": "Totals"
   }
 }

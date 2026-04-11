@@ -14,6 +14,7 @@ import MyDocumentsPage from './pages/MyDocumentsPage';
 import MaintenanceRequestsPage from './pages/MaintenanceRequestsPage';
 import LoyaltyPage from './pages/LoyaltyPage';
 import SettingsPage from './pages/SettingsPage';
+import PortfolioOverviewPage from './pages/PortfolioOverviewPage';
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
@@ -47,7 +48,7 @@ export default function App() {
           <Route path="/maintenance" element={<MaintenanceRequestsPage />} />
           <Route path="/loyalty" element={<LoyaltyPage />} />
           <Route path="/messages" element={<div className="p-6 font-headline text-2xl">Messages — Coming Soon</div>} />
-          <Route path="/portfolio" element={<div className="p-6 font-headline text-2xl">Portfolio — Coming Soon</div>} />
+          <Route path="/portfolio" element={<PortfolioOverviewPage />} />
           <Route path="/calendar" element={<MyCalendarPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>

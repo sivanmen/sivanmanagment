@@ -202,5 +202,23 @@
     "noData": "אין נתונים",
     "confirm": "אישור",
     "back": "חזרה"
+  },
+  "portfolio": {
+    "title": "התיק שלי",
+    "subtitle": "סקירת תיק",
+    "totalValue": "שווי תיק",
+    "monthlyIncome": "הכנסה חודשית",
+    "netYield": "תשואה נטו",
+    "occupancy": "תפוסה",
+    "myProperties": "הנכסים שלי",
+    "income": "הכנסה",
+    "expenses": "הוצאות",
+    "net": "נטו",
+    "score": "ציון",
+    "monthlyTrend": "מגמה חודשית",
+    "totalIncome": "הכנסה כוללת",
+    "propertyComparison": "השוואת נכסים",
+    "property": "נכס",
+    "totals": "סה\"כ"
   }
 }
