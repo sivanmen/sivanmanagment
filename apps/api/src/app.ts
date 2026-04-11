@@ -39,6 +39,13 @@ import teamsRoutes from './modules/teams/teams.routes';
 import bookingEngineRoutes from './modules/booking-engine/booking-engine.routes';
 import analyticsRoutes from './modules/analytics/analytics.routes';
 import scoringRoutes from './modules/scoring/scoring.routes';
+import usersRoutes from './modules/users/users.routes';
+import iotRoutes from './modules/iot/iot.routes';
+import aiRoutes from './modules/ai/ai.routes';
+import auditRoutes from './modules/audit/audit.routes';
+import translationsRoutes from './modules/translations/translations.routes';
+import integrationsRoutes from './modules/integrations/integrations.routes';
+import reviewsRoutes from './modules/reviews/reviews.routes';
 
 const app = express();
 
@@ -72,6 +79,37 @@ app.get('/api/v1/health', (_req, res) => {
     version: '1.0.0',
     env: config.env,
   });
+});
+
+// One-time admin setup endpoint (secured by JWT secret)
+app.post('/api/v1/setup/admin', async (req, res) => {
+  try {
+    const { secret, email, password, firstName, lastName } = req.body;
+    if (secret !== config.jwt.secret) {
+      return res.status(403).json({ error: 'Invalid secret' });
+    }
+    const bcrypt = require('bcryptjs');
+    const { prisma } = require('./prisma/client');
+    const passwordHash = await bcrypt.hash(password || 'Admin123!@#', 12);
+    const user = await prisma.user.upsert({
+      where: { email: email || 'admin@sivanmanagment.com' },
+      update: { passwordHash, role: 'SUPER_ADMIN', firstName: firstName || 'Sivan', lastName: lastName || 'Admin' },
+      create: {
+        email: email || 'admin@sivanmanagment.com',
+        passwordHash,
+        firstName: firstName || 'Sivan',
+        lastName: lastName || 'Admin',
+        role: 'SUPER_ADMIN',
+        status: 'ACTIVE',
+        preferredLocale: 'he',
+        timezone: 'Europe/Athens',
+        emailVerifiedAt: new Date(),
+      },
+    });
+    res.json({ success: true, message: `Admin ${user.email} configured`, id: user.id });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Routes
@@ -108,6 +146,13 @@ app.use('/api/v1/teams', teamsRoutes);
 app.use('/api/v1/booking-engine', bookingEngineRoutes);
 app.use('/api/v1/analytics', analyticsRoutes);
 app.use('/api/v1/scoring', scoringRoutes);
+app.use('/api/v1/users', usersRoutes);
+app.use('/api/v1/iot', iotRoutes);
+app.use('/api/v1/ai', aiRoutes);
+app.use('/api/v1/audit', auditRoutes);
+app.use('/api/v1/translations', translationsRoutes);
+app.use('/api/v1/integrations', integrationsRoutes);
+app.use('/api/v1/reviews', reviewsRoutes);
 
 // API Documentation
 const apiDocumentation = {
@@ -439,6 +484,96 @@ const apiDocumentation = {
         { method: 'GET', path: '/:propertyId/recommendations', description: 'Get improvement recommendations', auth: true },
         { method: 'PUT', path: '/:propertyId/recommendations/:recId', description: 'Update recommendation status', auth: true },
         { method: 'POST', path: '/compare', description: 'Compare property scores', auth: true, params: ['propertyIds'] },
+      ],
+    },
+    {
+      name: 'Users',
+      basePath: '/users',
+      endpoints: [
+        { method: 'GET', path: '/', description: 'List all users', auth: true, role: 'admin', params: ['search', 'role', 'isActive', 'page', 'limit', 'sortBy', 'sortOrder'] },
+        { method: 'GET', path: '/:id', description: 'Get user details', auth: true, role: 'admin' },
+        { method: 'POST', path: '/', description: 'Create a user', auth: true, role: 'super_admin' },
+        { method: 'PUT', path: '/:id', description: 'Update a user', auth: true, role: 'admin' },
+        { method: 'DELETE', path: '/:id', description: 'Deactivate a user', auth: true, role: 'super_admin' },
+      ],
+    },
+    {
+      name: 'IoT',
+      basePath: '/iot',
+      endpoints: [
+        { method: 'GET', path: '/dashboard', description: 'IoT devices dashboard', auth: true },
+        { method: 'GET', path: '/', description: 'List all IoT devices', auth: true, params: ['propertyId', 'type', 'status', 'isActive', 'page', 'limit'] },
+        { method: 'GET', path: '/:id', description: 'Get device details', auth: true },
+        { method: 'GET', path: '/:id/events', description: 'Get device event log', auth: true },
+        { method: 'POST', path: '/', description: 'Register a device', auth: true, role: 'admin' },
+        { method: 'PUT', path: '/:id', description: 'Update a device', auth: true, role: 'admin' },
+        { method: 'POST', path: '/:id/command', description: 'Send command to device', auth: true, role: 'admin' },
+        { method: 'DELETE', path: '/:id', description: 'Deactivate a device', auth: true, role: 'admin' },
+      ],
+    },
+    {
+      name: 'AI',
+      basePath: '/ai',
+      endpoints: [
+        { method: 'GET', path: '/sessions', description: 'List chat sessions', auth: true },
+        { method: 'GET', path: '/sessions/:id', description: 'Get session messages', auth: true },
+        { method: 'POST', path: '/chat', description: 'Send a chat message', auth: true },
+        { method: 'DELETE', path: '/sessions/:id', description: 'Delete a session', auth: true },
+        { method: 'GET', path: '/recommendations', description: 'Get AI recommendations', auth: true, params: ['propertyId', 'type', 'status', 'impact'] },
+        { method: 'PUT', path: '/recommendations/:id', description: 'Accept or dismiss recommendation', auth: true },
+      ],
+    },
+    {
+      name: 'Audit',
+      basePath: '/audit',
+      endpoints: [
+        { method: 'GET', path: '/', description: 'Get audit log', auth: true, role: 'admin', params: ['userId', 'action', 'entity', 'entityId', 'startDate', 'endDate', 'search', 'page', 'limit'] },
+        { method: 'GET', path: '/stats', description: 'Get audit statistics', auth: true, role: 'admin' },
+        { method: 'GET', path: '/user/:userId', description: 'Get user activity', auth: true, role: 'admin' },
+        { method: 'GET', path: '/entity/:entity/:entityId', description: 'Get entity change history', auth: true, role: 'admin' },
+        { method: 'GET', path: '/:id', description: 'Get audit entry details', auth: true, role: 'admin' },
+      ],
+    },
+    {
+      name: 'Translations',
+      basePath: '/translations',
+      endpoints: [
+        { method: 'GET', path: '/namespaces', description: 'List translation namespaces', auth: true },
+        { method: 'GET', path: '/stats', description: 'Get translation completeness stats', auth: true },
+        { method: 'GET', path: '/export', description: 'Export namespace translations', auth: true, params: ['namespace', 'language'] },
+        { method: 'GET', path: '/', description: 'List translation keys', auth: true, params: ['namespace', 'language', 'search', 'isVerified', 'missing', 'page', 'limit'] },
+        { method: 'GET', path: '/:id', description: 'Get translation key details', auth: true },
+        { method: 'POST', path: '/', description: 'Create translation key', auth: true, role: 'admin' },
+        { method: 'POST', path: '/import', description: 'Bulk import translations', auth: true, role: 'admin' },
+        { method: 'PUT', path: '/:id', description: 'Update translation key', auth: true, role: 'admin' },
+        { method: 'DELETE', path: '/:id', description: 'Delete translation key', auth: true, role: 'admin' },
+      ],
+    },
+    {
+      name: 'Integrations',
+      basePath: '/integrations',
+      endpoints: [
+        { method: 'GET', path: '/dashboard', description: 'Integrations dashboard', auth: true, role: 'admin' },
+        { method: 'GET', path: '/', description: 'List all integrations', auth: true, role: 'admin', params: ['type', 'status', 'isActive', 'page', 'limit'] },
+        { method: 'GET', path: '/:id', description: 'Get integration details', auth: true, role: 'admin' },
+        { method: 'GET', path: '/:id/sync-logs', description: 'Get sync history', auth: true, role: 'admin' },
+        { method: 'POST', path: '/', description: 'Add an integration', auth: true, role: 'admin' },
+        { method: 'PUT', path: '/:id', description: 'Update integration config', auth: true, role: 'admin' },
+        { method: 'POST', path: '/:id/sync', description: 'Trigger manual sync', auth: true, role: 'admin' },
+        { method: 'POST', path: '/:id/test', description: 'Test connection', auth: true, role: 'admin' },
+        { method: 'DELETE', path: '/:id', description: 'Disconnect integration', auth: true, role: 'admin' },
+      ],
+    },
+    {
+      name: 'Reviews',
+      basePath: '/reviews',
+      endpoints: [
+        { method: 'GET', path: '/stats', description: 'Get review statistics', auth: true, params: ['propertyId'] },
+        { method: 'GET', path: '/', description: 'List guest reviews', auth: true, params: ['propertyId', 'source', 'status', 'sentiment', 'ratingMin', 'ratingMax', 'search', 'page', 'limit'] },
+        { method: 'GET', path: '/:id', description: 'Get review details', auth: true },
+        { method: 'POST', path: '/:id/respond', description: 'Respond to a review', auth: true, role: 'admin' },
+        { method: 'PUT', path: '/:id/status', description: 'Update review status', auth: true, role: 'admin' },
+        { method: 'GET', path: '/:id/suggest-response', description: 'Get AI-suggested response', auth: true },
       ],
     },
   ],
