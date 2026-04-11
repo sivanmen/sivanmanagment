@@ -1365,5 +1365,8 @@ main()
   .catch(async (e) => {
     console.error('Seeding error:', e);
     await prisma.$disconnect();
-    process.exit(1);
+    // Don't exit with error code - allow server to start even if seed fails
+    if (require.main === module) {
+      process.exit(1);
+    }
   });

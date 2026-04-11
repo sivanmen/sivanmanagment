@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js",
+    "start": "sh -c 'npx prisma migrate deploy 2>&1 || true' && sh -c 'node dist/prisma/seed.js 2>&1 || true' && node dist/index.js",
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
