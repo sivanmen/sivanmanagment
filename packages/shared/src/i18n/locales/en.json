@@ -49,7 +49,11 @@
     "alreadyHaveAccount": "Already have an account?",
     "dontHaveAccount": "Don't have an account?",
     "orContinueWith": "Or continue with",
-    "termsAgreement": "By signing up, you agree to our Terms of Service and Privacy Policy"
+    "termsAgreement": "By signing up, you agree to our Terms of Service and Privacy Policy",
+    "newUser": "New here?",
+    "requestAccess": "Request Access",
+    "rememberDevice": "Remember this device",
+    "loggingIn": "Logging in..."
   },
   "dashboard": {
     "title": "Dashboard",
