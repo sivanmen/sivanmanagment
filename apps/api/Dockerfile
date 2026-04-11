@@ -50,4 +50,4 @@ COPY --from=base /app/node_modules/.prisma/ node_modules/.prisma/ 2>/dev/null ||
 
 # Entrypoint: run migrations, seed, then start server
 COPY --from=base /app/apps/api/prisma/ apps/api/prisma/
-CMD ["sh", "-c", "cd apps/api && npx prisma migrate deploy && node dist/prisma/seed.js && node dist/index.js"]
+CMD ["sh", "-c", "cd apps/api && npx prisma migrate deploy && (node dist/prisma/seed.js || echo 'Seed skipped or already applied') && node dist/index.js"]
