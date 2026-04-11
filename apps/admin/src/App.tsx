@@ -14,19 +14,23 @@ const PropertyDetailPage = lazy(() => import('./pages/PropertyDetailPage'));
 const PropertyFormPage = lazy(() => import('./pages/PropertyFormPage'));
 const OwnersListPage = lazy(() => import('./pages/OwnersListPage'));
 const OwnerDetailPage = lazy(() => import('./pages/OwnerDetailPage'));
+const OwnerFormPage = lazy(() => import('./pages/OwnerFormPage'));
 const BookingsListPage = lazy(() => import('./pages/BookingsListPage'));
 const BookingDetailPage = lazy(() => import('./pages/BookingDetailPage'));
 const BookingFormPage = lazy(() => import('./pages/BookingFormPage'));
 const CalendarPage = lazy(() => import('./pages/CalendarPage'));
 const GuestsListPage = lazy(() => import('./pages/GuestsListPage'));
+const GuestDetailPage = lazy(() => import('./pages/GuestDetailPage'));
 const FinanceDashboardPage = lazy(() => import('./pages/FinanceDashboardPage'));
 const IncomeListPage = lazy(() => import('./pages/IncomeListPage'));
+const IncomeFormPage = lazy(() => import('./pages/IncomeFormPage'));
 const ExpenseListPage = lazy(() => import('./pages/ExpenseListPage'));
 const ExpenseFormPage = lazy(() => import('./pages/ExpenseFormPage'));
 const ManagementFeesPage = lazy(() => import('./pages/ManagementFeesPage'));
 const DocumentsListPage = lazy(() => import('./pages/DocumentsListPage'));
 const MaintenanceListPage = lazy(() => import('./pages/MaintenanceListPage'));
 const MaintenanceDetailPage = lazy(() => import('./pages/MaintenanceDetailPage'));
+const MaintenanceFormPage = lazy(() => import('./pages/MaintenanceFormPage'));
 const TasksListPage = lazy(() => import('./pages/TasksListPage'));
 const MessagesPage = lazy(() => import('./pages/MessagesPage'));
 const ChannelsPage = lazy(() => import('./pages/ChannelsPage'));
@@ -103,19 +107,25 @@ export default function App() {
             <Route path="/bookings/:id" element={<BookingDetailPage />} />
             <Route path="/bookings/:id/edit" element={<BookingFormPage />} />
             <Route path="/owners" element={<OwnersListPage />} />
-            <Route path="/owners/new" element={<div className="p-6 font-headline text-2xl">New Owner — Coming Soon</div>} />
+            <Route path="/owners/new" element={<OwnerFormPage />} />
             <Route path="/owners/:id" element={<OwnerDetailPage />} />
+            <Route path="/owners/:id/edit" element={<OwnerFormPage />} />
             <Route path="/finance" element={<FinanceDashboardPage />} />
             <Route path="/finance/income" element={<IncomeListPage />} />
+            <Route path="/finance/income/new" element={<IncomeFormPage />} />
+            <Route path="/finance/income/:id/edit" element={<IncomeFormPage />} />
             <Route path="/finance/expenses" element={<ExpenseListPage />} />
             <Route path="/finance/expenses/new" element={<ExpenseFormPage />} />
             <Route path="/finance/expenses/:id/edit" element={<ExpenseFormPage />} />
             <Route path="/finance/fees" element={<ManagementFeesPage />} />
             <Route path="/calendar" element={<CalendarPage />} />
             <Route path="/guests" element={<GuestsListPage />} />
+            <Route path="/guests/:id" element={<GuestDetailPage />} />
             <Route path="/documents" element={<DocumentsListPage />} />
             <Route path="/maintenance" element={<MaintenanceListPage />} />
+            <Route path="/maintenance/new" element={<MaintenanceFormPage />} />
             <Route path="/maintenance/:id" element={<MaintenanceDetailPage />} />
+            <Route path="/maintenance/:id/edit" element={<MaintenanceFormPage />} />
             <Route path="/tasks" element={<TasksListPage />} />
             <Route path="/messages" element={<MessagesPage />} />
             <Route path="/communications" element={<MessagesPage />} />
