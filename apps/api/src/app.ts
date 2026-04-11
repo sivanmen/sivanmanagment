@@ -27,6 +27,8 @@ import paymentsRoutes from './modules/payments/payments.routes';
 import portfolioRoutes from './modules/portfolio/portfolio.routes';
 import marketingRoutes from './modules/marketing/marketing.routes';
 import adminRoutes from './modules/admin/admin.routes';
+import templatesRoutes from './modules/templates/templates.routes';
+import automationsRoutes from './modules/automations/automations.routes';
 
 const app = express();
 
@@ -84,6 +86,8 @@ app.use('/api/v1/payments', paymentsRoutes);
 app.use('/api/v1/portfolio', portfolioRoutes);
 app.use('/api/v1/marketing', marketingRoutes);
 app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1/templates', templatesRoutes);
+app.use('/api/v1/automations', automationsRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);

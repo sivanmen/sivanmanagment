@@ -1,37 +1,58 @@
+import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { useAuthStore } from './store/auth.store';
 import { useUIStore } from './store/ui.store';
-import DashboardLayout from './layouts/DashboardLayout';
 import AuthLayout from './layouts/AuthLayout';
-import LoginPage from './pages/LoginPage';
-import DashboardPage from './pages/DashboardPage';
-import PropertiesListPage from './pages/PropertiesListPage';
-import PropertyDetailPage from './pages/PropertyDetailPage';
-import PropertyFormPage from './pages/PropertyFormPage';
-import OwnersListPage from './pages/OwnersListPage';
-import OwnerDetailPage from './pages/OwnerDetailPage';
-import BookingsListPage from './pages/BookingsListPage';
-import BookingDetailPage from './pages/BookingDetailPage';
-import BookingFormPage from './pages/BookingFormPage';
-import CalendarPage from './pages/CalendarPage';
-import GuestsListPage from './pages/GuestsListPage';
-import FinanceDashboardPage from './pages/FinanceDashboardPage';
-import IncomeListPage from './pages/IncomeListPage';
-import ExpenseListPage from './pages/ExpenseListPage';
-import ExpenseFormPage from './pages/ExpenseFormPage';
-import ManagementFeesPage from './pages/ManagementFeesPage';
-import DocumentsListPage from './pages/DocumentsListPage';
-import MaintenanceListPage from './pages/MaintenanceListPage';
-import MaintenanceDetailPage from './pages/MaintenanceDetailPage';
-import TasksListPage from './pages/TasksListPage';
-import MessagesPage from './pages/MessagesPage';
-import ChannelsPage from './pages/ChannelsPage';
-import ReportsPage from './pages/ReportsPage';
-import LoyaltyAdminPage from './pages/LoyaltyAdminPage';
-import AffiliatesPage from './pages/AffiliatesPage';
-import NotificationsPage from './pages/NotificationsPage';
-import PortfolioPage from './pages/PortfolioPage';
+import AppLayout from './components/AppLayout';
+
+// Lazy-loaded pages
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const PropertiesListPage = lazy(() => import('./pages/PropertiesListPage'));
+const PropertyDetailPage = lazy(() => import('./pages/PropertyDetailPage'));
+const PropertyFormPage = lazy(() => import('./pages/PropertyFormPage'));
+const OwnersListPage = lazy(() => import('./pages/OwnersListPage'));
+const OwnerDetailPage = lazy(() => import('./pages/OwnerDetailPage'));
+const BookingsListPage = lazy(() => import('./pages/BookingsListPage'));
+const BookingDetailPage = lazy(() => import('./pages/BookingDetailPage'));
+const BookingFormPage = lazy(() => import('./pages/BookingFormPage'));
+const CalendarPage = lazy(() => import('./pages/CalendarPage'));
+const GuestsListPage = lazy(() => import('./pages/GuestsListPage'));
+const FinanceDashboardPage = lazy(() => import('./pages/FinanceDashboardPage'));
+const IncomeListPage = lazy(() => import('./pages/IncomeListPage'));
+const ExpenseListPage = lazy(() => import('./pages/ExpenseListPage'));
+const ExpenseFormPage = lazy(() => import('./pages/ExpenseFormPage'));
+const ManagementFeesPage = lazy(() => import('./pages/ManagementFeesPage'));
+const DocumentsListPage = lazy(() => import('./pages/DocumentsListPage'));
+const MaintenanceListPage = lazy(() => import('./pages/MaintenanceListPage'));
+const MaintenanceDetailPage = lazy(() => import('./pages/MaintenanceDetailPage'));
+const TasksListPage = lazy(() => import('./pages/TasksListPage'));
+const MessagesPage = lazy(() => import('./pages/MessagesPage'));
+const ChannelsPage = lazy(() => import('./pages/ChannelsPage'));
+const ReportsPage = lazy(() => import('./pages/ReportsPage'));
+const LoyaltyAdminPage = lazy(() => import('./pages/LoyaltyAdminPage'));
+const AffiliatesPage = lazy(() => import('./pages/AffiliatesPage'));
+const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
+const PortfolioPage = lazy(() => import('./pages/PortfolioPage'));
+const AutomationsPage = lazy(() => import('./pages/AutomationsPage'));
+const SystemSettingsPage = lazy(() => import('./pages/SystemSettingsPage'));
+const TemplatesPage = lazy(() => import('./pages/TemplatesPage'));
+
+// Loading screen component - Sivan Obsidian design
+function LoadingScreen() {
+  return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="flex flex-col items-center gap-4">
+        <div className="relative w-10 h-10">
+          <div className="absolute inset-0 rounded-full border-2 border-secondary/20" />
+          <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-secondary animate-spin" />
+        </div>
+        <p className="text-xs font-medium text-on-surface-variant tracking-wider uppercase">Loading</p>
+      </div>
+    </div>
+  );
+}
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
@@ -52,47 +73,52 @@ export default function App() {
   return (
     <div dir={dir} className="min-h-screen bg-surface">
       <Toaster position={dir === 'rtl' ? 'top-left' : 'top-right'} richColors />
-      <Routes>
-        <Route element={<GuestGuard><AuthLayout /></GuestGuard>}>
-          <Route path="/login" element={<LoginPage />} />
-        </Route>
-        <Route element={<AuthGuard><DashboardLayout /></AuthGuard>}>
-          <Route path="/" element={<DashboardPage />} />
-          <Route path="/properties" element={<PropertiesListPage />} />
-          <Route path="/properties/new" element={<PropertyFormPage />} />
-          <Route path="/properties/:id" element={<PropertyDetailPage />} />
-          <Route path="/properties/:id/edit" element={<PropertyFormPage />} />
-          <Route path="/bookings" element={<BookingsListPage />} />
-          <Route path="/bookings/new" element={<BookingFormPage />} />
-          <Route path="/bookings/:id" element={<BookingDetailPage />} />
-          <Route path="/bookings/:id/edit" element={<BookingFormPage />} />
-          <Route path="/owners" element={<OwnersListPage />} />
-          <Route path="/owners/new" element={<div className="p-6 font-headline text-2xl">New Owner — Coming Soon</div>} />
-          <Route path="/owners/:id" element={<OwnerDetailPage />} />
-          <Route path="/finance" element={<FinanceDashboardPage />} />
-          <Route path="/finance/income" element={<IncomeListPage />} />
-          <Route path="/finance/expenses" element={<ExpenseListPage />} />
-          <Route path="/finance/expenses/new" element={<ExpenseFormPage />} />
-          <Route path="/finance/expenses/:id/edit" element={<ExpenseFormPage />} />
-          <Route path="/finance/fees" element={<ManagementFeesPage />} />
-          <Route path="/calendar" element={<CalendarPage />} />
-          <Route path="/guests" element={<GuestsListPage />} />
-          <Route path="/documents" element={<DocumentsListPage />} />
-          <Route path="/maintenance" element={<MaintenanceListPage />} />
-          <Route path="/maintenance/:id" element={<MaintenanceDetailPage />} />
-          <Route path="/tasks" element={<TasksListPage />} />
-          <Route path="/messages" element={<MessagesPage />} />
-          <Route path="/communications" element={<MessagesPage />} />
-          <Route path="/reports" element={<ReportsPage />} />
-          <Route path="/channels" element={<ChannelsPage />} />
-          <Route path="/loyalty" element={<LoyaltyAdminPage />} />
-          <Route path="/affiliates" element={<AffiliatesPage />} />
-          <Route path="/notifications" element={<NotificationsPage />} />
-          <Route path="/portfolio" element={<PortfolioPage />} />
-          <Route path="/settings" element={<div className="p-6 font-headline text-2xl">Settings — Coming Soon</div>} />
-        </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <Suspense fallback={<LoadingScreen />}>
+        <Routes>
+          <Route element={<GuestGuard><AuthLayout /></GuestGuard>}>
+            <Route path="/login" element={<LoginPage />} />
+          </Route>
+          <Route element={<AuthGuard><AppLayout /></AuthGuard>}>
+            <Route path="/" element={<DashboardPage />} />
+            <Route path="/properties" element={<PropertiesListPage />} />
+            <Route path="/properties/new" element={<PropertyFormPage />} />
+            <Route path="/properties/:id" element={<PropertyDetailPage />} />
+            <Route path="/properties/:id/edit" element={<PropertyFormPage />} />
+            <Route path="/bookings" element={<BookingsListPage />} />
+            <Route path="/bookings/new" element={<BookingFormPage />} />
+            <Route path="/bookings/:id" element={<BookingDetailPage />} />
+            <Route path="/bookings/:id/edit" element={<BookingFormPage />} />
+            <Route path="/owners" element={<OwnersListPage />} />
+            <Route path="/owners/new" element={<div className="p-6 font-headline text-2xl">New Owner — Coming Soon</div>} />
+            <Route path="/owners/:id" element={<OwnerDetailPage />} />
+            <Route path="/finance" element={<FinanceDashboardPage />} />
+            <Route path="/finance/income" element={<IncomeListPage />} />
+            <Route path="/finance/expenses" element={<ExpenseListPage />} />
+            <Route path="/finance/expenses/new" element={<ExpenseFormPage />} />
+            <Route path="/finance/expenses/:id/edit" element={<ExpenseFormPage />} />
+            <Route path="/finance/fees" element={<ManagementFeesPage />} />
+            <Route path="/calendar" element={<CalendarPage />} />
+            <Route path="/guests" element={<GuestsListPage />} />
+            <Route path="/documents" element={<DocumentsListPage />} />
+            <Route path="/maintenance" element={<MaintenanceListPage />} />
+            <Route path="/maintenance/:id" element={<MaintenanceDetailPage />} />
+            <Route path="/tasks" element={<TasksListPage />} />
+            <Route path="/messages" element={<MessagesPage />} />
+            <Route path="/communications" element={<MessagesPage />} />
+            <Route path="/reports" element={<ReportsPage />} />
+            <Route path="/channels" element={<ChannelsPage />} />
+            <Route path="/loyalty" element={<LoyaltyAdminPage />} />
+            <Route path="/affiliates" element={<AffiliatesPage />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
+            <Route path="/portfolio" element={<PortfolioPage />} />
+            <Route path="/automations" element={<AutomationsPage />} />
+            <Route path="/marketing" element={<div className="p-6 font-headline text-2xl">Marketing — Coming Soon</div>} />
+            <Route path="/settings" element={<SystemSettingsPage />} />
+            <Route path="/templates" element={<TemplatesPage />} />
+          </Route>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
     </div>
   );
 }
