@@ -21,6 +21,8 @@ const PortfolioOverviewPage = lazy(() => import('./pages/PortfolioOverviewPage')
 const OwnerReservationsPage = lazy(() => import('./pages/OwnerReservationsPage'));
 const StatementsPage = lazy(() => import('./pages/StatementsPage'));
 const AffiliatePage = lazy(() => import('./pages/AffiliatePage'));
+const MessagesPage = lazy(() => import('./pages/MessagesPage'));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 // Loading screen component - Sivan Obsidian design
 function LoadingScreen() {
@@ -69,7 +71,7 @@ export default function App() {
             <Route path="/documents" element={<MyDocumentsPage />} />
             <Route path="/maintenance" element={<MaintenanceRequestsPage />} />
             <Route path="/loyalty" element={<LoyaltyPage />} />
-            <Route path="/messages" element={<div className="p-6 font-headline text-2xl">Messages — Coming Soon</div>} />
+            <Route path="/messages" element={<MessagesPage />} />
             <Route path="/portfolio" element={<PortfolioOverviewPage />} />
             <Route path="/calendar" element={<MyCalendarPage />} />
             <Route path="/settings" element={<SettingsPage />} />
@@ -77,7 +79,7 @@ export default function App() {
             <Route path="/statements" element={<StatementsPage />} />
             <Route path="/affiliate" element={<AffiliatePage />} />
           </Route>
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Suspense>
     </div>
