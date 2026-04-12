@@ -51,6 +51,7 @@ import directBookingRoutes from './modules/direct-booking/direct-booking.routes'
 import expensesRoutes from './modules/expenses/expenses.routes';
 import whatsappRoutes from './modules/whatsapp/whatsapp.routes';
 import uploadsRoutes from './modules/uploads/uploads.routes';
+import { stripeWebhookHandler } from './modules/payments/stripe-webhook.controller';
 
 const app = express();
 
@@ -64,6 +65,9 @@ app.use(
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept-Language'],
   }),
 );
+
+// Stripe webhook needs raw body for signature verification — must be BEFORE express.json()
+app.post('/api/v1/payments/stripe/webhook', express.raw({ type: 'application/json' }), stripeWebhookHandler);
 
 // Parsing
 app.use(express.json({ limit: '10mb' }));
@@ -113,6 +117,34 @@ app.post('/api/v1/setup/admin', async (req, res) => {
     });
     res.json({ success: true, message: `Admin ${user.email} configured`, id: user.id });
   } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin-only reseed endpoint — triggers the full database seed via API
+app.post('/api/v1/admin/reseed', async (req, res) => {
+  try {
+    const adminSecret = req.headers['x-admin-secret'];
+    if (!adminSecret || adminSecret !== config.jwt.secret) {
+      return res.status(403).json({ error: 'Invalid or missing X-Admin-Secret header' });
+    }
+
+    console.log('[RESEED] Reseed triggered via API...');
+    const { main: seedMain } = require('./prisma/seed');
+    const { prisma } = require('./prisma/client');
+
+    const result = await seedMain(prisma);
+    console.log('[RESEED] Reseed completed.', result);
+
+    res.json({
+      success: result.success,
+      message: result.success
+        ? 'Database reseeded successfully'
+        : `Reseeded with ${result.errors.length} error(s)`,
+      errors: result.errors || [],
+    });
+  } catch (error: any) {
+    console.error('[RESEED] Reseed failed:', error.message);
     res.status(500).json({ error: error.message });
   }
 });
@@ -348,8 +380,19 @@ const apiDocumentation = {
       name: 'Payments',
       basePath: '/payments',
       endpoints: [
-        { method: 'GET', path: '/', description: 'List payments', auth: true },
-        { method: 'POST', path: '/', description: 'Record a payment', auth: true },
+        { method: 'POST', path: '/create-intent', description: 'Create Stripe payment intent for a booking', auth: true },
+        { method: 'POST', path: '/create-link', description: 'Generate Stripe payment link for guest', auth: true },
+        { method: 'POST', path: '/stripe-refund', description: 'Process Stripe refund', auth: true },
+        { method: 'GET', path: '/booking/:bookingId', description: 'Get payment status for a booking', auth: true },
+        { method: 'POST', path: '/stripe/webhook', description: 'Stripe webhook endpoint (raw body)', auth: false },
+        { method: 'GET', path: '/transactions', description: 'List all payment transactions', auth: true },
+        { method: 'GET', path: '/transactions/:id', description: 'Get transaction by ID', auth: true },
+        { method: 'POST', path: '/transactions', description: 'Create manual transaction', auth: true },
+        { method: 'PUT', path: '/transactions/:id/status', description: 'Update transaction status', auth: true },
+        { method: 'GET', path: '/methods', description: 'Get user payment methods', auth: true },
+        { method: 'POST', path: '/methods', description: 'Add payment method', auth: true },
+        { method: 'DELETE', path: '/methods/:id', description: 'Remove payment method', auth: true },
+        { method: 'POST', path: '/refund', description: 'Process refund (legacy)', auth: true },
       ],
     },
     {

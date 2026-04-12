@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { paymentsService } from './payments.service';
+import { stripeService } from './stripe.service';
 import { sendSuccess, sendPaginated } from '../../utils/response';
 
 const transactionQuerySchema = z.object({
@@ -47,6 +48,25 @@ const addPaymentMethodSchema = z.object({
 
 const processRefundSchema = z.object({
   transactionId: z.string().uuid(),
+  amount: z.number().positive().optional(),
+  reason: z.string().optional(),
+});
+
+const createPaymentIntentSchema = z.object({
+  bookingId: z.string().uuid(),
+  amount: z.number().positive(),
+  currency: z.string().length(3).optional(),
+});
+
+const createPaymentLinkSchema = z.object({
+  bookingId: z.string().uuid(),
+  amount: z.number().positive(),
+  currency: z.string().length(3).optional(),
+  description: z.string().optional(),
+});
+
+const stripeRefundSchema = z.object({
+  paymentIntentId: z.string().min(1),
   amount: z.number().positive().optional(),
   reason: z.string().optional(),
 });
@@ -146,6 +166,92 @@ export class PaymentsController {
       const { transactionId, amount, reason } = processRefundSchema.parse(req.body);
       const refund = await paymentsService.processRefund(transactionId, amount, reason);
       sendSuccess(res, refund, 201);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // ==========================================
+  // Stripe Integration Endpoints
+  // ==========================================
+
+  async createPaymentIntent(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { bookingId, amount, currency } = createPaymentIntentSchema.parse(req.body);
+
+      const paymentIntent = await stripeService.createPaymentIntent(
+        amount,
+        currency || 'EUR',
+        { bookingId },
+      );
+
+      // Record a pending transaction
+      await paymentsService.createTransaction({
+        bookingId,
+        type: 'BOOKING_PAYMENT',
+        provider: 'STRIPE',
+        providerTransactionId: paymentIntent.id,
+        amount,
+        currency: currency || 'EUR',
+        status: 'PENDING',
+        metadata: {
+          stripePaymentIntentId: paymentIntent.id,
+          clientSecret: paymentIntent.client_secret,
+        },
+      });
+
+      sendSuccess(res, {
+        paymentIntentId: paymentIntent.id,
+        clientSecret: paymentIntent.client_secret,
+        amount: paymentIntent.amount,
+        currency: paymentIntent.currency,
+        status: paymentIntent.status,
+      }, 201);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async createPaymentLink(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { bookingId, amount, currency, description } = createPaymentLinkSchema.parse(req.body);
+
+      const paymentUrl = await stripeService.createPaymentLink(
+        bookingId,
+        amount,
+        currency || 'EUR',
+        description || '',
+      );
+
+      sendSuccess(res, { url: paymentUrl, bookingId }, 201);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async stripeRefund(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { paymentIntentId, amount, reason } = stripeRefundSchema.parse(req.body);
+
+      const refund = await stripeService.createRefund(paymentIntentId, amount, reason);
+
+      sendSuccess(res, {
+        refundId: refund.id,
+        amount: (refund.amount || 0) / 100,
+        currency: refund.currency,
+        status: refund.status,
+        paymentIntentId: refund.payment_intent,
+      }, 201);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getBookingPaymentStatus(req: Request, res: Response, next: NextFunction) {
+    try {
+      const bookingId = req.params.bookingId as string;
+      const status = await stripeService.getBookingPaymentStatus(bookingId);
+      sendSuccess(res, status);
     } catch (error) {
       next(error);
     }

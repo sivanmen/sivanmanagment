@@ -29,6 +29,10 @@ const pathLabels: Record<string, string> = {
   portfolio: 'Portfolio',
   calendar: 'Calendar',
   settings: 'Settings',
+  approvals: 'Pending Approvals',
+  statements: 'Statements',
+  affiliate: 'Affiliate Program',
+  'owner-reservations': 'Reservations',
 };
 
 function Breadcrumbs() {

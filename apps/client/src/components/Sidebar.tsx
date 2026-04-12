@@ -66,6 +66,7 @@ const navGroups: NavGroup[] = [
     label: 'Finance',
     items: [
       { key: 'financials', label: 'Financial Summary', path: '/financials', icon: DollarSign },
+      { key: 'approvals', label: 'Pending Approvals', path: '/approvals', icon: CalendarCheck, badge: 0 },
       { key: 'statements', label: 'Statements', path: '/statements', icon: FileBarChart },
       { key: 'documents', label: 'Documents', path: '/documents', icon: FileText },
     ],

@@ -40,9 +40,11 @@ import {
   X,
   Target,
   Shield,
+  ShieldAlert,
   LineChart,
   FileStack,
   Brain,
+  CreditCard,
 } from 'lucide-react';
 import { useAuthStore } from '../store/auth.store';
 import { useUIStore } from '../store/ui.store';
@@ -91,6 +93,7 @@ const navGroups: NavGroup[] = [
       { key: 'users', label: 'Users', path: '/users', icon: Shield },
       { key: 'owners', label: 'Owners', path: '/owners', icon: Users },
       { key: 'guests', label: 'Guests', path: '/guests', icon: UserCheck },
+      { key: 'screening', label: 'Screening', path: '/guests/screening', icon: ShieldAlert },
     ],
   },
   {
@@ -101,6 +104,7 @@ const navGroups: NavGroup[] = [
       { key: 'income', label: 'Income', path: '/finance/income', icon: TrendingUp },
       { key: 'expenses', label: 'Expenses', path: '/finance/expenses', icon: TrendingDown },
       { key: 'fees', label: 'Management Fees', path: '/finance/fees', icon: Receipt },
+      { key: 'payments', label: 'Payments', path: '/finance/payments', icon: CreditCard },
       { key: 'pricing', label: 'Revenue Management', path: '/pricing', icon: BadgeDollarSign },
     ],
   },
@@ -126,6 +130,7 @@ const navGroups: NavGroup[] = [
     label: 'Growth',
     items: [
       { key: 'channels', label: 'Channels', path: '/channels', icon: Radio },
+      { key: 'directBooking', label: 'Direct Booking', path: '/channels/direct-booking', icon: Globe },
       { key: 'marketing', label: 'Marketing', path: '/marketing', icon: Megaphone },
       { key: 'loyalty', label: 'Loyalty', path: '/loyalty', icon: Heart },
       { key: 'affiliates', label: 'Affiliates', path: '/affiliates', icon: UserPlus },

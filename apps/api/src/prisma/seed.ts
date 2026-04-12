@@ -1,22 +1,43 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
-const prisma = new PrismaClient({ log: ['warn', 'error'] });
+let prismaInstance: PrismaClient | null = null;
 
-async function main() {
+function getPrisma(): PrismaClient {
+  if (!prismaInstance) {
+    prismaInstance = new PrismaClient({ log: ['warn', 'error'] });
+  }
+  return prismaInstance;
+}
+
+export async function main(externalPrisma?: PrismaClient) {
+  const prisma = externalPrisma || getPrisma();
+  const errors: string[] = [];
   console.log(`[SEED] Starting database seed at ${new Date().toISOString()}`);
 
   // ══════════════════════════════════════════════════════════════
   // 1. USERS
   // ══════════════════════════════════════════════════════════════
 
+  let admin: any = null;
+  let managerUser: any = null;
+  let maintUser: any = null;
+  let owner1User: any = null;
+  let owner2User: any = null;
+  let owner3User: any = null;
+  let owner1: any = null;
+  let owner2: any = null;
+  let owner3: any = null;
+
+  try {
+  console.log('[SEED] Section 1: Creating users...');
   const adminPasswordHash = await bcrypt.hash('Admin123!@#', 12);
   const managerPasswordHash = await bcrypt.hash('Manager123!@#', 12);
   const maintPasswordHash = await bcrypt.hash('Maint123!@#', 12);
   const ownerPasswordHash = await bcrypt.hash('Owner123!@#', 12);
 
   // Super Admin
-  const admin = await prisma.user.upsert({
+  admin = await prisma.user.upsert({
     where: { email: 'admin@sivanmanagment.com' },
     update: { passwordHash: adminPasswordHash, role: 'SUPER_ADMIN' },
     create: {
@@ -34,7 +55,7 @@ async function main() {
   console.log(`Super Admin created: ${admin.email}`);
 
   // Property Manager
-  const managerUser = await prisma.user.upsert({
+  managerUser = await prisma.user.upsert({
     where: { email: 'manager@sivanmanagment.com' },
     update: {},
     create: {
@@ -52,7 +73,7 @@ async function main() {
   console.log(`Property Manager created: ${managerUser.email}`);
 
   // Maintenance Staff
-  const maintUser = await prisma.user.upsert({
+  maintUser = await prisma.user.upsert({
     where: { email: 'maintenance@sivanmanagment.com' },
     update: {},
     create: {
@@ -69,12 +90,8 @@ async function main() {
   });
   console.log(`Maintenance Staff created: ${maintUser.email}`);
 
-  // ══════════════════════════════════════════════════════════════
-  // 2. OWNERS (3)
-  // ══════════════════════════════════════════════════════════════
-
   // Owner 1: David Cohen - Gold tier, 25%
-  const owner1User = await prisma.user.upsert({
+  owner1User = await prisma.user.upsert({
     where: { email: 'david.cohen@sivanmanagment.com' },
     update: {},
     create: {
@@ -90,7 +107,7 @@ async function main() {
     },
   });
 
-  const owner1 = await prisma.owner.upsert({
+  owner1 = await prisma.owner.upsert({
     where: { userId: owner1User.id },
     update: {},
     create: {
@@ -108,7 +125,7 @@ async function main() {
   console.log(`Owner 1 created: David Cohen`);
 
   // Owner 2: Yael Levy - Silver tier, 20%
-  const owner2User = await prisma.user.upsert({
+  owner2User = await prisma.user.upsert({
     where: { email: 'yael.levy@sivanmanagment.com' },
     update: {},
     create: {
@@ -124,7 +141,7 @@ async function main() {
     },
   });
 
-  const owner2 = await prisma.owner.upsert({
+  owner2 = await prisma.owner.upsert({
     where: { userId: owner2User.id },
     update: {},
     create: {
@@ -142,7 +159,7 @@ async function main() {
   console.log(`Owner 2 created: Yael Levy`);
 
   // Owner 3: Michael Ben-Ari - Bronze tier, 30%
-  const owner3User = await prisma.user.upsert({
+  owner3User = await prisma.user.upsert({
     where: { email: 'michael.benari@sivanmanagment.com' },
     update: {},
     create: {
@@ -158,7 +175,7 @@ async function main() {
     },
   });
 
-  const owner3 = await prisma.owner.upsert({
+  owner3 = await prisma.owner.upsert({
     where: { userId: owner3User.id },
     update: {},
     create: {
@@ -172,13 +189,25 @@ async function main() {
     },
   });
   console.log(`Owner 3 created: Michael Ben-Ari`);
+  } catch (err: any) {
+    console.error(`[SEED] ERROR in Section 1 (Users & Owners): ${err.message}`);
+    errors.push(`Users & Owners: ${err.message}`);
+  }
 
   // ══════════════════════════════════════════════════════════════
-  // 3. PROPERTIES (7 in Crete)
+  // 2. PROPERTIES (12 in Crete)
   // ══════════════════════════════════════════════════════════════
+
+  let prop1: any = null, prop2: any = null, prop3: any = null, prop4: any = null;
+  let prop5: any = null, prop6: any = null, prop7: any = null;
+  let prop8: any = null, prop9: any = null, prop10: any = null, prop11: any = null, prop12: any = null;
+
+  try {
+  console.log('[SEED] Section 2: Creating properties...');
+  if (!owner1 || !owner2 || !owner3) throw new Error('Owners not available — cannot create properties');
 
   // Property 1: Aegean Sunset Villa (David) - Elounda
-  const prop1 = await prisma.property.upsert({
+  prop1 = await prisma.property.upsert({
     where: { internalCode: 'CRT-001' },
     update: {},
     create: {
@@ -222,7 +251,7 @@ async function main() {
   });
 
   // Property 2: Heraklion Harbor Suite (David)
-  const prop2 = await prisma.property.upsert({
+  prop2 = await prisma.property.upsert({
     where: { internalCode: 'CRT-002' },
     update: {},
     create: {
@@ -266,7 +295,7 @@ async function main() {
   });
 
   // Property 3: Chania Old Town Residence (David)
-  const prop3 = await prisma.property.upsert({
+  prop3 = await prisma.property.upsert({
     where: { internalCode: 'CRT-003' },
     update: {},
     create: {
@@ -310,7 +339,7 @@ async function main() {
   });
 
   // Property 4: Rethymno Beachfront Studio (David)
-  const prop4 = await prisma.property.upsert({
+  prop4 = await prisma.property.upsert({
     where: { internalCode: 'CRT-004' },
     update: {},
     create: {
@@ -354,7 +383,7 @@ async function main() {
   });
 
   // Property 5: Knossos Garden Apartment (Yael)
-  const prop5 = await prisma.property.upsert({
+  prop5 = await prisma.property.upsert({
     where: { internalCode: 'CRT-005' },
     update: {},
     create: {
@@ -398,7 +427,7 @@ async function main() {
   });
 
   // Property 6: Spinalonga View Villa (Yael)
-  const prop6 = await prisma.property.upsert({
+  prop6 = await prisma.property.upsert({
     where: { internalCode: 'CRT-006' },
     update: {},
     create: {
@@ -442,7 +471,7 @@ async function main() {
   });
 
   // Property 7: Samaria Gorge Lodge (Michael)
-  const prop7 = await prisma.property.upsert({
+  prop7 = await prisma.property.upsert({
     where: { internalCode: 'CRT-007' },
     update: {},
     create: {
@@ -490,7 +519,7 @@ async function main() {
   // ══════════════════════════════════════════════════════════════
 
   // Property 8: Azure Bay Suite (David) - Chania
-  const prop8 = await prisma.property.upsert({
+  prop8 = await prisma.property.upsert({
     where: { internalCode: 'CRT-008' },
     update: {},
     create: {
@@ -534,7 +563,7 @@ async function main() {
   });
 
   // Property 9: Olive Grove Retreat (Yael) - Rethymno
-  const prop9 = await prisma.property.upsert({
+  prop9 = await prisma.property.upsert({
     where: { internalCode: 'CRT-009' },
     update: {},
     create: {
@@ -578,7 +607,7 @@ async function main() {
   });
 
   // Property 10: Heraklion Harbor Flat (David) - Heraklion
-  const prop10 = await prisma.property.upsert({
+  prop10 = await prisma.property.upsert({
     where: { internalCode: 'CRT-010' },
     update: {},
     create: {
@@ -622,7 +651,7 @@ async function main() {
   });
 
   // Property 11: Cretan Paradise Villa (Yael) - Agios Nikolaos
-  const prop11 = await prisma.property.upsert({
+  prop11 = await prisma.property.upsert({
     where: { internalCode: 'CRT-011' },
     update: {},
     create: {
@@ -666,7 +695,7 @@ async function main() {
   });
 
   // Property 12: Sunset Terrace Studio (Michael) - Chania
-  const prop12 = await prisma.property.upsert({
+  prop12 = await prisma.property.upsert({
     where: { internalCode: 'CRT-012' },
     update: {},
     create: {
@@ -709,11 +738,25 @@ async function main() {
     },
   });
 
-  console.log('12 Properties created');
+  console.log('[SEED] 12 Properties created');
+  } catch (err: any) {
+    console.error(`[SEED] ERROR in Section 2 (Properties): ${err.message}`);
+    errors.push(`Properties: ${err.message}`);
+  }
 
   // ══════════════════════════════════════════════════════════════
-  // 4. GUESTS (20 — idempotent via findFirst)
+  // 3. GUESTS (20 — idempotent via findFirst)
   // ══════════════════════════════════════════════════════════════
+
+  let guest0: any = null, guest1: any = null, guest2: any = null, guest3: any = null;
+  let guest4: any = null, guest5: any = null, guest6: any = null, guest7: any = null;
+  let guest8: any = null, guest9: any = null;
+  let guest10: any = null, guest11: any = null, guest12: any = null, guest13: any = null;
+  let guest14: any = null, guest15: any = null, guest16: any = null, guest17: any = null;
+  let guest18: any = null, guest19: any = null;
+
+  try {
+  console.log('[SEED] Section 3: Creating guests...');
 
   async function upsertGuest(data: {
     firstName: string; lastName: string; email: string;
@@ -726,104 +769,104 @@ async function main() {
   }
 
   // Original 10 guests
-  const guest0 = await upsertGuest({
+  guest0 = await upsertGuest({
     firstName: 'Sarah', lastName: 'Mueller', email: 'sarah.mueller@gmail.com',
     phone: '+49 170 1234567', nationality: 'DE', language: 'de',
     totalStays: 3, totalRevenue: 4200,
   });
-  const guest1 = await upsertGuest({
+  guest1 = await upsertGuest({
     firstName: 'James', lastName: 'Thompson', email: 'james.t@outlook.com',
     phone: '+44 7700 900123', nationality: 'GB', language: 'en',
     totalStays: 2, totalRevenue: 2800,
   });
-  const guest2 = await upsertGuest({
+  guest2 = await upsertGuest({
     firstName: 'Marie', lastName: 'Dubois', email: 'marie.dubois@yahoo.fr',
     phone: '+33 6 12 34 56 78', nationality: 'FR', language: 'fr',
     totalStays: 1, totalRevenue: 1960,
   });
-  const guest3 = await upsertGuest({
+  guest3 = await upsertGuest({
     firstName: 'Robert', lastName: 'Anderson', email: 'robert.a@gmail.com',
     phone: '+1 555 123 4567', nationality: 'US', language: 'en',
     totalStays: 2, totalRevenue: 5600,
   });
-  const guest4 = await upsertGuest({
+  guest4 = await upsertGuest({
     firstName: 'Amit', lastName: 'Shapira', email: 'amit.shapira@walla.co.il',
     phone: '+972 50 123 4567', nationality: 'IL', language: 'he',
     totalStays: 4, totalRevenue: 3200,
   });
-  const guest5 = await upsertGuest({
+  guest5 = await upsertGuest({
     firstName: 'Claudia', lastName: 'Schmidt', email: 'c.schmidt@web.de',
     phone: '+49 151 9876543', nationality: 'DE', language: 'de',
     totalStays: 1, totalRevenue: 840,
   });
-  const guest6 = await upsertGuest({
+  guest6 = await upsertGuest({
     firstName: 'Oliver', lastName: 'Brown', email: 'oliver.brown@btinternet.com',
     phone: '+44 7911 123456', nationality: 'GB', language: 'en',
     totalStays: 1, totalRevenue: 1260,
   });
-  const guest7 = await upsertGuest({
+  guest7 = await upsertGuest({
     firstName: 'Sophie', lastName: 'Martin', email: 'sophie.martin@gmail.com',
     phone: '+33 7 98 76 54 32', nationality: 'FR', language: 'fr',
     totalStays: 2, totalRevenue: 2100,
   });
-  const guest8 = await upsertGuest({
+  guest8 = await upsertGuest({
     firstName: 'Daniel', lastName: 'Rosenberg', email: 'daniel.r@gmail.com',
     phone: '+972 54 987 6543', nationality: 'IL', language: 'he',
     totalStays: 1, totalRevenue: 1750,
   });
-  const guest9 = await upsertGuest({
+  guest9 = await upsertGuest({
     firstName: 'Anna', lastName: 'Fischer', email: 'anna.fischer@gmx.de',
     phone: '+49 176 1111222', nationality: 'DE', language: 'de',
     totalStays: 3, totalRevenue: 3500,
   });
 
   // 10 new guests with diverse nationalities
-  const guest10 = await upsertGuest({
+  guest10 = await upsertGuest({
     firstName: 'Pieter', lastName: 'van den Berg', email: 'pieter.vdberg@gmail.com',
     phone: '+31 6 1234 5678', nationality: 'NL', language: 'nl',
     totalStays: 2, totalRevenue: 3100,
   });
-  const guest11 = await upsertGuest({
+  guest11 = await upsertGuest({
     firstName: 'Erik', lastName: 'Lindqvist', email: 'erik.lindqvist@hotmail.se',
     phone: '+46 70 123 4567', nationality: 'SE', language: 'sv',
     totalStays: 1, totalRevenue: 1540,
   });
-  const guest12 = await upsertGuest({
+  guest12 = await upsertGuest({
     firstName: 'Giulia', lastName: 'Rossi', email: 'giulia.rossi@libero.it',
     phone: '+39 333 123 4567', nationality: 'IT', language: 'it',
     totalStays: 2, totalRevenue: 2800,
   });
-  const guest13 = await upsertGuest({
+  guest13 = await upsertGuest({
     firstName: 'Alexei', lastName: 'Petrov', email: 'alexei.petrov@yandex.ru',
     phone: '+7 916 123 4567', nationality: 'RU', language: 'ru',
     totalStays: 1, totalRevenue: 3150,
   });
-  const guest14 = await upsertGuest({
+  guest14 = await upsertGuest({
     firstName: 'Emma', lastName: 'Williams', email: 'emma.w@outlook.com.au',
     phone: '+61 412 345 678', nationality: 'AU', language: 'en',
     totalStays: 1, totalRevenue: 1960,
   });
-  const guest15 = await upsertGuest({
+  guest15 = await upsertGuest({
     firstName: 'Hans', lastName: 'Braun', email: 'hans.braun@web.de',
     phone: '+49 160 9876543', nationality: 'DE', language: 'de',
     totalStays: 3, totalRevenue: 4500,
   });
-  const guest16 = await upsertGuest({
+  guest16 = await upsertGuest({
     firstName: 'Charlotte', lastName: 'Evans', email: 'charlotte.evans@gmail.com',
     phone: '+44 7456 789012', nationality: 'GB', language: 'en',
     totalStays: 1, totalRevenue: 1050,
   });
-  const guest17 = await upsertGuest({
+  guest17 = await upsertGuest({
     firstName: 'Jean-Pierre', lastName: 'Laurent', email: 'jplaurent@orange.fr',
     phone: '+33 6 98 76 54 32', nationality: 'FR', language: 'fr',
     totalStays: 2, totalRevenue: 2640,
   });
-  const guest18 = await upsertGuest({
+  guest18 = await upsertGuest({
     firstName: 'Noa', lastName: 'Katz', email: 'noa.katz@gmail.com',
     phone: '+972 52 876 5432', nationality: 'IL', language: 'he',
     totalStays: 1, totalRevenue: 2250,
   });
-  const guest19 = await upsertGuest({
+  guest19 = await upsertGuest({
     firstName: 'Jennifer', lastName: 'Davis', email: 'jennifer.davis@yahoo.com',
     phone: '+1 312 555 7890', nationality: 'US', language: 'en',
     totalStays: 2, totalRevenue: 3800,
@@ -832,11 +875,18 @@ async function main() {
   // Build the guests array for backward compatibility with booking references
   const guests = [guest0, guest1, guest2, guest3, guest4, guest5, guest6, guest7, guest8, guest9];
 
-  console.log('20 Guests created/verified');
+  console.log('[SEED] 20 Guests created/verified');
+  } catch (err: any) {
+    console.error(`[SEED] ERROR in Section 3 (Guests): ${err.message}`);
+    errors.push(`Guests: ${err.message}`);
+  }
 
   // ══════════════════════════════════════════════════════════════
-  // 5. BOOKINGS (33 — idempotent via guestEmail + checkIn)
+  // 4. BOOKINGS (33 — idempotent via guestEmail + checkIn)
   // ══════════════════════════════════════════════════════════════
+
+  try {
+  console.log('[SEED] Section 4: Creating bookings...');
 
   async function upsertBooking(data: any) {
     const existing = await prisma.booking.findFirst({
@@ -1088,11 +1138,18 @@ async function main() {
     paymentStatus: 'PENDING', guestName: 'Daniel Rosenberg', guestEmail: 'daniel.r@gmail.com',
   });
 
-  console.log('29 Bookings created/verified');
+  console.log('[SEED] 29 Bookings created/verified');
+  } catch (err: any) {
+    console.error(`[SEED] ERROR in Section 4 (Bookings): ${err.message}`);
+    errors.push(`Bookings: ${err.message}`);
+  }
 
   // ══════════════════════════════════════════════════════════════
-  // 6. INCOME RECORDS (35 — idempotent via description check)
+  // 5. INCOME RECORDS (35 — idempotent via description check)
   // ══════════════════════════════════════════════════════════════
+
+  try {
+  console.log('[SEED] Section 5: Creating income records...');
 
   async function upsertIncome(data: {
     propertyId: string; ownerId: string; category: any;
@@ -1148,11 +1205,18 @@ async function main() {
   for (const inc of incomeData) {
     await upsertIncome(inc);
   }
-  console.log(`${incomeData.length} Income records created/verified`);
+  console.log(`[SEED] ${incomeData.length} Income records created/verified`);
+  } catch (err: any) {
+    console.error(`[SEED] ERROR in Section 5 (Income Records): ${err.message}`);
+    errors.push(`Income Records: ${err.message}`);
+  }
 
   // ══════════════════════════════════════════════════════════════
-  // 7. EXPENSE RECORDS (28 — idempotent)
+  // 6. EXPENSE RECORDS (28 — idempotent)
   // ══════════════════════════════════════════════════════════════
+
+  try {
+  console.log('[SEED] Section 6: Creating expense records...');
 
   async function upsertExpense(data: {
     propertyId: string; ownerId: string; category: any;
@@ -1202,11 +1266,18 @@ async function main() {
   for (const exp of expenseData) {
     await upsertExpense(exp);
   }
-  console.log(`${expenseData.length} Expense records created/verified`);
+  console.log(`[SEED] ${expenseData.length} Expense records created/verified`);
+  } catch (err: any) {
+    console.error(`[SEED] ERROR in Section 6 (Expense Records): ${err.message}`);
+    errors.push(`Expense Records: ${err.message}`);
+  }
 
   // ══════════════════════════════════════════════════════════════
-  // 8. MANAGEMENT FEE CALCULATIONS
+  // 7. MANAGEMENT FEE CALCULATIONS
   // ══════════════════════════════════════════════════════════════
+
+  try {
+  console.log('[SEED] Section 7: Creating management fee calculations...');
 
   const feeCalcs = [
     // January 2026 - David's properties
@@ -1253,11 +1324,18 @@ async function main() {
       },
     });
   }
-  console.log(`${feeCalcs.length} Management fee calculations created`);
+  console.log(`[SEED] ${feeCalcs.length} Management fee calculations created`);
+  } catch (err: any) {
+    console.error(`[SEED] ERROR in Section 7 (Management Fees): ${err.message}`);
+    errors.push(`Management Fees: ${err.message}`);
+  }
 
   // ══════════════════════════════════════════════════════════════
-  // 9. LOYALTY TIERS & MEMBERS
+  // 8. LOYALTY TIERS & MEMBERS
   // ══════════════════════════════════════════════════════════════
+
+  try {
+  console.log('[SEED] Section 8: Creating loyalty tiers & members...');
 
   const tiers = [
     { name: 'Bronze Star', minPoints: 0, multiplier: 1.0, color: '#CD7F32', sortOrder: 1, benefits: ['Standard support', 'Monthly reports'] },
@@ -1318,11 +1396,18 @@ async function main() {
       currentPoints: 150,
     },
   });
-  console.log('3 Loyalty Members created');
+  console.log('[SEED] 3 Loyalty Members created');
+  } catch (err: any) {
+    console.error(`[SEED] ERROR in Section 8 (Loyalty): ${err.message}`);
+    errors.push(`Loyalty: ${err.message}`);
+  }
 
   // ══════════════════════════════════════════════════════════════
-  // 10. MAINTENANCE REQUESTS (12 — idempotent via title + propertyId)
+  // 9. MAINTENANCE REQUESTS (12 — idempotent via title + propertyId)
   // ══════════════════════════════════════════════════════════════
+
+  try {
+  console.log('[SEED] Section 9: Creating maintenance requests...');
 
   async function upsertMaintenance(data: any) {
     const existing = await prisma.maintenanceRequest.findFirst({
@@ -1490,11 +1575,18 @@ async function main() {
     estimatedCost: 80,
   });
 
-  console.log('12 Maintenance requests created/verified');
+  console.log('[SEED] 12 Maintenance requests created/verified');
+  } catch (err: any) {
+    console.error(`[SEED] ERROR in Section 9 (Maintenance): ${err.message}`);
+    errors.push(`Maintenance: ${err.message}`);
+  }
 
   // ══════════════════════════════════════════════════════════════
-  // 11. TASKS (8 — idempotent via title + propertyId)
+  // 10. TASKS (8 — idempotent via title + propertyId)
   // ══════════════════════════════════════════════════════════════
+
+  try {
+  console.log('[SEED] Section 10: Creating tasks...');
 
   async function upsertTask(data: any) {
     const existing = await prisma.task.findFirst({
@@ -1624,11 +1716,18 @@ async function main() {
     });
   }
 
-  console.log('8 Tasks created/verified');
+  console.log('[SEED] 8 Tasks created/verified');
+  } catch (err: any) {
+    console.error(`[SEED] ERROR in Section 10 (Tasks): ${err.message}`);
+    errors.push(`Tasks: ${err.message}`);
+  }
 
   // ══════════════════════════════════════════════════════════════
-  // 12. DOCUMENTS (5 — idempotent via title)
+  // 11. DOCUMENTS (5 — idempotent via title)
   // ══════════════════════════════════════════════════════════════
+
+  try {
+  console.log('[SEED] Section 11: Creating documents...');
 
   async function upsertDocument(data: any) {
     const existing = await prisma.document.findFirst({
@@ -1697,11 +1796,18 @@ async function main() {
     accessLevel: 'PUBLIC',
   });
 
-  console.log('5 Documents created/verified');
+  console.log('[SEED] 5 Documents created/verified');
+  } catch (err: any) {
+    console.error(`[SEED] ERROR in Section 11 (Documents): ${err.message}`);
+    errors.push(`Documents: ${err.message}`);
+  }
 
   // ══════════════════════════════════════════════════════════════
-  // 13. MESSAGE THREADS (3 — idempotent via subject)
+  // 12. MESSAGE THREADS (3 — idempotent via subject)
   // ══════════════════════════════════════════════════════════════
+
+  try {
+  console.log('[SEED] Section 12: Creating message threads...');
 
   async function upsertThread(data: any, messages: any[]) {
     const existing = await prisma.messageThread.findFirst({
@@ -1765,11 +1871,18 @@ async function main() {
     ],
   );
 
-  console.log('3 Message threads created/verified');
+  console.log('[SEED] 3 Message threads created/verified');
+  } catch (err: any) {
+    console.error(`[SEED] ERROR in Section 12 (Message Threads): ${err.message}`);
+    errors.push(`Message Threads: ${err.message}`);
+  }
 
   // ══════════════════════════════════════════════════════════════
-  // NOTIFICATION TEMPLATES
+  // 13. NOTIFICATION TEMPLATES
   // ══════════════════════════════════════════════════════════════
+
+  try {
+  console.log('[SEED] Section 13: Creating notification templates...');
 
   const emailWrap = (bodyContent: string) =>
     `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:0;background:#f5f5f5;font-family:Arial,Helvetica,sans-serif}a{color:#6b38d4}</style></head><body><div style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:8px;overflow:hidden"><div style="background:#030303;padding:24px 32px;text-align:center"><h1 style="color:#ffffff;margin:0;font-size:22px">Sivan <span style="color:#6b38d4">Management</span></h1></div><div style="padding:32px">${bodyContent}</div><div style="background:#030303;padding:16px 32px;text-align:center;font-size:12px;color:#999999">&copy; Sivan Management | Vacation Rentals in Greece</div></div></body></html>`;
@@ -2371,23 +2484,41 @@ async function main() {
     });
   }
 
-  console.log(`${notificationTemplates.length} Notification templates created/updated`);
+  console.log(`[SEED] ${notificationTemplates.length} Notification templates created/updated`);
+  } catch (err: any) {
+    console.error(`[SEED] ERROR in Section 13 (Notification Templates): ${err.message}`);
+    errors.push(`Notification Templates: ${err.message}`);
+  }
 
-  console.log('\nSeeding completed successfully!');
-  console.log('Summary: 12 properties, 20 guests, 29 bookings, 35 income records, 28 expense records, 12 maintenance requests, 12 notification templates');
+  // ══════════════════════════════════════════════════════════════
+  // SUMMARY
+  // ══════════════════════════════════════════════════════════════
+
+  if (errors.length > 0) {
+    console.log(`\n[SEED] Seeding completed with ${errors.length} error(s):`);
+    errors.forEach((e, i) => console.log(`  ${i + 1}. ${e}`));
+  } else {
+    console.log('\n[SEED] Seeding completed successfully!');
+  }
+  console.log('[SEED] Summary: 12 properties, 20 guests, 29 bookings, 35 income records, 28 expense records, 12 maintenance requests, 12 notification templates');
+  return { success: errors.length === 0, errors };
 }
 
-main()
-  .then(async () => {
-    console.log('[SEED] Disconnecting from database...');
-    await prisma.$disconnect();
-    console.log('[SEED] Done.');
-  })
-  .catch(async (e) => {
-    console.error('[SEED] Fatal seeding error:', e);
-    console.error('[SEED] Error name:', e?.name);
-    console.error('[SEED] Error message:', e?.message);
-    if (e?.meta) console.error('[SEED] Prisma meta:', JSON.stringify(e.meta));
-    await prisma.$disconnect();
-    // Don't exit with error code - allow server to start even if seed fails
-  });
+// Only run directly when executed as a script (not when imported)
+const isDirectExecution = require.main === module || process.argv[1]?.includes('seed');
+if (isDirectExecution) {
+  main()
+    .then(async (result) => {
+      console.log('[SEED] Disconnecting from database...');
+      await getPrisma().$disconnect();
+      console.log('[SEED] Done.');
+    })
+    .catch(async (e) => {
+      console.error('[SEED] Fatal seeding error:', e);
+      console.error('[SEED] Error name:', e?.name);
+      console.error('[SEED] Error message:', e?.message);
+      if (e?.meta) console.error('[SEED] Prisma meta:', JSON.stringify(e.meta));
+      await getPrisma().$disconnect();
+      // Don't exit with error code - allow server to start even if seed fails
+    });
+}

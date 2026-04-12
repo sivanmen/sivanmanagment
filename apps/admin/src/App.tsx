@@ -27,6 +27,7 @@ const IncomeFormPage = lazy(() => import('./pages/IncomeFormPage'));
 const ExpenseListPage = lazy(() => import('./pages/ExpenseListPage'));
 const ExpenseFormPage = lazy(() => import('./pages/ExpenseFormPage'));
 const ManagementFeesPage = lazy(() => import('./pages/ManagementFeesPage'));
+const PaymentsPage = lazy(() => import('./pages/PaymentsPage'));
 const DocumentsListPage = lazy(() => import('./pages/DocumentsListPage'));
 const MaintenanceListPage = lazy(() => import('./pages/MaintenanceListPage'));
 const MaintenanceDetailPage = lazy(() => import('./pages/MaintenanceDetailPage'));
@@ -39,7 +40,7 @@ const LoyaltyAdminPage = lazy(() => import('./pages/LoyaltyAdminPage'));
 const AffiliatesPage = lazy(() => import('./pages/AffiliatesPage'));
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
 const PortfolioPage = lazy(() => import('./pages/PortfolioPage'));
-const AutomationsPage = lazy(() => import('./pages/AutomationsPage'));
+const AutomationsPage = lazy(() => import('./pages/TaskAutomationsPage'));
 const MarketingPage = lazy(() => import('./pages/MarketingPage'));
 const SystemSettingsPage = lazy(() => import('./pages/SystemSettingsPage'));
 const TemplatesPage = lazy(() => import('./pages/TemplatesPage'));
@@ -61,6 +62,8 @@ const TemplateEditorPage = lazy(() => import('./pages/TemplateEditorPage'));
 const AiProvidersPage = lazy(() => import('./pages/AiProvidersPage'));
 const UsersManagementPage = lazy(() => import('./pages/UsersManagementPage'));
 const UserProfilePage = lazy(() => import('./pages/UserProfilePage'));
+const DirectBookingConfigPage = lazy(() => import('./pages/DirectBookingConfigPage'));
+const GuestScreeningPage = lazy(() => import('./pages/GuestScreeningPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 // Loading screen component - Sivan Obsidian design
@@ -124,8 +127,10 @@ export default function App() {
             <Route path="/finance/expenses/new" element={<ExpenseFormPage />} />
             <Route path="/finance/expenses/:id/edit" element={<ExpenseFormPage />} />
             <Route path="/finance/fees" element={<ManagementFeesPage />} />
+            <Route path="/finance/payments" element={<PaymentsPage />} />
             <Route path="/calendar" element={<CalendarPage />} />
             <Route path="/guests" element={<GuestsListPage />} />
+            <Route path="/guests/screening" element={<GuestScreeningPage />} />
             <Route path="/guests/:id" element={<GuestDetailPage />} />
             <Route path="/documents" element={<DocumentsListPage />} />
             <Route path="/maintenance" element={<MaintenanceListPage />} />
@@ -137,6 +142,7 @@ export default function App() {
             <Route path="/communications" element={<MessagesPage />} />
             <Route path="/reports" element={<ReportsPage />} />
             <Route path="/channels" element={<ChannelsPage />} />
+            <Route path="/channels/direct-booking" element={<DirectBookingConfigPage />} />
             <Route path="/loyalty" element={<LoyaltyAdminPage />} />
             <Route path="/affiliates" element={<AffiliatesPage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
