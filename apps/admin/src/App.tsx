@@ -67,6 +67,7 @@ const DirectBookingConfigPage = lazy(() => import('./pages/DirectBookingConfigPa
 const GuestScreeningPage = lazy(() => import('./pages/GuestScreeningPage'));
 const IoTDashboardPage = lazy(() => import('./pages/IoTDashboardPage'));
 const ReviewManagementPage = lazy(() => import('./pages/ReviewManagementPage'));
+const WhatsAppInstancesPage = lazy(() => import('./pages/WhatsAppInstancesPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 // Loading screen component - Sivan Obsidian design
@@ -176,6 +177,7 @@ export default function App() {
             <Route path="/users/:id" element={<UserProfilePage />} />
             <Route path="/iot" element={<IoTDashboardPage />} />
             <Route path="/reviews" element={<ReviewManagementPage />} />
+            <Route path="/whatsapp-instances" element={<WhatsAppInstancesPage />} />
           </Route>
           <Route path="*" element={<NotFoundPage />} />
         </Routes>

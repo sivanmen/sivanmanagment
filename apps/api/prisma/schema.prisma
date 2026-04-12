@@ -204,6 +204,7 @@ model Property {
   portfolioInvestments PortfolioInvestment[]
   directBookingSettings DirectBookingSetting?
   managementFeeCalcs  ManagementFeeCalculation[]
+  messagingAssignments MessagingPropertyAssignment[]
 
   @@index([ownerId, status])
   @@index([city, status])
@@ -653,6 +654,26 @@ model ExpenseRecord {
   @@index([propertyId, periodYear, periodMonth])
   @@index([approvalStatus])
   @@map("expense_records")
+}
+
+model ExpenseApprovalRequest {
+  id             String    @id @default(uuid())
+  expenseId      String    @map("expense_id")
+  ownerId        String    @map("owner_id")
+  ownerPhone     String    @map("owner_phone")
+  status         String    @default("PENDING") // PENDING, APPROVED, REJECTED, EXPIRED
+  sentAt         DateTime  @default(now()) @map("sent_at")
+  respondedAt    DateTime? @map("responded_at")
+  reminderSentAt DateTime? @map("reminder_sent_at")
+  expiresAt      DateTime  @map("expires_at")
+  metadata       Json?
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  @@index([expenseId])
+  @@index([ownerId, status])
+  @@index([ownerPhone, status])
+  @@map("expense_approval_requests")
 }
 
 enum FeeType {
@@ -1804,51 +1825,6 @@ model NotificationPreference {
 }
 
 // ==========================================
-// 23b. NOTIFICATION CHANNELS & SETTINGS
-// ==========================================
-
-enum NotificationChannelType {
-  EMAIL
-  WHATSAPP
-  SMS
-  PUSH
-}
-
-model NotificationChannelConfig {
-  id            String                  @id @default(uuid())
-  type          NotificationChannelType
-  name          String                  // e.g. "Main Email", "WhatsApp Business"
-  isActive      Boolean                 @default(false) @map("is_active")
-  isDefault     Boolean                 @default(false) @map("is_default")
-  config        Json                    // Encrypted credentials/settings
-  lastTestedAt  DateTime?               @map("last_tested_at")
-  testStatus    String?                 @map("test_status") // 'success' | 'failed'
-  testError     String?                 @map("test_error")
-  metadata      Json?
-  createdAt     DateTime                @default(now()) @map("created_at")
-  updatedAt     DateTime                @updatedAt @map("updated_at")
-
-  @@map("notification_channel_configs")
-}
-
-model UserNotificationSetting {
-  id          String   @id @default(uuid())
-  userId      String   @map("user_id")
-  category    String   // 'booking', 'maintenance', 'payment', 'system', 'marketing'
-  email       Boolean  @default(true)
-  whatsapp    Boolean  @default(false)
-  sms         Boolean  @default(false)
-  push        Boolean  @default(false)
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  user        User     @relation(fields: [userId], references: [id])
-
-  @@unique([userId, category])
-  @@map("user_notification_settings")
-}
-
-// ==========================================
 // 24. WEBHOOKS
 // ==========================================
 
@@ -1979,55 +1955,173 @@ model AccountingIntegration {
   @@map("accounting_integrations")
 }
 
-// ==========================================
-// 28. NOTIFICATION TEMPLATES
-// ==========================================
+// ─── Messaging Instances (Evolution API / WhatsApp) ──────────────────
+// Flexible multi-instance WhatsApp management. Each instance represents
+// a separate phone number / Evolution API connection. Properties can be
+// assigned to different instances.
+
+enum MessagingProvider {
+  EVOLUTION_API
+  WHATSAPP_BUSINESS
+  TWILIO
+  CUSTOM
+}
+
+enum MessagingInstanceStatus {
+  MSG_ACTIVE
+  MSG_DISCONNECTED
+  MSG_PAIRING
+  MSG_ERROR
+  MSG_SUSPENDED
+}
+
+model MessagingInstance {
+  id              String                  @id @default(uuid())
+  name            String                  // e.g. "Main WhatsApp", "Backup Line"
+  provider        MessagingProvider       @default(EVOLUTION_API)
+  status          MessagingInstanceStatus @default(MSG_DISCONNECTED)
+  phoneNumber     String?                 @map("phone_number") // The actual phone number
+  instanceName    String                  @map("instance_name") // Evolution API instance name
+  apiUrl          String                  @map("api_url") // Evolution API base URL
+  apiKey          String                  @map("api_key") // Evolution API key
+  webhookUrl      String?                 @map("webhook_url") // Incoming webhook URL
+  qrCode          String?                 @map("qr_code") // Latest QR code for pairing
+  isDefault       Boolean                 @default(false) @map("is_default") // Default instance for sending
+  isActive        Boolean                 @default(true) @map("is_active")
+  config          Json?                   // Provider-specific config (message limits, templates, etc.)
+  lastConnectedAt DateTime?               @map("last_connected_at")
+  lastErrorMsg    String?                 @map("last_error_msg")
+  messagesSent    Int                     @default(0) @map("messages_sent")
+  messagesReceived Int                    @default(0) @map("messages_received")
+  createdAt       DateTime                @default(now()) @map("created_at")
+  updatedAt       DateTime                @updatedAt @map("updated_at")
+
+  // Property assignments — which properties use this instance
+  propertyAssignments MessagingPropertyAssignment[]
+
+  @@map("messaging_instances")
+}
+
+model MessagingPropertyAssignment {
+  id           String            @id @default(uuid())
+  instanceId   String            @map("instance_id")
+  propertyId   String            @map("property_id")
+  instance     MessagingInstance @relation(fields: [instanceId], references: [id], onDelete: Cascade)
+  property     Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt    DateTime          @default(now()) @map("created_at")
+
+  @@unique([instanceId, propertyId])
+  @@map("messaging_property_assignments")
+}
+
+// ─── System Settings (Key-Value Store) ───────────────────────────────
+// Generic system settings stored in DB, editable from admin UI.
+// Used for configuration that shouldn't require code changes.
+
+model SystemSetting {
+  id        String   @id @default(uuid())
+  key       String   @unique // e.g. "evolution.default_instance", "stripe.mode"
+  value     String   // JSON-encoded value
+  category  String   @default("general") // Grouping: "messaging", "payments", "notifications", etc.
+  label     String?  // Human-readable label for the admin UI
+  isSecret  Boolean  @default(false) @map("is_secret") // Mask in UI
+  updatedBy String?  @map("updated_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([category])
+  @@map("system_settings")
+}
+
+// ─── Notification Channel Configs ──────────────────────────────────
+// Multi-channel notification system configuration (Email, WhatsApp, SMS, Push).
+// Each record stores connection credentials and test status for a channel.
+
+enum NotificationChannelType {
+  EMAIL
+  WHATSAPP
+  SMS
+  PUSH
+}
+
+model NotificationChannelConfig {
+  id           String                  @id @default(uuid())
+  type         NotificationChannelType
+  name         String
+  isActive     Boolean                 @default(false) @map("is_active")
+  isDefault    Boolean                 @default(false) @map("is_default")
+  config       Json                    // Channel-specific credentials (host, apiKey, etc.)
+  metadata     Json?                   // Extra metadata
+  lastTestedAt DateTime?               @map("last_tested_at")
+  testStatus   String?                 @map("test_status") // "success" | "failed"
+  testError    String?                 @map("test_error")
+  createdAt    DateTime                @default(now()) @map("created_at")
+  updatedAt    DateTime                @updatedAt @map("updated_at")
+
+  @@map("notification_channel_configs")
+}
+
+// ─── User Notification Settings (per-category preferences) ─────────
+// Stores per-user, per-category channel preferences (email, whatsapp, sms, push).
+
+model UserNotificationSetting {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  category  String   // "booking", "maintenance", "payment", "system", "marketing"
+  email     Boolean  @default(true)
+  whatsapp  Boolean  @default(false)
+  sms       Boolean  @default(false)
+  push      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, category])
+  @@map("user_notification_settings")
+}
+
+// ─── Notification Templates ────────────────────────────────────────
+// Multi-locale, multi-channel message templates with variable substitution.
 
 model NotificationTemplate {
-  id            String   @id @default(uuid())
-  slug          String   @unique          // e.g. "booking_confirmation", "payment_receipt"
-  category      String                    // "booking", "payment", "maintenance", "system", "marketing", "guest"
-  name          Json                      // { en: "Booking Confirmation", he: "אישור הזמנה", ... }
-  description   String?
-
-  // Content per channel — all multilingual JSON { en: "...", he: "...", de: "...", es: "...", fr: "...", ru: "..." }
-  emailSubject  Json?    @map("email_subject")
-  emailBody     Json?    @map("email_body")     // HTML content
-  whatsappBody  Json?    @map("whatsapp_body")  // Plain text with variables
-  smsBody       Json?    @map("sms_body")       // Short plain text
-
-  // Variables available for this template
-  variables     Json?                     // ["guestName", "propertyName", "checkIn", "checkOut", "amount"]
-
-  isActive      Boolean  @default(true) @map("is_active")
-  isSystem      Boolean  @default(false) @map("is_system")  // System templates can't be deleted
-
-  version       Int      @default(1)
-  lastEditedBy  String?  @map("last_edited_by")
-
-  metadata      Json?
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  id           String   @id @default(uuid())
+  slug         String   @unique
+  category     String   // "booking", "payment", "maintenance", "system", "marketing", "guest"
+  name         Json     // { en: "...", he: "...", ... }
+  description  String?
+  emailSubject Json?    @map("email_subject") // { en: "...", he: "...", ... }
+  emailBody    Json?    @map("email_body")
+  whatsappBody Json?    @map("whatsapp_body")
+  smsBody      Json?    @map("sms_body")
+  variables    Json?    // ["guestName", "propertyName", ...]
+  isActive     Boolean  @default(true) @map("is_active")
+  isSystem     Boolean  @default(false) @map("is_system")
+  metadata     Json?
+  lastEditedBy String?  @map("last_edited_by")
+  version      Int      @default(1)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
   @@map("notification_templates")
 }
 
-// ==========================================
-// 29. AI PROVIDER CONFIGURATION
-// ==========================================
+// ─── AI Provider Configs ───────────────────────────────────────────
+// Configuration for AI providers (Anthropic, OpenAI, Google) used for
+// template generation, translation, and improvement.
 
 model AiProviderConfig {
-  id          String         @id @default(uuid())
-  provider    AiProvider
-  name        String                    // "Claude Sonnet", "GPT-4o", "Gemini Pro"
-  apiKey      String         @map("api_key") // Encrypted
-  model       String                    // "claude-sonnet-4-20250514", "gpt-4o", "gemini-1.5-pro"
-  isActive    Boolean        @default(false) @map("is_active")
-  isDefault   Boolean        @default(false) @map("is_default")
-  config      Json?                     // Additional config (temperature, etc.)
-  lastUsedAt  DateTime?      @map("last_used_at")
-  createdAt   DateTime       @default(now()) @map("created_at")
-  updatedAt   DateTime       @updatedAt @map("updated_at")
+  id         String     @id @default(uuid())
+  provider   String     // "ANTHROPIC", "OPENAI", "GOOGLE"
+  name       String     // Display name e.g. "Claude 3.5 Sonnet"
+  apiKey     String     @map("api_key")
+  model      String     // Model identifier e.g. "claude-3-5-sonnet-20241022"
+  isActive   Boolean    @default(true) @map("is_active")
+  isDefault  Boolean    @default(false) @map("is_default")
+  config     Json?      // Extra config: { temperature, maxTokens, ... }
+  lastUsedAt DateTime?  @map("last_used_at")
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
 
   @@map("ai_provider_configs")
 }

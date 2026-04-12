@@ -47,6 +47,7 @@ import {
   CreditCard,
   Wifi,
   MessageSquare,
+  Smartphone,
 } from 'lucide-react';
 import { useAuthStore } from '../store/auth.store';
 import { useUIStore } from '../store/ui.store';
@@ -119,6 +120,7 @@ const navGroups: NavGroup[] = [
       { key: 'messages', label: 'Messages', path: '/messages', icon: Mail, badge: 2 },
       { key: 'notifications', label: 'Notifications', path: '/notifications', icon: Bell },
       { key: 'notificationTemplates', label: 'Templates', path: '/notification-templates', icon: FileStack },
+      { key: 'whatsappInstances', label: 'WhatsApp Instances', path: '/whatsapp-instances', icon: Smartphone },
     ],
   },
   {

@@ -51,6 +51,7 @@ import directBookingRoutes from './modules/direct-booking/direct-booking.routes'
 import expensesRoutes from './modules/expenses/expenses.routes';
 import whatsappRoutes from './modules/whatsapp/whatsapp.routes';
 import uploadsRoutes from './modules/uploads/uploads.routes';
+import messagingInstancesRoutes from './modules/messaging-instances/messaging-instances.routes';
 import { stripeWebhookHandler } from './modules/payments/stripe-webhook.controller';
 import { requestLogger } from './middleware/request-logger.middleware';
 import { apiRateLimit, authRateLimit } from './middleware/rate-limit.middleware';
@@ -323,6 +324,7 @@ app.use('/api/v1/direct-booking', directBookingRoutes);
 app.use('/api/v1/expenses', expensesRoutes);
 app.use('/api/v1/whatsapp', whatsappRoutes);
 app.use('/api/v1/uploads', uploadsRoutes);
+app.use('/api/v1/messaging-instances', messagingInstancesRoutes);
 
 // API Documentation
 const apiDocumentation = {
