@@ -45,6 +45,8 @@ import {
   FileStack,
   Brain,
   CreditCard,
+  Wifi,
+  MessageSquare,
 } from 'lucide-react';
 import { useAuthStore } from '../store/auth.store';
 import { useUIStore } from '../store/ui.store';
@@ -84,6 +86,7 @@ const navGroups: NavGroup[] = [
       { key: 'calendar', label: 'Calendar', path: '/calendar', icon: Calendar },
       { key: 'tasks', label: 'Tasks', path: '/tasks', icon: ClipboardList, badge: 5 },
       { key: 'bookingExtras', label: 'Booking Extras', path: '/booking-extras', icon: Layers },
+      { key: 'iot', label: 'IoT & Smart Locks', path: '/iot', icon: Wifi },
     ],
   },
   {
@@ -105,6 +108,7 @@ const navGroups: NavGroup[] = [
       { key: 'expenses', label: 'Expenses', path: '/finance/expenses', icon: TrendingDown },
       { key: 'fees', label: 'Management Fees', path: '/finance/fees', icon: Receipt },
       { key: 'payments', label: 'Payments', path: '/finance/payments', icon: CreditCard },
+      { key: 'ownerStatements', label: 'Owner Statements', path: '/owner-statements', icon: FileText },
       { key: 'pricing', label: 'Revenue Management', path: '/pricing', icon: BadgeDollarSign },
     ],
   },
@@ -134,6 +138,7 @@ const navGroups: NavGroup[] = [
       { key: 'marketing', label: 'Marketing', path: '/marketing', icon: Megaphone },
       { key: 'loyalty', label: 'Loyalty', path: '/loyalty', icon: Heart },
       { key: 'affiliates', label: 'Affiliates', path: '/affiliates', icon: UserPlus },
+      { key: 'reviews', label: 'Reviews', path: '/reviews', icon: MessageSquare },
       { key: 'guestExperience', label: 'Guest Experience', path: '/guest-experience', icon: Star },
       { key: 'bookingEngine', label: 'Booking Engine', path: '/booking-engine', icon: Globe },
     ],

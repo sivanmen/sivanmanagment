@@ -23,6 +23,7 @@ const StatementsPage = lazy(() => import('./pages/StatementsPage'));
 const AffiliatePage = lazy(() => import('./pages/AffiliatePage'));
 const MessagesPage = lazy(() => import('./pages/MessagesPage'));
 const PendingApprovalsPage = lazy(() => import('./pages/PendingApprovalsPage'));
+const PropertyDetailPage = lazy(() => import('./pages/PropertyDetailPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 // Loading screen component - Sivan Obsidian design
@@ -67,6 +68,7 @@ export default function App() {
           <Route element={<AuthGuard><AppLayout /></AuthGuard>}>
             <Route path="/" element={<ClientDashboardPage />} />
             <Route path="/properties" element={<MyPropertiesPage />} />
+            <Route path="/properties/:id" element={<PropertyDetailPage />} />
             <Route path="/bookings" element={<MyBookingsPage />} />
             <Route path="/financials" element={<FinancialSummaryPage />} />
             <Route path="/documents" element={<MyDocumentsPage />} />

@@ -64,6 +64,8 @@ const UsersManagementPage = lazy(() => import('./pages/UsersManagementPage'));
 const UserProfilePage = lazy(() => import('./pages/UserProfilePage'));
 const DirectBookingConfigPage = lazy(() => import('./pages/DirectBookingConfigPage'));
 const GuestScreeningPage = lazy(() => import('./pages/GuestScreeningPage'));
+const IoTDashboardPage = lazy(() => import('./pages/IoTDashboardPage'));
+const ReviewManagementPage = lazy(() => import('./pages/ReviewManagementPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 // Loading screen component - Sivan Obsidian design
@@ -170,6 +172,8 @@ export default function App() {
             <Route path="/settings/ai-providers" element={<AiProvidersPage />} />
             <Route path="/users" element={<UsersManagementPage />} />
             <Route path="/users/:id" element={<UserProfilePage />} />
+            <Route path="/iot" element={<IoTDashboardPage />} />
+            <Route path="/reviews" element={<ReviewManagementPage />} />
           </Route>
           <Route path="*" element={<NotFoundPage />} />
         </Routes>

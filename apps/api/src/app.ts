@@ -122,7 +122,8 @@ app.post('/api/v1/setup/admin', async (req, res) => {
 });
 
 // Admin-only reseed endpoint — triggers the full database seed via API
-app.post('/api/v1/admin/reseed', async (req, res) => {
+// Uses /api/v1/setup/reseed path to avoid conflict with /api/v1/admin routes
+app.post('/api/v1/setup/reseed', async (req, res) => {
   try {
     const adminSecret = req.headers['x-admin-secret'];
     if (!adminSecret || adminSecret !== config.jwt.secret) {
