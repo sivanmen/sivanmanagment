@@ -4,6 +4,7 @@ import { useAuthStore } from '../store/auth.store';
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api/v1',
   headers: { 'Content-Type': 'application/json' },
+  timeout: 30000, // 30 second timeout
 });
 
 apiClient.interceptors.request.use((config) => {
@@ -11,6 +12,11 @@ apiClient.interceptors.request.use((config) => {
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`;
   }
+
+  // Send current locale for server-side i18n
+  const locale = localStorage.getItem('locale') || 'en';
+  config.headers['Accept-Language'] = locale;
+
   return config;
 });
 

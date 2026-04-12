@@ -1,21 +1,26 @@
 import { config } from './config';
 import app from './app';
 import { prisma } from './prisma/client';
+import { initRedis, disconnectRedis } from './lib/redis';
 
 async function main() {
   try {
     // Test database connection
     await prisma.$connect();
-    console.log('Database connected successfully');
+    console.log('[DB] Database connected successfully');
+
+    // Initialize Redis (non-blocking — app works without it)
+    await initRedis();
 
     // Start server
     app.listen(config.port, () => {
       console.log(`
 ╔══════════════════════════════════════════════╗
-║  Sivan Management API                        ║
+║  Sivan Management PMS API                    ║
 ║  Environment: ${config.env.padEnd(30)}║
 ║  Port: ${String(config.port).padEnd(37)}║
 ║  Health: http://localhost:${config.port}/api/v1/health  ║
+║  Deep:   http://localhost:${config.port}/api/v1/health/deep
 ╚══════════════════════════════════════════════╝
       `);
     });
@@ -25,17 +30,26 @@ async function main() {
   }
 }
 
-// Handle shutdown
-process.on('SIGTERM', async () => {
-  console.log('SIGTERM received. Shutting down...');
+// Handle shutdown gracefully
+async function shutdown(signal: string) {
+  console.log(`${signal} received. Shutting down gracefully...`);
+  await disconnectRedis();
   await prisma.$disconnect();
+  console.log('All connections closed. Goodbye.');
   process.exit(0);
+}
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
+
+// Catch unhandled rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[FATAL] Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
-process.on('SIGINT', async () => {
-  console.log('SIGINT received. Shutting down...');
-  await prisma.$disconnect();
-  process.exit(0);
+process.on('uncaughtException', (error) => {
+  console.error('[FATAL] Uncaught Exception:', error);
+  process.exit(1);
 });
 
 main();

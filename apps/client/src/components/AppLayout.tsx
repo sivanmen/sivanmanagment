@@ -3,17 +3,17 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Search,
-  Bell,
   Menu,
   ChevronRight,
   ChevronDown,
   LogOut,
-  Globe,
   Moon,
   Sun,
 } from 'lucide-react';
 import Sidebar from './Sidebar';
 import CommandPalette from './CommandPalette';
+import NotificationBell from './NotificationBell';
+import LanguageSelector from './LanguageSelector';
 import { useAuthStore } from '../store/auth.store';
 import { useUIStore } from '../store/ui.store';
 
@@ -68,7 +68,6 @@ export default function AppLayout() {
   const { user, logout } = useAuthStore();
   const { locale, setLocale, theme, setTheme } = useUIStore();
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   const openCommandPalette = () => {
     window.dispatchEvent(new Event('open-command-palette'));
@@ -127,47 +126,17 @@ export default function AppLayout() {
             </kbd>
           </button>
 
+          {/* Language Selector */}
+          <LanguageSelector />
+
           {/* Notifications */}
-          <div className="relative">
-            <button
-              onClick={() => {
-                setNotificationsOpen(!notificationsOpen);
-                setUserDropdownOpen(false);
-              }}
-              className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high/60 transition-colors relative"
-            >
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 end-1.5 w-2 h-2 bg-secondary rounded-full pulse-chip" />
-            </button>
-            {notificationsOpen && (
-              <div className="absolute end-0 top-full mt-2 w-72 glass-card rounded-xl ambient-shadow p-4 z-50">
-                <p className="text-sm font-headline font-semibold text-on-surface mb-3">Notifications</p>
-                <div className="space-y-3">
-                  <div className="flex gap-3 p-2 rounded-lg hover:bg-surface-container-low transition-colors">
-                    <div className="w-2 h-2 rounded-full bg-secondary mt-1.5 flex-shrink-0" />
-                    <div>
-                      <p className="text-xs text-on-surface">Your monthly income report is ready</p>
-                      <p className="text-[10px] text-on-surface-variant mt-0.5">5 minutes ago</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-3 p-2 rounded-lg hover:bg-surface-container-low transition-colors">
-                    <div className="w-2 h-2 rounded-full bg-success mt-1.5 flex-shrink-0" />
-                    <div>
-                      <p className="text-xs text-on-surface">New booking confirmed for your property</p>
-                      <p className="text-[10px] text-on-surface-variant mt-0.5">1 hour ago</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+          <NotificationBell />
 
           {/* User menu */}
           <div className="relative">
             <button
               onClick={() => {
                 setUserDropdownOpen(!userDropdownOpen);
-                setNotificationsOpen(false);
               }}
               className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-surface-container-high/60 transition-colors"
             >
@@ -184,17 +153,6 @@ export default function AppLayout() {
                   </p>
                   <p className="text-xs text-on-surface-variant">{user?.email || 'client@sivan.com'}</p>
                 </div>
-                <button
-                  onClick={() => {
-                    const newLocale = locale === 'en' ? 'he' : 'en';
-                    setLocale(newLocale);
-                    i18n.changeLanguage(newLocale);
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors"
-                >
-                  <Globe className="w-4 h-4" />
-                  <span>{locale === 'en' ? 'Switch to Hebrew' : 'Switch to English'}</span>
-                </button>
                 <button
                   onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
                   className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-on-surface-variant hover:bg-surface-container-low transition-colors"
@@ -222,12 +180,11 @@ export default function AppLayout() {
 
       <CommandPalette />
 
-      {(userDropdownOpen || notificationsOpen) && (
+      {userDropdownOpen && (
         <div
           className="fixed inset-0 z-20"
           onClick={() => {
             setUserDropdownOpen(false);
-            setNotificationsOpen(false);
           }}
         />
       )}

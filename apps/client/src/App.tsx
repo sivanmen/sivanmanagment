@@ -5,6 +5,7 @@ import { useAuthStore } from './store/auth.store';
 import { useUIStore } from './store/ui.store';
 import AuthLayout from './layouts/AuthLayout';
 import AppLayout from './components/AppLayout';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Lazy-loaded pages
 const LoginPage = lazy(() => import('./pages/LoginPage'));
@@ -60,6 +61,7 @@ export default function App() {
   return (
     <div dir={dir} className="min-h-screen bg-surface">
       <Toaster position={dir === 'rtl' ? 'top-left' : 'top-right'} richColors />
+      <ErrorBoundary>
       <Suspense fallback={<LoadingScreen />}>
         <Routes>
           <Route element={<GuestGuard><AuthLayout /></GuestGuard>}>
@@ -86,6 +88,7 @@ export default function App() {
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Suspense>
+      </ErrorBoundary>
     </div>
   );
 }

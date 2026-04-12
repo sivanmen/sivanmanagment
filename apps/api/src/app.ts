@@ -52,19 +52,31 @@ import expensesRoutes from './modules/expenses/expenses.routes';
 import whatsappRoutes from './modules/whatsapp/whatsapp.routes';
 import uploadsRoutes from './modules/uploads/uploads.routes';
 import { stripeWebhookHandler } from './modules/payments/stripe-webhook.controller';
+import { requestLogger } from './middleware/request-logger.middleware';
+import { apiRateLimit, authRateLimit } from './middleware/rate-limit.middleware';
+import { securityHeaders, sanitizeRequest, requestId } from './middleware/security.middleware';
 
 const app = express();
 
+// Trust proxy (Railway / reverse proxy)
+app.set('trust proxy', 1);
+
 // Security
 app.use(helmet());
+app.use(securityHeaders);
+app.use(requestId);
 app.use(
   cors({
     origin: config.corsOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept-Language'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept-Language', 'X-Admin-Secret', 'X-Request-Id'],
+    exposedHeaders: ['X-Request-Id', 'X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset'],
   }),
 );
+
+// Request logging
+app.use(requestLogger);
 
 // Stripe webhook needs raw body for signature verification — must be BEFORE express.json()
 app.post('/api/v1/payments/stripe/webhook', express.raw({ type: 'application/json' }), stripeWebhookHandler);
@@ -73,6 +85,13 @@ app.post('/api/v1/payments/stripe/webhook', express.raw({ type: 'application/jso
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// Sanitize request payloads
+app.use(sanitizeRequest);
+
+// Rate limiting
+app.use('/api/v1/auth', authRateLimit);
+app.use('/api/v1', apiRateLimit);
 
 // Locale detection
 app.use(localeMiddleware);
@@ -87,7 +106,115 @@ app.get('/api/v1/health', (_req, res) => {
     timestamp: new Date().toISOString(),
     version: '1.0.0',
     env: config.env,
+    uptime: process.uptime(),
   });
+});
+
+// Deep health check — verifies DB + Redis connectivity
+app.get('/api/v1/health/deep', async (_req, res) => {
+  const checks: Record<string, { status: string; latencyMs?: number; error?: string }> = {};
+  const start = Date.now();
+
+  // Database check
+  try {
+    const dbStart = Date.now();
+    const { prisma } = require('./prisma/client');
+    await prisma.$queryRaw`SELECT 1`;
+    checks.database = { status: 'ok', latencyMs: Date.now() - dbStart };
+  } catch (err: any) {
+    checks.database = { status: 'error', error: err.message };
+  }
+
+  // Redis check
+  try {
+    const redisStart = Date.now();
+    const { getRedisClient } = require('./lib/redis');
+    const redis = getRedisClient();
+    if (redis) {
+      await redis.ping();
+      checks.redis = { status: 'ok', latencyMs: Date.now() - redisStart };
+    } else {
+      checks.redis = { status: 'not_configured' };
+    }
+  } catch (err: any) {
+    checks.redis = { status: 'error', error: err.message };
+  }
+
+  const allOk = Object.values(checks).every(c => c.status === 'ok' || c.status === 'not_configured');
+  res.status(allOk ? 200 : 503).json({
+    status: allOk ? 'ok' : 'degraded',
+    timestamp: new Date().toISOString(),
+    version: '1.0.0',
+    env: config.env,
+    uptime: process.uptime(),
+    totalLatencyMs: Date.now() - start,
+    checks,
+    memory: {
+      rss: Math.round(process.memoryUsage().rss / 1024 / 1024),
+      heapUsed: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+      heapTotal: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
+    },
+  });
+});
+
+// System stats endpoint (admin-only, secured by header)
+app.get('/api/v1/system/stats', async (req, res) => {
+  const adminSecret = req.headers['x-admin-secret'];
+  if (!adminSecret || adminSecret !== config.jwt.secret) {
+    return res.status(403).json({ error: 'Unauthorized' });
+  }
+
+  try {
+    const { prisma } = require('./prisma/client');
+    const [
+      userCount,
+      propertyCount,
+      bookingCount,
+      guestCount,
+      ownerCount,
+      maintenanceCount,
+      taskCount,
+    ] = await Promise.all([
+      prisma.user.count(),
+      prisma.property.count(),
+      prisma.booking.count(),
+      prisma.guest.count(),
+      prisma.owner.count(),
+      prisma.maintenanceRequest.count(),
+      prisma.task.count(),
+    ]);
+
+    res.json({
+      timestamp: new Date().toISOString(),
+      counts: {
+        users: userCount,
+        properties: propertyCount,
+        bookings: bookingCount,
+        guests: guestCount,
+        owners: ownerCount,
+        maintenanceRequests: maintenanceCount,
+        tasks: taskCount,
+      },
+      server: {
+        nodeVersion: process.version,
+        platform: process.platform,
+        uptime: process.uptime(),
+        memory: {
+          rss: Math.round(process.memoryUsage().rss / 1024 / 1024),
+          heapUsed: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+          heapTotal: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
+        },
+      },
+      api: {
+        version: '1.0.0',
+        env: config.env,
+        modules: 45,
+        routes: 198,
+      },
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // One-time admin setup endpoint (secured by JWT secret)
