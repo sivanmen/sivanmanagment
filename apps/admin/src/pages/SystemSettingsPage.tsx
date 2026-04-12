@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Building2,
@@ -16,8 +16,19 @@ import {
   Download,
   Trash2,
   Shield,
+  Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useApiQuery, useApiMutation } from '../hooks/useApi';
+
+// ── Types ───────────────────────────────────────────────────────
+interface SystemSetting {
+  key: string;
+  value: string;
+  category: string;
+  label?: string;
+  isSecret: boolean;
+}
 
 // ── Tab Types ────────────────────────────────────────────────────
 type SettingsTab =
@@ -114,109 +125,364 @@ function MaskedInput({
   );
 }
 
+// ── Default State Shapes ─────────────────────────────────────────
+const defaultGeneral = {
+  companyName: '',
+  logoUrl: '',
+  supportEmail: '',
+  supportPhone: '',
+  defaultCurrency: 'EUR',
+  timezone: 'Europe/Athens',
+  defaultLanguage: 'en',
+  businessAddress: '',
+};
+
+const defaultBooking = {
+  defaultCheckInTime: '15:00',
+  defaultCheckOutTime: '11:00',
+  minimumStay: 1,
+  maximumStay: 90,
+  autoConfirmBookings: false,
+  bufferDays: 0,
+  cancellationPolicy: 'Moderate',
+  securityDeposit: 200,
+  defaultCleaningFee: 80,
+};
+
+const defaultFinancial = {
+  defaultManagementFee: 25,
+  defaultMinimumMonthlyFee: 250,
+  expenseApprovalThreshold: 100,
+  autoCreateIncome: true,
+  invoicePrefix: 'SM-',
+  taxRate: 24,
+  paymentTermsDays: 30,
+  bankIban: '',
+  bankBic: '',
+  bankName: '',
+};
+
+const defaultNotifications = {
+  email: {
+    newBooking: true,
+    cancellation: true,
+    checkInReminder: true,
+    paymentReceived: true,
+    expenseApproval: true,
+  },
+  whatsapp: {
+    newBooking: true,
+    cancellation: false,
+    checkInReminder: true,
+    paymentReceived: false,
+    expenseApproval: true,
+  },
+  sms: {
+    newBooking: false,
+    cancellation: false,
+    checkInReminder: false,
+    paymentReceived: false,
+    expenseApproval: false,
+  },
+  checkInReminderLead: '24',
+  documentExpiryLead: '14',
+};
+
+const defaultIntegrations = {
+  airbnbApiKey: '',
+  bookingComUser: '',
+  bookingComPass: '',
+  vrboUser: '',
+  vrboPass: '',
+  stripeApiKey: '',
+  whatsappToken: '',
+  smtpHost: '',
+  smtpPort: '587',
+  smtpUser: '',
+  smtpPass: '',
+  googleMapsKey: '',
+  icalSyncInterval: '15',
+};
+
+const defaultAppearance = {
+  primaryColor: '#030303',
+  accentColor: '#6b38d4',
+  logoUpload: '',
+  clientPortalBranding: false,
+  customCss: '',
+};
+
+// ── Setting Key Maps ─────────────────────────────────────────────
+// Maps local state field names to API setting keys
+
+const GENERAL_KEY_MAP: Record<string, string> = {
+  companyName: 'company.name',
+  logoUrl: 'company.logo_url',
+  supportEmail: 'company.support_email',
+  supportPhone: 'company.support_phone',
+  defaultCurrency: 'general.default_currency',
+  timezone: 'general.timezone',
+  defaultLanguage: 'general.default_language',
+  businessAddress: 'company.business_address',
+};
+
+const BOOKING_KEY_MAP: Record<string, string> = {
+  defaultCheckInTime: 'booking.default_checkin_time',
+  defaultCheckOutTime: 'booking.default_checkout_time',
+  minimumStay: 'booking.minimum_stay',
+  maximumStay: 'booking.maximum_stay',
+  autoConfirmBookings: 'booking.auto_confirm',
+  bufferDays: 'booking.buffer_days',
+  cancellationPolicy: 'booking.cancellation_policy',
+  securityDeposit: 'booking.security_deposit',
+  defaultCleaningFee: 'booking.default_cleaning_fee',
+};
+
+const FINANCIAL_KEY_MAP: Record<string, string> = {
+  defaultManagementFee: 'financial.default_management_fee',
+  defaultMinimumMonthlyFee: 'financial.default_minimum_monthly_fee',
+  expenseApprovalThreshold: 'financial.expense_approval_threshold',
+  autoCreateIncome: 'financial.auto_create_income',
+  invoicePrefix: 'financial.invoice_prefix',
+  taxRate: 'financial.tax_rate',
+  paymentTermsDays: 'financial.payment_terms_days',
+  bankIban: 'financial.bank_iban',
+  bankBic: 'financial.bank_bic',
+  bankName: 'financial.bank_name',
+};
+
+const NOTIFICATION_KEY_PREFIX = 'notifications';
+const NOTIF_CHANNELS = ['email', 'whatsapp', 'sms'] as const;
+const NOTIF_EVENTS = ['newBooking', 'cancellation', 'checkInReminder', 'paymentReceived', 'expenseApproval'] as const;
+
+const NOTIFICATION_MISC_MAP: Record<string, string> = {
+  checkInReminderLead: 'notifications.checkin_reminder_lead',
+  documentExpiryLead: 'notifications.document_expiry_lead',
+};
+
+const INTEGRATION_KEY_MAP: Record<string, string> = {
+  airbnbApiKey: 'integrations.airbnb_api_key',
+  bookingComUser: 'integrations.bookingcom_user',
+  bookingComPass: 'integrations.bookingcom_pass',
+  vrboUser: 'integrations.vrbo_user',
+  vrboPass: 'integrations.vrbo_pass',
+  stripeApiKey: 'integrations.stripe_api_key',
+  whatsappToken: 'integrations.whatsapp_token',
+  smtpHost: 'integrations.smtp_host',
+  smtpPort: 'integrations.smtp_port',
+  smtpUser: 'integrations.smtp_user',
+  smtpPass: 'integrations.smtp_pass',
+  googleMapsKey: 'integrations.google_maps_key',
+  icalSyncInterval: 'integrations.ical_sync_interval',
+};
+
+const APPEARANCE_KEY_MAP: Record<string, string> = {
+  primaryColor: 'appearance.primary_color',
+  accentColor: 'appearance.accent_color',
+  logoUpload: 'appearance.logo_upload',
+  clientPortalBranding: 'appearance.client_portal_branding',
+  customCss: 'appearance.custom_css',
+};
+
+const DANGER_KEY_MAP: Record<string, string> = {
+  maintenanceMode: 'danger.maintenance_mode',
+};
+
+// ── Helpers: build lookup from API data ──────────────────────────
+function buildLookup(settings: SystemSetting[]): Record<string, string> {
+  const map: Record<string, string> = {};
+  for (const s of settings) {
+    map[s.key] = s.value;
+  }
+  return map;
+}
+
+function parseFromLookup<T extends Record<string, unknown>>(
+  lookup: Record<string, string>,
+  keyMap: Record<string, string>,
+  defaults: T,
+): T {
+  const result = { ...defaults };
+  for (const [field, apiKey] of Object.entries(keyMap)) {
+    const raw = lookup[apiKey];
+    if (raw === undefined) continue;
+
+    const defaultVal = defaults[field as keyof T];
+    if (typeof defaultVal === 'number') {
+      (result as Record<string, unknown>)[field] = parseFloat(raw) || 0;
+    } else if (typeof defaultVal === 'boolean') {
+      (result as Record<string, unknown>)[field] = raw === 'true';
+    } else {
+      (result as Record<string, unknown>)[field] = raw;
+    }
+  }
+  return result;
+}
+
+function parseNotifications(
+  lookup: Record<string, string>,
+  defaults: typeof defaultNotifications,
+): typeof defaultNotifications {
+  const result = JSON.parse(JSON.stringify(defaults)) as typeof defaultNotifications;
+
+  // Parse channel toggles like "notifications.email.newBooking"
+  for (const ch of NOTIF_CHANNELS) {
+    for (const ev of NOTIF_EVENTS) {
+      const apiKey = `${NOTIFICATION_KEY_PREFIX}.${ch}.${ev}`;
+      const raw = lookup[apiKey];
+      if (raw !== undefined) {
+        (result[ch] as Record<string, boolean>)[ev] = raw === 'true';
+      }
+    }
+  }
+
+  // Parse misc notification settings
+  for (const [field, apiKey] of Object.entries(NOTIFICATION_MISC_MAP)) {
+    const raw = lookup[apiKey];
+    if (raw !== undefined) {
+      (result as Record<string, unknown>)[field] = raw;
+    }
+  }
+
+  return result;
+}
+
+// ── Helpers: convert state to settings array for bulk update ─────
+function stateToSettings(
+  keyMap: Record<string, string>,
+  state: Record<string, unknown>,
+): Array<{ key: string; value: string }> {
+  const settings: Array<{ key: string; value: string }> = [];
+  for (const [field, apiKey] of Object.entries(keyMap)) {
+    settings.push({ key: apiKey, value: String(state[field]) });
+  }
+  return settings;
+}
+
+function notificationsToSettings(
+  state: typeof defaultNotifications,
+): Array<{ key: string; value: string }> {
+  const settings: Array<{ key: string; value: string }> = [];
+
+  for (const ch of NOTIF_CHANNELS) {
+    for (const ev of NOTIF_EVENTS) {
+      settings.push({
+        key: `${NOTIFICATION_KEY_PREFIX}.${ch}.${ev}`,
+        value: String(state[ch][ev]),
+      });
+    }
+  }
+
+  for (const [field, apiKey] of Object.entries(NOTIFICATION_MISC_MAP)) {
+    settings.push({ key: apiKey, value: String((state as Record<string, unknown>)[field]) });
+  }
+
+  return settings;
+}
+
+// ── Masked value sentinel ────────────────────────────────────────
+const MASKED_VALUE = '••••••••';
+
 // ── Main Component ───────────────────────────────────────────────
 export default function SystemSettingsPage() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<SettingsTab>('general');
 
-  // ── General ──
-  const [general, setGeneral] = useState({
-    companyName: 'Sivan Management',
-    logoUrl: '',
-    supportEmail: 'support@sivanmanagment.com',
-    supportPhone: '+30 281 0123456',
-    defaultCurrency: 'EUR',
-    timezone: 'Europe/Athens',
-    defaultLanguage: 'en',
-    businessAddress: 'Heraklion, Crete, Greece',
-  });
+  // ── Fetch all settings ──
+  const { data: settingsResponse, isLoading, isError } = useApiQuery<SystemSetting[]>(
+    ['system-settings'],
+    '/system-settings',
+  );
 
-  // ── Booking ──
-  const [booking, setBooking] = useState({
-    defaultCheckInTime: '15:00',
-    defaultCheckOutTime: '11:00',
-    minimumStay: 1,
-    maximumStay: 90,
-    autoConfirmBookings: false,
-    bufferDays: 0,
-    cancellationPolicy: 'Moderate',
-    securityDeposit: 200,
-    defaultCleaningFee: 80,
-  });
-
-  // ── Financial ──
-  const [financial, setFinancial] = useState({
-    defaultManagementFee: 25,
-    defaultMinimumMonthlyFee: 250,
-    expenseApprovalThreshold: 100,
-    autoCreateIncome: true,
-    invoicePrefix: 'SM-',
-    taxRate: 24,
-    paymentTermsDays: 30,
-    bankIban: '',
-    bankBic: '',
-    bankName: '',
-  });
-
-  // ── Notifications ──
-  const [notifications, setNotifications] = useState({
-    email: {
-      newBooking: true,
-      cancellation: true,
-      checkInReminder: true,
-      paymentReceived: true,
-      expenseApproval: true,
-    },
-    whatsapp: {
-      newBooking: true,
-      cancellation: false,
-      checkInReminder: true,
-      paymentReceived: false,
-      expenseApproval: true,
-    },
-    sms: {
-      newBooking: false,
-      cancellation: false,
-      checkInReminder: false,
-      paymentReceived: false,
-      expenseApproval: false,
-    },
-    checkInReminderLead: '24',
-    documentExpiryLead: '14',
-  });
-
-  // ── Integrations ──
-  const [integrations, setIntegrations] = useState({
-    airbnbApiKey: '',
-    bookingComUser: '',
-    bookingComPass: '',
-    vrboUser: '',
-    vrboPass: '',
-    stripeApiKey: '',
-    whatsappToken: '',
-    smtpHost: '',
-    smtpPort: '587',
-    smtpUser: '',
-    smtpPass: '',
-    googleMapsKey: '',
-    icalSyncInterval: '15',
-  });
-
-  // ── Appearance ──
-  const [appearance, setAppearance] = useState({
-    primaryColor: '#030303',
-    accentColor: '#6b38d4',
-    logoUpload: '',
-    clientPortalBranding: false,
-    customCss: '',
-  });
-
-  // ── Danger ──
+  // ── Local form state ──
+  const [general, setGeneral] = useState({ ...defaultGeneral });
+  const [booking, setBooking] = useState({ ...defaultBooking });
+  const [financial, setFinancial] = useState({ ...defaultFinancial });
+  const [notifications, setNotifications] = useState({ ...defaultNotifications });
+  const [integrations, setIntegrations] = useState({ ...defaultIntegrations });
+  const [appearance, setAppearance] = useState({ ...defaultAppearance });
   const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const initializedRef = useRef(false);
 
-  const handleSave = () => {
-    toast.success(t('settings.saveSuccess'));
-  };
+  // ── Populate state from API data ──
+  useEffect(() => {
+    if (!settingsResponse?.data || initializedRef.current) return;
+    const lookup = buildLookup(settingsResponse.data);
+
+    setGeneral(parseFromLookup(lookup, GENERAL_KEY_MAP, defaultGeneral));
+    setBooking(parseFromLookup(lookup, BOOKING_KEY_MAP, defaultBooking));
+    setFinancial(parseFromLookup(lookup, FINANCIAL_KEY_MAP, defaultFinancial));
+    setNotifications(parseNotifications(lookup, defaultNotifications));
+    setIntegrations(parseFromLookup(lookup, INTEGRATION_KEY_MAP, defaultIntegrations));
+    setAppearance(parseFromLookup(lookup, APPEARANCE_KEY_MAP, defaultAppearance));
+
+    const maint = lookup[DANGER_KEY_MAP.maintenanceMode];
+    if (maint !== undefined) setMaintenanceMode(maint === 'true');
+
+    initializedRef.current = true;
+  }, [settingsResponse]);
+
+  // ── Bulk update mutation ──
+  const bulkUpdateMutation = useApiMutation<SystemSetting[], { settings: Array<{ key: string; value: string }> }>(
+    'put',
+    '/system-settings/bulk',
+    {
+      invalidateKeys: [['system-settings']],
+      successMessage: t('settings.saveSuccess'),
+    },
+  );
+
+  // ── Collect all changed settings for current tab and save ──
+  const handleSave = useCallback(() => {
+    let settingsToSave: Array<{ key: string; value: string }> = [];
+
+    // Build the original lookup so we can detect secrets that haven't changed
+    const lookup = settingsResponse?.data ? buildLookup(settingsResponse.data) : {};
+
+    const filterUnchangedSecrets = (items: Array<{ key: string; value: string }>) =>
+      items.filter((s) => {
+        // Skip masked values that the user hasn't edited
+        if (s.value === MASKED_VALUE) return false;
+        // Also skip if the value is exactly the same as what came from API
+        if (lookup[s.key] === s.value) return false;
+        return true;
+      });
+
+    switch (activeTab) {
+      case 'general':
+        settingsToSave = stateToSettings(GENERAL_KEY_MAP, general as unknown as Record<string, unknown>);
+        break;
+      case 'booking':
+        settingsToSave = stateToSettings(BOOKING_KEY_MAP, booking as unknown as Record<string, unknown>);
+        break;
+      case 'financial':
+        settingsToSave = stateToSettings(FINANCIAL_KEY_MAP, financial as unknown as Record<string, unknown>);
+        break;
+      case 'notifications':
+        settingsToSave = notificationsToSettings(notifications);
+        break;
+      case 'integrations':
+        settingsToSave = stateToSettings(INTEGRATION_KEY_MAP, integrations as unknown as Record<string, unknown>);
+        break;
+      case 'appearance':
+        settingsToSave = stateToSettings(APPEARANCE_KEY_MAP, appearance as unknown as Record<string, unknown>);
+        break;
+      case 'danger':
+        settingsToSave = stateToSettings(DANGER_KEY_MAP, { maintenanceMode } as unknown as Record<string, unknown>);
+        break;
+    }
+
+    settingsToSave = filterUnchangedSecrets(settingsToSave);
+
+    if (settingsToSave.length === 0) {
+      toast.info(t('settings.noChanges', 'No changes to save'));
+      return;
+    }
+
+    bulkUpdateMutation.mutate({ settings: settingsToSave });
+  }, [activeTab, general, booking, financial, notifications, integrations, appearance, maintenanceMode, bulkUpdateMutation, settingsResponse, t]);
+
+  const isSaving = bulkUpdateMutation.isPending;
 
   const notifCategories = [
     { key: 'newBooking', label: t('settings.notifNewBooking') },
@@ -225,6 +491,36 @@ export default function SystemSettingsPage() {
     { key: 'paymentReceived', label: t('settings.notifPaymentReceived') },
     { key: 'expenseApproval', label: t('settings.notifExpenseApproval') },
   ] as const;
+
+  // ── Loading State ──
+  if (isLoading) {
+    return (
+      <div className="p-4 lg:p-6 flex items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 text-secondary animate-spin" />
+          <p className="text-sm text-on-surface-variant">{t('common.loading', 'Loading settings...')}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Error State ──
+  if (isError) {
+    return (
+      <div className="p-4 lg:p-6 flex items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center gap-3 text-center">
+          <AlertTriangle className="w-8 h-8 text-error" />
+          <p className="text-sm text-on-surface-variant">{t('common.errorLoading', 'Failed to load settings')}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="text-sm text-secondary underline hover:text-secondary/80"
+          >
+            {t('common.retry', 'Retry')}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
@@ -241,10 +537,15 @@ export default function SystemSettingsPage() {
         {activeTab !== 'danger' && (
           <button
             onClick={handleSave}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium text-white gradient-accent hover:shadow-ambient-lg transition-all"
+            disabled={isSaving}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium text-white gradient-accent hover:shadow-ambient-lg transition-all disabled:opacity-60"
           >
-            <Save className="w-4 h-4" />
-            <span>{t('common.save')}</span>
+            {isSaving ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            <span>{isSaving ? t('common.saving', 'Saving...') : t('common.save')}</span>
           </button>
         )}
       </div>

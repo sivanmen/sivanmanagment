@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useForm, Controller } from 'react-hook-form';
-import { ArrowLeft, Save, X } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { ArrowLeft, Save, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import apiClient from '../lib/api-client';
 
 interface BookingFormData {
   propertyId: string;
@@ -13,6 +15,7 @@ interface BookingFormData {
   guestPhone: string;
   checkIn: string;
   checkOut: string;
+  guestsCount: number;
   adults: number;
   children: number;
   infants: number;
@@ -23,30 +26,33 @@ interface BookingFormData {
   taxes: number;
   currency: string;
   source: string;
+  status: string;
   paymentStatus: string;
   specialRequests: string;
   internalNotes: string;
 }
 
-const demoProperties = [
-  { id: 'prop-001', name: 'Elounda Breeze Villa', basePrice: 320, units: [] },
-  {
-    id: 'prop-002',
-    name: 'Heraklion Harbor Suite',
-    basePrice: 250,
-    units: [
-      { id: 'unit-001', name: 'Suite A' },
-      { id: 'unit-002', name: 'Suite B' },
-    ],
-  },
-  { id: 'prop-003', name: 'Chania Old Town Residence', basePrice: 250, units: [] },
-  { id: 'prop-004', name: 'Rethymno Sunset Apartment', basePrice: 220, units: [] },
-];
+interface Property {
+  id: string;
+  name: string;
+  basePrice: number;
+  currency?: string;
+  units?: { id: string; unitNumber: string; unitType?: string }[];
+}
+
+interface Guest {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email?: string;
+  phone?: string;
+}
 
 export default function BookingFormPage() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const isEdit = !!id;
 
   const {
@@ -54,8 +60,8 @@ export default function BookingFormPage() {
     handleSubmit,
     watch,
     setValue,
-    control,
-    formState: { errors, isSubmitting },
+    reset,
+    formState: { errors },
   } = useForm<BookingFormData>({
     defaultValues: {
       propertyId: '',
@@ -65,6 +71,7 @@ export default function BookingFormPage() {
       guestPhone: '',
       checkIn: '',
       checkOut: '',
+      guestsCount: 2,
       adults: 2,
       children: 0,
       infants: 0,
@@ -75,11 +82,74 @@ export default function BookingFormPage() {
       taxes: 0,
       currency: 'EUR',
       source: 'DIRECT',
-      paymentStatus: 'UNPAID',
+      status: 'CONFIRMED',
+      paymentStatus: 'PENDING',
       specialRequests: '',
       internalNotes: '',
     },
   });
+
+  // ---- Fetch existing booking for edit mode ----
+  const { data: booking, isLoading: bookingLoading } = useQuery({
+    queryKey: ['booking', id],
+    queryFn: async () => {
+      const res = await apiClient.get(`/bookings/${id}`);
+      return res.data.data ?? res.data;
+    },
+    enabled: isEdit,
+  });
+
+  // ---- Fetch properties for dropdown ----
+  const { data: propertiesData } = useQuery({
+    queryKey: ['properties-list'],
+    queryFn: async () => {
+      const res = await apiClient.get('/properties', { params: { pageSize: 200 } });
+      return res.data;
+    },
+  });
+
+  const properties: Property[] = propertiesData?.data ?? [];
+
+  // ---- Fetch guests for autofill suggestions ----
+  const { data: guestsData } = useQuery({
+    queryKey: ['guests-list'],
+    queryFn: async () => {
+      const res = await apiClient.get('/guests', { params: { pageSize: 200 } });
+      return res.data;
+    },
+  });
+
+  const guests: Guest[] = guestsData?.data ?? [];
+
+  // ---- Populate form when editing ----
+  useEffect(() => {
+    if (booking) {
+      reset({
+        propertyId: booking.propertyId ?? '',
+        unitId: booking.unitId ?? '',
+        guestName: booking.guestName ?? '',
+        guestEmail: booking.guestEmail ?? '',
+        guestPhone: booking.guestPhone ?? '',
+        checkIn: booking.checkIn ? booking.checkIn.slice(0, 10) : '',
+        checkOut: booking.checkOut ? booking.checkOut.slice(0, 10) : '',
+        guestsCount: booking.guestsCount ?? 2,
+        adults: booking.adults ?? 2,
+        children: booking.children ?? 0,
+        infants: booking.infants ?? 0,
+        pets: booking.pets ?? 0,
+        nightlyRate: booking.nightlyRate ?? 0,
+        cleaningFee: booking.cleaningFee ?? 0,
+        serviceFee: booking.serviceFee ?? 0,
+        taxes: booking.taxes ?? 0,
+        currency: booking.currency ?? 'EUR',
+        source: booking.source ?? 'DIRECT',
+        status: booking.status ?? 'CONFIRMED',
+        paymentStatus: booking.paymentStatus ?? 'PENDING',
+        specialRequests: booking.specialRequests ?? '',
+        internalNotes: booking.internalNotes ?? '',
+      });
+    }
+  }, [booking, reset]);
 
   const selectedPropertyId = watch('propertyId');
   const checkIn = watch('checkIn');
@@ -89,10 +159,10 @@ export default function BookingFormPage() {
   const serviceFee = watch('serviceFee');
   const taxes = watch('taxes');
 
-  const selectedProperty = demoProperties.find((p) => p.id === selectedPropertyId);
+  const selectedProperty = properties.find((p) => p.id === selectedPropertyId);
   const units = selectedProperty?.units ?? [];
 
-  // Auto-fill nightly rate when property changes
+  // Auto-fill nightly rate when property changes (only on create)
   useEffect(() => {
     if (selectedProperty && !isEdit) {
       setValue('nightlyRate', selectedProperty.basePrice);
@@ -110,9 +180,47 @@ export default function BookingFormPage() {
     return nightlyRate * nights + cleaningFee + serviceFee + taxes;
   }, [nightlyRate, nights, cleaningFee, serviceFee, taxes]);
 
+  // ---- Create / Update mutation ----
+  const mutation = useMutation({
+    mutationFn: (data: BookingFormData) => {
+      const adults = data.adults || 0;
+      const children = data.children || 0;
+      const infants = data.infants || 0;
+      const payload = {
+        ...data,
+        guestsCount: adults + children + infants || data.guestsCount || 1,
+        unitId: data.unitId || undefined,
+      };
+      if (isEdit) {
+        return apiClient.put(`/bookings/${id}`, payload);
+      }
+      return apiClient.post('/bookings', payload);
+    },
+    onSuccess: () => {
+      toast.success(isEdit ? 'Booking updated successfully' : 'Booking created successfully');
+      queryClient.invalidateQueries({ queryKey: ['bookings'] });
+      if (isEdit) {
+        queryClient.invalidateQueries({ queryKey: ['booking', id] });
+      }
+      navigate('/bookings');
+    },
+    onError: () => {
+      toast.error(isEdit ? 'Failed to update booking' : 'Failed to create booking');
+    },
+  });
+
   const onSubmit = (data: BookingFormData) => {
-    toast.success(isEdit ? 'Booking updated successfully' : 'Booking created successfully');
-    navigate('/bookings');
+    mutation.mutate(data);
+  };
+
+  // ---- Auto-fill guest info from guest dropdown ----
+  const handleGuestSelect = (guestId: string) => {
+    const guest = guests.find((g) => g.id === guestId);
+    if (guest) {
+      setValue('guestName', `${guest.firstName} ${guest.lastName}`.trim());
+      if (guest.email) setValue('guestEmail', guest.email);
+      if (guest.phone) setValue('guestPhone', guest.phone);
+    }
   };
 
   const inputClass =
@@ -120,6 +228,15 @@ export default function BookingFormPage() {
   const labelClass =
     'block text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant mb-1.5';
   const errorClass = 'text-xs text-error mt-1';
+
+  // Loading state for edit mode
+  if (isEdit && bookingLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-secondary" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 lg:p-6 space-y-6 max-w-4xl mx-auto">
@@ -150,7 +267,7 @@ export default function BookingFormPage() {
               <label className={labelClass}>Property *</label>
               <select {...register('propertyId', { required: 'Property is required' })} className={inputClass}>
                 <option value="">Select a property...</option>
-                {demoProperties.map((p) => (
+                {properties.map((p) => (
                   <option key={p.id} value={p.id}>{p.name}</option>
                 ))}
               </select>
@@ -161,7 +278,7 @@ export default function BookingFormPage() {
               <select {...register('unitId')} className={inputClass} disabled={units.length === 0}>
                 <option value="">{units.length === 0 ? 'No units available' : 'Select a unit...'}</option>
                 {units.map((u) => (
-                  <option key={u.id} value={u.id}>{u.name}</option>
+                  <option key={u.id} value={u.id}>{u.unitNumber}</option>
                 ))}
               </select>
             </div>
@@ -171,6 +288,28 @@ export default function BookingFormPage() {
         {/* Guest */}
         <div className="bg-surface-container-lowest rounded-xl p-5 ambient-shadow">
           <h3 className="font-headline text-lg font-semibold text-on-surface mb-4">Guest Information</h3>
+
+          {/* Guest quick-select */}
+          {guests.length > 0 && (
+            <div className="mb-4">
+              <label className={labelClass}>Select Existing Guest</label>
+              <select
+                className={inputClass}
+                defaultValue=""
+                onChange={(e) => {
+                  if (e.target.value) handleGuestSelect(e.target.value);
+                }}
+              >
+                <option value="">Fill from existing guest...</option>
+                {guests.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.firstName} {g.lastName}{g.email ? ` (${g.email})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className={labelClass}>Guest Name *</label>
@@ -284,10 +423,10 @@ export default function BookingFormPage() {
           </div>
         </div>
 
-        {/* Source & Payment */}
+        {/* Source, Status & Payment */}
         <div className="bg-surface-container-lowest rounded-xl p-5 ambient-shadow">
           <h3 className="font-headline text-lg font-semibold text-on-surface mb-4">Booking Details</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className={labelClass}>{t('bookings.source')}</label>
               <select {...register('source')} className={inputClass}>
@@ -295,17 +434,30 @@ export default function BookingFormPage() {
                 <option value="AIRBNB">Airbnb</option>
                 <option value="BOOKING_COM">Booking.com</option>
                 <option value="VRBO">VRBO</option>
-                <option value="WEBSITE">Website</option>
-                <option value="PHONE">Phone</option>
+                <option value="MANUAL">Manual</option>
+                <option value="WIDGET">Widget</option>
+              </select>
+            </div>
+            <div>
+              <label className={labelClass}>Status</label>
+              <select {...register('status')} className={inputClass}>
+                <option value="INQUIRY">Inquiry</option>
+                <option value="PENDING">Pending</option>
+                <option value="CONFIRMED">Confirmed</option>
+                <option value="CHECKED_IN">Checked In</option>
+                <option value="CHECKED_OUT">Checked Out</option>
+                <option value="CANCELLED">Cancelled</option>
+                <option value="NO_SHOW">No Show</option>
               </select>
             </div>
             <div>
               <label className={labelClass}>{t('bookings.payment')}</label>
               <select {...register('paymentStatus')} className={inputClass}>
-                <option value="UNPAID">Unpaid</option>
+                <option value="PENDING">Pending</option>
                 <option value="PARTIAL">Partial</option>
                 <option value="PAID">Paid</option>
                 <option value="REFUNDED">Refunded</option>
+                <option value="FAILED">Failed</option>
               </select>
             </div>
           </div>
@@ -348,11 +500,15 @@ export default function BookingFormPage() {
           </button>
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={mutation.isPending}
             className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium text-white gradient-accent hover:shadow-ambient-lg transition-all disabled:opacity-60"
           >
-            <Save className="w-4 h-4" />
-            <span>{isSubmitting ? t('common.loading') : t('common.save')}</span>
+            {mutation.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            <span>{mutation.isPending ? t('common.loading') : t('common.save')}</span>
           </button>
         </div>
       </form>

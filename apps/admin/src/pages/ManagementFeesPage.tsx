@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Calculator,
   Info,
@@ -9,16 +10,21 @@ import {
   CreditCard,
   Check,
   ArrowRight,
+  Loader2,
+  AlertTriangle,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import apiClient from '../lib/api-client';
 
 type FeeStatus = 'DRAFT' | 'APPROVED' | 'INVOICED' | 'PAID';
 type FeeType = 'PERCENTAGE' | 'MINIMUM';
 
-interface FeeCalculation {
+interface FeeRecord {
   id: string;
-  ownerName: string;
-  propertyName: string;
+  ownerId: string;
+  propertyId: string;
+  periodMonth: number;
+  periodYear: number;
   totalIncome: number;
   feePercent: number;
   calculatedFee: number;
@@ -26,6 +32,47 @@ interface FeeCalculation {
   appliedFee: number;
   feeType: FeeType;
   status: FeeStatus;
+  property: {
+    id: string;
+    name: string;
+    internalCode: string | null;
+  };
+  owner: {
+    id: string;
+    companyName: string | null;
+    user: {
+      firstName: string;
+      lastName: string;
+    };
+  };
+}
+
+interface FeesListResponse {
+  data: FeeRecord[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+  };
+}
+
+interface FeeSummaryResponse {
+  data: {
+    totalFees: number;
+    totalIncome: number;
+    totalCalculations: number;
+    byStatus: Array<{
+      status: FeeStatus;
+      totalFees: number;
+      count: number;
+    }>;
+    byOwner: Array<{
+      ownerId: string;
+      totalFees: number;
+      totalIncome: number;
+      count: number;
+    }>;
+  };
 }
 
 const feeStatusStyles: Record<FeeStatus, string> = {
@@ -64,43 +111,107 @@ const feeTypeStyles: Record<FeeType, string> = {
 const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const years = ['2026', '2025', '2024'];
 
-const demoFees: FeeCalculation[] = [
-  { id: '1', ownerName: 'Dimitris Papadopoulos', propertyName: 'Santorini Sunset Villa', totalIncome: 12400, feePercent: 10, calculatedFee: 1240, minimumFee: 400, appliedFee: 1240, feeType: 'PERCENTAGE', status: 'PAID' },
-  { id: '2', ownerName: 'Dimitris Papadopoulos', propertyName: 'Athens Central Loft', totalIncome: 2800, feePercent: 12, calculatedFee: 336, minimumFee: 400, appliedFee: 400, feeType: 'MINIMUM', status: 'INVOICED' },
-  { id: '3', ownerName: 'Maria Konstantinou', propertyName: 'Mykonos Beach House', totalIncome: 9800, feePercent: 10, calculatedFee: 980, minimumFee: 350, appliedFee: 980, feeType: 'PERCENTAGE', status: 'APPROVED' },
-  { id: '4', ownerName: 'Maria Konstantinou', propertyName: 'Crete Harbor Suite', totalIncome: 3100, feePercent: 15, calculatedFee: 465, minimumFee: 500, appliedFee: 500, feeType: 'MINIMUM', status: 'DRAFT' },
-  { id: '5', ownerName: 'Yannis Alexiou', propertyName: 'Rhodes Old Town Apt', totalIncome: 5400, feePercent: 10, calculatedFee: 540, minimumFee: 300, appliedFee: 540, feeType: 'PERCENTAGE', status: 'DRAFT' },
-  { id: '6', ownerName: 'Yannis Alexiou', propertyName: 'Paros Seaside Studio', totalIncome: 1800, feePercent: 12, calculatedFee: 216, minimumFee: 350, appliedFee: 350, feeType: 'MINIMUM', status: 'DRAFT' },
-  { id: '7', ownerName: 'Elena Michailidou', propertyName: 'Corfu Garden Villa', totalIncome: 7600, feePercent: 10, calculatedFee: 760, minimumFee: 400, appliedFee: 760, feeType: 'PERCENTAGE', status: 'APPROVED' },
-  { id: '8', ownerName: 'Elena Michailidou', propertyName: 'Zakynthos Blue Apt', totalIncome: 2200, feePercent: 10, calculatedFee: 220, minimumFee: 300, appliedFee: 300, feeType: 'MINIMUM', status: 'INVOICED' },
-];
-
 export default function ManagementFeesPage() {
   const { t } = useTranslation();
-  const [selectedMonth, setSelectedMonth] = useState('March');
+  const queryClient = useQueryClient();
+  const [selectedMonth, setSelectedMonth] = useState('April');
   const [selectedYear, setSelectedYear] = useState('2026');
-  const [fees, setFees] = useState(demoFees);
 
-  const totalFees = fees.reduce((sum, f) => sum + f.appliedFee, 0);
-  const byStatus = fees.reduce<Record<FeeStatus, number>>((acc, f) => {
-    acc[f.status] = (acc[f.status] ?? 0) + f.appliedFee;
-    return acc;
-  }, {} as Record<FeeStatus, number>);
+  const periodMonth = months.indexOf(selectedMonth) + 1;
+  const periodYear = parseInt(selectedYear);
 
-  const handleAdvanceStatus = (id: string) => {
-    setFees((prev) =>
-      prev.map((f) => {
-        if (f.id === id && nextStatus[f.status]) {
-          return { ...f, status: nextStatus[f.status]! };
-        }
-        return f;
-      }),
-    );
-    toast.success('Fee status updated');
+  // ─── Queries ──────────────────────────────────────────────────
+
+  const {
+    data: feesData,
+    isLoading,
+    isError,
+    error,
+  } = useQuery<FeesListResponse>({
+    queryKey: ['fees', periodMonth, periodYear],
+    queryFn: async () => {
+      const res = await apiClient.get('/fees', {
+        params: { periodMonth, periodYear, limit: 100 },
+      });
+      return res.data;
+    },
+  });
+
+  const { data: summaryData } = useQuery<FeeSummaryResponse>({
+    queryKey: ['fees-summary', periodMonth, periodYear],
+    queryFn: async () => {
+      const res = await apiClient.get('/fees/summary', {
+        params: { periodMonth, periodYear },
+      });
+      return res.data;
+    },
+  });
+
+  // ─── Mutations ────────────────────────────────────────────────
+
+  const calculateMutation = useMutation({
+    mutationFn: () =>
+      apiClient.post('/fees/calculate', { periodMonth, periodYear }),
+    onSuccess: () => {
+      toast.success(`Fees calculated for ${selectedMonth} ${selectedYear}`);
+      queryClient.invalidateQueries({ queryKey: ['fees'] });
+      queryClient.invalidateQueries({ queryKey: ['fees-summary'] });
+    },
+    onError: () => {
+      toast.error('Failed to calculate fees');
+    },
+  });
+
+  const advanceStatusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: FeeStatus }) =>
+      apiClient.put(`/fees/${id}/status`, { status }),
+    onSuccess: () => {
+      toast.success('Fee status updated');
+      queryClient.invalidateQueries({ queryKey: ['fees'] });
+      queryClient.invalidateQueries({ queryKey: ['fees-summary'] });
+    },
+    onError: () => {
+      toast.error('Failed to update fee status');
+    },
+  });
+
+  // ─── Derived Data ─────────────────────────────────────────────
+
+  const fees = feesData?.data ?? [];
+  const summary = summaryData?.data;
+
+  const totalFees = summary?.totalFees ?? fees.reduce((sum, f) => sum + f.appliedFee, 0);
+
+  const byStatusMap: Record<FeeStatus, number> = { DRAFT: 0, APPROVED: 0, INVOICED: 0, PAID: 0 };
+  if (summary?.byStatus) {
+    for (const s of summary.byStatus) {
+      byStatusMap[s.status] = s.totalFees;
+    }
+  } else {
+    for (const f of fees) {
+      byStatusMap[f.status] = (byStatusMap[f.status] ?? 0) + f.appliedFee;
+    }
+  }
+
+  const handleAdvanceStatus = (id: string, currentStatus: FeeStatus) => {
+    const next = nextStatus[currentStatus];
+    if (next) {
+      advanceStatusMutation.mutate({ id, status: next });
+    }
   };
 
   const handleCalculateFees = () => {
-    toast.success(`Fees calculated for ${selectedMonth} ${selectedYear}`);
+    calculateMutation.mutate();
+  };
+
+  const getOwnerName = (fee: FeeRecord) => {
+    if (fee.owner?.user) {
+      return `${fee.owner.user.firstName} ${fee.owner.user.lastName}`;
+    }
+    if (fee.owner?.companyName) {
+      return fee.owner.companyName;
+    }
+    return 'Unknown';
   };
 
   return (
@@ -140,9 +251,14 @@ export default function ManagementFeesPage() {
           </select>
           <button
             onClick={handleCalculateFees}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium text-white gradient-accent hover:shadow-ambient-lg transition-all"
+            disabled={calculateMutation.isPending}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium text-white gradient-accent hover:shadow-ambient-lg transition-all disabled:opacity-60"
           >
-            <Calculator className="w-4 h-4" />
+            {calculateMutation.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Calculator className="w-4 h-4" />
+            )}
             <span>{t('finance.calculateFees')}</span>
           </button>
         </div>
@@ -190,106 +306,131 @@ export default function ManagementFeesPage() {
               </span>
             </div>
             <p className="font-headline text-xl font-bold text-on-surface">
-              {'\u20AC'}{(byStatus[status] ?? 0).toLocaleString()}
+              {'\u20AC'}{(byStatusMap[status] ?? 0).toLocaleString()}
             </p>
           </div>
         ))}
       </div>
 
-      {/* Fees Table */}
-      <div className="bg-surface-container-lowest rounded-xl ambient-shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-outline-variant/20">
-                <th className="text-start py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  Owner
-                </th>
-                <th className="text-start py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  Property
-                </th>
-                <th className="text-end py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  Total {t('finance.income')}
-                </th>
-                <th className="text-end py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  {t('finance.feePercent')}
-                </th>
-                <th className="text-end py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  Calculated
-                </th>
-                <th className="text-end py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  {t('finance.minimumFee')}
-                </th>
-                <th className="text-end py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  {t('finance.appliedFee')}
-                </th>
-                <th className="text-start py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  Type
-                </th>
-                <th className="text-start py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  Status
-                </th>
-                <th className="text-center py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  Action
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {fees.map((fee) => (
-                <tr
-                  key={fee.id}
-                  className="border-b border-outline-variant/10 hover:bg-surface-container-low transition-colors"
-                >
-                  <td className="py-3 px-4 text-sm font-medium text-on-surface">{fee.ownerName}</td>
-                  <td className="py-3 px-4 text-sm text-on-surface-variant">{fee.propertyName}</td>
-                  <td className="py-3 px-4 text-sm text-end text-on-surface">
-                    {'\u20AC'}{fee.totalIncome.toLocaleString()}
-                  </td>
-                  <td className="py-3 px-4 text-sm text-end text-on-surface-variant">
-                    {fee.feePercent}%
-                  </td>
-                  <td className="py-3 px-4 text-sm text-end text-on-surface-variant">
-                    {'\u20AC'}{fee.calculatedFee.toLocaleString()}
-                  </td>
-                  <td className="py-3 px-4 text-sm text-end text-on-surface-variant">
-                    {'\u20AC'}{fee.minimumFee.toLocaleString()}
-                  </td>
-                  <td className="py-3 px-4 text-sm text-end font-bold text-secondary">
-                    {'\u20AC'}{fee.appliedFee.toLocaleString()}
-                  </td>
-                  <td className="py-3 px-4">
-                    <span
-                      className={`px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider ${feeTypeStyles[fee.feeType]}`}
-                    >
-                      {fee.feeType === 'PERCENTAGE' ? '%' : 'MIN'}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span
-                      className={`px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider ${feeStatusStyles[fee.status]}`}
-                    >
-                      {feeStatusLabels[fee.status]}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    {nextStatus[fee.status] ? (
-                      <button
-                        onClick={() => handleAdvanceStatus(fee.id)}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-[10px] font-semibold text-secondary bg-secondary/10 hover:bg-secondary/20 transition-colors"
-                      >
-                        {nextStatusLabels[fee.status]}
-                        <ArrowRight className="w-3 h-3" />
-                      </button>
-                    ) : (
-                      <Check className="w-4 h-4 text-success mx-auto" />
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {/* Loading / Error States */}
+      {isLoading && (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 text-secondary animate-spin" />
         </div>
-      </div>
+      )}
+
+      {isError && (
+        <div className="flex items-center justify-center py-20 gap-3 text-error">
+          <AlertTriangle className="w-5 h-5" />
+          <p className="text-sm">{(error as any)?.message || 'Failed to load fee calculations'}</p>
+        </div>
+      )}
+
+      {/* Fees Table */}
+      {!isLoading && !isError && (
+        <div className="bg-surface-container-lowest rounded-xl ambient-shadow overflow-hidden">
+          {fees.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-on-surface-variant">
+              <Calculator className="w-10 h-10 mb-3 opacity-40" />
+              <p className="text-sm font-medium">No fee calculations for this period</p>
+              <p className="text-xs mt-1 opacity-70">Click "Calculate Fees" to generate fee records</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-outline-variant/20">
+                    <th className="text-start py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                      Owner
+                    </th>
+                    <th className="text-start py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                      Property
+                    </th>
+                    <th className="text-end py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                      Total {t('finance.income')}
+                    </th>
+                    <th className="text-end py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                      {t('finance.feePercent')}
+                    </th>
+                    <th className="text-end py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                      Calculated
+                    </th>
+                    <th className="text-end py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                      {t('finance.minimumFee')}
+                    </th>
+                    <th className="text-end py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                      {t('finance.appliedFee')}
+                    </th>
+                    <th className="text-start py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                      Type
+                    </th>
+                    <th className="text-start py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                      Status
+                    </th>
+                    <th className="text-center py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                      Action
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {fees.map((fee) => (
+                    <tr
+                      key={fee.id}
+                      className="border-b border-outline-variant/10 hover:bg-surface-container-low transition-colors"
+                    >
+                      <td className="py-3 px-4 text-sm font-medium text-on-surface">{getOwnerName(fee)}</td>
+                      <td className="py-3 px-4 text-sm text-on-surface-variant">{fee.property?.name ?? '-'}</td>
+                      <td className="py-3 px-4 text-sm text-end text-on-surface">
+                        {'\u20AC'}{Number(fee.totalIncome).toLocaleString()}
+                      </td>
+                      <td className="py-3 px-4 text-sm text-end text-on-surface-variant">
+                        {Number(fee.feePercent)}%
+                      </td>
+                      <td className="py-3 px-4 text-sm text-end text-on-surface-variant">
+                        {'\u20AC'}{Number(fee.calculatedFee).toLocaleString()}
+                      </td>
+                      <td className="py-3 px-4 text-sm text-end text-on-surface-variant">
+                        {'\u20AC'}{Number(fee.minimumFee).toLocaleString()}
+                      </td>
+                      <td className="py-3 px-4 text-sm text-end font-bold text-secondary">
+                        {'\u20AC'}{Number(fee.appliedFee).toLocaleString()}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span
+                          className={`px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider ${feeTypeStyles[fee.feeType]}`}
+                        >
+                          {fee.feeType === 'PERCENTAGE' ? '%' : 'MIN'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span
+                          className={`px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider ${feeStatusStyles[fee.status]}`}
+                        >
+                          {feeStatusLabels[fee.status]}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        {nextStatus[fee.status] ? (
+                          <button
+                            onClick={() => handleAdvanceStatus(fee.id, fee.status)}
+                            disabled={advanceStatusMutation.isPending}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-[10px] font-semibold text-secondary bg-secondary/10 hover:bg-secondary/20 transition-colors disabled:opacity-60"
+                          >
+                            {nextStatusLabels[fee.status]}
+                            <ArrowRight className="w-3 h-3" />
+                          </button>
+                        ) : (
+                          <Check className="w-4 h-4 text-success mx-auto" />
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

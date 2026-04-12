@@ -1,4 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import {
   Star,
   MessageSquare,
@@ -7,8 +9,6 @@ import {
   Bot,
   Filter,
   Search,
-  TrendingUp,
-  TrendingDown,
   ChevronDown,
   ChevronUp,
   Send,
@@ -25,17 +25,17 @@ import {
   Globe,
   MessageCircle,
   PieChart as PieChartIcon,
-  CalendarDays,
   ArrowUpRight,
   ArrowDownRight,
   RefreshCw,
   FileText,
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import {
   BarChart,
   Bar,
-  LineChart,
-  Line,
   PieChart,
   Pie,
   Cell,
@@ -46,6 +46,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
+import apiClient from '../lib/api-client';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -86,6 +87,35 @@ interface Review {
   updatedAt: string;
 }
 
+interface ReviewsResponse {
+  success: boolean;
+  data: Review[];
+  meta: {
+    total: number;
+    page: number;
+    perPage: number;
+    totalPages: number;
+  };
+}
+
+interface StatsResponse {
+  success: boolean;
+  data: {
+    totalReviews: number;
+    averageRating: number;
+    byRating: { rating: number; count: number }[];
+    bySentiment: { positive: number; neutral: number; negative: number };
+    bySource: Record<string, number>;
+    byStatus: { pendingResponse: number; responded: number; flagged: number; archived: number };
+    averageCategoryRatings: Record<string, number>;
+  };
+}
+
+interface PropertyOption {
+  id: string;
+  name: string;
+}
+
 interface ResponseTemplate {
   id: string;
   name: string;
@@ -93,275 +123,6 @@ interface ResponseTemplate {
   content: string;
   tone: ResponseTone;
 }
-
-// ── Mock Data (20+ reviews) ────────────────────────────────────────────────
-
-const mockReviews: Review[] = [
-  {
-    id: 'rev-001', propertyId: 'prop-001', propertyName: 'Villa Elounda Seafront',
-    bookingId: 'book-040', guestName: 'Hans Mueller', guestEmail: 'hans.m@email.de',
-    source: 'AIRBNB', rating: 5,
-    categoryRatings: { cleanliness: 5, communication: 5, checkIn: 5, accuracy: 5, location: 5, value: 4 },
-    title: 'Perfekter Urlaub in Kreta!',
-    content: 'Wunderschone Villa mit atemberaubendem Meerblick. Alles war sauber und gut organisiert. Die Kommunikation mit dem Team war hervorragend. Wir kommen definitiv wieder!',
-    language: 'de',
-    response: 'Thank you, Hans! We are so happy you enjoyed your stay at Villa Elounda. We look forward to welcoming you back to Crete!',
-    respondedAt: '2026-04-02T10:00:00Z', respondedBy: 'u-001',
-    status: 'RESPONDED', sentiment: 'POSITIVE',
-    publishedAt: '2026-04-01T08:00:00Z', createdAt: '2026-04-01T08:00:00Z', updatedAt: '2026-04-02T10:00:00Z',
-  },
-  {
-    id: 'rev-002', propertyId: 'prop-002', propertyName: 'Chania Old Town Apt',
-    bookingId: 'book-042', guestName: 'Sophie Laurent', guestEmail: 'sophie.l@email.fr',
-    source: 'BOOKING_COM', rating: 4,
-    categoryRatings: { cleanliness: 4, communication: 5, checkIn: 4, accuracy: 4, location: 5, value: 4 },
-    title: 'Charmant appartement',
-    content: 'Tres bel appartement dans la vieille ville de Chania. Emplacement parfait pour explorer la ville. Le seul bemol: la climatisation etait un peu bruyante la nuit.',
-    language: 'fr', status: 'PENDING_RESPONSE', sentiment: 'POSITIVE',
-    publishedAt: '2026-04-05T12:00:00Z', createdAt: '2026-04-05T12:00:00Z', updatedAt: '2026-04-05T12:00:00Z',
-  },
-  {
-    id: 'rev-003', propertyId: 'prop-003', propertyName: 'Rethymno Beach House',
-    bookingId: 'book-044', guestName: 'James Wilson', guestEmail: 'j.wilson@email.com',
-    source: 'AIRBNB', rating: 3,
-    categoryRatings: { cleanliness: 3, communication: 4, checkIn: 3, accuracy: 3, location: 4, value: 3 },
-    title: 'Decent but needs improvements',
-    content: 'The location is great but the house needs some maintenance work. The pool filter was not working properly and there was a minor leak in the bathroom. The team fixed the pool issue quickly once reported.',
-    language: 'en', status: 'FLAGGED', sentiment: 'NEUTRAL',
-    publishedAt: '2026-04-08T15:00:00Z', createdAt: '2026-04-08T15:00:00Z', updatedAt: '2026-04-08T15:00:00Z',
-  },
-  {
-    id: 'rev-004', propertyId: 'prop-001', propertyName: 'Villa Elounda Seafront',
-    guestName: 'Maria Ivanova', guestEmail: 'maria.i@email.ru',
-    source: 'GOOGLE', rating: 5,
-    title: 'Zamechatelnoye mesto!',
-    content: 'Prekrasnaya villa s vidom na more. Vse bylo idealno - chistota, komfort, obsluzhivanie. Osobenno ponravilsya bassein i terassa dlya zavtraka. Rekomenduyu vsem!',
-    language: 'ru',
-    response: 'Spasibo, Maria! We appreciate your wonderful review. Hope to see you again in Crete!',
-    respondedAt: '2026-03-20T09:00:00Z', respondedBy: 'u-002',
-    status: 'RESPONDED', sentiment: 'POSITIVE',
-    publishedAt: '2026-03-18T10:00:00Z', createdAt: '2026-03-18T10:00:00Z', updatedAt: '2026-03-20T09:00:00Z',
-  },
-  {
-    id: 'rev-005', propertyId: 'prop-002', propertyName: 'Chania Old Town Apt',
-    bookingId: 'book-038', guestName: 'Erik Johansson',
-    source: 'VRBO', rating: 2,
-    categoryRatings: { cleanliness: 2, communication: 3, checkIn: 2, accuracy: 2, location: 4, value: 2 },
-    title: 'Not as expected',
-    content: 'The apartment looked much better in the photos. The furniture was worn and the bathroom needed renovation. Also had trouble with the check-in process as the lockbox code did not work at first.',
-    language: 'en', status: 'FLAGGED', sentiment: 'NEGATIVE',
-    publishedAt: '2026-03-25T16:00:00Z', createdAt: '2026-03-25T16:00:00Z', updatedAt: '2026-03-25T16:00:00Z',
-  },
-  {
-    id: 'rev-006', propertyId: 'prop-004', propertyName: 'Heraklion City Loft',
-    bookingId: 'book-050', guestName: 'Akiko Tanaka', guestEmail: 'akiko.t@email.jp',
-    source: 'BOOKING_COM', rating: 5,
-    categoryRatings: { cleanliness: 5, communication: 5, checkIn: 5, accuracy: 5, location: 4, value: 5 },
-    title: 'Wonderful modern loft',
-    content: 'Everything was perfect. Very clean, modern furnishings, fast wifi. The host was very responsive and helpful with restaurant recommendations. Would definitely come back.',
-    language: 'en',
-    response: 'Thank you so much Akiko! We are delighted you had such a great experience. Welcome back anytime!',
-    respondedAt: '2026-04-04T14:00:00Z', respondedBy: 'u-001',
-    status: 'RESPONDED', sentiment: 'POSITIVE',
-    publishedAt: '2026-04-03T09:00:00Z', createdAt: '2026-04-03T09:00:00Z', updatedAt: '2026-04-04T14:00:00Z',
-  },
-  {
-    id: 'rev-007', propertyId: 'prop-001', propertyName: 'Villa Elounda Seafront',
-    bookingId: 'book-035', guestName: 'Carlos Fernandez', guestEmail: 'carlos.f@email.es',
-    source: 'AIRBNB', rating: 4,
-    categoryRatings: { cleanliness: 5, communication: 4, checkIn: 4, accuracy: 4, location: 5, value: 3 },
-    title: 'Gran villa, un poco cara',
-    content: 'Villa preciosa con vistas increibles al mar. Todo estaba limpio y bien cuidado. El unico punto negativo es el precio, que es bastante alto para la temporada. Pero la experiencia general fue excelente.',
-    language: 'es', status: 'PENDING_RESPONSE', sentiment: 'POSITIVE',
-    publishedAt: '2026-03-30T11:00:00Z', createdAt: '2026-03-30T11:00:00Z', updatedAt: '2026-03-30T11:00:00Z',
-  },
-  {
-    id: 'rev-008', propertyId: 'prop-003', propertyName: 'Rethymno Beach House',
-    bookingId: 'book-045', guestName: 'Anna Schmidt', guestEmail: 'anna.s@email.de',
-    source: 'GOOGLE', rating: 4,
-    title: 'Schones Strandhaus',
-    content: 'Tolles Strandhaus mit direktem Zugang zum Strand. Das Haus war geraumig und komfortabel. Die Kuche war gut ausgestattet. Der einzige Minuspunkt war der Parkplatz, der etwas weit entfernt war.',
-    language: 'de',
-    response: 'Vielen Dank, Anna! We are glad you enjoyed the beach house. We are working on improving the parking situation for our guests.',
-    respondedAt: '2026-04-06T08:00:00Z', respondedBy: 'u-001',
-    status: 'RESPONDED', sentiment: 'POSITIVE',
-    publishedAt: '2026-04-05T10:00:00Z', createdAt: '2026-04-05T10:00:00Z', updatedAt: '2026-04-06T08:00:00Z',
-  },
-  {
-    id: 'rev-009', propertyId: 'prop-005', propertyName: 'Agios Nikolaos Suite',
-    bookingId: 'book-048', guestName: 'Pierre Dubois', guestEmail: 'pierre.d@email.fr',
-    source: 'DIRECT', rating: 5,
-    title: 'Exceptionnel!',
-    content: 'Suite magnifique avec vue sur la baie. Le service etait impeccable. Le petit-dejeuner sur la terrasse etait un reve. Un sejour inoubliable que je recommande vivement a tous.',
-    language: 'fr',
-    response: 'Merci Pierre! Your kind words mean the world to us. We hope to welcome you back to our beautiful Agios Nikolaos Suite!',
-    respondedAt: '2026-04-09T11:00:00Z', respondedBy: 'u-002',
-    status: 'RESPONDED', sentiment: 'POSITIVE',
-    publishedAt: '2026-04-08T07:00:00Z', createdAt: '2026-04-08T07:00:00Z', updatedAt: '2026-04-09T11:00:00Z',
-  },
-  {
-    id: 'rev-010', propertyId: 'prop-004', propertyName: 'Heraklion City Loft',
-    guestName: 'John Smith', guestEmail: 'john.s@email.com',
-    source: 'TRIPADVISOR', rating: 1,
-    title: 'Terrible experience',
-    content: 'Do not book this place. The air conditioning was broken, there were insects in the kitchen, and the noise from the street was unbearable. When I complained, the response was very slow. Complete waste of money.',
-    language: 'en', status: 'FLAGGED', sentiment: 'NEGATIVE',
-    publishedAt: '2026-04-10T18:00:00Z', createdAt: '2026-04-10T18:00:00Z', updatedAt: '2026-04-10T18:00:00Z',
-  },
-  {
-    id: 'rev-011', propertyId: 'prop-002', propertyName: 'Chania Old Town Apt',
-    bookingId: 'book-051', guestName: 'Lisa Johnson', guestEmail: 'lisa.j@email.com',
-    source: 'AIRBNB', rating: 5,
-    categoryRatings: { cleanliness: 5, communication: 5, checkIn: 5, accuracy: 5, location: 5, value: 5 },
-    title: 'Absolutely perfect stay!',
-    content: 'This apartment is a hidden gem in the old town. Walking distance to everything. The host thought of every detail, from the welcome basket to the detailed guidebook. The rooftop terrace was our favorite spot.',
-    language: 'en',
-    response: 'Thank you Lisa! So glad you discovered our little gem. The rooftop terrace is indeed magical. See you next time!',
-    respondedAt: '2026-04-11T09:00:00Z', respondedBy: 'u-001',
-    status: 'RESPONDED', sentiment: 'POSITIVE',
-    publishedAt: '2026-04-10T14:00:00Z', createdAt: '2026-04-10T14:00:00Z', updatedAt: '2026-04-11T09:00:00Z',
-  },
-  {
-    id: 'rev-012', propertyId: 'prop-005', propertyName: 'Agios Nikolaos Suite',
-    guestName: 'Marco Rossi', guestEmail: 'marco.r@email.it',
-    source: 'BOOKING_COM', rating: 3,
-    categoryRatings: { cleanliness: 3, communication: 3, checkIn: 4, accuracy: 3, location: 5, value: 2 },
-    title: 'Posizione fantastica, prezzo alto',
-    content: 'La posizione della suite e straordinaria con vista sulla baia. Tuttavia il rapporto qualita-prezzo non e dei migliori. Il bagno era piccolo e la colazione basica rispetto al prezzo pagato.',
-    language: 'it', status: 'PENDING_RESPONSE', sentiment: 'NEUTRAL',
-    publishedAt: '2026-04-07T16:00:00Z', createdAt: '2026-04-07T16:00:00Z', updatedAt: '2026-04-07T16:00:00Z',
-  },
-  {
-    id: 'rev-013', propertyId: 'prop-001', propertyName: 'Villa Elounda Seafront',
-    bookingId: 'book-052', guestName: 'Emily Chen', guestEmail: 'emily.c@email.com',
-    source: 'DIRECT', rating: 5,
-    categoryRatings: { cleanliness: 5, communication: 5, checkIn: 5, accuracy: 5, location: 5, value: 5 },
-    title: 'Dream vacation property',
-    content: 'We booked directly and got a great deal. The villa exceeded all expectations. Private pool, stunning views, spacious rooms. The team organized a boat trip for us that was the highlight of our holiday. Cannot recommend enough!',
-    language: 'en', status: 'PENDING_RESPONSE', sentiment: 'POSITIVE',
-    publishedAt: '2026-04-11T08:00:00Z', createdAt: '2026-04-11T08:00:00Z', updatedAt: '2026-04-11T08:00:00Z',
-  },
-  {
-    id: 'rev-014', propertyId: 'prop-003', propertyName: 'Rethymno Beach House',
-    guestName: 'Olga Petrova', guestEmail: 'olga.p@email.ru',
-    source: 'GOOGLE', rating: 2,
-    title: 'Razochаrovаnie',
-    content: 'Dom trebyet remontа. Konditsioner ne rаbotаl kаk sleduyet, gorychаya vodа bylа s pereboiyami. Plyzh ryadom horosho, no dom ne sootvetstvuyet tsenam. Budu iskаt drugoy vаriаnt v sleduyushchiy rаz.',
-    language: 'ru', status: 'PENDING_RESPONSE', sentiment: 'NEGATIVE',
-    publishedAt: '2026-04-09T13:00:00Z', createdAt: '2026-04-09T13:00:00Z', updatedAt: '2026-04-09T13:00:00Z',
-  },
-  {
-    id: 'rev-015', propertyId: 'prop-004', propertyName: 'Heraklion City Loft',
-    bookingId: 'book-053', guestName: 'David Kim', guestEmail: 'david.k@email.com',
-    source: 'AIRBNB', rating: 4,
-    categoryRatings: { cleanliness: 4, communication: 5, checkIn: 5, accuracy: 4, location: 3, value: 4 },
-    title: 'Great loft, noisy area',
-    content: 'The loft itself is beautiful and well designed. Very comfortable bed and the kitchen had everything we needed. However, the area can be quite noisy at night due to nearby bars. Light sleepers beware. Overall a good stay.',
-    language: 'en',
-    response: 'Thank you David! We appreciate the honest feedback. We provide earplugs in the welcome kit and are looking into soundproofing solutions.',
-    respondedAt: '2026-04-11T16:00:00Z', respondedBy: 'u-001',
-    status: 'RESPONDED', sentiment: 'POSITIVE',
-    publishedAt: '2026-04-10T20:00:00Z', createdAt: '2026-04-10T20:00:00Z', updatedAt: '2026-04-11T16:00:00Z',
-  },
-  {
-    id: 'rev-016', propertyId: 'prop-005', propertyName: 'Agios Nikolaos Suite',
-    bookingId: 'book-054', guestName: 'Yuki Sato', guestEmail: 'yuki.s@email.jp',
-    source: 'BOOKING_COM', rating: 5,
-    title: 'Subarashii taiken!',
-    content: 'The suite was absolutely stunning. Waking up to the view of Mirabello Bay was breathtaking. The staff went above and beyond to make our honeymoon special. The surprise champagne and flowers were such a lovely touch.',
-    language: 'en',
-    response: 'Congratulations on your honeymoon, Yuki! It was our pleasure to make it special. Wishing you both a lifetime of happiness!',
-    respondedAt: '2026-04-07T10:00:00Z', respondedBy: 'u-002',
-    status: 'RESPONDED', sentiment: 'POSITIVE',
-    publishedAt: '2026-04-06T12:00:00Z', createdAt: '2026-04-06T12:00:00Z', updatedAt: '2026-04-07T10:00:00Z',
-  },
-  {
-    id: 'rev-017', propertyId: 'prop-001', propertyName: 'Villa Elounda Seafront',
-    guestName: 'Robert Brown', guestEmail: 'robert.b@email.com',
-    source: 'TRIPADVISOR', rating: 4,
-    title: 'Beautiful villa with minor issues',
-    content: 'The villa is truly beautiful with amazing views. We had a fantastic week there. A few small issues: the wifi was spotty at times and one of the sun loungers was broken. But the overall experience was wonderful and the location is unbeatable.',
-    language: 'en', status: 'PENDING_RESPONSE', sentiment: 'POSITIVE',
-    publishedAt: '2026-03-28T09:00:00Z', createdAt: '2026-03-28T09:00:00Z', updatedAt: '2026-03-28T09:00:00Z',
-  },
-  {
-    id: 'rev-018', propertyId: 'prop-002', propertyName: 'Chania Old Town Apt',
-    bookingId: 'book-055', guestName: 'Nina Kowalski', guestEmail: 'nina.k@email.pl',
-    source: 'VRBO', rating: 5,
-    categoryRatings: { cleanliness: 5, communication: 5, checkIn: 5, accuracy: 5, location: 5, value: 4 },
-    title: 'Cudowne miejsce!',
-    content: 'Piekne mieszkanie w samym sercu starego miasta. Wszystko bylo czyste i zadbane. Gospodarz bardzo pomocny, polecil swietne restauracje. Zdecydowanie polecam i wrocemy!',
-    language: 'pl',
-    response: 'Dziekujemy Nina! So happy you loved your stay. We will have your favorite wine ready for your return visit!',
-    respondedAt: '2026-04-03T08:00:00Z', respondedBy: 'u-001',
-    status: 'RESPONDED', sentiment: 'POSITIVE',
-    publishedAt: '2026-04-02T15:00:00Z', createdAt: '2026-04-02T15:00:00Z', updatedAt: '2026-04-03T08:00:00Z',
-  },
-  {
-    id: 'rev-019', propertyId: 'prop-003', propertyName: 'Rethymno Beach House',
-    bookingId: 'book-056', guestName: 'Thomas Anderson', guestEmail: 'thomas.a@email.com',
-    source: 'DIRECT', rating: 4,
-    categoryRatings: { cleanliness: 4, communication: 4, checkIn: 5, accuracy: 4, location: 5, value: 4 },
-    title: 'Beach lovers paradise',
-    content: 'Perfect location right on the beach. The house is comfortable and well equipped. We loved having breakfast on the terrace watching the sunrise. The only improvement would be updating the kitchen appliances which are a bit dated.',
-    language: 'en', status: 'PENDING_RESPONSE', sentiment: 'POSITIVE',
-    publishedAt: '2026-04-11T11:00:00Z', createdAt: '2026-04-11T11:00:00Z', updatedAt: '2026-04-11T11:00:00Z',
-  },
-  {
-    id: 'rev-020', propertyId: 'prop-004', propertyName: 'Heraklion City Loft',
-    guestName: 'Isabella Garcia', guestEmail: 'isabella.g@email.es',
-    source: 'GOOGLE', rating: 3,
-    title: 'Bien pero puede mejorar',
-    content: 'El loft es bonito y esta bien ubicado para visitar la ciudad. Sin embargo, el aire acondicionado no funcionaba bien y tuvimos que esperar dos dias para que lo arreglaran. El servicio de limpieza podria ser mejor.',
-    language: 'es', status: 'PENDING_RESPONSE', sentiment: 'NEUTRAL',
-    publishedAt: '2026-04-04T17:00:00Z', createdAt: '2026-04-04T17:00:00Z', updatedAt: '2026-04-04T17:00:00Z',
-  },
-  {
-    id: 'rev-021', propertyId: 'prop-005', propertyName: 'Agios Nikolaos Suite',
-    bookingId: 'book-057', guestName: 'Chen Wei', guestEmail: 'chen.w@email.cn',
-    source: 'AIRBNB', rating: 5,
-    categoryRatings: { cleanliness: 5, communication: 5, checkIn: 5, accuracy: 5, location: 5, value: 5 },
-    title: 'Best vacation ever!',
-    content: 'This suite is absolutely incredible. The panoramic views of the bay are unlike anything I have ever seen. The host arranged a private cooking class where we learned to make traditional Cretan dishes. Every detail was perfect. Already planning our return trip!',
-    language: 'en',
-    response: 'Thank you Chen Wei! It was a joy to host you. Chef Yannis still talks about how well you mastered the moussaka! Cannot wait to see you again!',
-    respondedAt: '2026-04-12T07:00:00Z', respondedBy: 'u-001',
-    status: 'RESPONDED', sentiment: 'POSITIVE',
-    publishedAt: '2026-04-11T22:00:00Z', createdAt: '2026-04-11T22:00:00Z', updatedAt: '2026-04-12T07:00:00Z',
-  },
-  {
-    id: 'rev-022', propertyId: 'prop-001', propertyName: 'Villa Elounda Seafront',
-    bookingId: 'book-058', guestName: 'Sarah Mitchell', guestEmail: 'sarah.m@email.com',
-    source: 'BOOKING_COM', rating: 4,
-    categoryRatings: { cleanliness: 4, communication: 4, checkIn: 4, accuracy: 4, location: 5, value: 3 },
-    title: 'Lovely villa, pricey but worth it',
-    content: 'The villa is stunning and the location is perfect. The pool area is beautiful and the views are to die for. We felt it was a bit overpriced for the region but the quality of the property and service justified it in the end. Would recommend for a special occasion.',
-    language: 'en', status: 'PENDING_RESPONSE', sentiment: 'POSITIVE',
-    publishedAt: '2026-04-12T06:00:00Z', createdAt: '2026-04-12T06:00:00Z', updatedAt: '2026-04-12T06:00:00Z',
-  },
-  {
-    id: 'rev-023', propertyId: 'prop-002', propertyName: 'Chania Old Town Apt',
-    guestName: 'Ahmed Hassan', guestEmail: 'ahmed.h@email.com',
-    source: 'GOOGLE', rating: 1,
-    title: 'Very disappointed',
-    content: 'The apartment was nothing like the photos. Dirty on arrival, broken shower handle, stains on the bedsheets. When I contacted the host, they were dismissive. Had to find alternative accommodation for the last two nights. Requesting a refund.',
-    language: 'en', status: 'FLAGGED', sentiment: 'NEGATIVE',
-    publishedAt: '2026-03-15T20:00:00Z', createdAt: '2026-03-15T20:00:00Z', updatedAt: '2026-03-15T20:00:00Z',
-  },
-  {
-    id: 'rev-024', propertyId: 'prop-003', propertyName: 'Rethymno Beach House',
-    bookingId: 'book-059', guestName: 'Francesca Bianchi', guestEmail: 'francesca.b@email.it',
-    source: 'AIRBNB', rating: 5,
-    categoryRatings: { cleanliness: 5, communication: 5, checkIn: 5, accuracy: 5, location: 5, value: 5 },
-    title: 'Paradiso sulla spiaggia!',
-    content: 'Casa meravigliosa direttamente sulla spiaggia. Abbiamo trascorso una settimana indimenticabile. I bambini hanno adorato giocare sulla spiaggia ogni giorno. La casa aveva tutto cio di cui avevamo bisogno. Torneremo sicuramente!',
-    language: 'it',
-    response: 'Grazie mille Francesca! We are so happy your family had such a wonderful time. The beach is perfect for children. Arrivederci and see you soon!',
-    respondedAt: '2026-04-08T09:00:00Z', respondedBy: 'u-002',
-    status: 'RESPONDED', sentiment: 'POSITIVE',
-    publishedAt: '2026-04-07T08:00:00Z', createdAt: '2026-04-07T08:00:00Z', updatedAt: '2026-04-08T09:00:00Z',
-  },
-];
 
 // ── Response Templates ─────────────────────────────────────────────────────
 
@@ -401,28 +162,6 @@ const responseTemplates: ResponseTemplate[] = [
     content: 'Dear {guestName}, thank you for your feedback about {propertyName}. We understand that value for money is important and we regularly review our pricing to ensure it reflects the quality and experience we provide. We offer seasonal discounts and direct booking benefits that may interest you for future stays.',
     tone: 'professional',
   },
-];
-
-// ── Chart Data ─────────────────────────────────────────────────────────────
-
-const ratingOverTimeData = [
-  { month: 'Oct 2025', rating: 4.1, reviews: 8 },
-  { month: 'Nov 2025', rating: 4.3, reviews: 6 },
-  { month: 'Dec 2025', rating: 4.0, reviews: 4 },
-  { month: 'Jan 2026', rating: 4.2, reviews: 5 },
-  { month: 'Feb 2026', rating: 4.4, reviews: 7 },
-  { month: 'Mar 2026', rating: 4.1, reviews: 10 },
-  { month: 'Apr 2026', rating: 4.3, reviews: 12 },
-];
-
-const reviewsPerMonthData = [
-  { month: 'Oct', count: 8, responded: 7 },
-  { month: 'Nov', count: 6, responded: 5 },
-  { month: 'Dec', count: 4, responded: 4 },
-  { month: 'Jan', count: 5, responded: 4 },
-  { month: 'Feb', count: 7, responded: 6 },
-  { month: 'Mar', count: 10, responded: 8 },
-  { month: 'Apr', count: 12, responded: 9 },
 ];
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -795,214 +534,17 @@ function TemplatesPanel({
   );
 }
 
-// ── Review Card ────────────────────────────────────────────────────────────
-
-function ReviewCard({
-  review,
-  onRespond,
-  onFlag,
-  onArchive,
-  onOpenAi,
-  onOpenTemplates,
-}: {
-  review: Review;
-  onRespond: (id: string, text: string) => void;
-  onFlag: (id: string) => void;
-  onArchive: (id: string) => void;
-  onOpenAi: (review: Review) => void;
-  onOpenTemplates: (review: Review) => void;
-}) {
-  const [expanded, setExpanded] = useState(false);
-  const [showReplyBox, setShowReplyBox] = useState(false);
-  const [replyText, setReplyText] = useState('');
-  const [sending, setSending] = useState(false);
-  const sentimentCfg = sentimentConfig[review.sentiment];
-  const SentimentIcon = sentimentCfg.Icon;
-  const isLong = review.content.length > 200;
-
-  const handleSend = () => {
-    if (!replyText.trim()) return;
-    setSending(true);
-    setTimeout(() => {
-      onRespond(review.id, replyText);
-      setShowReplyBox(false);
-      setReplyText('');
-      setSending(false);
-    }, 600);
-  };
-
-  // Allow AI/template modals to inject text
-  const injectReply = useCallback((text: string) => {
-    setReplyText(text);
-    setShowReplyBox(true);
-  }, []);
-
-  return (
-    <div className="glass-card rounded-xl ambient-shadow overflow-hidden">
-      {/* Header */}
-      <div className="px-5 pt-5 pb-3 flex items-start gap-4">
-        {/* Avatar */}
-        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${getInitialsColor(review.guestName)} flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}>
-          {getInitials(review.guestName)}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-semibold text-on-surface text-sm">{review.guestName}</span>
-            <PlatformBadge platform={review.source} />
-            <span className={`flex items-center gap-0.5 text-xs font-medium ${sentimentCfg.color}`}>
-              <SentimentIcon className="w-3 h-3" />
-              {sentimentCfg.label}
-            </span>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusConfig[review.status].badge}`}>
-              {statusConfig[review.status].label}
-            </span>
-          </div>
-          <div className="flex items-center gap-2 mt-1">
-            <StarRating rating={review.rating} size="sm" />
-            <span className="text-xs text-on-surface-variant">{formatDate(review.publishedAt)}</span>
-            <span className="text-xs text-on-surface-variant/60">|</span>
-            <span className="text-xs text-on-surface-variant">{review.propertyName}</span>
-          </div>
-        </div>
-        {/* Actions */}
-        <div className="flex items-center gap-1 flex-shrink-0">
-          {review.status !== 'FLAGGED' && (
-            <button
-              onClick={() => onFlag(review.id)}
-              title="Flag review"
-              className="p-1.5 rounded-lg hover:bg-error/10 text-on-surface-variant hover:text-error transition-colors"
-            >
-              <Flag className="w-4 h-4" />
-            </button>
-          )}
-          {review.status !== 'ARCHIVED' && (
-            <button
-              onClick={() => onArchive(review.id)}
-              title="Archive review"
-              className="p-1.5 rounded-lg hover:bg-surface-variant/50 text-on-surface-variant hover:text-on-surface transition-colors"
-            >
-              <Archive className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Review title & content */}
-      <div className="px-5 pb-4">
-        {review.title && (
-          <p className="text-sm font-semibold text-on-surface mb-1">&ldquo;{review.title}&rdquo;</p>
-        )}
-        <p className={`text-sm text-on-surface-variant leading-relaxed ${!expanded && isLong ? 'line-clamp-3' : ''}`}>
-          {review.content}
-        </p>
-        {isLong && (
-          <button
-            onClick={() => setExpanded(!expanded)}
-            className="flex items-center gap-1 mt-1 text-xs font-medium text-secondary hover:text-secondary/80 transition-colors"
-          >
-            {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-            {expanded ? 'Show less' : 'Read more'}
-          </button>
-        )}
-      </div>
-
-      {/* Response section */}
-      {review.response ? (
-        <div className="mx-5 mb-4 p-4 rounded-xl bg-surface-variant/30 border-s-2 border-secondary/40">
-          <div className="flex items-center gap-2 mb-2">
-            <MessageCircle className="w-3.5 h-3.5 text-secondary" />
-            <span className="text-xs font-semibold text-secondary">Your Response</span>
-            {review.respondedAt && (
-              <span className="text-[10px] text-on-surface-variant">{formatDate(review.respondedAt)}</span>
-            )}
-          </div>
-          <p className="text-sm text-on-surface-variant leading-relaxed">{review.response}</p>
-        </div>
-      ) : (
-        <div className="px-5 pb-4">
-          {showReplyBox ? (
-            <div className="space-y-3">
-              <textarea
-                value={replyText}
-                onChange={(e) => setReplyText(e.target.value)}
-                placeholder="Write your response..."
-                rows={4}
-                className="w-full px-4 py-3 rounded-xl bg-surface-variant/30 border border-outline-variant/20 text-sm text-on-surface placeholder:text-on-surface-variant/50 outline-none focus:border-secondary/40 transition-colors resize-y"
-              />
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => onOpenAi(review)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary/10 text-secondary text-xs font-medium hover:bg-secondary/20 transition-colors"
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    AI Assist
-                  </button>
-                  <button
-                    onClick={() => onOpenTemplates(review)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-variant/50 text-on-surface-variant text-xs font-medium hover:bg-surface-variant transition-colors"
-                  >
-                    <FileText className="w-3.5 h-3.5" />
-                    Templates
-                  </button>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => { setShowReplyBox(false); setReplyText(''); }}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium text-on-surface-variant hover:bg-surface-variant/50 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleSend}
-                    disabled={!replyText.trim() || sending}
-                    className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg gradient-accent text-white text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
-                  >
-                    {sending ? (
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <Send className="w-3.5 h-3.5" />
-                    )}
-                    {sending ? 'Sending...' : 'Send Response'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowReplyBox(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg gradient-accent text-white text-sm font-medium hover:opacity-90 transition-opacity"
-              >
-                <MessageSquare className="w-4 h-4" />
-                Respond
-              </button>
-              <button
-                onClick={() => {
-                  onOpenAi(review);
-                }}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary/10 text-secondary text-sm font-medium hover:bg-secondary/20 transition-colors"
-              >
-                <Bot className="w-4 h-4" />
-                AI Response
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ── Main Page ──────────────────────────────────────────────────────────────
 
 type ActiveTab = 'feed' | 'analytics' | 'templates';
 
 export default function ReviewManagementPage() {
-  const [reviews, setReviews] = useState<Review[]>(mockReviews);
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<ActiveTab>('feed');
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const pageSize = 20;
 
   // Filters
   const [filterProperty, setFilterProperty] = useState<string>('all');
@@ -1018,64 +560,90 @@ export default function ReviewManagementPage() {
   // Track which review card should receive injected text
   const [injectTarget, setInjectTarget] = useState<{ id: string; text: string } | null>(null);
 
-  // Properties derived from reviews
-  const properties = useMemo(() => {
-    const map = new Map<string, string>();
-    mockReviews.forEach((r) => map.set(r.propertyId, r.propertyName));
-    return Array.from(map, ([id, name]) => ({ id, name }));
-  }, []);
+  // ── API: Fetch reviews ─────────────────────────────────────────────
 
-  // Filter logic
-  const filteredReviews = useMemo(() => {
-    let result = [...reviews];
+  const ratingMinMax = useMemo(() => {
+    if (filterRating === 'all') return {};
+    const [min, max] = filterRating.split('-').map(Number);
+    return { ratingMin: min, ratingMax: max };
+  }, [filterRating]);
 
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(
-        (r) =>
-          r.guestName.toLowerCase().includes(q) ||
-          r.content.toLowerCase().includes(q) ||
-          (r.title && r.title.toLowerCase().includes(q)) ||
-          r.propertyName.toLowerCase().includes(q),
-      );
-    }
-    if (filterProperty !== 'all') result = result.filter((r) => r.propertyId === filterProperty);
-    if (filterPlatform !== 'all') result = result.filter((r) => r.source === filterPlatform);
-    if (filterRating !== 'all') {
-      const [min, max] = filterRating.split('-').map(Number);
-      result = result.filter((r) => r.rating >= min && r.rating <= max);
-    }
-    if (filterStatus !== 'all') result = result.filter((r) => r.status === filterStatus);
-    if (filterDateFrom) result = result.filter((r) => r.publishedAt >= filterDateFrom);
-    if (filterDateTo) result = result.filter((r) => r.publishedAt <= filterDateTo + 'T23:59:59Z');
+  const { data: reviewsResponse, isLoading: reviewsLoading } = useQuery<ReviewsResponse>({
+    queryKey: [
+      'reviews',
+      {
+        search: searchQuery || undefined,
+        propertyId: filterProperty !== 'all' ? filterProperty : undefined,
+        source: filterPlatform !== 'all' ? filterPlatform : undefined,
+        status: filterStatus !== 'all' ? filterStatus : undefined,
+        ...ratingMinMax,
+        page,
+        limit: pageSize,
+        sortBy: 'publishedAt',
+        sortOrder: 'desc',
+      },
+    ],
+    queryFn: async () => {
+      const params: Record<string, string | number> = { page, limit: pageSize, sortBy: 'publishedAt', sortOrder: 'desc' };
+      if (searchQuery) params.search = searchQuery;
+      if (filterProperty !== 'all') params.propertyId = filterProperty;
+      if (filterPlatform !== 'all') params.source = filterPlatform;
+      if (filterStatus !== 'all') params.status = filterStatus;
+      if (ratingMinMax.ratingMin !== undefined) params.ratingMin = ratingMinMax.ratingMin;
+      if (ratingMinMax.ratingMax !== undefined) params.ratingMax = ratingMinMax.ratingMax;
+      const res = await apiClient.get('/reviews', { params });
+      return res.data;
+    },
+  });
 
-    return result.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
-  }, [reviews, searchQuery, filterProperty, filterPlatform, filterRating, filterStatus, filterDateFrom, filterDateTo]);
+  const reviews: Review[] = reviewsResponse?.data ?? [];
+  const meta = reviewsResponse?.meta ?? { total: 0, page: 1, perPage: pageSize, totalPages: 1 };
+  const totalPages = Math.max(1, meta.totalPages);
 
-  // Stats
+  // ── API: Fetch stats ──────────────────────────────────────────────
+
+  const { data: statsResponse } = useQuery<StatsResponse>({
+    queryKey: ['reviews-stats'],
+    queryFn: async () => {
+      const res = await apiClient.get('/reviews/stats');
+      return res.data;
+    },
+    staleTime: 30_000,
+  });
+
   const stats = useMemo(() => {
-    const total = reviews.length;
-    const avgRating = total > 0 ? reviews.reduce((s, r) => s + r.rating, 0) / total : 0;
-    const responded = reviews.filter((r) => r.status === 'RESPONDED').length;
-    const responseRate = total > 0 ? (responded / total) * 100 : 0;
-
-    const byRating = [5, 4, 3, 2, 1].map((r) => ({
-      rating: r,
-      count: reviews.filter((rv) => rv.rating === r).length,
-      pct: total > 0 ? (reviews.filter((rv) => rv.rating === r).length / total) * 100 : 0,
-    }));
-
-    const byPlatform: Record<string, number> = {};
-    reviews.forEach((r) => { byPlatform[r.source] = (byPlatform[r.source] || 0) + 1; });
-
-    const bySentiment = {
-      positive: reviews.filter((r) => r.sentiment === 'POSITIVE').length,
-      neutral: reviews.filter((r) => r.sentiment === 'NEUTRAL').length,
-      negative: reviews.filter((r) => r.sentiment === 'NEGATIVE').length,
+    const s = statsResponse?.data;
+    if (!s) {
+      return {
+        total: 0,
+        avgRating: 0,
+        responseRate: 0,
+        responded: 0,
+        byRating: [5, 4, 3, 2, 1].map((r) => ({ rating: r, count: 0, pct: 0 })),
+        byPlatform: {} as Record<string, number>,
+        bySentiment: { positive: 0, neutral: 0, negative: 0 },
+        averageCategoryRatings: {} as Record<string, number>,
+      };
+    }
+    const total = s.totalReviews;
+    const responded = s.byStatus.responded;
+    const responseRate = total > 0 ? Math.round((responded / total) * 100) : 0;
+    const byRating = [5, 4, 3, 2, 1].map((rating) => {
+      const found = s.byRating.find((r) => r.rating === rating);
+      const count = found?.count ?? 0;
+      return { rating, count, pct: total > 0 ? (count / total) * 100 : 0 };
+    });
+    return {
+      total,
+      avgRating: s.averageRating,
+      responseRate,
+      responded,
+      byRating,
+      byPlatform: s.bySource,
+      bySentiment: s.bySentiment,
+      averageCategoryRatings: s.averageCategoryRatings,
     };
-
-    return { total, avgRating: Math.round(avgRating * 10) / 10, responseRate: Math.round(responseRate), responded, byRating, byPlatform, bySentiment };
-  }, [reviews]);
+  }, [statsResponse]);
 
   const sentimentChartData = useMemo(() => [
     { name: 'Positive', value: stats.bySentiment.positive },
@@ -1083,32 +651,75 @@ export default function ReviewManagementPage() {
     { name: 'Negative', value: stats.bySentiment.negative },
   ], [stats.bySentiment]);
 
-  // Actions
+  // ── API: Fetch properties for filter dropdown ─────────────────────
+
+  const { data: propertiesData } = useQuery<{ data: PropertyOption[] }>({
+    queryKey: ['properties-list-mini'],
+    queryFn: async () => {
+      const res = await apiClient.get('/properties', { params: { pageSize: 200 } });
+      return res.data;
+    },
+    staleTime: 60_000,
+  });
+  const properties: PropertyOption[] = (propertiesData?.data ?? []).map((p: any) => ({
+    id: p.id,
+    name: p.name,
+  }));
+
+  // ── Mutations ─────────────────────────────────────────────────────
+
+  const respondMutation = useMutation({
+    mutationFn: ({ id, response }: { id: string; response: string }) =>
+      apiClient.post(`/reviews/${id}/respond`, { response }),
+    onSuccess: () => {
+      toast.success('Response sent successfully');
+      queryClient.invalidateQueries({ queryKey: ['reviews'] });
+      queryClient.invalidateQueries({ queryKey: ['reviews-stats'] });
+    },
+    onError: () => {
+      toast.error('Failed to send response');
+    },
+  });
+
+  const flagMutation = useMutation({
+    mutationFn: (id: string) =>
+      apiClient.put(`/reviews/${id}/status`, { status: 'FLAGGED' }),
+    onSuccess: () => {
+      toast.success('Review flagged');
+      queryClient.invalidateQueries({ queryKey: ['reviews'] });
+      queryClient.invalidateQueries({ queryKey: ['reviews-stats'] });
+    },
+    onError: () => {
+      toast.error('Failed to flag review');
+    },
+  });
+
+  const archiveMutation = useMutation({
+    mutationFn: (id: string) =>
+      apiClient.put(`/reviews/${id}/status`, { status: 'ARCHIVED' }),
+    onSuccess: () => {
+      toast.success('Review archived');
+      queryClient.invalidateQueries({ queryKey: ['reviews'] });
+      queryClient.invalidateQueries({ queryKey: ['reviews-stats'] });
+    },
+    onError: () => {
+      toast.error('Failed to archive review');
+    },
+  });
+
+  // ── Handlers ──────────────────────────────────────────────────────
+
   const handleRespond = useCallback((id: string, text: string) => {
-    setReviews((prev) =>
-      prev.map((r) =>
-        r.id === id
-          ? { ...r, response: text, respondedAt: new Date().toISOString(), status: 'RESPONDED' as const, updatedAt: new Date().toISOString() }
-          : r,
-      ),
-    );
-  }, []);
+    respondMutation.mutate({ id, response: text });
+  }, [respondMutation]);
 
   const handleFlag = useCallback((id: string) => {
-    setReviews((prev) =>
-      prev.map((r) =>
-        r.id === id ? { ...r, status: 'FLAGGED' as const, updatedAt: new Date().toISOString() } : r,
-      ),
-    );
-  }, []);
+    flagMutation.mutate(id);
+  }, [flagMutation]);
 
   const handleArchive = useCallback((id: string) => {
-    setReviews((prev) =>
-      prev.map((r) =>
-        r.id === id ? { ...r, status: 'ARCHIVED' as const, updatedAt: new Date().toISOString() } : r,
-      ),
-    );
-  }, []);
+    archiveMutation.mutate(id);
+  }, [archiveMutation]);
 
   const handleAiSelect = useCallback((text: string) => {
     if (aiModalReview) {
@@ -1132,6 +743,7 @@ export default function ReviewManagementPage() {
     setFilterDateFrom('');
     setFilterDateTo('');
     setSearchQuery('');
+    setPage(1);
   };
 
   const hasActiveFilters = filterProperty !== 'all' || filterPlatform !== 'all' || filterRating !== 'all' || filterStatus !== 'all' || filterDateFrom || filterDateTo || searchQuery;
@@ -1176,8 +788,6 @@ export default function ReviewManagementPage() {
           label="Total Reviews"
           value={stats.total}
           icon={MessageSquare}
-          trend={15}
-          trendLabel="vs last month"
           accent="gradient-accent"
         />
         <KpiCard
@@ -1185,14 +795,11 @@ export default function ReviewManagementPage() {
           value={stats.avgRating}
           suffix="/ 5"
           icon={Star}
-          trend={3.2}
-          trendLabel="vs last month"
         />
         <KpiCard
           label="Response Rate"
           value={`${stats.responseRate}%`}
           icon={MessageCircle}
-          trend={8}
           trendLabel={`${stats.responded} responded`}
         />
         <KpiCard
@@ -1200,13 +807,13 @@ export default function ReviewManagementPage() {
           value={stats.bySentiment.positive}
           suffix={`/ ${stats.total}`}
           icon={ThumbsUp}
-          trend={5}
         />
         <div className="glass-card rounded-xl p-5 ambient-shadow col-span-2 md:col-span-4 lg:col-span-1">
           <p className="text-xs font-medium text-on-surface-variant mb-3">By Platform</p>
           <div className="space-y-2">
             {Object.entries(stats.byPlatform).map(([platform, count]) => {
               const cfg = platformConfig[platform as Platform];
+              if (!cfg) return null;
               return (
                 <div key={platform} className="flex items-center justify-between">
                   <span className={`text-xs font-medium ${cfg.color}`}>{cfg.label}</span>
@@ -1271,7 +878,7 @@ export default function ReviewManagementPage() {
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
               placeholder="Search reviews by guest, content, property..."
               className="w-full ps-10 pe-4 py-2.5 rounded-xl bg-surface-variant/30 border border-outline-variant/20 text-sm text-on-surface placeholder:text-on-surface-variant/50 outline-none focus:border-secondary/40 transition-colors"
             />
@@ -1283,7 +890,7 @@ export default function ReviewManagementPage() {
               <label className="block text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">Property</label>
               <select
                 value={filterProperty}
-                onChange={(e) => setFilterProperty(e.target.value)}
+                onChange={(e) => { setFilterProperty(e.target.value); setPage(1); }}
                 className="w-full px-3 py-2 rounded-lg bg-surface-variant/30 border border-outline-variant/20 text-sm text-on-surface outline-none focus:border-secondary/40 transition-colors"
               >
                 <option value="all">All Properties</option>
@@ -1298,7 +905,7 @@ export default function ReviewManagementPage() {
               <label className="block text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">Platform</label>
               <select
                 value={filterPlatform}
-                onChange={(e) => setFilterPlatform(e.target.value)}
+                onChange={(e) => { setFilterPlatform(e.target.value); setPage(1); }}
                 className="w-full px-3 py-2 rounded-lg bg-surface-variant/30 border border-outline-variant/20 text-sm text-on-surface outline-none focus:border-secondary/40 transition-colors"
               >
                 <option value="all">All Platforms</option>
@@ -1313,7 +920,7 @@ export default function ReviewManagementPage() {
               <label className="block text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">Rating</label>
               <select
                 value={filterRating}
-                onChange={(e) => setFilterRating(e.target.value)}
+                onChange={(e) => { setFilterRating(e.target.value); setPage(1); }}
                 className="w-full px-3 py-2 rounded-lg bg-surface-variant/30 border border-outline-variant/20 text-sm text-on-surface outline-none focus:border-secondary/40 transition-colors"
               >
                 <option value="all">All Ratings</option>
@@ -1332,7 +939,7 @@ export default function ReviewManagementPage() {
               <label className="block text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">Status</label>
               <select
                 value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
+                onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
                 className="w-full px-3 py-2 rounded-lg bg-surface-variant/30 border border-outline-variant/20 text-sm text-on-surface outline-none focus:border-secondary/40 transition-colors"
               >
                 <option value="all">All Statuses</option>
@@ -1349,7 +956,7 @@ export default function ReviewManagementPage() {
               <input
                 type="date"
                 value={filterDateFrom}
-                onChange={(e) => setFilterDateFrom(e.target.value)}
+                onChange={(e) => { setFilterDateFrom(e.target.value); setPage(1); }}
                 className="w-full px-3 py-2 rounded-lg bg-surface-variant/30 border border-outline-variant/20 text-sm text-on-surface outline-none focus:border-secondary/40 transition-colors"
               />
             </div>
@@ -1360,7 +967,7 @@ export default function ReviewManagementPage() {
               <input
                 type="date"
                 value={filterDateTo}
-                onChange={(e) => setFilterDateTo(e.target.value)}
+                onChange={(e) => { setFilterDateTo(e.target.value); setPage(1); }}
                 className="w-full px-3 py-2 rounded-lg bg-surface-variant/30 border border-outline-variant/20 text-sm text-on-surface outline-none focus:border-secondary/40 transition-colors"
               />
             </div>
@@ -1396,7 +1003,8 @@ export default function ReviewManagementPage() {
           {/* Results count */}
           <div className="flex items-center justify-between">
             <p className="text-xs text-on-surface-variant">
-              Showing {filteredReviews.length} of {reviews.length} reviews
+              Showing {reviews.length} of {meta.total} reviews
+              {meta.totalPages > 1 && ` (page ${meta.page} of ${totalPages})`}
             </p>
             {hasActiveFilters && (
               <button
@@ -1408,103 +1016,95 @@ export default function ReviewManagementPage() {
             )}
           </div>
 
-          {/* Reviews list */}
-          <div className="space-y-4">
-            {filteredReviews.length === 0 ? (
-              <div className="glass-card rounded-xl p-12 ambient-shadow flex flex-col items-center justify-center">
-                <Eye className="w-12 h-12 text-on-surface-variant/30 mb-4" />
-                <p className="text-sm font-medium text-on-surface-variant">No reviews match your filters</p>
-                <button
-                  onClick={clearFilters}
-                  className="mt-3 text-xs font-medium text-secondary hover:text-secondary/80 transition-colors"
-                >
-                  Clear all filters
-                </button>
+          {/* Loading state */}
+          {reviewsLoading ? (
+            <div className="glass-card rounded-xl p-12 ambient-shadow flex flex-col items-center justify-center">
+              <Loader2 className="w-8 h-8 text-secondary animate-spin mb-4" />
+              <p className="text-sm font-medium text-on-surface-variant">Loading reviews...</p>
+            </div>
+          ) : (
+            <>
+              {/* Reviews list */}
+              <div className="space-y-4">
+                {reviews.length === 0 ? (
+                  <div className="glass-card rounded-xl p-12 ambient-shadow flex flex-col items-center justify-center">
+                    <Eye className="w-12 h-12 text-on-surface-variant/30 mb-4" />
+                    <p className="text-sm font-medium text-on-surface-variant">No reviews match your filters</p>
+                    <button
+                      onClick={clearFilters}
+                      className="mt-3 text-xs font-medium text-secondary hover:text-secondary/80 transition-colors"
+                    >
+                      Clear all filters
+                    </button>
+                  </div>
+                ) : (
+                  reviews.map((review) => (
+                    <ReviewCardWrapper
+                      key={review.id}
+                      review={review}
+                      onRespond={handleRespond}
+                      onFlag={handleFlag}
+                      onArchive={handleArchive}
+                      onOpenAi={setAiModalReview}
+                      onOpenTemplates={setTemplatesReview}
+                      injectTarget={injectTarget}
+                      clearInject={() => setInjectTarget(null)}
+                    />
+                  ))
+                )}
               </div>
-            ) : (
-              filteredReviews.map((review) => (
-                <ReviewCardWrapper
-                  key={review.id}
-                  review={review}
-                  onRespond={handleRespond}
-                  onFlag={handleFlag}
-                  onArchive={handleArchive}
-                  onOpenAi={setAiModalReview}
-                  onOpenTemplates={setTemplatesReview}
-                  injectTarget={injectTarget}
-                  clearInject={() => setInjectTarget(null)}
-                />
-              ))
-            )}
-          </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 pt-2">
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="p-2 rounded-lg glass-card ambient-shadow text-on-surface-variant hover:text-on-surface disabled:opacity-40 transition-colors"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                    let pageNum: number;
+                    if (totalPages <= 7) {
+                      pageNum = i + 1;
+                    } else if (page <= 4) {
+                      pageNum = i + 1;
+                    } else if (page >= totalPages - 3) {
+                      pageNum = totalPages - 6 + i;
+                    } else {
+                      pageNum = page - 3 + i;
+                    }
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setPage(pageNum)}
+                        className={`w-8 h-8 rounded-lg text-xs font-medium transition-colors ${
+                          page === pageNum
+                            ? 'gradient-accent text-white shadow-md'
+                            : 'glass-card ambient-shadow text-on-surface-variant hover:text-on-surface'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                  <button
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className="p-2 rounded-lg glass-card ambient-shadow text-on-surface-variant hover:text-on-surface disabled:opacity-40 transition-colors"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
 
       {activeTab === 'analytics' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Rating Over Time */}
-          <div className="glass-card rounded-xl p-5 ambient-shadow">
-            <h3 className="text-sm font-semibold text-on-surface mb-4 flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-secondary" />
-              Average Rating Over Time
-            </h3>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={ratingOverTimeData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9CA3AF' }} />
-                  <YAxis domain={[0, 5]} ticks={[1, 2, 3, 4, 5]} tick={{ fontSize: 11, fill: '#9CA3AF' }} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'rgba(30, 30, 30, 0.95)',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      borderRadius: '12px',
-                      fontSize: '12px',
-                      color: '#fff',
-                    }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="rating"
-                    stroke={CHART_COLORS.primary}
-                    strokeWidth={2.5}
-                    dot={{ fill: CHART_COLORS.primary, r: 4, strokeWidth: 0 }}
-                    activeDot={{ r: 6, fill: CHART_COLORS.primary }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* Reviews Per Month */}
-          <div className="glass-card rounded-xl p-5 ambient-shadow">
-            <h3 className="text-sm font-semibold text-on-surface mb-4 flex items-center gap-2">
-              <CalendarDays className="w-4 h-4 text-secondary" />
-              Reviews Per Month
-            </h3>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={reviewsPerMonthData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9CA3AF' }} />
-                  <YAxis tick={{ fontSize: 11, fill: '#9CA3AF' }} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'rgba(30, 30, 30, 0.95)',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      borderRadius: '12px',
-                      fontSize: '12px',
-                      color: '#fff',
-                    }}
-                  />
-                  <Legend wrapperStyle={{ fontSize: '11px' }} />
-                  <Bar dataKey="count" name="Total Reviews" fill={CHART_COLORS.primary} radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="responded" name="Responded" fill={CHART_COLORS.success} radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
           {/* Sentiment Analysis */}
           <div className="glass-card rounded-xl p-5 ambient-shadow">
             <h3 className="text-sm font-semibold text-on-surface mb-4 flex items-center gap-2">
@@ -1549,6 +1149,68 @@ export default function ReviewManagementPage() {
             </div>
           </div>
 
+          {/* Platform Distribution */}
+          <div className="glass-card rounded-xl p-5 ambient-shadow">
+            <h3 className="text-sm font-semibold text-on-surface mb-4 flex items-center gap-2">
+              <Globe className="w-4 h-4 text-secondary" />
+              Reviews by Platform
+            </h3>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={Object.entries(stats.byPlatform).map(([source, count]) => ({
+                  name: platformConfig[source as Platform]?.label ?? source,
+                  count,
+                }))}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#9CA3AF' }} />
+                  <YAxis tick={{ fontSize: 11, fill: '#9CA3AF' }} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'rgba(30, 30, 30, 0.95)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: '12px',
+                      fontSize: '12px',
+                      color: '#fff',
+                    }}
+                  />
+                  <Bar dataKey="count" name="Reviews" fill={CHART_COLORS.primary} radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Rating Distribution Chart */}
+          <div className="glass-card rounded-xl p-5 ambient-shadow">
+            <h3 className="text-sm font-semibold text-on-surface mb-4 flex items-center gap-2">
+              <Star className="w-4 h-4 text-secondary" />
+              Rating Distribution
+            </h3>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={stats.byRating.slice().reverse()}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                  <XAxis dataKey="rating" tick={{ fontSize: 11, fill: '#9CA3AF' }} tickFormatter={(v) => `${v} star`} />
+                  <YAxis tick={{ fontSize: 11, fill: '#9CA3AF' }} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'rgba(30, 30, 30, 0.95)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: '12px',
+                      fontSize: '12px',
+                      color: '#fff',
+                    }}
+                    formatter={(value: number) => [`${value} reviews`]}
+                  />
+                  <Bar dataKey="count" name="Reviews" radius={[4, 4, 0, 0]}>
+                    {stats.byRating.slice().reverse().map((entry) => (
+                      <Cell key={entry.rating} fill={RATING_COLORS[entry.rating]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
           {/* Category Averages */}
           <div className="glass-card rounded-xl p-5 ambient-shadow">
             <h3 className="text-sm font-semibold text-on-surface mb-4 flex items-center gap-2">
@@ -1557,11 +1219,7 @@ export default function ReviewManagementPage() {
             </h3>
             <div className="space-y-3">
               {(['cleanliness', 'communication', 'checkIn', 'accuracy', 'location', 'value'] as const).map((cat) => {
-                const reviewsWithCat = reviews.filter((r) => r.categoryRatings?.[cat] !== undefined);
-                const avg = reviewsWithCat.length > 0
-                  ? reviewsWithCat.reduce((s, r) => s + (r.categoryRatings![cat] || 0), 0) / reviewsWithCat.length
-                  : 0;
-                const roundedAvg = Math.round(avg * 10) / 10;
+                const avg = stats.averageCategoryRatings[cat] ?? 0;
                 const pct = (avg / 5) * 100;
                 const label = cat === 'checkIn' ? 'Check-in' : cat.charAt(0).toUpperCase() + cat.slice(1);
                 return (
@@ -1573,7 +1231,7 @@ export default function ReviewManagementPage() {
                         style={{ width: `${pct}%` }}
                       />
                     </div>
-                    <span className="text-xs font-semibold text-on-surface w-8 text-end">{roundedAvg}</span>
+                    <span className="text-xs font-semibold text-on-surface w-8 text-end">{avg}</span>
                   </div>
                 );
               })}
@@ -1686,8 +1344,9 @@ function ReviewCardWrapper({
   const handleSend = () => {
     if (!replyText.trim()) return;
     setSending(true);
+    onRespond(review.id, replyText);
+    // Reset UI state after a short delay (mutation handles actual API call)
     setTimeout(() => {
-      onRespond(review.id, replyText);
       setShowReplyBox(false);
       setReplyText('');
       setSending(false);

@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
-  ArrowLeft, Save, Wrench, AlertTriangle, Camera, Calendar,
+  ArrowLeft, Save, Wrench, AlertTriangle, Camera, Calendar, Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import apiClient from '../lib/api-client';
 
 const maintenanceSchema = z.object({
   title: z.string().min(3, 'Title is required'),
@@ -25,20 +27,17 @@ const maintenanceSchema = z.object({
 
 type MaintenanceFormData = z.infer<typeof maintenanceSchema>;
 
-const demoProperties = [
-  { id: 'p1', name: 'Villa Athena - Chania' },
-  { id: 'p2', name: 'Sunset Suite - Rethymno' },
-  { id: 'p3', name: 'Blue Horizon Apt - Heraklion' },
-  { id: 'p4', name: 'Olive Garden Villa - Agios Nikolaos' },
-  { id: 'p5', name: 'Sea Breeze Studio - Elounda' },
-];
+interface Property {
+  id: string;
+  name: string;
+}
 
-const demoTeam = [
-  { id: 't1', name: 'Nikos Papadakis' },
-  { id: 't2', name: 'Maria Stavrou' },
-  { id: 't3', name: 'Yannis Dimitriou' },
-  { id: 't4', name: 'External Vendor' },
-];
+interface User {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+}
 
 const categories = [
   'Plumbing', 'Electrical', 'HVAC', 'Appliance Repair', 'Cleaning',
@@ -56,50 +55,131 @@ const priorityColors: Record<string, string> = {
 export default function MaintenanceFormPage() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const queryClient = useQueryClient();
   const isEdit = Boolean(id);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
+
+  // ---- Fetch existing maintenance request for edit mode ----
+  const { data: maintenanceRequest, isLoading: isLoadingRequest } = useQuery({
+    queryKey: ['maintenance', id],
+    queryFn: async () => {
+      const res = await apiClient.get(`/maintenance/${id}`);
+      return res.data.data ?? res.data;
+    },
+    enabled: isEdit,
+  });
+
+  // ---- Fetch properties for dropdown ----
+  const { data: propertiesData } = useQuery<{ data: Property[] }>({
+    queryKey: ['properties-list'],
+    queryFn: async () => {
+      const res = await apiClient.get('/properties', { params: { pageSize: 200 } });
+      return res.data;
+    },
+  });
+
+  const properties = propertiesData?.data ?? [];
+
+  // ---- Fetch users for assignee dropdown ----
+  const { data: usersData } = useQuery<{ data: User[] }>({
+    queryKey: ['users-list'],
+    queryFn: async () => {
+      const res = await apiClient.get('/users', { params: { pageSize: 200 } });
+      return res.data;
+    },
+  });
+
+  const users = usersData?.data ?? [];
 
   const {
     register,
     handleSubmit,
     watch,
+    reset,
     formState: { errors },
   } = useForm<MaintenanceFormData>({
     resolver: zodResolver(maintenanceSchema),
-    defaultValues: isEdit ? {
-      title: 'Leaking faucet in master bathroom',
-      description: 'The kitchen faucet has been dripping continuously. Guest reported it. Needs replacement of the cartridge or full faucet.',
-      propertyId: 'p1',
-      category: 'Plumbing',
-      priority: 'high',
-      assigneeId: 't1',
-      scheduledDate: '2026-04-15',
-      estimatedCost: 120,
-      vendorName: 'Crete Plumbing Services',
-      vendorPhone: '+30-28210-55555',
-      notes: 'Guest checking out on April 14th. Schedule repair for April 15th morning.',
-      affectsGuests: true,
-    } : {
+    defaultValues: {
       priority: 'medium',
       affectsGuests: false,
     },
   });
 
+  // Populate form when maintenance request loads (edit mode)
+  useEffect(() => {
+    if (maintenanceRequest) {
+      reset({
+        title: maintenanceRequest.title ?? '',
+        description: maintenanceRequest.description ?? '',
+        propertyId: maintenanceRequest.propertyId ?? '',
+        category: maintenanceRequest.category ?? '',
+        priority: maintenanceRequest.priority?.toLowerCase() ?? 'medium',
+        assigneeId: maintenanceRequest.assignedToId ?? maintenanceRequest.assignedTo?.id ?? '',
+        scheduledDate: maintenanceRequest.scheduledDate
+          ? maintenanceRequest.scheduledDate.split('T')[0]
+          : '',
+        estimatedCost: maintenanceRequest.estimatedCost
+          ? Number(maintenanceRequest.estimatedCost)
+          : undefined,
+        vendorName: maintenanceRequest.vendorName ?? '',
+        vendorPhone: maintenanceRequest.vendorPhone ?? '',
+        notes: maintenanceRequest.notes ?? '',
+        affectsGuests: maintenanceRequest.affectsGuests ?? false,
+      });
+    }
+  }, [maintenanceRequest, reset]);
+
   const priority = watch('priority');
 
-  const onSubmit = async (_data: MaintenanceFormData) => {
-    setIsSubmitting(true);
-    await new Promise((r) => setTimeout(r, 800));
-    setIsSubmitting(false);
-    toast.success(isEdit ? 'Request updated' : 'Maintenance request created');
-    navigate(isEdit ? `/maintenance/${id}` : '/maintenance');
+  // ---- Create / Update mutation ----
+  const mutation = useMutation({
+    mutationFn: (data: MaintenanceFormData) => {
+      const body = {
+        propertyId: data.propertyId,
+        title: data.title,
+        description: data.description,
+        priority: data.priority,
+        category: data.category,
+        assignedToId: data.assigneeId || undefined,
+        estimatedCost: data.estimatedCost,
+        scheduledDate: data.scheduledDate || undefined,
+        notes: data.notes,
+      };
+      if (isEdit) {
+        return apiClient.put(`/maintenance/${id}`, body);
+      }
+      return apiClient.post('/maintenance', body);
+    },
+    onSuccess: () => {
+      toast.success(isEdit ? 'Request updated' : 'Maintenance request created');
+      queryClient.invalidateQueries({ queryKey: ['maintenance'] });
+      if (isEdit) {
+        queryClient.invalidateQueries({ queryKey: ['maintenance', id] });
+      }
+      navigate(isEdit ? `/maintenance/${id}` : '/maintenance');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Failed to save maintenance request');
+    },
+  });
+
+  const onSubmit = (data: MaintenanceFormData) => {
+    mutation.mutate(data);
   };
 
   const handlePhotoAdd = () => {
     setPhotos([...photos, `photo_${photos.length + 1}.jpg`]);
     toast.success('Photo added');
   };
+
+  // ---- Loading state for edit mode ----
+  if (isEdit && isLoadingRequest) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-secondary" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
@@ -164,7 +244,7 @@ export default function MaintenanceFormPage() {
                 className="w-full px-3 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/40"
               >
                 <option value="">Select property</option>
-                {demoProperties.map((p) => (
+                {properties.map((p) => (
                   <option key={p.id} value={p.id}>{p.name}</option>
                 ))}
               </select>
@@ -225,8 +305,10 @@ export default function MaintenanceFormPage() {
                 className="w-full px-3 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/40"
               >
                 <option value="">Unassigned</option>
-                {demoTeam.map((t) => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
+                {users.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.firstName} {u.lastName}
+                  </option>
                 ))}
               </select>
             </div>
@@ -242,10 +324,10 @@ export default function MaintenanceFormPage() {
             </div>
             <div>
               <label className="block text-[10px] font-semibold tracking-widest text-on-surface-variant uppercase mb-1.5">
-                Estimated Cost (€)
+                Estimated Cost (EUR)
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">€</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">EUR</span>
                 <input
                   type="number"
                   {...register('estimatedCost', { valueAsNumber: true })}
@@ -343,12 +425,12 @@ export default function MaintenanceFormPage() {
           </button>
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={mutation.isPending}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white gradient-accent hover:opacity-90 transition-opacity disabled:opacity-50`}
           >
-            {isSubmitting ? (
+            {mutation.isPending ? (
               <>
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin" />
                 Saving...
               </>
             ) : (

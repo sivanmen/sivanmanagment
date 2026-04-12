@@ -1,4 +1,5 @@
-import { useState, useRef, Fragment, useMemo } from 'react';
+import { useState, useRef, Fragment, useMemo, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 // import { useTranslation } from 'react-i18next';
 import {
   FileText,
@@ -24,8 +25,10 @@ import {
   ChevronLeft,
   Layers,
   CalendarRange,
+  Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import apiClient from '../lib/api-client';
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
 
@@ -94,6 +97,47 @@ interface Statement {
   payoutHistory: PayoutHistoryEntry[];
 }
 
+/** Shape returned by the API for owner-portal statements */
+interface ApiStatement {
+  id: string;
+  ownerId: string;
+  periodMonth: number;
+  periodYear: number;
+  properties: {
+    propertyId: string;
+    propertyName: string;
+    bookings: { guestName: string; checkIn: string; checkOut: string; nights: number; revenue: number }[];
+    totalRevenue: number;
+    expenses: { category: string; description: string; amount: number }[];
+    totalExpenses: number;
+    managementFee: number;
+    feeType: string;
+    netIncome: number;
+  }[];
+  totalIncome: number;
+  totalExpenses: number;
+  totalManagementFees: number;
+  netPayout: number;
+  currency: string;
+  status: StatementStatus;
+  generatedAt: string;
+}
+
+interface OwnerOption {
+  id: string;
+  name: string;
+  email: string;
+  company?: string;
+}
+
+interface PropertyOption {
+  id: string;
+  name: string;
+  ownerId?: string;
+  location?: string;
+  address?: string;
+}
+
 // ─── Constants ──────────────────────────────────────────────────────────────────
 
 const statusStyles: Record<StatementStatus, string> = {
@@ -130,27 +174,70 @@ const months = [
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
-// ─── Mock Data ──────────────────────────────────────────────────────────────────
+// ─── API Mapper ─────────────────────────────────────────────────────────────────
 
-const demoOwners = [
-  { id: 'owner-1', name: 'Dimitris Papadopoulos', email: 'dimitris@example.com', company: 'Papadopoulos Properties LLC' },
-  { id: 'owner-2', name: 'Maria Konstantinou', email: 'maria.k@example.com', company: 'MK Real Estate' },
-  { id: 'owner-3', name: 'Yannis Alexiou', email: 'yannis.a@example.com', company: 'Alexiou Investments' },
-  { id: 'owner-4', name: 'Elena Georgiou', email: 'elena.g@example.com', company: 'Georgiou Hospitality' },
-];
+/** Map an API statement to the rich frontend Statement shape */
+function mapApiStatement(api: ApiStatement, owners: OwnerOption[]): Statement {
+  const owner = owners.find((o) => o.id === api.ownerId);
+  const monthLabel = months[(api.periodMonth || 1) - 1] || '';
+  const periodStart = `${api.periodYear}-${String(api.periodMonth).padStart(2, '0')}-01`;
+  const lastDay = new Date(api.periodYear, api.periodMonth, 0).getDate();
+  const periodEnd = `${api.periodYear}-${String(api.periodMonth).padStart(2, '0')}-${lastDay}`;
+  const generatedDate = api.generatedAt
+    ? new Date(api.generatedAt).toISOString().split('T')[0]
+    : '';
 
-const demoProperties = [
-  { id: 'prop-1', name: 'Santorini Sunset Villa', ownerId: 'owner-1', location: 'Oia, Santorini' },
-  { id: 'prop-2', name: 'Athens Central Loft', ownerId: 'owner-1', location: 'Plaka, Athens' },
-  { id: 'prop-3', name: 'Mykonos Beach House', ownerId: 'owner-2', location: 'Ornos, Mykonos' },
-  { id: 'prop-4', name: 'Crete Harbor Suite', ownerId: 'owner-2', location: 'Chania, Crete' },
-  { id: 'prop-5', name: 'Rhodes Old Town Apt', ownerId: 'owner-3', location: 'Old Town, Rhodes' },
-  { id: 'prop-6', name: 'Paros Seaside Cottage', ownerId: 'owner-3', location: 'Naoussa, Paros' },
-  { id: 'prop-7', name: 'Corfu Olive Grove Villa', ownerId: 'owner-4', location: 'Kassiopi, Corfu' },
-  { id: 'prop-8', name: 'Naxos Mountain Retreat', ownerId: 'owner-4', location: 'Halki, Naxos' },
-];
+  return {
+    id: api.id,
+    ownerId: api.ownerId,
+    ownerName: owner?.name || api.ownerId,
+    ownerEmail: owner?.email || '',
+    ownerCompany: owner?.company || '',
+    periodLabel: `${monthLabel} ${api.periodYear}`,
+    periodStart,
+    periodEnd,
+    periodType: 'monthly',
+    properties: api.properties.map((p) => ({
+      propertyId: p.propertyId,
+      propertyName: p.propertyName,
+      location: '',
+      bookings: p.bookings.map((b) => ({
+        guestName: b.guestName,
+        checkIn: b.checkIn,
+        checkOut: b.checkOut,
+        nights: b.nights,
+        platform: 'Direct',
+        grossAmount: b.revenue,
+        managementFee: p.managementFee / Math.max(p.bookings.length, 1),
+        netAmount: b.revenue - p.managementFee / Math.max(p.bookings.length, 1),
+      })),
+      totalGrossIncome: p.totalRevenue,
+      totalManagementFees: p.managementFee,
+      totalNetBookingIncome: p.totalRevenue - p.managementFee,
+      expenses: p.expenses.map((e) => ({
+        date: periodStart,
+        category: e.category,
+        description: e.description,
+        vendor: '',
+        amount: e.amount,
+      })),
+      totalExpenses: p.totalExpenses,
+      netPropertyIncome: p.netIncome,
+    })),
+    totalGrossIncome: api.totalIncome,
+    totalExpenses: api.totalExpenses,
+    totalManagementFees: api.totalManagementFees,
+    netPayout: api.netPayout,
+    currency: api.currency || 'EUR',
+    status: api.status,
+    generatedAt: generatedDate,
+    sentAt: api.status === 'SENT' ? generatedDate : undefined,
+    payoutHistory: [],
+  };
+}
 
-function buildDemoStatements(): Statement[] {
+/** @deprecated - kept for reference; data now comes from API */
+function _buildDemoStatements(): Statement[] {
   return [
     {
       id: 'stmt-1',
@@ -476,9 +563,7 @@ type ActiveTab = 'generator' | 'history' | 'comparison';
 
 export default function OwnerStatementsPage() {
   // const { t } = useTranslation();
-
-  // Statement data
-  const [statements, setStatements] = useState<Statement[]>(buildDemoStatements);
+  const queryClient = useQueryClient();
 
   // Active tab
   const [activeTab, setActiveTab] = useState<ActiveTab>('generator');
@@ -497,7 +582,7 @@ export default function OwnerStatementsPage() {
   const [previewStmt, setPreviewStmt] = useState<Statement | null>(null);
 
   // Comparison
-  const [compareOwnerId, setCompareOwnerId] = useState('owner-1');
+  const [compareOwnerId, setCompareOwnerId] = useState('');
   const [comparePeriodA, setComparePeriodA] = useState('');
   const [comparePeriodB, setComparePeriodB] = useState('');
 
@@ -514,6 +599,93 @@ export default function OwnerStatementsPage() {
   // Print ref
   const printRef = useRef<HTMLDivElement>(null);
 
+  // ── API: Fetch owners for dropdowns ──
+  const { data: ownersList = [] } = useQuery<OwnerOption[]>({
+    queryKey: ['owners-list-for-statements'],
+    queryFn: async () => {
+      const res = await apiClient.get('/owners', { params: { pageSize: 200 } });
+      return res.data.data?.items || res.data.data || [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // ── API: Fetch properties for dropdowns ──
+  const { data: propertiesList = [] } = useQuery<PropertyOption[]>({
+    queryKey: ['properties-list-for-statements'],
+    queryFn: async () => {
+      const res = await apiClient.get('/properties', { params: { pageSize: 200 } });
+      return res.data.data?.items || res.data.data || [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // ── API: Fetch statements ──
+  const { data: rawStatements = [], isLoading: statementsLoading } = useQuery<ApiStatement[]>({
+    queryKey: ['owner-statements'],
+    queryFn: async () => {
+      const res = await apiClient.get('/owner-portal/statements');
+      return res.data.data || [];
+    },
+  });
+
+  // Map API statements to the rich frontend shape
+  const statements: Statement[] = useMemo(
+    () => rawStatements.map((s) => mapApiStatement(s, ownersList)),
+    [rawStatements, ownersList],
+  );
+
+  // Set default compare owner when owners load
+  useEffect(() => {
+    if (ownersList.length > 0 && !compareOwnerId) {
+      setCompareOwnerId(ownersList[0].id);
+    }
+  }, [ownersList, compareOwnerId]);
+
+  // ── API: Generate statement ──
+  const generateMutation = useMutation({
+    mutationFn: async (payload: { ownerId: string; month: number; year: number }) => {
+      const res = await apiClient.post('/owner-portal/statements/generate', payload);
+      return res.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['owner-statements'] });
+    },
+    onError: () => {
+      toast.error('Failed to generate statement');
+    },
+  });
+
+  // ── API: Approve statement ──
+  const approveMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiClient.post(`/owner-portal/statements/${id}/approve`);
+      return res.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['owner-statements'] });
+      toast.success('Statement approved');
+    },
+    onError: () => {
+      toast.error('Failed to approve statement');
+    },
+  });
+
+  // ── API: Send statement ──
+  const sendMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiClient.post(`/owner-portal/statements/${id}/send`);
+      return res.data.data;
+    },
+    onSuccess: (_data, id) => {
+      queryClient.invalidateQueries({ queryKey: ['owner-statements'] });
+      const stmt = statements.find((s) => s.id === id);
+      toast.success(`Statement sent to ${stmt?.ownerEmail || 'owner'}`);
+    },
+    onError: () => {
+      toast.error('Failed to send statement');
+    },
+  });
+
   // ── Computed ──
 
   const totalNetPayout = statements.reduce((sum, s) => sum + s.netPayout, 0);
@@ -525,9 +697,9 @@ export default function OwnerStatementsPage() {
 
   // Properties for selected owner in generator
   const ownerProperties = useMemo(() => {
-    if (genOwner === 'all') return demoProperties;
-    return demoProperties.filter((p) => p.ownerId === genOwner);
-  }, [genOwner]);
+    if (genOwner === 'all') return propertiesList;
+    return propertiesList.filter((p) => p.ownerId === genOwner);
+  }, [genOwner, propertiesList]);
 
   // Comparison data
   const ownerStatementsForCompare = useMemo(() => {
@@ -563,136 +735,105 @@ export default function OwnerStatementsPage() {
   // ── Actions ──
 
   const handleGenerate = () => {
-    const targetOwners = genOwner === 'all' ? demoOwners : demoOwners.filter((o) => o.id === genOwner);
+    const targetOwners = genOwner === 'all' ? ownersList : ownersList.filter((o) => o.id === genOwner);
 
-    let periodLabel = '';
-    let periodStart = '';
-    let periodEnd = '';
-
-    switch (genPeriodType) {
-      case 'monthly':
-        periodLabel = `${months[Number(genMonth) - 1]} ${genYear}`;
-        periodStart = `${genYear}-${genMonth.padStart(2, '0')}-01`;
-        periodEnd = `${genYear}-${genMonth.padStart(2, '0')}-${new Date(Number(genYear), Number(genMonth), 0).getDate()}`;
-        break;
-      case 'quarterly':
-        const qStartMonth = (Number(genQuarter) - 1) * 3 + 1;
-        periodLabel = `Q${genQuarter} ${genYear}`;
-        periodStart = `${genYear}-${String(qStartMonth).padStart(2, '0')}-01`;
-        periodEnd = `${genYear}-${String(qStartMonth + 2).padStart(2, '0')}-${new Date(Number(genYear), qStartMonth + 2, 0).getDate()}`;
-        break;
-      case 'yearly':
-        periodLabel = genYear;
-        periodStart = `${genYear}-01-01`;
-        periodEnd = `${genYear}-12-31`;
-        break;
-      case 'custom':
-        periodLabel = `${genCustomStart} to ${genCustomEnd}`;
-        periodStart = genCustomStart;
-        periodEnd = genCustomEnd;
-        break;
+    if (targetOwners.length === 0) {
+      toast.error('No owners found. Please add owners first.');
+      return;
     }
 
-    const newStatements: Statement[] = targetOwners.map((owner) => {
-      const props = demoProperties.filter((p) => p.ownerId === owner.id);
-      const filteredProps = genPropertyFilter === 'all' ? props : props.filter((p) => p.id === genPropertyFilter);
+    const month = Number(genMonth);
+    const year = Number(genYear);
 
-      const stmtProperties: StatementProperty[] = filteredProps.map((prop) => ({
-        propertyId: prop.id,
-        propertyName: prop.name,
-        location: prop.location,
-        bookings: [
-          {
-            guestName: 'Demo Guest A',
-            checkIn: periodStart,
-            checkOut: `${periodStart.slice(0, 8)}08`,
-            nights: 7,
-            platform: 'Airbnb',
-            grossAmount: 1400,
-            managementFee: 140,
-            netAmount: 1260,
-          },
-          {
-            guestName: 'Demo Guest B',
-            checkIn: `${periodStart.slice(0, 8)}15`,
-            checkOut: `${periodStart.slice(0, 8)}22`,
-            nights: 7,
-            platform: 'Booking.com',
-            grossAmount: 1260,
-            managementFee: 126,
-            netAmount: 1134,
-          },
-        ],
-        totalGrossIncome: 2660,
-        totalManagementFees: 266,
-        totalNetBookingIncome: 2394,
-        expenses: [
-          { date: periodStart, category: 'Cleaning', description: 'Professional cleaning x2', vendor: 'Local Cleaners', amount: 160 },
-          { date: periodStart, category: 'Utilities', description: 'Electricity + Water', vendor: 'HEDNO S.A.', amount: 130 },
-        ],
-        totalExpenses: 290,
-        netPropertyIncome: 2104,
-      }));
-
-      const totalGross = stmtProperties.reduce((s, p) => s + p.totalGrossIncome, 0);
-      const totalExp = stmtProperties.reduce((s, p) => s + p.totalExpenses, 0);
-      const totalMgmt = stmtProperties.reduce((s, p) => s + p.totalManagementFees, 0);
-
-      return {
-        id: `stmt-${Date.now()}-${owner.id}`,
-        ownerId: owner.id,
-        ownerName: owner.name,
-        ownerEmail: owner.email,
-        ownerCompany: owner.company,
-        periodLabel,
-        periodStart,
-        periodEnd,
-        periodType: genPeriodType,
-        properties: stmtProperties,
-        totalGrossIncome: totalGross,
-        totalExpenses: totalExp,
-        totalManagementFees: totalMgmt,
-        netPayout: totalGross - totalExp - totalMgmt,
-        currency: 'EUR',
-        status: 'DRAFT' as StatementStatus,
-        generatedAt: new Date().toISOString().split('T')[0],
-        payoutHistory: [],
-      };
-    });
-
-    setStatements((prev) => [...newStatements, ...prev]);
-    toast.success(
-      genOwner === 'all'
-        ? `${newStatements.length} statements generated for all owners`
-        : `Statement generated for ${targetOwners[0]?.name}`,
-    );
+    if (genPeriodType === 'monthly') {
+      const promises = targetOwners.map((owner) =>
+        generateMutation.mutateAsync({ ownerId: owner.id, month, year }),
+      );
+      Promise.all(promises)
+        .then(() => {
+          toast.success(
+            genOwner === 'all'
+              ? `${targetOwners.length} statements generated for all owners`
+              : `Statement generated for ${targetOwners[0]?.name}`,
+          );
+        })
+        .catch(() => {});
+    } else if (genPeriodType === 'quarterly') {
+      const qStartMonth = (Number(genQuarter) - 1) * 3 + 1;
+      const monthsInQuarter = [qStartMonth, qStartMonth + 1, qStartMonth + 2];
+      const promises = targetOwners.flatMap((owner) =>
+        monthsInQuarter.map((m) =>
+          generateMutation.mutateAsync({ ownerId: owner.id, month: m, year }),
+        ),
+      );
+      Promise.all(promises)
+        .then(() => {
+          toast.success(`Q${genQuarter} ${year} statements generated`);
+        })
+        .catch(() => {});
+    } else if (genPeriodType === 'yearly') {
+      const allMonths = Array.from({ length: 12 }, (_, i) => i + 1);
+      const promises = targetOwners.flatMap((owner) =>
+        allMonths.map((m) =>
+          generateMutation.mutateAsync({ ownerId: owner.id, month: m, year }),
+        ),
+      );
+      Promise.all(promises)
+        .then(() => {
+          toast.success(`Full year ${year} statements generated`);
+        })
+        .catch(() => {});
+    } else {
+      // Custom: generate for month extracted from start date
+      const startDate = new Date(genCustomStart);
+      const customMonth = startDate.getMonth() + 1;
+      const customYear = startDate.getFullYear();
+      const promises = targetOwners.map((owner) =>
+        generateMutation.mutateAsync({ ownerId: owner.id, month: customMonth, year: customYear }),
+      );
+      Promise.all(promises)
+        .then(() => {
+          toast.success('Custom range statements generated');
+        })
+        .catch(() => {});
+    }
   };
 
   const handleApprove = (id: string) => {
-    setStatements((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, status: 'APPROVED' as StatementStatus } : s)),
-    );
-    toast.success('Statement approved');
+    approveMutation.mutate(id);
   };
 
   const handleSend = (id: string) => {
-    const stmt = statements.find((s) => s.id === id);
-    setStatements((prev) =>
-      prev.map((s) =>
-        s.id === id
-          ? { ...s, status: 'SENT' as StatementStatus, sentAt: new Date().toISOString().split('T')[0] }
-          : s,
-      ),
-    );
-    toast.success(`Statement sent to ${stmt?.ownerEmail || 'owner'}`);
+    sendMutation.mutate(id);
   };
 
   const handleDownloadPdf = (stmt: Statement) => {
-    toast.success(`PDF download started: ${stmt.ownerName} - ${stmt.periodLabel}`);
+    apiClient
+      .get(`/owner-portal/export/${stmt.ownerId}`, {
+        params: { format: 'json' },
+        responseType: 'blob',
+      })
+      .then((res) => {
+        const blob = new Blob([res.data], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `statement-${stmt.ownerName.replace(/\s+/g, '_')}-${stmt.periodLabel.replace(/\s+/g, '_')}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast.success(`Download started: ${stmt.ownerName} - ${stmt.periodLabel}`);
+      })
+      .catch(() => {
+        toast.error('Failed to download statement');
+      });
   };
 
   const handleEmailOwner = (stmt: Statement) => {
-    toast.success(`Email sent to ${stmt.ownerEmail}`);
+    if (stmt.status === 'APPROVED') {
+      sendMutation.mutate(stmt.id);
+    } else {
+      toast.info(`Statement must be approved before sending to ${stmt.ownerEmail}`);
+    }
   };
 
   const handlePrint = () => {
@@ -739,6 +880,18 @@ export default function OwnerStatementsPage() {
     { key: 'comparison', label: 'Period Comparison', icon: ArrowLeftRight },
   ];
 
+  // ── Loading state ──
+  if (statementsLoading) {
+    return (
+      <div className="p-4 lg:p-6 flex items-center justify-center min-h-[50vh]">
+        <div className="text-center space-y-3">
+          <Loader2 className="w-8 h-8 text-secondary animate-spin mx-auto" />
+          <p className="text-sm text-on-surface-variant">Loading statements...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-4 lg:p-6 space-y-6">
       {/* ─── Header ─── */}
@@ -760,9 +913,14 @@ export default function OwnerStatementsPage() {
               setActiveTab('generator');
               handleBatchGenerate();
             }}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-on-surface bg-surface-container-lowest ambient-shadow hover:bg-surface-container-low transition-all"
+            disabled={generateMutation.isPending}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-on-surface bg-surface-container-lowest ambient-shadow hover:bg-surface-container-low transition-all disabled:opacity-50"
           >
-            <Layers className="w-4 h-4" />
+            {generateMutation.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Layers className="w-4 h-4" />
+            )}
             Batch Generate
           </button>
           <button
@@ -831,7 +989,7 @@ export default function OwnerStatementsPage() {
                   className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30"
                 >
                   <option value="all">All Owners (Batch)</option>
-                  {demoOwners.map((o) => (
+                  {ownersList.map((o) => (
                     <option key={o.id} value={o.id}>
                       {o.name}
                     </option>
@@ -954,7 +1112,7 @@ export default function OwnerStatementsPage() {
                   <option value="all">All Properties</option>
                   {ownerProperties.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} - {p.location}
+                      {p.name} - {p.location || p.address || ''}
                     </option>
                   ))}
                 </select>
@@ -965,14 +1123,19 @@ export default function OwnerStatementsPage() {
             <div className="flex flex-wrap items-center gap-3">
               <button
                 onClick={handleGenerate}
-                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium text-white gradient-accent hover:shadow-ambient-lg transition-all"
+                disabled={generateMutation.isPending}
+                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium text-white gradient-accent hover:shadow-ambient-lg transition-all disabled:opacity-50"
               >
-                <FileText className="w-4 h-4" />
+                {generateMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <FileText className="w-4 h-4" />
+                )}
                 {genOwner === 'all' ? 'Generate All Statements' : 'Generate Statement'}
               </button>
               {genOwner === 'all' && (
                 <p className="text-xs text-on-surface-variant">
-                  Will generate {demoOwners.length} statements for all owners
+                  Will generate {ownersList.length} statements for all owners
                 </p>
               )}
             </div>
@@ -1018,7 +1181,13 @@ export default function OwnerStatementsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {statements.slice(0, 5).map((stmt) => {
+                  {statements.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} className="py-12 text-center text-sm text-on-surface-variant">
+                        No statements yet. Generate your first statement above.
+                      </td>
+                    </tr>
+                  ) : statements.slice(0, 5).map((stmt) => {
                     const StatusIcon = statusIcons[stmt.status];
                     return (
                       <Fragment key={stmt.id}>
@@ -1078,7 +1247,8 @@ export default function OwnerStatementsPage() {
                                 <button
                                   onClick={() => handleApprove(stmt.id)}
                                   title="Approve"
-                                  className="p-1.5 rounded-lg text-secondary bg-secondary/10 hover:bg-secondary/20 transition-colors"
+                                  disabled={approveMutation.isPending}
+                                  className="p-1.5 rounded-lg text-secondary bg-secondary/10 hover:bg-secondary/20 transition-colors disabled:opacity-50"
                                 >
                                   <Check className="w-3.5 h-3.5" />
                                 </button>
@@ -1087,7 +1257,8 @@ export default function OwnerStatementsPage() {
                                 <button
                                   onClick={() => handleSend(stmt.id)}
                                   title="Send"
-                                  className="p-1.5 rounded-lg text-success bg-success/10 hover:bg-success/20 transition-colors"
+                                  disabled={sendMutation.isPending}
+                                  className="p-1.5 rounded-lg text-success bg-success/10 hover:bg-success/20 transition-colors disabled:opacity-50"
                                 >
                                   <Send className="w-3.5 h-3.5" />
                                 </button>
@@ -1288,7 +1459,7 @@ export default function OwnerStatementsPage() {
               className="px-4 py-2.5 rounded-lg bg-surface-container-lowest ambient-shadow text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30"
             >
               <option value="all">All Owners</option>
-              {demoOwners.map((o) => (
+              {ownersList.map((o) => (
                 <option key={o.id} value={o.id}>
                   {o.name}
                 </option>
@@ -1422,7 +1593,8 @@ export default function OwnerStatementsPage() {
                                 <button
                                   onClick={() => handleApprove(stmt.id)}
                                   title="Approve"
-                                  className="p-1.5 rounded-lg text-secondary bg-secondary/10 hover:bg-secondary/20 transition-colors"
+                                  disabled={approveMutation.isPending}
+                                  className="p-1.5 rounded-lg text-secondary bg-secondary/10 hover:bg-secondary/20 transition-colors disabled:opacity-50"
                                 >
                                   <Check className="w-3.5 h-3.5" />
                                 </button>
@@ -1431,7 +1603,8 @@ export default function OwnerStatementsPage() {
                                 <button
                                   onClick={() => handleSend(stmt.id)}
                                   title="Send to Owner"
-                                  className="p-1.5 rounded-lg text-success bg-success/10 hover:bg-success/20 transition-colors"
+                                  disabled={sendMutation.isPending}
+                                  className="p-1.5 rounded-lg text-success bg-success/10 hover:bg-success/20 transition-colors disabled:opacity-50"
                                 >
                                   <Send className="w-3.5 h-3.5" />
                                 </button>
@@ -1505,7 +1678,7 @@ export default function OwnerStatementsPage() {
                   }}
                   className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30"
                 >
-                  {demoOwners.map((o) => (
+                  {ownersList.map((o) => (
                     <option key={o.id} value={o.id}>
                       {o.name}
                     </option>

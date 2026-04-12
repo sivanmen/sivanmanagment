@@ -11,6 +11,8 @@ import {
   ArrowDownRight,
   Info,
   Receipt,
+  AlertTriangle,
+  RefreshCcw,
 } from 'lucide-react';
 import {
   BarChart,
@@ -21,181 +23,47 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import api from '../lib/api-client';
+import apiClient from '../lib/api-client';
 
-type Period = 'this_month' | 'last_month' | 'this_year' | 'custom';
+type Period = 'this_month' | 'last_month' | 'this_year';
 
-interface PropertyBreakdown {
-  name: string;
-  bookings: number;
-  grossIncome: number;
-  managementFee: number;
-  netIncome: number;
-}
-
-interface Transaction {
-  id: string;
-  date: string;
-  description: string;
-  property: string;
-  type: 'income' | 'expense';
-  amount: number;
-}
-
-interface FinancialData {
+interface FinancialSummary {
   totalIncome: number;
-  managementFees: number;
+  totalExpenses: number;
   netIncome: number;
-  occupancyRate: number;
-  incomeChange: number;
-  feeChange: number;
-  netChange: number;
-  occupancyChange: number;
-  monthlyRevenue: { month: string; revenue: number; expenses: number }[];
-  propertyBreakdown: PropertyBreakdown[];
-  recentTransactions: Transaction[];
-  managementFeePercent: number;
-  minimumMonthlyFee: number;
+  occupancyRate?: number;
+  incomeByCategory: { category: string; total: number; count: number }[];
+  expensesByCategory: { category: string; total: number; count: number }[];
 }
 
-const demoData: FinancialData = {
-  totalIncome: 14280,
-  managementFees: 2142,
-  netIncome: 12138,
-  occupancyRate: 87.3,
-  incomeChange: 8.4,
-  feeChange: 8.4,
-  netChange: 8.4,
-  occupancyChange: 3.1,
-  monthlyRevenue: [
-    { month: 'Jul', revenue: 9800, expenses: 1470 },
-    { month: 'Aug', revenue: 12400, expenses: 1860 },
-    { month: 'Sep', revenue: 10200, expenses: 1530 },
-    { month: 'Oct', revenue: 8600, expenses: 1290 },
-    { month: 'Nov', revenue: 5400, expenses: 810 },
-    { month: 'Dec', revenue: 6200, expenses: 930 },
-    { month: 'Jan', revenue: 4800, expenses: 720 },
-    { month: 'Feb', revenue: 5600, expenses: 840 },
-    { month: 'Mar', revenue: 8400, expenses: 1260 },
-    { month: 'Apr', revenue: 14280, expenses: 2142 },
-    { month: 'May', revenue: 0, expenses: 0 },
-    { month: 'Jun', revenue: 0, expenses: 0 },
-  ],
-  propertyBreakdown: [
-    {
-      name: 'Aegean Sunset Villa',
-      bookings: 8,
-      grossIncome: 6720,
-      managementFee: 1008,
-      netIncome: 5712,
-    },
-    {
-      name: 'Heraklion Harbor Suite',
-      bookings: 6,
-      grossIncome: 3600,
-      managementFee: 540,
-      netIncome: 3060,
-    },
-    {
-      name: 'Chania Old Town Residence',
-      bookings: 5,
-      grossIncome: 3200,
-      managementFee: 480,
-      netIncome: 2720,
-    },
-    {
-      name: 'Rethymno Beachfront Studio',
-      bookings: 3,
-      grossIncome: 760,
-      managementFee: 114,
-      netIncome: 646,
-    },
-  ],
-  recentTransactions: [
-    {
-      id: 'TXN-001',
-      date: '2026-04-10',
-      description: 'Booking BK-2026-1201 - Marcus Lindqvist',
-      property: 'Aegean Sunset Villa',
-      type: 'income',
-      amount: 1960,
-    },
-    {
-      id: 'TXN-002',
-      date: '2026-04-09',
-      description: 'Management Fee - April',
-      property: 'Aegean Sunset Villa',
-      type: 'expense',
-      amount: 294,
-    },
-    {
-      id: 'TXN-003',
-      date: '2026-04-08',
-      description: 'Booking BK-2026-1198 - Elena Papadopoulos',
-      property: 'Heraklion Harbor Suite',
-      type: 'income',
-      amount: 600,
-    },
-    {
-      id: 'TXN-004',
-      date: '2026-04-07',
-      description: 'Cleaning Service',
-      property: 'Heraklion Harbor Suite',
-      type: 'expense',
-      amount: 80,
-    },
-    {
-      id: 'TXN-005',
-      date: '2026-04-06',
-      description: 'Booking BK-2026-1195 - Hans Weber',
-      property: 'Chania Old Town Residence',
-      type: 'income',
-      amount: 1400,
-    },
-    {
-      id: 'TXN-006',
-      date: '2026-04-05',
-      description: 'Management Fee - March',
-      property: 'Chania Old Town Residence',
-      type: 'expense',
-      amount: 210,
-    },
-    {
-      id: 'TXN-007',
-      date: '2026-04-04',
-      description: 'Maintenance - Plumbing Repair',
-      property: 'Rethymno Beachfront Studio',
-      type: 'expense',
-      amount: 320,
-    },
-    {
-      id: 'TXN-008',
-      date: '2026-04-03',
-      description: 'Booking BK-2026-1185 - James Richardson',
-      property: 'Rethymno Beachfront Studio',
-      type: 'income',
-      amount: 630,
-    },
-    {
-      id: 'TXN-009',
-      date: '2026-04-02',
-      description: 'Utility Payment - Water',
-      property: 'Aegean Sunset Villa',
-      type: 'expense',
-      amount: 145,
-    },
-    {
-      id: 'TXN-010',
-      date: '2026-04-01',
-      description: 'Booking BK-2026-1180 - Anna Kowalski',
-      property: 'Heraklion Harbor Suite',
-      type: 'income',
-      amount: 750,
-    },
-  ],
-  managementFeePercent: 15,
-  minimumMonthlyFee: 250,
-};
+interface TrendPoint {
+  month: number;
+  year: number;
+  label: string;
+  income: number;
+  expenses: number;
+  net: number;
+}
+
+interface PropertySummary {
+  id: string;
+  name: string;
+  _count?: { bookings: number };
+  baseNightlyRate: number;
+}
+
+function getPeriodParams(period: Period): { periodMonth?: number; periodYear?: number } {
+  const now = new Date();
+  if (period === 'this_month') {
+    return { periodMonth: now.getMonth() + 1, periodYear: now.getFullYear() };
+  }
+  if (period === 'last_month') {
+    const d = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    return { periodMonth: d.getMonth() + 1, periodYear: d.getFullYear() };
+  }
+  // this_year: only year
+  return { periodYear: now.getFullYear() };
+}
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-GB', {
@@ -204,22 +72,141 @@ function formatDate(dateStr: string): string {
   });
 }
 
+function SkeletonKPI() {
+  return (
+    <div className="bg-surface-container-lowest rounded-xl p-5 ambient-shadow animate-pulse">
+      <div className="flex items-center justify-between mb-3">
+        <div className="h-3 bg-surface-container-high rounded w-24" />
+        <div className="w-8 h-8 rounded-lg bg-surface-container-high" />
+      </div>
+      <div className="h-7 bg-surface-container-high rounded w-28 mb-1" />
+      <div className="h-3 bg-surface-container-high rounded w-20" />
+    </div>
+  );
+}
+
 export default function FinancialSummaryPage() {
   const { t } = useTranslation();
   const [activePeriod, setActivePeriod] = useState<Period>('this_month');
 
-  const { data: financials } = useQuery({
-    queryKey: ['financials', activePeriod],
+  // Fetch financial summary
+  const {
+    data: summary,
+    isLoading: summaryLoading,
+    isError: summaryError,
+    error: summaryErrorObj,
+    refetch: refetchSummary,
+  } = useQuery({
+    queryKey: ['finance-summary', activePeriod],
     queryFn: async () => {
-      try {
-        const res = await api.get('/api/v1/financials', { params: { period: activePeriod } });
-        return res.data.data as FinancialData;
-      } catch {
-        return demoData;
-      }
+      const params = getPeriodParams(activePeriod);
+      const res = await apiClient.get('/api/v1/finance/summary', { params });
+      return res.data.data as FinancialSummary;
     },
-    initialData: demoData,
   });
+
+  // Fetch monthly trend for the chart
+  const { data: trend, isLoading: trendLoading } = useQuery({
+    queryKey: ['finance-trend'],
+    queryFn: async () => {
+      const res = await apiClient.get('/api/v1/finance/trend', { params: { months: 12 } });
+      return res.data.data as TrendPoint[];
+    },
+  });
+
+  // Fetch properties for breakdown
+  const { data: properties } = useQuery({
+    queryKey: ['my-properties-for-finance'],
+    queryFn: async () => {
+      const res = await apiClient.get('/api/v1/properties');
+      return res.data.data as PropertySummary[];
+    },
+  });
+
+  // Fetch recent transactions (income + expenses)
+  const { data: recentIncome } = useQuery({
+    queryKey: ['recent-income', activePeriod],
+    queryFn: async () => {
+      const params = getPeriodParams(activePeriod);
+      const res = await apiClient.get('/api/v1/finance/income', {
+        params: { ...params, limit: 10, sortBy: 'date', sortOrder: 'desc' },
+      });
+      return res.data.data as {
+        id: string;
+        date: string;
+        description?: string;
+        property?: { name: string };
+        category: string;
+        amount: number;
+      }[];
+    },
+  });
+
+  const { data: recentExpenses } = useQuery({
+    queryKey: ['recent-expenses', activePeriod],
+    queryFn: async () => {
+      const params = getPeriodParams(activePeriod);
+      const res = await apiClient.get('/api/v1/finance/expenses', {
+        params: { ...params, limit: 10, sortBy: 'date', sortOrder: 'desc' },
+      });
+      return res.data.data as {
+        id: string;
+        date: string;
+        description: string;
+        property?: { name: string };
+        category: string;
+        amount: number;
+      }[];
+    },
+  });
+
+  // Build chart data from trend
+  const chartData = (trend || []).map((t) => ({
+    month: t.label || `${t.year}-${String(t.month).padStart(2, '0')}`,
+    revenue: t.income,
+    expenses: t.expenses,
+  }));
+
+  // Build recent transactions from income + expenses
+  const recentTransactions = [
+    ...(recentIncome || []).map((r) => ({
+      id: r.id,
+      date: r.date,
+      description: r.description || r.category,
+      property: r.property?.name || '',
+      type: 'income' as const,
+      amount: typeof r.amount === 'number' ? r.amount : Number(r.amount) || 0,
+    })),
+    ...(recentExpenses || []).map((r) => ({
+      id: r.id,
+      date: r.date,
+      description: r.description || r.category,
+      property: r.property?.name || '',
+      type: 'expense' as const,
+      amount: typeof r.amount === 'number' ? r.amount : Number(r.amount) || 0,
+    })),
+  ]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 10);
+
+  // Derived values
+  const totalIncome = summary?.totalIncome ?? 0;
+  const totalExpenses = summary?.totalExpenses ?? 0;
+  const netIncome = summary?.netIncome ?? 0;
+  const occupancyRate = summary?.occupancyRate ?? 0;
+
+  // Management fee calculation from expenses by category
+  const mgmtFee = summary?.expensesByCategory?.find((c) => c.category === 'MANAGEMENT_FEE');
+  const managementFees = mgmtFee?.total ?? 0;
+
+  // Property breakdown
+  const propertyBreakdown = (properties || []).map((p) => ({
+    name: p.name,
+    bookings: p._count?.bookings || 0,
+    grossIncome: 0, // would need per-property income call
+    managementFee: 0,
+    netIncome: 0,
+  }));
 
   const periods: { key: Period; label: string }[] = [
     { key: 'this_month', label: t('financials.thisMonth') },
@@ -257,82 +244,99 @@ export default function FinancialSummaryPage() {
         </div>
       </div>
 
+      {/* Error State */}
+      {summaryError && (
+        <div className="bg-error/5 border border-error/20 rounded-xl p-6 flex items-center gap-4">
+          <AlertTriangle className="w-8 h-8 text-error flex-shrink-0" />
+          <div className="flex-1">
+            <p className="font-medium text-on-surface">Failed to load financial data</p>
+            <p className="text-sm text-on-surface-variant mt-1">
+              {(summaryErrorObj as Error)?.message || 'An unexpected error occurred.'}
+            </p>
+          </div>
+          <button
+            onClick={() => refetchSummary()}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-error/10 text-error text-sm font-medium hover:bg-error/20 transition-colors"
+          >
+            <RefreshCcw className="w-4 h-4" />
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-surface-container-lowest rounded-xl p-5 ambient-shadow hover:shadow-ambient-lg transition-shadow">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-medium text-on-surface-variant uppercase tracking-wider">
-              {t('financials.totalIncome')}
+      {summaryLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <SkeletonKPI key={i} />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-surface-container-lowest rounded-xl p-5 ambient-shadow hover:shadow-ambient-lg transition-shadow">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-medium text-on-surface-variant uppercase tracking-wider">
+                {t('financials.totalIncome')}
+              </p>
+              <div className="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center">
+                <TrendingUp className="w-4 h-4 text-success" />
+              </div>
+            </div>
+            <p className="font-headline text-2xl font-bold text-on-surface mb-1">
+              {'\u20AC'}{totalIncome.toLocaleString()}
             </p>
-            <div className="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center">
-              <TrendingUp className="w-4 h-4 text-success" />
+          </div>
+
+          <div className="bg-surface-container-lowest rounded-xl p-5 ambient-shadow hover:shadow-ambient-lg transition-shadow">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-medium text-on-surface-variant uppercase tracking-wider">
+                {t('financials.managementFees')}
+              </p>
+              <div className="w-8 h-8 rounded-lg bg-error/10 flex items-center justify-center">
+                <TrendingDown className="w-4 h-4 text-error" />
+              </div>
+            </div>
+            <p className="font-headline text-2xl font-bold text-on-surface mb-1">
+              {'\u20AC'}{totalExpenses.toLocaleString()}
+            </p>
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-on-surface-variant">
+                Mgmt: {'\u20AC'}{managementFees.toLocaleString()}
+              </span>
             </div>
           </div>
-          <p className="font-headline text-2xl font-bold text-on-surface mb-1">
-            {'\u20AC'}{financials.totalIncome.toLocaleString()}
-          </p>
-          <div className="flex items-center gap-1">
-            <span className="text-xs font-medium text-success">+{financials.incomeChange}%</span>
-            <span className="text-xs text-on-surface-variant">vs last month</span>
-          </div>
-        </div>
 
-        <div className="bg-surface-container-lowest rounded-xl p-5 ambient-shadow hover:shadow-ambient-lg transition-shadow">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-medium text-on-surface-variant uppercase tracking-wider">
-              {t('financials.managementFees')}
-            </p>
-            <div className="w-8 h-8 rounded-lg bg-error/10 flex items-center justify-center">
-              <TrendingDown className="w-4 h-4 text-error" />
+          <div className="bg-surface-container-lowest rounded-xl p-5 ambient-shadow hover:shadow-ambient-lg transition-shadow">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-medium text-on-surface-variant uppercase tracking-wider">
+                {t('financials.netIncome')}
+              </p>
+              <div className="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center">
+                <Wallet className="w-4 h-4 text-secondary" />
+              </div>
             </div>
-          </div>
-          <p className="font-headline text-2xl font-bold text-on-surface mb-1">
-            {'\u20AC'}{financials.managementFees.toLocaleString()}
-          </p>
-          <div className="flex items-center gap-1">
-            <span className="text-xs font-medium text-error">+{financials.feeChange}%</span>
-            <span className="text-xs text-on-surface-variant">vs last month</span>
-          </div>
-        </div>
-
-        <div className="bg-surface-container-lowest rounded-xl p-5 ambient-shadow hover:shadow-ambient-lg transition-shadow">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-medium text-on-surface-variant uppercase tracking-wider">
-              {t('financials.netIncome')}
+            <p className="font-headline text-2xl font-bold text-on-surface mb-1">
+              {'\u20AC'}{netIncome.toLocaleString()}
             </p>
-            <div className="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center">
-              <Wallet className="w-4 h-4 text-secondary" />
-            </div>
           </div>
-          <p className="font-headline text-2xl font-bold text-on-surface mb-1">
-            {'\u20AC'}{financials.netIncome.toLocaleString()}
-          </p>
-          <div className="flex items-center gap-1">
-            <span className="text-xs font-medium text-success">+{financials.netChange}%</span>
-            <span className="text-xs text-on-surface-variant">vs last month</span>
-          </div>
-        </div>
 
-        <div className="bg-surface-container-lowest rounded-xl p-5 ambient-shadow hover:shadow-ambient-lg transition-shadow">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-medium text-on-surface-variant uppercase tracking-wider">
-              {t('financials.occupancyRate')}
+          <div className="bg-surface-container-lowest rounded-xl p-5 ambient-shadow hover:shadow-ambient-lg transition-shadow">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-medium text-on-surface-variant uppercase tracking-wider">
+                {t('financials.occupancyRate')}
+              </p>
+              <div className="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center">
+                <Percent className="w-4 h-4 text-warning" />
+              </div>
+            </div>
+            <p className="font-headline text-2xl font-bold text-on-surface mb-1">
+              {occupancyRate}%
             </p>
-            <div className="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center">
-              <Percent className="w-4 h-4 text-warning" />
-            </div>
-          </div>
-          <p className="font-headline text-2xl font-bold text-on-surface mb-1">
-            {financials.occupancyRate}%
-          </p>
-          <div className="flex items-center gap-1">
-            <span className="text-xs font-medium text-success">+{financials.occupancyChange}%</span>
-            <span className="text-xs text-on-surface-variant">vs last month</span>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Revenue Chart + Management Fee Info */}
+      {/* Revenue Chart + Category Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Chart */}
         <div className="lg:col-span-2 bg-surface-container-lowest rounded-xl p-5 ambient-shadow">
@@ -352,39 +356,49 @@ export default function FinancialSummaryPage() {
             </div>
           </div>
           <div className="h-[280px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={financials.monthlyRevenue} barGap={2}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e7e8e9" />
-                <XAxis
-                  dataKey="month"
-                  tick={{ fill: '#46464c', fontSize: 11 }}
-                  axisLine={{ stroke: '#e7e8e9' }}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{ fill: '#46464c', fontSize: 11 }}
-                  axisLine={false}
-                  tickLine={false}
-                  tickFormatter={(value: number) => `\u20AC${(value / 1000).toFixed(0)}k`}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#ffffff',
-                    border: 'none',
-                    borderRadius: '12px',
-                    boxShadow: '0px 24px 48px rgba(25, 28, 29, 0.06)',
-                    fontSize: '12px',
-                  }}
-                  formatter={(value: number) => [`\u20AC${value.toLocaleString()}`, '']}
-                />
-                <Bar dataKey="revenue" fill="#6b38d4" radius={[4, 4, 0, 0]} name="Revenue" />
-                <Bar dataKey="expenses" fill="#ba1a1a40" radius={[4, 4, 0, 0]} name="Fees" />
-              </BarChart>
-            </ResponsiveContainer>
+            {trendLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-secondary border-t-transparent" />
+              </div>
+            ) : chartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} barGap={2}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e7e8e9" />
+                  <XAxis
+                    dataKey="month"
+                    tick={{ fill: '#46464c', fontSize: 11 }}
+                    axisLine={{ stroke: '#e7e8e9' }}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tick={{ fill: '#46464c', fontSize: 11 }}
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(value: number) => `\u20AC${(value / 1000).toFixed(0)}k`}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#ffffff',
+                      border: 'none',
+                      borderRadius: '12px',
+                      boxShadow: '0px 24px 48px rgba(25, 28, 29, 0.06)',
+                      fontSize: '12px',
+                    }}
+                    formatter={(value: number) => [`\u20AC${value.toLocaleString()}`, '']}
+                  />
+                  <Bar dataKey="revenue" fill="#6b38d4" radius={[4, 4, 0, 0]} name="Revenue" />
+                  <Bar dataKey="expenses" fill="#ba1a1a40" radius={[4, 4, 0, 0]} name="Expenses" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-on-surface-variant">
+                No trend data available
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Management Fee Info */}
+        {/* Income/Expense Category Breakdown */}
         <div className="bg-surface-container-lowest rounded-xl p-5 ambient-shadow flex flex-col">
           <div className="flex items-center gap-2 mb-4">
             <div className="w-7 h-7 rounded-lg bg-secondary/10 flex items-center justify-center">
@@ -395,129 +409,85 @@ export default function FinancialSummaryPage() {
             </h3>
           </div>
 
-          <div className="flex-1 space-y-4">
-            <div className="p-4 rounded-lg bg-surface-container-low">
-              <p className="text-[10px] text-on-surface-variant uppercase tracking-wider mb-1">
-                {t('financials.feePercentage')}
-              </p>
-              <p className="font-headline text-2xl font-bold text-secondary">
-                {financials.managementFeePercent}%
-              </p>
-              <p className="text-xs text-on-surface-variant mt-1">
-                {t('financials.feeDescription')}
-              </p>
-            </div>
+          <div className="flex-1 space-y-3">
+            {summary?.incomeByCategory?.map((cat) => (
+              <div key={cat.category} className="p-3 rounded-lg bg-surface-container-low">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-on-surface-variant capitalize">
+                    {cat.category.toLowerCase().replace(/_/g, ' ')}
+                  </p>
+                  <span className="text-sm font-semibold text-success">
+                    +{'\u20AC'}{cat.total.toLocaleString()}
+                  </span>
+                </div>
+                <p className="text-[10px] text-on-surface-variant mt-0.5">{cat.count} records</p>
+              </div>
+            ))}
 
-            <div className="p-4 rounded-lg bg-surface-container-low">
-              <p className="text-[10px] text-on-surface-variant uppercase tracking-wider mb-1">
-                {t('financials.minimumFee')}
-              </p>
-              <p className="font-headline text-2xl font-bold text-on-surface">
-                {'\u20AC'}{financials.minimumMonthlyFee}
-              </p>
-              <p className="text-xs text-on-surface-variant mt-1">
-                {t('financials.minimumFeeDescription')}
-              </p>
-            </div>
+            {summary?.expensesByCategory?.map((cat) => (
+              <div key={cat.category} className="p-3 rounded-lg bg-surface-container-low">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-on-surface-variant capitalize">
+                    {cat.category.toLowerCase().replace(/_/g, ' ')}
+                  </p>
+                  <span className="text-sm font-semibold text-error">
+                    -{'\u20AC'}{cat.total.toLocaleString()}
+                  </span>
+                </div>
+                <p className="text-[10px] text-on-surface-variant mt-0.5">{cat.count} records</p>
+              </div>
+            ))}
 
-            <div className="p-4 rounded-lg bg-success/5 border border-success/10">
-              <p className="text-xs font-medium text-success">
-                {t('financials.feeNote')}
-              </p>
-            </div>
+            {!summaryLoading && !summary?.incomeByCategory?.length && !summary?.expensesByCategory?.length && (
+              <div className="p-4 rounded-lg bg-surface-container-low text-center">
+                <p className="text-sm text-on-surface-variant">No category data for this period</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* Property Breakdown */}
-      <div className="bg-surface-container-lowest rounded-xl p-5 ambient-shadow">
-        <div className="flex items-center gap-2 mb-4">
-          <Building2 className="w-5 h-5 text-secondary" />
-          <h3 className="font-headline text-lg font-semibold text-on-surface">
-            {t('financials.propertyBreakdown')}
-          </h3>
-        </div>
+      {propertyBreakdown.length > 0 && (
+        <div className="bg-surface-container-lowest rounded-xl p-5 ambient-shadow">
+          <div className="flex items-center gap-2 mb-4">
+            <Building2 className="w-5 h-5 text-secondary" />
+            <h3 className="font-headline text-lg font-semibold text-on-surface">
+              {t('financials.propertyBreakdown')}
+            </h3>
+          </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-surface-container-high">
-                <th className="text-left py-3 px-3 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  {t('financials.property')}
-                </th>
-                <th className="text-left py-3 px-3 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  {t('financials.bookingsCount')}
-                </th>
-                <th className="text-left py-3 px-3 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  {t('financials.grossIncome')}
-                </th>
-                <th className="text-left py-3 px-3 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  {t('financials.mgmtFee')}
-                </th>
-                <th className="text-left py-3 px-3 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  {t('financials.netLabel')}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {financials.propertyBreakdown.map((prop) => (
-                <tr
-                  key={prop.name}
-                  className="border-b border-surface-container-high/50 hover:bg-surface-container-low/50 transition-colors"
-                >
-                  <td className="py-3 px-3">
-                    <span className="text-sm font-medium text-on-surface">{prop.name}</span>
-                  </td>
-                  <td className="py-3 px-3">
-                    <span className="text-sm text-on-surface-variant">{prop.bookings}</span>
-                  </td>
-                  <td className="py-3 px-3">
-                    <span className="text-sm font-semibold text-on-surface">
-                      {'\u20AC'}{prop.grossIncome.toLocaleString()}
-                    </span>
-                  </td>
-                  <td className="py-3 px-3">
-                    <span className="text-sm text-error">
-                      -{'\u20AC'}{prop.managementFee.toLocaleString()}
-                    </span>
-                  </td>
-                  <td className="py-3 px-3">
-                    <span className="text-sm font-semibold text-success">
-                      {'\u20AC'}{prop.netIncome.toLocaleString()}
-                    </span>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-surface-container-high">
+                  <th className="text-left py-3 px-3 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                    {t('financials.property')}
+                  </th>
+                  <th className="text-left py-3 px-3 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                    {t('financials.bookingsCount')}
+                  </th>
                 </tr>
-              ))}
-              {/* Totals row */}
-              <tr className="bg-surface-container-low/50">
-                <td className="py-3 px-3">
-                  <span className="text-sm font-bold text-on-surface">{t('financials.total')}</span>
-                </td>
-                <td className="py-3 px-3">
-                  <span className="text-sm font-semibold text-on-surface">
-                    {financials.propertyBreakdown.reduce((s, p) => s + p.bookings, 0)}
-                  </span>
-                </td>
-                <td className="py-3 px-3">
-                  <span className="text-sm font-bold text-on-surface">
-                    {'\u20AC'}{financials.propertyBreakdown.reduce((s, p) => s + p.grossIncome, 0).toLocaleString()}
-                  </span>
-                </td>
-                <td className="py-3 px-3">
-                  <span className="text-sm font-bold text-error">
-                    -{'\u20AC'}{financials.propertyBreakdown.reduce((s, p) => s + p.managementFee, 0).toLocaleString()}
-                  </span>
-                </td>
-                <td className="py-3 px-3">
-                  <span className="text-sm font-bold text-success">
-                    {'\u20AC'}{financials.propertyBreakdown.reduce((s, p) => s + p.netIncome, 0).toLocaleString()}
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {propertyBreakdown.map((prop) => (
+                  <tr
+                    key={prop.name}
+                    className="border-b border-surface-container-high/50 hover:bg-surface-container-low/50 transition-colors"
+                  >
+                    <td className="py-3 px-3">
+                      <span className="text-sm font-medium text-on-surface">{prop.name}</span>
+                    </td>
+                    <td className="py-3 px-3">
+                      <span className="text-sm text-on-surface-variant">{prop.bookings}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Recent Transactions */}
       <div className="bg-surface-container-lowest rounded-xl p-5 ambient-shadow">
@@ -528,41 +498,48 @@ export default function FinancialSummaryPage() {
           </h3>
         </div>
 
-        <div className="space-y-2">
-          {financials.recentTransactions.map((txn) => (
-            <div
-              key={txn.id}
-              className="flex items-center justify-between p-3 rounded-lg bg-surface-container-low hover:bg-surface-container-high transition-colors"
-            >
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div
-                  className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                    txn.type === 'income' ? 'bg-success/10' : 'bg-error/10'
+        {recentTransactions.length === 0 && !summaryLoading ? (
+          <div className="text-center py-8">
+            <Receipt className="w-10 h-10 text-on-surface-variant/30 mx-auto mb-2" />
+            <p className="text-sm text-on-surface-variant">No transactions for this period</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {recentTransactions.map((txn) => (
+              <div
+                key={txn.id}
+                className="flex items-center justify-between p-3 rounded-lg bg-surface-container-low hover:bg-surface-container-high transition-colors"
+              >
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                      txn.type === 'income' ? 'bg-success/10' : 'bg-error/10'
+                    }`}
+                  >
+                    {txn.type === 'income' ? (
+                      <ArrowUpRight className="w-4 h-4 text-success" />
+                    ) : (
+                      <ArrowDownRight className="w-4 h-4 text-error" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-on-surface truncate">{txn.description}</p>
+                    <p className="text-xs text-on-surface-variant">
+                      {txn.property && <>{txn.property} &middot; </>}{formatDate(txn.date)}
+                    </p>
+                  </div>
+                </div>
+                <span
+                  className={`text-sm font-semibold flex-shrink-0 ml-3 ${
+                    txn.type === 'income' ? 'text-success' : 'text-error'
                   }`}
                 >
-                  {txn.type === 'income' ? (
-                    <ArrowUpRight className="w-4 h-4 text-success" />
-                  ) : (
-                    <ArrowDownRight className="w-4 h-4 text-error" />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-on-surface truncate">{txn.description}</p>
-                  <p className="text-xs text-on-surface-variant">
-                    {txn.property} &middot; {formatDate(txn.date)}
-                  </p>
-                </div>
+                  {txn.type === 'income' ? '+' : '-'}{'\u20AC'}{txn.amount.toLocaleString()}
+                </span>
               </div>
-              <span
-                className={`text-sm font-semibold flex-shrink-0 ml-3 ${
-                  txn.type === 'income' ? 'text-success' : 'text-error'
-                }`}
-              >
-                {txn.type === 'income' ? '+' : '-'}{'\u20AC'}{txn.amount.toLocaleString()}
-              </span>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

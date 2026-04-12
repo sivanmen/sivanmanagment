@@ -1,7 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
@@ -15,8 +16,10 @@ import {
   Banknote,
   Building2,
   Repeat,
+  Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import apiClient from '../lib/api-client';
 
 // ---------------------------------------------------------------------------
 // Schema
@@ -59,14 +62,6 @@ const expenseCategories = [
   { value: 'OTHER', label: 'Other' },
 ];
 
-const demoProperties = [
-  { id: 'p1', name: 'Santorini Sunset Villa' },
-  { id: 'p2', name: 'Athens Central Loft' },
-  { id: 'p3', name: 'Mykonos Beach House' },
-  { id: 'p4', name: 'Crete Harbor Suite' },
-  { id: 'p5', name: 'Rhodes Old Town Apt' },
-];
-
 const paymentMethods = [
   { value: 'CASH', label: 'Cash', icon: Banknote },
   { value: 'BANK_TRANSFER', label: 'Bank Transfer', icon: Building2 },
@@ -80,20 +75,14 @@ const recurrenceOptions = [
   { value: 'ANNUAL', label: 'Annual' },
 ];
 
-// Demo data used when editing an existing expense
-const demoExpense: ExpenseFormData & { receiptFileName?: string } = {
-  category: 'MAINTENANCE',
-  amount: 320,
-  date: '2026-03-28',
-  propertyId: 'p1',
-  vendor: 'Nikos Plumbing Co.',
-  description: 'Kitchen faucet replacement and pipe inspection',
-  paymentMethod: 'BANK_TRANSFER',
-  isRecurring: false,
-  recurrencePattern: '',
-  notes: 'Annual inspection recommended next March',
-  receiptFileName: 'receipt-nikos-plumbing-2026.pdf',
-};
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+interface Property {
+  id: string;
+  name: string;
+}
 
 // ---------------------------------------------------------------------------
 // Component
@@ -103,51 +92,106 @@ export default function ExpenseFormPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const queryClient = useQueryClient();
   const isEditing = !!id;
 
   // Receipt upload state (visual only)
-  const [receiptFile, setReceiptFile] = useState<string | null>(
-    isEditing ? demoExpense.receiptFileName ?? null : null,
-  );
+  const [receiptFile, setReceiptFile] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+
+  // ---- Fetch existing expense for edit mode ----
+  const { data: expense, isLoading: isLoadingExpense } = useQuery({
+    queryKey: ['expense', id],
+    queryFn: async () => {
+      const res = await apiClient.get(`/expenses/${id}`);
+      return res.data.data ?? res.data;
+    },
+    enabled: isEditing,
+  });
+
+  // ---- Fetch properties for dropdown ----
+  const { data: propertiesData } = useQuery<{ data: Property[] }>({
+    queryKey: ['properties-list'],
+    queryFn: async () => {
+      const res = await apiClient.get('/properties', { params: { pageSize: 200 } });
+      return res.data;
+    },
+  });
+
+  const properties = propertiesData?.data ?? [];
 
   const {
     register,
     handleSubmit,
     watch,
     control,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<ExpenseFormData>({
     resolver: zodResolver(expenseSchema),
-    defaultValues: isEditing
-      ? {
-          category: demoExpense.category,
-          amount: demoExpense.amount,
-          date: demoExpense.date,
-          propertyId: demoExpense.propertyId,
-          vendor: demoExpense.vendor,
-          description: demoExpense.description,
-          paymentMethod: demoExpense.paymentMethod,
-          isRecurring: demoExpense.isRecurring,
-          recurrencePattern: demoExpense.recurrencePattern,
-          notes: demoExpense.notes,
-        }
-      : {
-          category: '',
-          amount: undefined as unknown as number,
-          date: new Date().toISOString().split('T')[0],
-          propertyId: '',
-          vendor: '',
-          description: '',
-          paymentMethod: '',
-          isRecurring: false,
-          recurrencePattern: '',
-          notes: '',
-        },
+    defaultValues: {
+      category: '',
+      amount: undefined as unknown as number,
+      date: new Date().toISOString().split('T')[0],
+      propertyId: '',
+      vendor: '',
+      description: '',
+      paymentMethod: '',
+      isRecurring: false,
+      recurrencePattern: '',
+      notes: '',
+    },
   });
+
+  // Populate form when expense loads (edit mode)
+  useEffect(() => {
+    if (expense) {
+      reset({
+        category: expense.category ?? '',
+        amount: Number(expense.amount) || 0,
+        date: expense.date ? expense.date.split('T')[0] : '',
+        propertyId: expense.propertyId ?? '',
+        vendor: expense.vendor ?? '',
+        description: expense.description ?? '',
+        paymentMethod: expense.paymentMethod ?? '',
+        isRecurring: expense.isRecurring ?? false,
+        recurrencePattern: expense.recurrencePattern ?? '',
+        notes: expense.notes ?? '',
+      });
+      if (expense.receiptUrl) {
+        setReceiptFile(expense.receiptUrl.split('/').pop() ?? expense.receiptUrl);
+      }
+    }
+  }, [expense, reset]);
 
   const isRecurring = watch('isRecurring');
   const watchedAmount = watch('amount');
+
+  // ---- Create / Update mutation ----
+  const mutation = useMutation({
+    mutationFn: (data: ExpenseFormData) => {
+      const body = {
+        ...data,
+        currency: 'EUR',
+        receiptUrl: receiptFile ?? undefined,
+      };
+      if (isEditing) {
+        return apiClient.put(`/expenses/${id}`, body);
+      }
+      return apiClient.post('/expenses', body);
+    },
+    onSuccess: () => {
+      toast.success(isEditing ? 'Expense updated successfully' : 'Expense created successfully');
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      if (isEditing) {
+        queryClient.invalidateQueries({ queryKey: ['expense', id] });
+      }
+      navigate('/finance/expenses');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Failed to save expense');
+    },
+  });
 
   // ---- Drag & drop handlers (visual only) ----
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -181,17 +225,8 @@ export default function ExpenseFormPage() {
   }, []);
 
   // ---- Submit ----
-  const onSubmit = async (data: ExpenseFormData) => {
-    try {
-      // In production, this would call the API
-      console.log('Expense data:', { ...data, receiptFile });
-      toast.success(
-        isEditing ? 'Expense updated successfully' : 'Expense created successfully',
-      );
-      navigate('/finance/expenses');
-    } catch {
-      toast.error('Failed to save expense');
-    }
+  const onSubmit = (data: ExpenseFormData) => {
+    mutation.mutate(data);
   };
 
   // ---- Style tokens ----
@@ -202,6 +237,15 @@ export default function ExpenseFormPage() {
   const errorClasses = 'text-xs text-error mt-1';
   const sectionClasses =
     'bg-surface-container-lowest rounded-xl p-5 ambient-shadow space-y-4 border border-outline/5';
+
+  // ---- Loading state for edit mode ----
+  if (isEditing && isLoadingExpense) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-secondary" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 lg:p-6 space-y-6 max-w-4xl">
@@ -282,7 +326,7 @@ export default function ExpenseFormPage() {
               <label className={labelClasses}>Property</label>
               <select {...register('propertyId')} className={inputClasses}>
                 <option value="">No specific property</option>
-                {demoProperties.map((p) => (
+                {properties.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
                   </option>
@@ -512,10 +556,14 @@ export default function ExpenseFormPage() {
         <div className="flex items-center gap-3 pt-2">
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || mutation.isPending}
             className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium text-white gradient-accent hover:shadow-ambient-lg transition-all disabled:opacity-50"
           >
-            <Save className="w-4 h-4" />
+            {mutation.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
             <span>{isEditing ? 'Save Changes' : 'Create Expense'}</span>
           </button>
           <button

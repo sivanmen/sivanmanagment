@@ -1,85 +1,170 @@
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ArrowLeft, Save, User, Building2, Percent, CreditCard, Globe } from 'lucide-react';
+import { ArrowLeft, Save, User, Building2, Percent, CreditCard, Globe, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import apiClient from '../lib/api-client';
 
 const ownerSchema = z.object({
   firstName: z.string().min(2, 'First name is required'),
   lastName: z.string().min(2, 'Last name is required'),
-  company: z.string().optional(),
   email: z.string().email('Valid email required'),
-  phone: z.string().min(8, 'Phone number is required'),
-  address: z.string().optional(),
-  city: z.string().optional(),
-  country: z.string().optional(),
+  phone: z.string().min(8, 'Phone number is required').optional().or(z.literal('')),
+  companyName: z.string().optional(),
   taxId: z.string().optional(),
-  bankName: z.string().optional(),
-  bankAccount: z.string().optional(),
-  bankSwift: z.string().optional(),
-  managementFeePercent: z.number().min(0).max(100).default(15),
-  minimumMonthlyFee: z.number().min(0).optional(),
-  preferredLanguage: z.string().default('en'),
+  billingAddress: z.object({
+    street: z.string().optional(),
+    city: z.string().optional(),
+    country: z.string().optional(),
+  }).optional(),
+  bankDetails: z.object({
+    bankName: z.string().optional(),
+    accountNumber: z.string().optional(),
+    iban: z.string().optional(),
+    swift: z.string().optional(),
+  }).optional(),
+  defaultManagementFeePercent: z.coerce.number().min(0).max(100).default(25),
+  defaultMinimumMonthlyFee: z.coerce.number().min(0).optional(),
+  expenseApprovalThreshold: z.coerce.number().min(0).optional(),
+  locale: z.string().default('en'),
+  timezone: z.string().default('Europe/Athens'),
   notes: z.string().optional(),
-  portalAccess: z.boolean().default(true),
+  preferredPaymentMethod: z.enum(['BANK_TRANSFER', 'STRIPE', 'PAYPAL', 'CASH', 'APPLE_PAY', 'GOOGLE_PAY']).default('BANK_TRANSFER'),
 });
 
 type OwnerFormData = z.infer<typeof ownerSchema>;
 
-// Demo data for edit mode
-const demoOwner: OwnerFormData = {
-  firstName: 'David',
-  lastName: 'Cohen',
-  company: 'Cohen Investments Ltd',
-  email: 'david.cohen@example.com',
-  phone: '+972-54-123-4567',
-  address: '42 Rothschild Blvd',
-  city: 'Tel Aviv',
-  country: 'Israel',
-  taxId: '515123456',
-  bankName: 'Bank Hapoalim',
-  bankAccount: 'IL620108000000099999999',
-  bankSwift: 'POALILIT',
-  managementFeePercent: 15,
-  minimumMonthlyFee: 300,
-  preferredLanguage: 'he',
-  notes: 'Prefers WhatsApp communication. Has 3 properties in Chania.',
-  portalAccess: true,
-};
-
 export default function OwnerFormPage() {
   const navigate = useNavigate();
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
+  const queryClient = useQueryClient();
   const isEdit = Boolean(id);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
     register,
     handleSubmit,
+    reset,
+    setValue,
     watch,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<OwnerFormData>({
     resolver: zodResolver(ownerSchema),
-    defaultValues: isEdit ? demoOwner : {
-      managementFeePercent: 15,
-      minimumMonthlyFee: 0,
-      preferredLanguage: 'en',
-      portalAccess: true,
+    defaultValues: {
+      defaultManagementFeePercent: 25,
+      defaultMinimumMonthlyFee: 0,
+      expenseApprovalThreshold: 100,
+      locale: 'en',
+      timezone: 'Europe/Athens',
+      preferredPaymentMethod: 'BANK_TRANSFER',
     },
   });
 
-  const portalAccess = watch('portalAccess');
+  // Fetch existing owner for edit mode
+  const { data: owner, isLoading: isLoadingOwner } = useQuery({
+    queryKey: ['owner', id],
+    queryFn: async () => {
+      const res = await apiClient.get(`/owners/${id}`);
+      return res.data.data ?? res.data;
+    },
+    enabled: isEdit,
+  });
 
-  const onSubmit = async (_data: OwnerFormData) => {
-    setIsSubmitting(true);
-    // Simulate API call
-    await new Promise((r) => setTimeout(r, 800));
-    setIsSubmitting(false);
-    toast.success(isEdit ? 'Owner updated successfully' : 'Owner created successfully');
-    navigate(isEdit ? `/owners/${id}` : '/owners');
+  // Populate form when owner data loads
+  useEffect(() => {
+    if (owner) {
+      const billingAddr = owner.billingAddress as any;
+      const bank = owner.bankDetails as any;
+
+      reset({
+        firstName: owner.user?.firstName ?? '',
+        lastName: owner.user?.lastName ?? '',
+        email: owner.user?.email ?? '',
+        phone: owner.user?.phone ?? '',
+        companyName: owner.companyName ?? '',
+        taxId: owner.taxId ?? '',
+        billingAddress: {
+          street: billingAddr?.street ?? '',
+          city: billingAddr?.city ?? '',
+          country: billingAddr?.country ?? '',
+        },
+        bankDetails: {
+          bankName: bank?.bankName ?? '',
+          accountNumber: bank?.accountNumber ?? '',
+          iban: bank?.iban ?? '',
+          swift: bank?.swift ?? '',
+        },
+        defaultManagementFeePercent: owner.defaultManagementFeePercent != null
+          ? Number(owner.defaultManagementFeePercent)
+          : 25,
+        defaultMinimumMonthlyFee: owner.defaultMinimumMonthlyFee != null
+          ? Number(owner.defaultMinimumMonthlyFee)
+          : 0,
+        expenseApprovalThreshold: owner.expenseApprovalThreshold != null
+          ? Number(owner.expenseApprovalThreshold)
+          : 100,
+        locale: owner.user?.preferredLocale ?? 'en',
+        timezone: owner.user?.timezone ?? 'Europe/Athens',
+        notes: owner.notes ?? '',
+        preferredPaymentMethod: owner.preferredPaymentMethod ?? 'BANK_TRANSFER',
+      });
+    }
+  }, [owner, reset]);
+
+  // Create mutation
+  const createMutation = useMutation({
+    mutationFn: (data: OwnerFormData) => apiClient.post('/owners', data),
+    onSuccess: () => {
+      toast.success('Owner created successfully');
+      queryClient.invalidateQueries({ queryKey: ['owners'] });
+      navigate('/owners');
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || 'Failed to create owner';
+      toast.error(message);
+    },
+  });
+
+  // Update mutation
+  const updateMutation = useMutation({
+    mutationFn: (data: OwnerFormData) => apiClient.put(`/owners/${id}`, data),
+    onSuccess: () => {
+      toast.success('Owner updated successfully');
+      queryClient.invalidateQueries({ queryKey: ['owners'] });
+      queryClient.invalidateQueries({ queryKey: ['owner', id] });
+      navigate(`/owners/${id}`);
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || 'Failed to update owner';
+      toast.error(message);
+    },
+  });
+
+  const isSaving = createMutation.isPending || updateMutation.isPending;
+
+  const onSubmit = async (data: OwnerFormData) => {
+    if (isEdit) {
+      // For update, strip out email (cannot change) and send only relevant fields
+      const { email, ...updateData } = data;
+      updateMutation.mutate(updateData as OwnerFormData);
+    } else {
+      createMutation.mutate(data);
+    }
   };
+
+  // Show loading state when fetching owner for edit
+  if (isEdit && isLoadingOwner) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 text-secondary animate-spin" />
+          <p className="text-sm text-on-surface-variant">Loading owner data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
@@ -139,7 +224,7 @@ export default function OwnerFormPage() {
               Company
             </label>
             <input
-              {...register('company')}
+              {...register('companyName')}
               className="w-full px-3 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-secondary/40"
               placeholder="Company name (optional)"
             />
@@ -153,14 +238,16 @@ export default function OwnerFormPage() {
               <input
                 type="email"
                 {...register('email')}
-                className="w-full px-3 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-secondary/40"
+                disabled={isEdit}
+                className="w-full px-3 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-secondary/40 disabled:opacity-60 disabled:cursor-not-allowed"
                 placeholder="owner@example.com"
               />
+              {isEdit && <p className="mt-1 text-[10px] text-on-surface-variant">Email cannot be changed after creation</p>}
               {errors.email && <p className="mt-1 text-xs text-red-400">{errors.email.message}</p>}
             </div>
             <div>
               <label className="block text-[10px] font-semibold tracking-widest text-on-surface-variant uppercase mb-1.5">
-                Phone *
+                Phone
               </label>
               <input
                 {...register('phone')}
@@ -177,7 +264,7 @@ export default function OwnerFormPage() {
                 Address
               </label>
               <input
-                {...register('address')}
+                {...register('billingAddress.street')}
                 className="w-full px-3 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-secondary/40"
                 placeholder="Street address"
               />
@@ -187,7 +274,7 @@ export default function OwnerFormPage() {
                 City
               </label>
               <input
-                {...register('city')}
+                {...register('billingAddress.city')}
                 className="w-full px-3 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-secondary/40"
                 placeholder="City"
               />
@@ -197,7 +284,7 @@ export default function OwnerFormPage() {
                 Country
               </label>
               <select
-                {...register('country')}
+                {...register('billingAddress.country')}
                 className="w-full px-3 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/40"
               >
                 <option value="">Select country</option>
@@ -221,7 +308,7 @@ export default function OwnerFormPage() {
             <h3 className="font-headline text-sm font-semibold text-on-surface">Management Terms</h3>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-[10px] font-semibold tracking-widest text-on-surface-variant uppercase mb-1.5">
                 Management Fee (%)
@@ -230,7 +317,7 @@ export default function OwnerFormPage() {
                 <input
                   type="number"
                   step="0.5"
-                  {...register('managementFeePercent', { valueAsNumber: true })}
+                  {...register('defaultManagementFeePercent', { valueAsNumber: true })}
                   className="w-full px-3 py-2.5 pr-8 rounded-lg bg-surface-container-low text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/40"
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">%</span>
@@ -239,18 +326,33 @@ export default function OwnerFormPage() {
             </div>
             <div>
               <label className="block text-[10px] font-semibold tracking-widest text-on-surface-variant uppercase mb-1.5">
-                Minimum Monthly Fee (€)
+                Minimum Monthly Fee
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">€</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">EUR</span>
                 <input
                   type="number"
-                  {...register('minimumMonthlyFee', { valueAsNumber: true })}
-                  className="w-full pl-7 pr-3 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/40"
+                  {...register('defaultMinimumMonthlyFee', { valueAsNumber: true })}
+                  className="w-full pl-11 pr-3 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/40"
                   placeholder="0"
                 />
               </div>
               <p className="mt-1 text-[10px] text-on-surface-variant">Fee = MAX(% revenue, minimum)</p>
+            </div>
+            <div>
+              <label className="block text-[10px] font-semibold tracking-widest text-on-surface-variant uppercase mb-1.5">
+                Expense Approval Threshold
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">EUR</span>
+                <input
+                  type="number"
+                  {...register('expenseApprovalThreshold', { valueAsNumber: true })}
+                  className="w-full pl-11 pr-3 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/40"
+                  placeholder="100"
+                />
+              </div>
+              <p className="mt-1 text-[10px] text-on-surface-variant">Expenses above this need owner approval</p>
             </div>
           </div>
 
@@ -273,25 +375,55 @@ export default function OwnerFormPage() {
             <h3 className="font-headline text-sm font-semibold text-on-surface">Banking Information</h3>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-[10px] font-semibold tracking-widest text-on-surface-variant uppercase mb-1.5">
+              Preferred Payment Method
+            </label>
+            <select
+              {...register('preferredPaymentMethod')}
+              className="w-full px-3 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/40"
+            >
+              <option value="BANK_TRANSFER">Bank Transfer</option>
+              <option value="STRIPE">Stripe</option>
+              <option value="PAYPAL">PayPal</option>
+              <option value="CASH">Cash</option>
+              <option value="APPLE_PAY">Apple Pay</option>
+              <option value="GOOGLE_PAY">Google Pay</option>
+            </select>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-[10px] font-semibold tracking-widest text-on-surface-variant uppercase mb-1.5">
                 Bank Name
               </label>
               <input
-                {...register('bankName')}
+                {...register('bankDetails.bankName')}
                 className="w-full px-3 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-secondary/40"
                 placeholder="Bank name"
               />
             </div>
             <div>
               <label className="block text-[10px] font-semibold tracking-widest text-on-surface-variant uppercase mb-1.5">
-                IBAN / Account Number
+                Account Number
               </label>
               <input
-                {...register('bankAccount')}
+                {...register('bankDetails.accountNumber')}
                 className="w-full px-3 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-secondary/40"
-                placeholder="IBAN or account number"
+                placeholder="Account number"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[10px] font-semibold tracking-widest text-on-surface-variant uppercase mb-1.5">
+                IBAN
+              </label>
+              <input
+                {...register('bankDetails.iban')}
+                className="w-full px-3 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-secondary/40"
+                placeholder="IBAN"
               />
             </div>
             <div>
@@ -299,7 +431,7 @@ export default function OwnerFormPage() {
                 SWIFT / BIC
               </label>
               <input
-                {...register('bankSwift')}
+                {...register('bankDetails.swift')}
                 className="w-full px-3 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-secondary/40"
                 placeholder="SWIFT code"
               />
@@ -320,32 +452,34 @@ export default function OwnerFormPage() {
                 Preferred Language
               </label>
               <select
-                {...register('preferredLanguage')}
+                {...register('locale')}
                 className="w-full px-3 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/40"
               >
-                <option value="he">עברית (Hebrew)</option>
+                <option value="he">Hebrew</option>
                 <option value="en">English</option>
-                <option value="es">Español</option>
-                <option value="fr">Français</option>
+                <option value="es">Espanol</option>
+                <option value="fr">Francais</option>
                 <option value="de">Deutsch</option>
-                <option value="ru">Русский</option>
+                <option value="ru">Russian</option>
               </select>
             </div>
-            <div className="flex items-center gap-3 pt-5">
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  {...register('portalAccess')}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-surface-container-low peer-focus:ring-2 peer-focus:ring-secondary/40 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-on-surface-variant after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary peer-checked:after:bg-white" />
+            <div>
+              <label className="block text-[10px] font-semibold tracking-widest text-on-surface-variant uppercase mb-1.5">
+                Timezone
               </label>
-              <div>
-                <p className="text-sm font-medium text-on-surface">Owner Portal Access</p>
-                <p className="text-xs text-on-surface-variant">
-                  {portalAccess ? 'Owner can access client.sivanmanagment.com' : 'Portal access disabled'}
-                </p>
-              </div>
+              <select
+                {...register('timezone')}
+                className="w-full px-3 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/40"
+              >
+                <option value="Europe/Athens">Europe/Athens (Greece)</option>
+                <option value="Asia/Jerusalem">Asia/Jerusalem (Israel)</option>
+                <option value="Europe/Berlin">Europe/Berlin (Germany)</option>
+                <option value="Europe/Paris">Europe/Paris (France)</option>
+                <option value="Europe/London">Europe/London (UK)</option>
+                <option value="Europe/Madrid">Europe/Madrid (Spain)</option>
+                <option value="Europe/Moscow">Europe/Moscow (Russia)</option>
+                <option value="America/New_York">America/New_York (US East)</option>
+              </select>
             </div>
           </div>
 
@@ -363,12 +497,14 @@ export default function OwnerFormPage() {
         </div>
 
         {/* Building icon indicator for edit mode */}
-        {isEdit && (
+        {isEdit && owner && (
           <div className="p-4 rounded-xl bg-secondary/5 border border-secondary/10">
             <div className="flex items-center gap-3">
               <Building2 className="w-5 h-5 text-secondary" />
               <div>
-                <p className="text-sm font-medium text-on-surface">Properties linked to this owner</p>
+                <p className="text-sm font-medium text-on-surface">
+                  {owner._count?.properties ?? 0} properties linked to this owner
+                </p>
                 <p className="text-xs text-on-surface-variant">
                   Manage property assignments from the Properties page or the Owner Detail page.
                 </p>
@@ -388,10 +524,10 @@ export default function OwnerFormPage() {
           </button>
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSaving}
             className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white gradient-accent hover:opacity-90 transition-opacity disabled:opacity-50"
           >
-            {isSubmitting ? (
+            {isSaving ? (
               <>
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 Saving...

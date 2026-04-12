@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ArrowLeft, Save, DollarSign } from 'lucide-react';
+import { ArrowLeft, Save, DollarSign, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import apiClient from '../lib/api-client';
 
 const incomeSchema = z.object({
   type: z.enum(['booking', 'cleaning_fee', 'extra_service', 'penalty', 'other']),
@@ -23,40 +25,46 @@ const incomeSchema = z.object({
 
 type IncomeFormData = z.infer<typeof incomeSchema>;
 
-const demoProperties = [
-  { id: 'p1', name: 'Villa Athena - Chania' },
-  { id: 'p2', name: 'Sunset Suite - Rethymno' },
-  { id: 'p3', name: 'Blue Horizon Apt - Heraklion' },
-  { id: 'p4', name: 'Olive Garden Villa - Agios Nikolaos' },
-  { id: 'p5', name: 'Sea Breeze Studio - Elounda' },
-];
+interface Property {
+  id: string;
+  name: string;
+}
 
 export default function IncomeFormPage() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const queryClient = useQueryClient();
   const isEdit = Boolean(id);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // ---- Fetch existing income record for edit mode ----
+  const { data: incomeRecord, isLoading: isLoadingIncome } = useQuery({
+    queryKey: ['income', id],
+    queryFn: async () => {
+      const res = await apiClient.get(`/finance/income/${id}`);
+      return res.data.data ?? res.data;
+    },
+    enabled: isEdit,
+  });
+
+  // ---- Fetch properties for dropdown ----
+  const { data: propertiesData } = useQuery<{ data: Property[] }>({
+    queryKey: ['properties-list'],
+    queryFn: async () => {
+      const res = await apiClient.get('/properties', { params: { pageSize: 200 } });
+      return res.data;
+    },
+  });
+
+  const properties = propertiesData?.data ?? [];
 
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm<IncomeFormData>({
     resolver: zodResolver(incomeSchema),
-    defaultValues: isEdit ? {
-      type: 'booking',
-      amount: 2100,
-      currency: 'EUR',
-      date: '2026-03-22',
-      propertyId: 'p1',
-      bookingId: 'BK-2026-089',
-      source: 'airbnb',
-      guestName: 'Michael Schmidt',
-      description: 'Booking payout - 7 nights',
-      paymentMethod: 'ota_payout',
-      reference: 'PAY-AIR-20260322-89',
-      notes: 'Includes cleaning fee of €80',
-    } : {
+    defaultValues: {
       type: 'booking',
       currency: 'EUR',
       source: 'direct',
@@ -64,13 +72,74 @@ export default function IncomeFormPage() {
     },
   });
 
-  const onSubmit = async (_data: IncomeFormData) => {
-    setIsSubmitting(true);
-    await new Promise((r) => setTimeout(r, 800));
-    setIsSubmitting(false);
-    toast.success(isEdit ? 'Income record updated' : 'Income recorded successfully');
-    navigate('/finance/income');
+  // Populate form when income record loads (edit mode)
+  useEffect(() => {
+    if (incomeRecord) {
+      reset({
+        type: incomeRecord.type ?? 'booking',
+        amount: Number(incomeRecord.amount) || 0,
+        currency: incomeRecord.currency ?? 'EUR',
+        date: incomeRecord.date ? incomeRecord.date.split('T')[0] : '',
+        propertyId: incomeRecord.propertyId ?? '',
+        bookingId: incomeRecord.bookingId ?? '',
+        source: incomeRecord.source ?? 'direct',
+        guestName: incomeRecord.guestName ?? '',
+        description: incomeRecord.description ?? '',
+        paymentMethod: incomeRecord.paymentMethod ?? 'bank_transfer',
+        reference: incomeRecord.reference ?? '',
+        notes: incomeRecord.notes ?? '',
+      });
+    }
+  }, [incomeRecord, reset]);
+
+  // ---- Create / Update mutation ----
+  const mutation = useMutation({
+    mutationFn: (data: IncomeFormData) => {
+      const body = {
+        propertyId: data.propertyId,
+        bookingId: data.bookingId || undefined,
+        source: data.source,
+        amount: data.amount,
+        currency: data.currency,
+        description: data.description,
+        date: data.date,
+        notes: data.notes,
+        // Additional fields the form collects
+        type: data.type,
+        guestName: data.guestName || undefined,
+        paymentMethod: data.paymentMethod,
+        reference: data.reference || undefined,
+      };
+      if (isEdit) {
+        return apiClient.put(`/finance/income/${id}`, body);
+      }
+      return apiClient.post('/finance/income', body);
+    },
+    onSuccess: () => {
+      toast.success(isEdit ? 'Income record updated' : 'Income recorded successfully');
+      queryClient.invalidateQueries({ queryKey: ['income'] });
+      if (isEdit) {
+        queryClient.invalidateQueries({ queryKey: ['income', id] });
+      }
+      navigate('/finance/income');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Failed to save income record');
+    },
+  });
+
+  const onSubmit = (data: IncomeFormData) => {
+    mutation.mutate(data);
   };
+
+  // ---- Loading state for edit mode ----
+  if (isEdit && isLoadingIncome) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-secondary" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6 max-w-3xl mx-auto">
@@ -139,7 +208,7 @@ export default function IncomeFormPage() {
                 Amount *
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">€</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">EUR</span>
                 <input
                   type="number"
                   step="0.01"
@@ -189,7 +258,7 @@ export default function IncomeFormPage() {
                 className="w-full px-3 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/40"
               >
                 <option value="">Select property</option>
-                {demoProperties.map((p) => (
+                {properties.map((p) => (
                   <option key={p.id} value={p.id}>{p.name}</option>
                 ))}
               </select>
@@ -265,12 +334,12 @@ export default function IncomeFormPage() {
           </button>
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={mutation.isPending}
             className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white gradient-accent hover:opacity-90 transition-opacity disabled:opacity-50"
           >
-            {isSubmitting ? (
+            {mutation.isPending ? (
               <>
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin" />
                 Saving...
               </>
             ) : (
