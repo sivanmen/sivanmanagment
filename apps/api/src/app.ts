@@ -52,6 +52,7 @@ import expensesRoutes from './modules/expenses/expenses.routes';
 import whatsappRoutes from './modules/whatsapp/whatsapp.routes';
 import uploadsRoutes from './modules/uploads/uploads.routes';
 import messagingInstancesRoutes from './modules/messaging-instances/messaging-instances.routes';
+import systemSettingsRoutes from './modules/system-settings/system-settings.routes';
 import whatsappWebhookRoutes from './modules/whatsapp/whatsapp-webhook.routes';
 import { stripeWebhookHandler } from './modules/payments/stripe-webhook.controller';
 import { requestLogger } from './middleware/request-logger.middleware';
@@ -329,6 +330,7 @@ app.use('/api/v1/expenses', expensesRoutes);
 app.use('/api/v1/whatsapp', whatsappRoutes);
 app.use('/api/v1/uploads', uploadsRoutes);
 app.use('/api/v1/messaging-instances', messagingInstancesRoutes);
+app.use('/api/v1/system-settings', systemSettingsRoutes);
 
 // API Documentation
 const apiDocumentation = {

@@ -10,8 +10,12 @@ import {
   MessageCircle,
   AlertCircle,
   History,
+  Loader2,
+  RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuthStore } from '../store/auth.store';
+import { useApiQuery, useApiMutation } from '../hooks/useApi';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -20,6 +24,34 @@ import { toast } from 'sonner';
 type ApprovalTab = 'pending' | 'history';
 type ApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'EXPIRED';
 
+interface ExpenseRecord {
+  id: string;
+  propertyId: string;
+  propertyName: string;
+  category: string;
+  description: string;
+  vendor?: string | null;
+  amount: number;
+  currency: string;
+  date: string;
+  approvalStatus: string;
+  createdBy?: string | null;
+}
+
+interface ApprovalRequest {
+  id: string;
+  expenseId: string;
+  ownerId: string;
+  ownerPhone: string;
+  status: ApprovalStatus;
+  sentAt: string;
+  respondedAt?: string | null;
+  expiresAt: string;
+  reminderSentAt?: string | null;
+  expense?: ExpenseRecord;
+}
+
+// Normalized shape used for rendering cards (same visual structure as before)
 interface ApprovalItem {
   id: string;
   expenseId: string;
@@ -39,7 +71,7 @@ interface ApprovalItem {
 }
 
 // ---------------------------------------------------------------------------
-// Demo data
+// Helpers — labels & styles (unchanged)
 // ---------------------------------------------------------------------------
 
 const categoryLabels: Record<string, string> = {
@@ -49,8 +81,10 @@ const categoryLabels: Record<string, string> = {
   INSURANCE: 'Insurance',
   SUPPLIES: 'Supplies',
   TAXES: 'Taxes',
+  TAX: 'Taxes',
   MARKETING: 'Marketing',
   MANAGEMENT: 'Management',
+  MISC: 'Other',
   OTHER: 'Other',
 };
 
@@ -61,8 +95,10 @@ const categoryColors: Record<string, string> = {
   INSURANCE: 'bg-error/10 text-error',
   SUPPLIES: 'bg-outline-variant/20 text-on-surface-variant',
   TAXES: 'bg-secondary/10 text-secondary',
+  TAX: 'bg-secondary/10 text-secondary',
   MARKETING: 'bg-secondary/10 text-secondary',
   MANAGEMENT: 'bg-secondary/10 text-secondary',
+  MISC: 'bg-outline-variant/20 text-on-surface-variant',
   OTHER: 'bg-outline-variant/20 text-on-surface-variant',
 };
 
@@ -80,127 +116,30 @@ const statusLabels: Record<ApprovalStatus, string> = {
   EXPIRED: 'Expired',
 };
 
-const demoApprovals: ApprovalItem[] = [
-  {
-    id: 'ear-001',
-    expenseId: 'exp-101',
-    propertyName: 'Santorini Sunset Villa',
-    propertyId: 'p1',
-    category: 'MAINTENANCE',
-    description: 'Pool pump replacement and filter system upgrade',
-    vendor: 'Pool Masters GR',
-    amount: 780,
-    currency: 'EUR',
-    date: '2026-04-03',
-    submittedBy: 'Maria K. (Property Manager)',
-    status: 'PENDING',
-    sentAt: '2026-04-03T09:15:00Z',
-    expiresAt: '2026-04-04T09:15:00Z',
-  },
-  {
-    id: 'ear-002',
-    expenseId: 'exp-102',
-    propertyName: 'Crete Harbor Suite',
-    propertyId: 'p4',
-    category: 'SUPPLIES',
-    description: 'Premium linens and towels replacement for summer season',
-    vendor: 'Hospitality Supply GR',
-    amount: 450,
-    currency: 'EUR',
-    date: '2026-04-07',
-    submittedBy: 'Maria K. (Property Manager)',
-    status: 'PENDING',
-    sentAt: '2026-04-07T10:00:00Z',
-    expiresAt: '2026-04-08T10:00:00Z',
-  },
-  {
-    id: 'ear-003',
-    expenseId: 'exp-103',
-    propertyName: 'Athens Central Loft',
-    propertyId: 'p2',
-    category: 'MAINTENANCE',
-    description: 'Exterior paint touch-up and balcony railing repair',
-    vendor: 'Athens Painters',
-    amount: 350,
-    currency: 'EUR',
-    date: '2026-03-27',
-    submittedBy: 'Kostas D. (Maintenance)',
-    status: 'PENDING',
-    sentAt: '2026-03-27T14:00:00Z',
-    expiresAt: '2026-03-28T14:00:00Z',
-  },
-];
+// ---------------------------------------------------------------------------
+// Normalize API response into the card-friendly shape
+// ---------------------------------------------------------------------------
 
-const demoHistory: ApprovalItem[] = [
-  {
-    id: 'ear-010',
-    expenseId: 'exp-110',
-    propertyName: 'Santorini Sunset Villa',
-    propertyId: 'p1',
-    category: 'INSURANCE',
-    description: 'Annual property insurance premium renewal',
-    vendor: 'Ethniki Insurance',
-    amount: 1200,
-    currency: 'EUR',
-    date: '2026-04-06',
-    submittedBy: 'Maria K. (Property Manager)',
-    status: 'APPROVED',
-    sentAt: '2026-04-06T15:00:00Z',
-    respondedAt: '2026-04-06T16:20:00Z',
-    expiresAt: '2026-04-07T15:00:00Z',
-  },
-  {
-    id: 'ear-011',
-    expenseId: 'exp-111',
-    propertyName: 'Mykonos Beach House',
-    propertyId: 'p3',
-    category: 'UTILITIES',
-    description: 'Electricity bill - March 2026',
-    vendor: 'HEDNO S.A.',
-    amount: 320,
-    currency: 'EUR',
-    date: '2026-04-08',
-    submittedBy: 'Kostas D. (Maintenance)',
-    status: 'APPROVED',
-    sentAt: '2026-04-08T09:00:00Z',
-    respondedAt: '2026-04-08T14:30:00Z',
-    expiresAt: '2026-04-09T09:00:00Z',
-  },
-  {
-    id: 'ear-012',
-    expenseId: 'exp-112',
-    propertyName: 'Rhodes Old Town Apt',
-    propertyId: 'p5',
-    category: 'SUPPLIES',
-    description: 'Kitchen supplies restock - premium items',
-    vendor: 'Metro Cash & Carry',
-    amount: 110,
-    currency: 'EUR',
-    date: '2026-03-29',
-    submittedBy: 'Maria K. (Property Manager)',
-    status: 'REJECTED',
-    sentAt: '2026-03-29T10:00:00Z',
-    respondedAt: '2026-03-29T18:45:00Z',
-    expiresAt: '2026-03-30T10:00:00Z',
-  },
-  {
-    id: 'ear-013',
-    expenseId: 'exp-113',
-    propertyName: 'Santorini Sunset Villa',
-    propertyId: 'p1',
-    category: 'TAXES',
-    description: 'Property tax Q1 2026',
-    vendor: 'Hellenic Tax Authority',
-    amount: 520,
-    currency: 'EUR',
-    date: '2026-04-01',
-    submittedBy: 'Maria K. (Property Manager)',
-    status: 'APPROVED',
-    sentAt: '2026-04-01T08:00:00Z',
-    respondedAt: '2026-04-01T11:45:00Z',
-    expiresAt: '2026-04-02T08:00:00Z',
-  },
-];
+function toApprovalItem(req: ApprovalRequest): ApprovalItem {
+  const exp = req.expense;
+  return {
+    id: req.id,
+    expenseId: req.expenseId,
+    propertyName: exp?.propertyName ?? 'Unknown Property',
+    propertyId: exp?.propertyId ?? '',
+    category: exp?.category ?? 'OTHER',
+    description: exp?.description ?? '',
+    vendor: exp?.vendor ?? '',
+    amount: exp ? Number(exp.amount) : 0,
+    currency: exp?.currency ?? 'EUR',
+    date: exp?.date ? String(exp.date).split('T')[0] : '',
+    submittedBy: exp?.createdBy ?? 'Property Manager',
+    status: req.status as ApprovalStatus,
+    sentAt: req.sentAt,
+    respondedAt: req.respondedAt ?? undefined,
+    expiresAt: req.expiresAt,
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Component
@@ -209,41 +148,76 @@ const demoHistory: ApprovalItem[] = [
 export default function PendingApprovalsPage() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<ApprovalTab>('pending');
-  const [approvals, setApprovals] = useState(demoApprovals);
-  const [history, setHistory] = useState(demoHistory);
+  const user = useAuthStore((s) => s.user);
+  const ownerId = user?.owner?.id ?? user?.id ?? '';
 
-  const handleApprove = (id: string) => {
-    const item = approvals.find((a) => a.id === id);
-    if (!item) return;
+  // ── Queries ──
 
-    setApprovals((prev) => prev.filter((a) => a.id !== id));
-    setHistory((prev) => [
-      {
-        ...item,
-        status: 'APPROVED' as ApprovalStatus,
-        respondedAt: new Date().toISOString(),
-      },
-      ...prev,
-    ]);
-    toast.success(`Expense approved: ${item.description}`);
+  const {
+    data: pendingData,
+    isLoading: pendingLoading,
+    isError: pendingError,
+    refetch: refetchPending,
+  } = useApiQuery<ApprovalRequest[]>(
+    ['approvals', 'pending', ownerId],
+    `/expenses/approvals/owner/${ownerId}/pending`,
+    undefined,
+    { enabled: !!ownerId },
+  );
+
+  const {
+    data: historyData,
+    isLoading: historyLoading,
+    isError: historyError,
+    refetch: refetchHistory,
+  } = useApiQuery<ApprovalRequest[]>(
+    ['approvals', 'history', ownerId],
+    `/expenses/approvals/owner/${ownerId}/history`,
+    undefined,
+    { enabled: !!ownerId },
+  );
+
+  const approvals: ApprovalItem[] = (pendingData?.data ?? []).map(toApprovalItem);
+  const history: ApprovalItem[] = (historyData?.data ?? []).map(toApprovalItem);
+
+  // ── Mutations ──
+
+  const approveMutation = useApiMutation<unknown, { expenseId: string }>(
+    'post',
+    (vars) => `/expenses/${vars.expenseId}/approve-web`,
+    {
+      invalidateKeys: [
+        ['approvals', 'pending', ownerId],
+        ['approvals', 'history', ownerId],
+      ],
+      successMessage: 'Expense approved',
+    },
+  );
+
+  const rejectMutation = useApiMutation<unknown, { expenseId: string; reason?: string }>(
+    'post',
+    (vars) => `/expenses/${vars.expenseId}/reject-web`,
+    {
+      invalidateKeys: [
+        ['approvals', 'pending', ownerId],
+        ['approvals', 'history', ownerId],
+      ],
+      successMessage: 'Expense rejected',
+    },
+  );
+
+  const handleApprove = (item: ApprovalItem) => {
+    approveMutation.mutate({ expenseId: item.expenseId });
   };
 
-  const handleReject = (id: string) => {
-    const item = approvals.find((a) => a.id === id);
-    if (!item) return;
-
-    setApprovals((prev) => prev.filter((a) => a.id !== id));
-    setHistory((prev) => [
-      {
-        ...item,
-        status: 'REJECTED' as ApprovalStatus,
-        respondedAt: new Date().toISOString(),
-      },
-      ...prev,
-    ]);
-    toast.success(`Expense rejected: ${item.description}`);
+  const handleReject = (item: ApprovalItem) => {
+    rejectMutation.mutate({ expenseId: item.expenseId });
   };
 
+  // ── Derived state ──
+
+  const isLoading = activeTab === 'pending' ? pendingLoading : historyLoading;
+  const isError = activeTab === 'pending' ? pendingError : historyError;
   const displayItems = activeTab === 'pending' ? approvals : history;
 
   return (
@@ -273,7 +247,9 @@ export default function PendingApprovalsPage() {
               <Clock className="w-3.5 h-3.5 text-warning" />
             </div>
           </div>
-          <p className="font-headline text-xl font-bold text-on-surface">{approvals.length}</p>
+          <p className="font-headline text-xl font-bold text-on-surface">
+            {pendingLoading ? '...' : approvals.length}
+          </p>
           <p className="text-[10px] text-on-surface-variant mt-1">
             {'\u20AC'}
             {approvals.reduce((sum, a) => sum + a.amount, 0).toLocaleString()} total
@@ -289,7 +265,7 @@ export default function PendingApprovalsPage() {
             </div>
           </div>
           <p className="font-headline text-xl font-bold text-on-surface">
-            {history.filter((h) => h.status === 'APPROVED').length}
+            {historyLoading ? '...' : history.filter((h) => h.status === 'APPROVED').length}
           </p>
         </div>
         <div className="bg-surface-container-lowest rounded-xl px-5 py-4 ambient-shadow">
@@ -302,7 +278,7 @@ export default function PendingApprovalsPage() {
             </div>
           </div>
           <p className="font-headline text-xl font-bold text-on-surface">
-            {history.filter((h) => h.status === 'REJECTED').length}
+            {historyLoading ? '...' : history.filter((h) => h.status === 'REJECTED').length}
           </p>
         </div>
       </div>
@@ -338,8 +314,39 @@ export default function PendingApprovalsPage() {
         </button>
       </div>
 
+      {/* Loading state */}
+      {isLoading && (
+        <div className="bg-surface-container-lowest rounded-xl p-8 ambient-shadow text-center">
+          <Loader2 className="w-8 h-8 text-secondary animate-spin mx-auto mb-3" />
+          <p className="text-sm text-on-surface-variant">Loading approvals...</p>
+        </div>
+      )}
+
+      {/* Error state */}
+      {isError && !isLoading && (
+        <div className="bg-surface-container-lowest rounded-xl p-8 ambient-shadow text-center">
+          <div className="w-12 h-12 rounded-full bg-error/10 flex items-center justify-center mx-auto mb-3">
+            <AlertCircle className="w-6 h-6 text-error" />
+          </div>
+          <p className="text-sm font-medium text-on-surface">Failed to load approvals</p>
+          <p className="text-xs text-on-surface-variant mt-1">
+            Please check your connection and try again.
+          </p>
+          <button
+            onClick={() => {
+              refetchPending();
+              refetchHistory();
+            }}
+            className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-secondary bg-secondary/10 hover:bg-secondary/20 transition-colors"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Cards */}
-      {displayItems.length === 0 ? (
+      {!isLoading && !isError && displayItems.length === 0 ? (
         <div className="bg-surface-container-lowest rounded-xl p-8 ambient-shadow text-center">
           <div className="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-3">
             <Check className="w-6 h-6 text-success" />
@@ -353,99 +360,117 @@ export default function PendingApprovalsPage() {
               : 'Your approved and rejected expenses will appear here.'}
           </p>
         </div>
-      ) : (
+      ) : !isLoading && !isError && (
         <div className="space-y-4">
-          {displayItems.map((item) => (
-            <div
-              key={item.id}
-              className="bg-surface-container-lowest rounded-xl ambient-shadow overflow-hidden border border-outline/5"
-            >
-              {/* Card header */}
-              <div className="flex items-start justify-between p-4 pb-0">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center">
-                    <Building2 className="w-5 h-5 text-secondary" />
+          {displayItems.map((item) => {
+            const isMutating =
+              (approveMutation.isPending && approveMutation.variables?.expenseId === item.expenseId) ||
+              (rejectMutation.isPending && rejectMutation.variables?.expenseId === item.expenseId);
+
+            return (
+              <div
+                key={item.id}
+                className={`bg-surface-container-lowest rounded-xl ambient-shadow overflow-hidden border border-outline/5 ${
+                  isMutating ? 'opacity-60 pointer-events-none' : ''
+                }`}
+              >
+                {/* Card header */}
+                <div className="flex items-start justify-between p-4 pb-0">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center">
+                      <Building2 className="w-5 h-5 text-secondary" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-on-surface">{item.propertyName}</h3>
+                      <span
+                        className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-wider mt-1 ${
+                          categoryColors[item.category] ?? 'bg-outline-variant/20 text-on-surface-variant'
+                        }`}
+                      >
+                        {categoryLabels[item.category] ?? item.category}
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-on-surface">{item.propertyName}</h3>
+                  <div className="text-end">
+                    <p className="font-headline text-lg font-bold text-error">
+                      {'\u20AC'}{item.amount.toLocaleString()}
+                    </p>
                     <span
                       className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-wider mt-1 ${
-                        categoryColors[item.category] ?? 'bg-outline-variant/20 text-on-surface-variant'
+                        statusStyles[item.status]
                       }`}
                     >
-                      {categoryLabels[item.category] ?? item.category}
+                      {statusLabels[item.status]}
                     </span>
                   </div>
                 </div>
-                <div className="text-end">
-                  <p className="font-headline text-lg font-bold text-error">
-                    {'\u20AC'}{item.amount.toLocaleString()}
-                  </p>
-                  <span
-                    className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-wider mt-1 ${
-                      statusStyles[item.status]
-                    }`}
-                  >
-                    {statusLabels[item.status]}
-                  </span>
-                </div>
-              </div>
 
-              {/* Card body */}
-              <div className="p-4 pt-3 space-y-2">
-                <p className="text-sm text-on-surface">{item.description}</p>
+                {/* Card body */}
+                <div className="p-4 pt-3 space-y-2">
+                  <p className="text-sm text-on-surface">{item.description}</p>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-on-surface-variant">
-                  {item.vendor && (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-on-surface-variant">
+                    {item.vendor && (
+                      <div className="flex items-center gap-1.5">
+                        <Receipt className="w-3 h-3" />
+                        <span>{item.vendor}</span>
+                      </div>
+                    )}
                     <div className="flex items-center gap-1.5">
-                      <Receipt className="w-3 h-3" />
-                      <span>{item.vendor}</span>
+                      <Clock className="w-3 h-3" />
+                      <span>{item.date}</span>
                     </div>
+                    <div className="flex items-center gap-1.5">
+                      <User className="w-3 h-3" />
+                      <span>{item.submittedBy}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <MessageCircle className="w-3 h-3" />
+                      <span>
+                        Sent {new Date(item.sentAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+
+                  {item.respondedAt && (
+                    <p className="text-[10px] text-on-surface-variant">
+                      Responded: {new Date(item.respondedAt).toLocaleString()}
+                    </p>
                   )}
-                  <div className="flex items-center gap-1.5">
-                    <Clock className="w-3 h-3" />
-                    <span>{item.date}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <User className="w-3 h-3" />
-                    <span>{item.submittedBy}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <MessageCircle className="w-3 h-3" />
-                    <span>
-                      Sent {new Date(item.sentAt).toLocaleDateString()}
-                    </span>
-                  </div>
                 </div>
 
-                {item.respondedAt && (
-                  <p className="text-[10px] text-on-surface-variant">
-                    Responded: {new Date(item.respondedAt).toLocaleString()}
-                  </p>
+                {/* Card actions */}
+                {item.status === 'PENDING' && (
+                  <div className="flex items-center gap-2 px-4 py-3 border-t border-outline/5 bg-surface-container-low/30">
+                    <button
+                      onClick={() => handleApprove(item)}
+                      disabled={isMutating}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-white bg-success hover:bg-success/90 transition-colors disabled:opacity-50"
+                    >
+                      {approveMutation.isPending && approveMutation.variables?.expenseId === item.expenseId ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Check className="w-4 h-4" />
+                      )}
+                      Approve
+                    </button>
+                    <button
+                      onClick={() => handleReject(item)}
+                      disabled={isMutating}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-white bg-error hover:bg-error/90 transition-colors disabled:opacity-50"
+                    >
+                      {rejectMutation.isPending && rejectMutation.variables?.expenseId === item.expenseId ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <X className="w-4 h-4" />
+                      )}
+                      Reject
+                    </button>
+                  </div>
                 )}
               </div>
-
-              {/* Card actions */}
-              {item.status === 'PENDING' && (
-                <div className="flex items-center gap-2 px-4 py-3 border-t border-outline/5 bg-surface-container-low/30">
-                  <button
-                    onClick={() => handleApprove(item.id)}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-white bg-success hover:bg-success/90 transition-colors"
-                  >
-                    <Check className="w-4 h-4" />
-                    Approve
-                  </button>
-                  <button
-                    onClick={() => handleReject(item.id)}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-white bg-error hover:bg-error/90 transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                    Reject
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

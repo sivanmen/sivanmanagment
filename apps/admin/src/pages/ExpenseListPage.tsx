@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Plus,
   Search,
@@ -9,29 +10,70 @@ import {
   Check,
   X,
   Clock,
-  AlertCircle,
   DollarSign,
   MessageCircle,
   Send,
   User,
+  Loader2,
+  AlertTriangle,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import apiClient from '../lib/api-client';
 
-type ApprovalStatus = 'AUTO_APPROVED' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'PENDING_WHATSAPP';
+type ApprovalStatus = 'AUTO_APPROVED' | 'PENDING' | 'APPROVED' | 'REJECTED';
 
-interface ExpenseRecord {
+interface Expense {
   id: string;
-  date: string;
-  propertyName: string;
-  propertyId: string;
+  propertyId: string | null;
   category: string;
+  amount: string | number;
+  currency: string;
   description: string;
-  vendor: string;
-  amount: number;
+  date: string;
+  vendor: string | null;
+  receiptUrl: string | null;
   approvalStatus: ApprovalStatus;
-  approvedBy?: string;
-  approvedAt?: string;
-  whatsappSentAt?: string;
+  approvedAt: string | null;
+  whatsappApprovalMsgId: string | null;
+  isRecurring: boolean;
+  notes: string | null;
+  createdAt: string;
+  property: {
+    id: string;
+    name: string;
+    internalCode: string | null;
+  } | null;
+  approvedBy: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  } | null;
+}
+
+interface ExpensesResponse {
+  data: Expense[];
+  meta: {
+    page: number;
+    perPage: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+interface StatsResponse {
+  data: {
+    totalExpenses: number;
+    count: number;
+    averageExpense: number;
+    byCategory: Record<string, number>;
+    byProperty: Record<string, number>;
+    byStatus: {
+      pending: number;
+      approved: number;
+      auto_approved: number;
+      rejected: number;
+    };
+  };
 }
 
 const expenseCategories = [
@@ -41,8 +83,10 @@ const expenseCategories = [
   'CLEANING',
   'INSURANCE',
   'SUPPLIES',
-  'TAXES',
-  'OTHER',
+  'TAX',
+  'MARKETING',
+  'MANAGEMENT',
+  'MISC',
 ] as const;
 
 const categoryLabels: Record<string, string> = {
@@ -51,8 +95,10 @@ const categoryLabels: Record<string, string> = {
   CLEANING: 'Cleaning',
   INSURANCE: 'Insurance',
   SUPPLIES: 'Supplies',
-  TAXES: 'Taxes',
-  OTHER: 'Other',
+  TAX: 'Taxes',
+  MARKETING: 'Marketing',
+  MANAGEMENT: 'Management',
+  MISC: 'Other',
 };
 
 const categoryColors: Record<string, string> = {
@@ -61,11 +107,13 @@ const categoryColors: Record<string, string> = {
   CLEANING: 'bg-warning/10 text-warning',
   INSURANCE: 'bg-error/10 text-error',
   SUPPLIES: 'bg-outline-variant/20 text-on-surface-variant',
-  TAXES: 'bg-secondary/10 text-secondary',
-  OTHER: 'bg-outline-variant/20 text-on-surface-variant',
+  TAX: 'bg-secondary/10 text-secondary',
+  MARKETING: 'bg-blue-500/10 text-blue-400',
+  MANAGEMENT: 'bg-purple-500/10 text-purple-400',
+  MISC: 'bg-outline-variant/20 text-on-surface-variant',
 };
 
-const approvalStatusStyles: Record<ApprovalStatus, string> = {
+const approvalStatusStyles: Record<string, string> = {
   AUTO_APPROVED: 'bg-success/10 text-success',
   PENDING: 'bg-warning/10 text-warning',
   PENDING_WHATSAPP: 'bg-emerald-500/10 text-emerald-400',
@@ -73,7 +121,7 @@ const approvalStatusStyles: Record<ApprovalStatus, string> = {
   REJECTED: 'bg-error/10 text-error',
 };
 
-const approvalStatusLabels: Record<ApprovalStatus, string> = {
+const approvalStatusLabels: Record<string, string> = {
   AUTO_APPROVED: 'Auto-Approved',
   PENDING: 'Pending',
   PENDING_WHATSAPP: 'Pending WhatsApp',
@@ -81,75 +129,129 @@ const approvalStatusLabels: Record<ApprovalStatus, string> = {
   REJECTED: 'Rejected',
 };
 
-const demoProperties = ['All', 'Santorini Sunset Villa', 'Athens Central Loft', 'Mykonos Beach House', 'Crete Harbor Suite', 'Rhodes Old Town Apt'];
-const approvalFilters = ['All', 'PENDING', 'PENDING_WHATSAPP', 'APPROVED', 'REJECTED', 'AUTO_APPROVED'] as const;
+const approvalFilters = ['All', 'PENDING', 'APPROVED', 'REJECTED', 'AUTO_APPROVED'] as const;
 
-const demoExpenses: ExpenseRecord[] = [
-  { id: '1', date: '2026-04-10', propertyName: 'Santorini Sunset Villa', propertyId: 'p1', category: 'MAINTENANCE', description: 'Plumber - kitchen faucet repair', vendor: 'Nikos Plumbing Co.', amount: 180, approvalStatus: 'PENDING' },
-  { id: '2', date: '2026-04-09', propertyName: 'Athens Central Loft', propertyId: 'p2', category: 'CLEANING', description: 'Deep cleaning after guest checkout', vendor: 'SparkClean Athens', amount: 95, approvalStatus: 'AUTO_APPROVED' },
-  { id: '3', date: '2026-04-08', propertyName: 'Mykonos Beach House', propertyId: 'p3', category: 'UTILITIES', description: 'Electricity bill - March 2026', vendor: 'HEDNO S.A.', amount: 320, approvalStatus: 'APPROVED', approvedBy: 'Dimitris P.', approvedAt: '2026-04-08T14:30:00Z' },
-  { id: '4', date: '2026-04-07', propertyName: 'Crete Harbor Suite', propertyId: 'p4', category: 'SUPPLIES', description: 'Linens and towels replacement', vendor: 'Hospitality Supply GR', amount: 450, approvalStatus: 'PENDING_WHATSAPP', whatsappSentAt: '2026-04-07T10:00:00Z' },
-  { id: '5', date: '2026-04-06', propertyName: 'Santorini Sunset Villa', propertyId: 'p1', category: 'INSURANCE', description: 'Annual property insurance premium', vendor: 'Ethniki Insurance', amount: 1200, approvalStatus: 'APPROVED', approvedBy: 'Owner via WhatsApp', approvedAt: '2026-04-06T16:20:00Z' },
-  { id: '6', date: '2026-04-05', propertyName: 'Rhodes Old Town Apt', propertyId: 'p5', category: 'MAINTENANCE', description: 'AC unit servicing', vendor: 'Cool Air Services', amount: 150, approvalStatus: 'AUTO_APPROVED' },
-  { id: '7', date: '2026-04-04', propertyName: 'Athens Central Loft', propertyId: 'p2', category: 'UTILITIES', description: 'Water bill - Q1 2026', vendor: 'EYDAP S.A.', amount: 85, approvalStatus: 'AUTO_APPROVED' },
-  { id: '8', date: '2026-04-03', propertyName: 'Mykonos Beach House', propertyId: 'p3', category: 'MAINTENANCE', description: 'Pool pump replacement', vendor: 'Pool Masters GR', amount: 780, approvalStatus: 'PENDING_WHATSAPP', whatsappSentAt: '2026-04-03T09:15:00Z' },
-  { id: '9', date: '2026-04-02', propertyName: 'Crete Harbor Suite', propertyId: 'p4', category: 'CLEANING', description: 'Monthly pest control', vendor: 'PestGuard Crete', amount: 60, approvalStatus: 'AUTO_APPROVED' },
-  { id: '10', date: '2026-04-01', propertyName: 'Santorini Sunset Villa', propertyId: 'p1', category: 'TAXES', description: 'Property tax Q1 2026', vendor: 'Hellenic Tax Authority', amount: 520, approvalStatus: 'APPROVED', approvedBy: 'Owner via WhatsApp', approvedAt: '2026-04-01T11:45:00Z' },
-  { id: '11', date: '2026-03-29', propertyName: 'Rhodes Old Town Apt', propertyId: 'p5', category: 'SUPPLIES', description: 'Kitchen supplies restock', vendor: 'Metro Cash & Carry', amount: 110, approvalStatus: 'REJECTED' },
-  { id: '12', date: '2026-03-27', propertyName: 'Athens Central Loft', propertyId: 'p2', category: 'MAINTENANCE', description: 'Exterior paint touch-up', vendor: 'Athens Painters', amount: 350, approvalStatus: 'PENDING' },
-];
+/** Derive a display-level status: if PENDING + has a whatsapp msg id, show as PENDING_WHATSAPP */
+function getDisplayStatus(expense: Expense): string {
+  if (expense.approvalStatus === 'PENDING' && expense.whatsappApprovalMsgId) {
+    return 'PENDING_WHATSAPP';
+  }
+  return expense.approvalStatus;
+}
 
 export default function ExpenseListPage() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
-  const [propertyFilter, setPropertyFilter] = useState('All');
+  const [propertyFilter, setPropertyFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [approvalFilter, setApprovalFilter] = useState('All');
-  const [monthFilter, setMonthFilter] = useState('All');
   const [yearFilter, setYearFilter] = useState('2026');
   const [page, setPage] = useState(1);
-  const [expenses, setExpenses] = useState(demoExpenses);
   const pageSize = 8;
 
-  const filtered = expenses.filter((rec) => {
-    if (propertyFilter !== 'All' && rec.propertyName !== propertyFilter) return false;
-    if (categoryFilter !== 'All' && rec.category !== categoryFilter) return false;
-    if (approvalFilter !== 'All' && rec.approvalStatus !== approvalFilter) return false;
-    if (search && !rec.description.toLowerCase().includes(search.toLowerCase()) && !rec.vendor.toLowerCase().includes(search.toLowerCase())) return false;
-    return true;
+  // ── Fetch properties for filter dropdown ──
+  const { data: propertiesData } = useQuery<{ data: { id: string; name: string }[] }>({
+    queryKey: ['properties-list-minimal'],
+    queryFn: async () => {
+      const res = await apiClient.get('/properties', { params: { pageSize: 100 } });
+      return res.data;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+  const properties = propertiesData?.data ?? [];
+
+  // ── Fetch expenses with server-side filtering + pagination ──
+  const { data: expensesData, isLoading, isError, error } = useQuery<ExpensesResponse>({
+    queryKey: ['expenses', { search, propertyId: propertyFilter, category: categoryFilter, approvalStatus: approvalFilter, year: yearFilter, page, limit: pageSize }],
+    queryFn: async () => {
+      const params: Record<string, string | number> = { page, limit: pageSize, sortBy: 'date', sortOrder: 'desc' };
+      if (search) params.search = search;
+      if (propertyFilter !== 'all') params.propertyId = propertyFilter;
+      if (categoryFilter !== 'All') params.category = categoryFilter;
+      if (approvalFilter !== 'All') params.approvalStatus = approvalFilter;
+      // Date range based on year filter
+      params.startDate = `${yearFilter}-01-01`;
+      params.endDate = `${yearFilter}-12-31`;
+      const res = await apiClient.get('/expenses', { params });
+      return res.data;
+    },
   });
 
-  const totalPages = Math.ceil(filtered.length / pageSize);
-  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
+  const expenses = expensesData?.data ?? [];
+  const totalPages = expensesData?.meta?.totalPages ?? 1;
+  const totalRecords = expensesData?.meta?.total ?? 0;
 
-  const totalExpenses = filtered.reduce((sum, r) => sum + r.amount, 0);
-  const pendingCount = expenses.filter((r) => r.approvalStatus === 'PENDING').length;
-  const pendingWhatsAppCount = expenses.filter((r) => r.approvalStatus === 'PENDING_WHATSAPP').length;
-  const approvedThisMonth = expenses.filter((r) => r.approvalStatus === 'APPROVED' || r.approvalStatus === 'AUTO_APPROVED').length;
+  // ── Fetch stats ──
+  const { data: statsData } = useQuery<StatsResponse>({
+    queryKey: ['expenses-stats', { propertyId: propertyFilter, year: yearFilter }],
+    queryFn: async () => {
+      const params: Record<string, string> = {
+        startDate: `${yearFilter}-01-01`,
+        endDate: `${yearFilter}-12-31`,
+      };
+      if (propertyFilter !== 'all') params.propertyId = propertyFilter;
+      const res = await apiClient.get('/expenses/stats', { params });
+      return res.data;
+    },
+  });
 
-  const handleApprove = (id: string) => {
-    setExpenses((prev) =>
-      prev.map((e) => (e.id === id ? { ...e, approvalStatus: 'APPROVED' as ApprovalStatus, approvedBy: 'Admin', approvedAt: new Date().toISOString() } : e)),
-    );
-    toast.success('Expense approved');
-  };
+  const stats = statsData?.data;
+  const totalExpenses = stats?.totalExpenses ?? 0;
+  const pendingCount = stats?.byStatus?.pending ?? 0;
+  const approvedCount = (stats?.byStatus?.approved ?? 0) + (stats?.byStatus?.auto_approved ?? 0);
 
-  const handleReject = (id: string) => {
-    setExpenses((prev) =>
-      prev.map((e) => (e.id === id ? { ...e, approvalStatus: 'REJECTED' as ApprovalStatus } : e)),
-    );
-    toast.success('Expense rejected');
-  };
+  // ── Approve mutation ──
+  const approveMutation = useMutation({
+    mutationFn: (id: string) => apiClient.post(`/expenses/${id}/approve`),
+    onSuccess: () => {
+      toast.success('Expense approved');
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['expenses-stats'] });
+    },
+    onError: () => {
+      toast.error('Failed to approve expense');
+    },
+  });
 
-  const handleRequestApproval = (id: string) => {
-    setExpenses((prev) =>
-      prev.map((e) => (e.id === id ? { ...e, approvalStatus: 'PENDING_WHATSAPP' as ApprovalStatus, whatsappSentAt: new Date().toISOString() } : e)),
-    );
-    toast.success('Approval request sent via WhatsApp');
-  };
+  // ── Reject mutation ──
+  const rejectMutation = useMutation({
+    mutationFn: (id: string) => apiClient.post(`/expenses/${id}/reject`),
+    onSuccess: () => {
+      toast.success('Expense rejected');
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['expenses-stats'] });
+    },
+    onError: () => {
+      toast.error('Failed to reject expense');
+    },
+  });
 
-  const months = ['All', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  // ── Request WhatsApp approval mutation ──
+  const requestApprovalMutation = useMutation({
+    mutationFn: (id: string) => apiClient.post(`/expenses/${id}/request-approval`),
+    onSuccess: () => {
+      toast.success('Approval request sent via WhatsApp');
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+    },
+    onError: () => {
+      toast.error('Failed to send WhatsApp approval request');
+    },
+  });
+
+  // ── Delete mutation ──
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => apiClient.delete(`/expenses/${id}`),
+    onSuccess: () => {
+      toast.success('Expense deleted');
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['expenses-stats'] });
+    },
+    onError: () => {
+      toast.error('Failed to delete expense');
+    },
+  });
+
   const years = ['2026', '2025', '2024'];
 
   return (
@@ -196,9 +298,10 @@ export default function ExpenseListPage() {
           }}
           className="px-4 py-2.5 rounded-lg bg-surface-container-lowest ambient-shadow text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30 transition-all"
         >
-          {demoProperties.map((p) => (
-            <option key={p} value={p}>
-              {p === 'All' ? 'All Properties' : p}
+          <option value="all">All Properties</option>
+          {properties.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
             </option>
           ))}
         </select>
@@ -226,7 +329,7 @@ export default function ExpenseListPage() {
         >
           {approvalFilters.map((a) => (
             <option key={a} value={a}>
-              {a === 'All' ? 'All Statuses' : approvalStatusLabels[a as ApprovalStatus] ?? a}
+              {a === 'All' ? 'All Statuses' : approvalStatusLabels[a] ?? a}
             </option>
           ))}
         </select>
@@ -275,166 +378,213 @@ export default function ExpenseListPage() {
         <div className="bg-surface-container-lowest rounded-xl px-5 py-4 ambient-shadow">
           <div className="flex items-center justify-between mb-2">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
-              Awaiting WhatsApp
+              Total Records
             </p>
             <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center">
               <MessageCircle className="w-3.5 h-3.5 text-emerald-400" />
             </div>
           </div>
-          <p className="font-headline text-xl font-bold text-on-surface">{pendingWhatsAppCount}</p>
+          <p className="font-headline text-xl font-bold text-on-surface">{stats?.count ?? 0}</p>
         </div>
         <div className="bg-surface-container-lowest rounded-xl px-5 py-4 ambient-shadow">
           <div className="flex items-center justify-between mb-2">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
-              Approved This Month
+              Approved This Year
             </p>
             <div className="w-7 h-7 rounded-lg bg-success/10 flex items-center justify-center">
               <Check className="w-3.5 h-3.5 text-success" />
             </div>
           </div>
-          <p className="font-headline text-xl font-bold text-on-surface">{approvedThisMonth}</p>
+          <p className="font-headline text-xl font-bold text-on-surface">{approvedCount}</p>
         </div>
       </div>
 
+      {/* Loading state */}
+      {isLoading && (
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="w-8 h-8 animate-spin text-secondary" />
+          <span className="ml-3 text-on-surface-variant">Loading expenses...</span>
+        </div>
+      )}
+
+      {/* Error state */}
+      {isError && (
+        <div className="flex flex-col items-center justify-center py-16 text-error">
+          <AlertTriangle className="w-10 h-10 mb-3" />
+          <p className="text-sm font-medium">Failed to load expenses</p>
+          <p className="text-xs text-on-surface-variant mt-1">
+            {(error as Error)?.message ?? 'Unknown error'}
+          </p>
+        </div>
+      )}
+
+      {/* Empty state */}
+      {!isLoading && !isError && expenses.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-16 text-on-surface-variant">
+          <DollarSign className="w-10 h-10 mb-3 opacity-40" />
+          <p className="text-sm font-medium">No expenses found</p>
+          <p className="text-xs mt-1">Try adjusting your filters or add a new expense.</p>
+        </div>
+      )}
+
       {/* Table */}
-      <div className="bg-surface-container-lowest rounded-xl ambient-shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-outline-variant/20">
-                <th className="text-start py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  Date
-                </th>
-                <th className="text-start py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  Property
-                </th>
-                <th className="text-start py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  {t('finance.category')}
-                </th>
-                <th className="text-start py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  Description
-                </th>
-                <th className="text-start py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  {t('finance.vendor')}
-                </th>
-                <th className="text-end py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  {t('finance.amount')}
-                </th>
-                <th className="text-start py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  {t('finance.approval')}
-                </th>
-                <th className="text-center py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginated.map((rec) => (
-                <tr
-                  key={rec.id}
-                  className="border-b border-outline-variant/10 hover:bg-surface-container-low transition-colors"
-                >
-                  <td className="py-3 px-4 text-sm text-on-surface-variant">{rec.date}</td>
-                  <td className="py-3 px-4 text-sm font-medium text-on-surface">
-                    {rec.propertyName}
-                  </td>
-                  <td className="py-3 px-4">
-                    <span
-                      className={`px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider ${categoryColors[rec.category] ?? 'bg-outline-variant/20 text-on-surface-variant'}`}
+      {!isLoading && !isError && expenses.length > 0 && (
+        <div className="bg-surface-container-lowest rounded-xl ambient-shadow overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-outline-variant/20">
+                  <th className="text-start py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                    Date
+                  </th>
+                  <th className="text-start py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                    Property
+                  </th>
+                  <th className="text-start py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                    {t('finance.category')}
+                  </th>
+                  <th className="text-start py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                    Description
+                  </th>
+                  <th className="text-start py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                    {t('finance.vendor')}
+                  </th>
+                  <th className="text-end py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                    {t('finance.amount')}
+                  </th>
+                  <th className="text-start py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                    {t('finance.approval')}
+                  </th>
+                  <th className="text-center py-3 px-4 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {expenses.map((rec) => {
+                  const displayStatus = getDisplayStatus(rec);
+                  const amount = typeof rec.amount === 'string' ? parseFloat(rec.amount) : rec.amount;
+                  const approverName = rec.approvedBy
+                    ? `${rec.approvedBy.firstName} ${rec.approvedBy.lastName}`
+                    : rec.whatsappApprovalMsgId && rec.approvalStatus === 'APPROVED'
+                      ? 'Owner via WhatsApp'
+                      : undefined;
+
+                  return (
+                    <tr
+                      key={rec.id}
+                      className="border-b border-outline-variant/10 hover:bg-surface-container-low transition-colors"
                     >
-                      {categoryLabels[rec.category] ?? rec.category}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-sm text-on-surface-variant max-w-[200px] truncate">
-                    {rec.description}
-                  </td>
-                  <td className="py-3 px-4 text-sm text-on-surface-variant">{rec.vendor}</td>
-                  <td className="py-3 px-4 text-sm text-end font-semibold text-error">
-                    {'\u20AC'}{rec.amount.toLocaleString()}
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="flex flex-col gap-1">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider w-fit ${approvalStatusStyles[rec.approvalStatus]}`}
-                      >
-                        {rec.approvalStatus === 'PENDING_WHATSAPP' && (
-                          <MessageCircle className="w-3 h-3" />
-                        )}
-                        {approvalStatusLabels[rec.approvalStatus]}
-                      </span>
-                      {rec.approvedBy && (
-                        <span className="flex items-center gap-1 text-[10px] text-on-surface-variant">
-                          <User className="w-2.5 h-2.5" />
-                          {rec.approvedBy}
-                          {rec.approvedAt && (
-                            <span className="opacity-60">
-                              {new Date(rec.approvedAt).toLocaleDateString()}
+                      <td className="py-3 px-4 text-sm text-on-surface-variant">
+                        {new Date(rec.date).toLocaleDateString('en-CA')}
+                      </td>
+                      <td className="py-3 px-4 text-sm font-medium text-on-surface">
+                        {rec.property?.name ?? '-'}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span
+                          className={`px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider ${categoryColors[rec.category] ?? 'bg-outline-variant/20 text-on-surface-variant'}`}
+                        >
+                          {categoryLabels[rec.category] ?? rec.category}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-sm text-on-surface-variant max-w-[200px] truncate">
+                        {rec.description}
+                      </td>
+                      <td className="py-3 px-4 text-sm text-on-surface-variant">{rec.vendor ?? '-'}</td>
+                      <td className="py-3 px-4 text-sm text-end font-semibold text-error">
+                        {'\u20AC'}{amount.toLocaleString()}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex flex-col gap-1">
+                          <span
+                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider w-fit ${approvalStatusStyles[displayStatus] ?? approvalStatusStyles.PENDING}`}
+                          >
+                            {displayStatus === 'PENDING_WHATSAPP' && (
+                              <MessageCircle className="w-3 h-3" />
+                            )}
+                            {approvalStatusLabels[displayStatus] ?? displayStatus}
+                          </span>
+                          {approverName && (
+                            <span className="flex items-center gap-1 text-[10px] text-on-surface-variant">
+                              <User className="w-2.5 h-2.5" />
+                              {approverName}
+                              {rec.approvedAt && (
+                                <span className="opacity-60">
+                                  {new Date(rec.approvedAt).toLocaleDateString()}
+                                </span>
+                              )}
                             </span>
                           )}
-                        </span>
-                      )}
-                      {rec.whatsappSentAt && rec.approvalStatus === 'PENDING_WHATSAPP' && (
-                        <span className="text-[10px] text-emerald-400/70">
-                          Sent {new Date(rec.whatsappSentAt).toLocaleString()}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="py-3 px-4">
-                    {rec.approvalStatus === 'PENDING' ? (
-                      <div className="flex items-center justify-center gap-1 flex-wrap">
-                        <button
-                          onClick={() => handleApprove(rec.id)}
-                          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold text-success bg-success/10 hover:bg-success/20 transition-colors"
-                        >
-                          <Check className="w-3 h-3" />
-                          {t('finance.approve')}
-                        </button>
-                        <button
-                          onClick={() => handleReject(rec.id)}
-                          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold text-error bg-error/10 hover:bg-error/20 transition-colors"
-                        >
-                          <X className="w-3 h-3" />
-                          {t('finance.reject')}
-                        </button>
-                        {rec.amount > 300 && (
-                          <button
-                            onClick={() => handleRequestApproval(rec.id)}
-                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors"
-                          >
-                            <Send className="w-3 h-3" />
-                            WhatsApp
-                          </button>
+                          {displayStatus === 'PENDING_WHATSAPP' && (
+                            <span className="text-[10px] text-emerald-400/70">
+                              WhatsApp approval sent
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        {rec.approvalStatus === 'PENDING' && !rec.whatsappApprovalMsgId ? (
+                          <div className="flex items-center justify-center gap-1 flex-wrap">
+                            <button
+                              onClick={() => approveMutation.mutate(rec.id)}
+                              disabled={approveMutation.isPending}
+                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold text-success bg-success/10 hover:bg-success/20 transition-colors disabled:opacity-50"
+                            >
+                              <Check className="w-3 h-3" />
+                              {t('finance.approve')}
+                            </button>
+                            <button
+                              onClick={() => rejectMutation.mutate(rec.id)}
+                              disabled={rejectMutation.isPending}
+                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold text-error bg-error/10 hover:bg-error/20 transition-colors disabled:opacity-50"
+                            >
+                              <X className="w-3 h-3" />
+                              {t('finance.reject')}
+                            </button>
+                            {amount > 300 && (
+                              <button
+                                onClick={() => requestApprovalMutation.mutate(rec.id)}
+                                disabled={requestApprovalMutation.isPending}
+                                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors disabled:opacity-50"
+                              >
+                                <Send className="w-3 h-3" />
+                                WhatsApp
+                              </button>
+                            )}
+                          </div>
+                        ) : displayStatus === 'PENDING_WHATSAPP' ? (
+                          <div className="flex items-center justify-center gap-1 flex-wrap">
+                            <button
+                              onClick={() => approveMutation.mutate(rec.id)}
+                              disabled={approveMutation.isPending}
+                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold text-success bg-success/10 hover:bg-success/20 transition-colors disabled:opacity-50"
+                            >
+                              <Check className="w-3 h-3" />
+                              {t('finance.approve')}
+                            </button>
+                            <button
+                              onClick={() => rejectMutation.mutate(rec.id)}
+                              disabled={rejectMutation.isPending}
+                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold text-error bg-error/10 hover:bg-error/20 transition-colors disabled:opacity-50"
+                            >
+                              <X className="w-3 h-3" />
+                              {t('finance.reject')}
+                            </button>
+                            <span className="text-[10px] text-on-surface-variant italic">Awaiting reply</span>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-on-surface-variant text-center block">-</span>
                         )}
-                      </div>
-                    ) : rec.approvalStatus === 'PENDING_WHATSAPP' ? (
-                      <div className="flex items-center justify-center gap-1 flex-wrap">
-                        <button
-                          onClick={() => handleApprove(rec.id)}
-                          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold text-success bg-success/10 hover:bg-success/20 transition-colors"
-                        >
-                          <Check className="w-3 h-3" />
-                          {t('finance.approve')}
-                        </button>
-                        <button
-                          onClick={() => handleReject(rec.id)}
-                          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold text-error bg-error/10 hover:bg-error/20 transition-colors"
-                        >
-                          <X className="w-3 h-3" />
-                          {t('finance.reject')}
-                        </button>
-                        <span className="text-[10px] text-on-surface-variant italic">Awaiting reply</span>
-                      </div>
-                    ) : (
-                      <span className="text-xs text-on-surface-variant text-center block">-</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Pagination */}
       {totalPages > 1 && (

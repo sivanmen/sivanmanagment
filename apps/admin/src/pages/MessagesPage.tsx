@@ -1,5 +1,7 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import {
   Plus,
   Search,
@@ -10,34 +12,96 @@ import {
   Send,
   ArrowLeft,
   ChevronRight,
+  Archive,
+  CheckCircle,
+  Loader2,
 } from 'lucide-react';
+import apiClient from '../lib/api-client';
 
-type Channel = 'EMAIL' | 'SMS' | 'WHATSAPP' | 'IN_APP';
-type ThreadStatus = 'OPEN' | 'PENDING' | 'RESOLVED' | 'CLOSED';
-type MessageDirection = 'INBOUND' | 'OUTBOUND';
+type Channel = 'EMAIL' | 'SMS' | 'WHATSAPP' | 'IN_APP' | 'AIRBNB' | 'BOOKING_COM';
+type ThreadStatus = 'OPEN' | 'AWAITING_REPLY' | 'RESOLVED' | 'CLOSED';
+type SenderType = 'GUEST' | 'STAFF' | 'SYSTEM' | 'AI';
 
-interface Message {
+interface MessageSender {
   id: string;
-  direction: MessageDirection;
+  email: string;
+  firstName: string;
+  lastName: string;
+}
+
+interface GuestMessage {
+  id: string;
+  threadId: string;
+  senderType: SenderType;
+  senderId: string | null;
   content: string;
-  timestamp: string;
-  senderName: string;
+  contentType: string;
+  attachments: unknown;
+  isRead: boolean;
+  aiSuggestedReply: string | null;
+  sentAt: string;
+  createdAt: string;
+  sender: MessageSender | null;
+}
+
+interface ThreadProperty {
+  id: string;
+  name: string;
+  city: string;
+  internalCode: string;
+}
+
+interface ThreadGuest {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+}
+
+interface ThreadBooking {
+  id: string;
+  guestName: string;
+  checkIn: string;
+  checkOut: string;
 }
 
 interface Thread {
   id: string;
-  subject: string;
-  guestName: string;
-  guestEmail: string;
-  propertyName: string;
-  propertyId: string;
+  propertyId: string | null;
+  bookingId: string | null;
+  guestId: string | null;
+  ownerId: string | null;
   channel: Channel;
+  subject: string | null;
   status: ThreadStatus;
-  priority: 'LOW' | 'MEDIUM' | 'HIGH';
-  unread: boolean;
-  lastMessagePreview: string;
-  lastMessageAt: string;
-  messages: Message[];
+  assignedToId: string | null;
+  lastMessageAt: string | null;
+  unreadCount: number;
+  metadata: unknown;
+  createdAt: string;
+  updatedAt: string;
+  property: ThreadProperty | null;
+  booking: ThreadBooking | null;
+  guest: ThreadGuest | null;
+  assignedTo: MessageSender | null;
+  _count: { messages: number };
+  // Only present on detail endpoint
+  messages?: GuestMessage[];
+}
+
+interface ThreadsResponse {
+  data: Thread[];
+  meta: {
+    total: number;
+    page: number;
+    perPage: number;
+    totalPages: number;
+  };
+}
+
+interface ThreadDetailResponse {
+  data: Thread;
 }
 
 const channelIcons: Record<Channel, typeof Mail> = {
@@ -45,6 +109,8 @@ const channelIcons: Record<Channel, typeof Mail> = {
   SMS: Smartphone,
   WHATSAPP: MessageCircle,
   IN_APP: Bell,
+  AIRBNB: MessageCircle,
+  BOOKING_COM: MessageCircle,
 };
 
 const channelLabels: Record<Channel, string> = {
@@ -52,377 +118,178 @@ const channelLabels: Record<Channel, string> = {
   SMS: 'SMS',
   WHATSAPP: 'WhatsApp',
   IN_APP: 'In-App',
+  AIRBNB: 'Airbnb',
+  BOOKING_COM: 'Booking.com',
 };
 
 const statusStyles: Record<ThreadStatus, string> = {
   OPEN: 'bg-blue-500/10 text-blue-600',
-  PENDING: 'bg-warning/10 text-warning',
+  AWAITING_REPLY: 'bg-warning/10 text-warning',
   RESOLVED: 'bg-success/10 text-success',
   CLOSED: 'bg-outline-variant/20 text-on-surface-variant',
 };
 
-const priorityStyles: Record<string, string> = {
-  LOW: 'bg-outline-variant/20 text-on-surface-variant',
-  MEDIUM: 'bg-blue-500/10 text-blue-600',
-  HIGH: 'bg-error/10 text-error',
-};
-
-const demoThreads: Thread[] = [
-  {
-    id: 'thread-001',
-    subject: 'Check-in instructions request',
-    guestName: 'Maria Papadopoulos',
-    guestEmail: 'maria.p@gmail.com',
-    propertyName: 'Elounda Breeze Villa',
-    propertyId: 'prop-001',
-    channel: 'EMAIL',
-    status: 'OPEN',
-    priority: 'HIGH',
-    unread: true,
-    lastMessagePreview: 'Could you please send me the check-in instructions and directions?',
-    lastMessageAt: '2026-04-11T10:30:00Z',
-    messages: [
-      {
-        id: 'msg-001-1',
-        direction: 'INBOUND',
-        content: 'Hello! I am looking forward to my stay at Elounda Breeze Villa. Could you please send me the check-in instructions and directions to the property?',
-        timestamp: '2026-04-11T10:30:00Z',
-        senderName: 'Maria Papadopoulos',
-      },
-      {
-        id: 'msg-001-2',
-        direction: 'OUTBOUND',
-        content: 'Hi Maria! Welcome! We are excited to host you. The check-in time is 3:00 PM. I will send you the full instructions with the door code and directions 24 hours before your arrival.',
-        timestamp: '2026-04-11T11:00:00Z',
-        senderName: 'Sivan M.',
-      },
-      {
-        id: 'msg-001-3',
-        direction: 'INBOUND',
-        content: 'Thank you! Is it possible to do a late check-in around 10 PM? Our flight arrives at 8:30 PM.',
-        timestamp: '2026-04-11T11:15:00Z',
-        senderName: 'Maria Papadopoulos',
-      },
-      {
-        id: 'msg-001-4',
-        direction: 'OUTBOUND',
-        content: 'Absolutely, late check-in is no problem at all. The property has a smart lock so you can arrive at any time. I will make sure the lights are on for you.',
-        timestamp: '2026-04-11T11:30:00Z',
-        senderName: 'Sivan M.',
-      },
-      {
-        id: 'msg-001-5',
-        direction: 'INBOUND',
-        content: 'Perfect, that sounds great! One more thing - is there parking available at the property?',
-        timestamp: '2026-04-11T12:00:00Z',
-        senderName: 'Maria Papadopoulos',
-      },
-    ],
-  },
-  {
-    id: 'thread-002',
-    subject: 'AC not working - urgent',
-    guestName: 'Hans Mueller',
-    guestEmail: 'h.mueller@outlook.de',
-    propertyName: 'Heraklion Harbor Suite',
-    propertyId: 'prop-002',
-    channel: 'WHATSAPP',
-    status: 'PENDING',
-    priority: 'HIGH',
-    unread: true,
-    lastMessagePreview: 'The AC unit is still not working. Room temperature is 28C.',
-    lastMessageAt: '2026-04-11T09:45:00Z',
-    messages: [
-      {
-        id: 'msg-002-1',
-        direction: 'INBOUND',
-        content: 'Hi, the air conditioning in the bedroom is not cooling at all. It is running but the room stays very warm.',
-        timestamp: '2026-04-10T22:00:00Z',
-        senderName: 'Hans Mueller',
-      },
-      {
-        id: 'msg-002-2',
-        direction: 'OUTBOUND',
-        content: 'Hello Hans, I am very sorry about this issue. I have contacted our HVAC technician and they will come tomorrow morning. In the meantime, there is a portable fan in the storage closet.',
-        timestamp: '2026-04-10T22:30:00Z',
-        senderName: 'Sivan M.',
-      },
-      {
-        id: 'msg-002-3',
-        direction: 'INBOUND',
-        content: 'The AC unit is still not working. Room temperature is 28C. When will the technician arrive?',
-        timestamp: '2026-04-11T09:45:00Z',
-        senderName: 'Hans Mueller',
-      },
-    ],
-  },
-  {
-    id: 'thread-003',
-    subject: 'Booking confirmation',
-    guestName: 'Sophie Laurent',
-    guestEmail: 'sophie.l@yahoo.fr',
-    propertyName: 'Chania Old Town Residence',
-    propertyId: 'prop-003',
-    channel: 'EMAIL',
-    status: 'RESOLVED',
-    priority: 'LOW',
-    unread: false,
-    lastMessagePreview: 'Thank you for confirming! See you soon.',
-    lastMessageAt: '2026-04-09T16:00:00Z',
-    messages: [
-      {
-        id: 'msg-003-1',
-        direction: 'OUTBOUND',
-        content: 'Dear Sophie, your booking at Chania Old Town Residence has been confirmed for April 10-14. Please find the confirmation details attached.',
-        timestamp: '2026-04-09T14:00:00Z',
-        senderName: 'Sivan M.',
-      },
-      {
-        id: 'msg-003-2',
-        direction: 'INBOUND',
-        content: 'Thank you for confirming! We are very excited. Just to confirm - we will be arriving with our small dog. Is that still okay?',
-        timestamp: '2026-04-09T15:30:00Z',
-        senderName: 'Sophie Laurent',
-      },
-      {
-        id: 'msg-003-3',
-        direction: 'OUTBOUND',
-        content: 'Yes, absolutely! Dogs are welcome at the property. We will prepare a pet-friendly setup for you. See you soon!',
-        timestamp: '2026-04-09T15:45:00Z',
-        senderName: 'Sivan M.',
-      },
-      {
-        id: 'msg-003-4',
-        direction: 'INBOUND',
-        content: 'Thank you for confirming! See you soon.',
-        timestamp: '2026-04-09T16:00:00Z',
-        senderName: 'Sophie Laurent',
-      },
-    ],
-  },
-  {
-    id: 'thread-004',
-    subject: 'Early check-out request',
-    guestName: 'James Thompson',
-    guestEmail: 'j.thompson@gmail.com',
-    propertyName: 'Rethymno Sunset Apartment',
-    propertyId: 'prop-004',
-    channel: 'SMS',
-    status: 'CLOSED',
-    priority: 'LOW',
-    unread: false,
-    lastMessagePreview: 'All done. Safe travels!',
-    lastMessageAt: '2026-04-09T08:00:00Z',
-    messages: [
-      {
-        id: 'msg-004-1',
-        direction: 'INBOUND',
-        content: 'Hi, I need to check out early tomorrow morning around 6 AM instead of 11 AM. Is that okay?',
-        timestamp: '2026-04-08T20:00:00Z',
-        senderName: 'James Thompson',
-      },
-      {
-        id: 'msg-004-2',
-        direction: 'OUTBOUND',
-        content: 'No problem at all, James. You can leave the keys on the kitchen counter. Have a safe trip!',
-        timestamp: '2026-04-08T20:15:00Z',
-        senderName: 'Sivan M.',
-      },
-      {
-        id: 'msg-004-3',
-        direction: 'INBOUND',
-        content: 'All done. Keys on the counter. Thank you for the wonderful stay!',
-        timestamp: '2026-04-09T06:15:00Z',
-        senderName: 'James Thompson',
-      },
-      {
-        id: 'msg-004-4',
-        direction: 'OUTBOUND',
-        content: 'All done. Safe travels! Thank you for staying with us. Hope to see you again!',
-        timestamp: '2026-04-09T08:00:00Z',
-        senderName: 'Sivan M.',
-      },
-    ],
-  },
-  {
-    id: 'thread-005',
-    subject: 'Pool heating request',
-    guestName: 'Elena Ivanova',
-    guestEmail: 'e.ivanova@mail.ru',
-    propertyName: 'Elounda Breeze Villa',
-    propertyId: 'prop-001',
-    channel: 'IN_APP',
-    status: 'OPEN',
-    priority: 'MEDIUM',
-    unread: true,
-    lastMessagePreview: 'Is it possible to heat the pool before our arrival?',
-    lastMessageAt: '2026-04-11T08:00:00Z',
-    messages: [
-      {
-        id: 'msg-005-1',
-        direction: 'INBOUND',
-        content: 'Hello, we are arriving on April 25th. Is it possible to heat the pool before our arrival? We would like it to be ready when we get there.',
-        timestamp: '2026-04-11T08:00:00Z',
-        senderName: 'Elena Ivanova',
-      },
-    ],
-  },
-  {
-    id: 'thread-006',
-    subject: 'Maintenance follow-up',
-    guestName: 'Marco Rossi',
-    guestEmail: 'm.rossi@libero.it',
-    propertyName: 'Chania Old Town Residence',
-    propertyId: 'prop-003',
-    channel: 'WHATSAPP',
-    status: 'PENDING',
-    priority: 'MEDIUM',
-    unread: false,
-    lastMessagePreview: 'Was the window latch fixed? We arrive next week.',
-    lastMessageAt: '2026-04-10T14:30:00Z',
-    messages: [
-      {
-        id: 'msg-006-1',
-        direction: 'INBOUND',
-        content: 'Hi, I saw in the reviews that there was a window latch issue. Has this been fixed before our stay? We arrive on April 20th.',
-        timestamp: '2026-04-10T14:00:00Z',
-        senderName: 'Marco Rossi',
-      },
-      {
-        id: 'msg-006-2',
-        direction: 'OUTBOUND',
-        content: 'Hello Marco! Yes, our maintenance team is currently fixing it. It will be fully repaired well before your arrival.',
-        timestamp: '2026-04-10T14:15:00Z',
-        senderName: 'Sivan M.',
-      },
-      {
-        id: 'msg-006-3',
-        direction: 'INBOUND',
-        content: 'Was the window latch fixed? We arrive next week. Just want to make sure everything is ready.',
-        timestamp: '2026-04-10T14:30:00Z',
-        senderName: 'Marco Rossi',
-      },
-    ],
-  },
-  {
-    id: 'thread-007',
-    subject: 'Invoice request',
-    guestName: 'Anna Schmidt',
-    guestEmail: 'anna.s@web.de',
-    propertyName: 'Heraklion Harbor Suite',
-    propertyId: 'prop-002',
-    channel: 'EMAIL',
-    status: 'RESOLVED',
-    priority: 'LOW',
-    unread: false,
-    lastMessagePreview: 'Received, thank you!',
-    lastMessageAt: '2026-04-08T12:00:00Z',
-    messages: [
-      {
-        id: 'msg-007-1',
-        direction: 'INBOUND',
-        content: 'Hello, could you please send me an invoice for my cancelled stay? I need it for my travel insurance claim.',
-        timestamp: '2026-04-07T10:00:00Z',
-        senderName: 'Anna Schmidt',
-      },
-      {
-        id: 'msg-007-2',
-        direction: 'OUTBOUND',
-        content: 'Of course, Anna. I have prepared the invoice and attached it to this email. Let me know if you need any changes.',
-        timestamp: '2026-04-07T11:00:00Z',
-        senderName: 'Sivan M.',
-      },
-      {
-        id: 'msg-007-3',
-        direction: 'INBOUND',
-        content: 'Received, thank you! That is exactly what I needed.',
-        timestamp: '2026-04-08T12:00:00Z',
-        senderName: 'Anna Schmidt',
-      },
-    ],
-  },
-  {
-    id: 'thread-008',
-    subject: 'Wi-Fi password not working',
-    guestName: 'David Chen',
-    guestEmail: 'd.chen@gmail.com',
-    propertyName: 'Rethymno Sunset Apartment',
-    propertyId: 'prop-004',
-    channel: 'SMS',
-    status: 'OPEN',
-    priority: 'MEDIUM',
-    unread: false,
-    lastMessagePreview: 'Try the new password: SunsetCrete2026',
-    lastMessageAt: '2026-04-10T19:00:00Z',
-    messages: [
-      {
-        id: 'msg-008-1',
-        direction: 'INBOUND',
-        content: 'Hi, the Wi-Fi password in the welcome book is not working. Can you help?',
-        timestamp: '2026-04-10T18:30:00Z',
-        senderName: 'David Chen',
-      },
-      {
-        id: 'msg-008-2',
-        direction: 'OUTBOUND',
-        content: 'Sorry about that, David! The password was recently changed. Try the new password: SunsetCrete2026',
-        timestamp: '2026-04-10T19:00:00Z',
-        senderName: 'Sivan M.',
-      },
-      {
-        id: 'msg-008-3',
-        direction: 'INBOUND',
-        content: 'That worked, thanks!',
-        timestamp: '2026-04-10T19:05:00Z',
-        senderName: 'David Chen',
-      },
-    ],
-  },
-];
-
 export default function MessagesPage() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
+
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [channelFilter, setChannelFilter] = useState('all');
+  const [page, setPage] = useState(1);
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
   const [composeText, setComposeText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const filtered = useMemo(() => {
-    return demoThreads.filter((thread) => {
-      if (search) {
-        const q = search.toLowerCase();
-        if (
-          !thread.subject.toLowerCase().includes(q) &&
-          !thread.guestName.toLowerCase().includes(q) &&
-          !thread.lastMessagePreview.toLowerCase().includes(q)
-        )
-          return false;
-      }
-      if (statusFilter !== 'all' && thread.status !== statusFilter) return false;
-      if (channelFilter !== 'all' && thread.channel !== channelFilter) return false;
-      return true;
-    });
-  }, [search, statusFilter, channelFilter]);
+  // --- Queries ---
 
-  const selectedThread = selectedThreadId
-    ? demoThreads.find((t) => t.id === selectedThreadId) ?? null
-    : null;
+  const { data: threadsData, isLoading: threadsLoading } = useQuery<ThreadsResponse>({
+    queryKey: ['threads', { search, status: statusFilter, channel: channelFilter, page }],
+    queryFn: async () => {
+      const params: Record<string, string | number> = { page, limit: 30, sortBy: 'lastMessageAt', sortOrder: 'desc' };
+      if (search) params.search = search;
+      if (statusFilter !== 'all') params.status = statusFilter;
+      if (channelFilter !== 'all') params.channel = channelFilter;
+      const res = await apiClient.get('/communications', { params });
+      return res.data;
+    },
+  });
+
+  const threads = threadsData?.data ?? [];
+  const meta = threadsData?.meta;
+
+  const { data: threadDetailData, isLoading: detailLoading } = useQuery<ThreadDetailResponse>({
+    queryKey: ['threads', selectedThreadId],
+    queryFn: async () => {
+      const res = await apiClient.get(`/communications/${selectedThreadId}`);
+      return res.data;
+    },
+    enabled: !!selectedThreadId,
+  });
+
+  const selectedThread = threadDetailData?.data ?? null;
+
+  // --- Mutations ---
+
+  const sendMessageMutation = useMutation({
+    mutationFn: async ({ threadId, content }: { threadId: string; content: string }) => {
+      const res = await apiClient.post(`/communications/${threadId}/messages`, {
+        content,
+        senderType: 'STAFF',
+        contentType: 'TEXT',
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      setComposeText('');
+      queryClient.invalidateQueries({ queryKey: ['threads', selectedThreadId] });
+      queryClient.invalidateQueries({ queryKey: ['threads'] });
+    },
+    onError: () => {
+      toast.error(t('messages.sendError', 'Failed to send message'));
+    },
+  });
+
+  const resolveThreadMutation = useMutation({
+    mutationFn: async (threadId: string) => {
+      const res = await apiClient.post(`/communications/${threadId}/resolve`);
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success(t('messages.resolved', 'Thread resolved'));
+      queryClient.invalidateQueries({ queryKey: ['threads'] });
+      queryClient.invalidateQueries({ queryKey: ['threads', selectedThreadId] });
+    },
+    onError: () => {
+      toast.error(t('messages.resolveError', 'Failed to resolve thread'));
+    },
+  });
+
+  const archiveThreadMutation = useMutation({
+    mutationFn: async (threadId: string) => {
+      const res = await apiClient.put(`/communications/${threadId}`, { status: 'CLOSED' });
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success(t('messages.archived', 'Thread closed'));
+      queryClient.invalidateQueries({ queryKey: ['threads'] });
+      queryClient.invalidateQueries({ queryKey: ['threads', selectedThreadId] });
+    },
+    onError: () => {
+      toast.error(t('messages.archiveError', 'Failed to close thread'));
+    },
+  });
+
+  const markReadMutation = useMutation({
+    mutationFn: async (messageIds: string[]) => {
+      await Promise.all(
+        messageIds.map((id) => apiClient.put(`/communications/messages/${id}/read`)),
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['threads'] });
+      queryClient.invalidateQueries({ queryKey: ['threads', selectedThreadId] });
+    },
+  });
+
+  // --- Effects ---
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [selectedThreadId]);
+  }, [selectedThread?.messages]);
+
+  // Mark unread messages as read when selecting a thread
+  useEffect(() => {
+    if (selectedThread?.messages) {
+      const unreadIds = selectedThread.messages
+        .filter((m) => !m.isRead && m.senderType === 'GUEST')
+        .map((m) => m.id);
+      if (unreadIds.length > 0) {
+        markReadMutation.mutate(unreadIds);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedThread?.id, selectedThread?.messages?.length]);
+
+  // --- Handlers ---
 
   const handleSend = () => {
-    if (!composeText.trim()) return;
-    setComposeText('');
+    if (!composeText.trim() || !selectedThreadId) return;
+    sendMessageMutation.mutate({ threadId: selectedThreadId, content: composeText.trim() });
   };
 
-  const inputClass =
-    'px-4 py-2.5 rounded-lg bg-surface-container-lowest ambient-shadow text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-secondary/30 transition-all';
+  const handleSelectThread = (threadId: string) => {
+    setSelectedThreadId(threadId);
+  };
 
-  const formatTime = (iso: string) => {
+  // --- Helpers ---
+
+  const getParticipantName = (thread: Thread): string => {
+    if (thread.guest) {
+      return `${thread.guest.firstName} ${thread.guest.lastName}`.trim();
+    }
+    if (thread.booking) {
+      return thread.booking.guestName;
+    }
+    return t('messages.unknownParticipant', 'Unknown');
+  };
+
+  const getLastMessagePreview = (thread: Thread): string => {
+    return thread.subject || '';
+  };
+
+  const getMessageSenderName = (msg: GuestMessage): string => {
+    if (msg.sender) {
+      return `${msg.sender.firstName} ${msg.sender.lastName}`.trim();
+    }
+    if (msg.senderType === 'GUEST') return t('messages.guest', 'Guest');
+    if (msg.senderType === 'SYSTEM') return t('messages.system', 'System');
+    if (msg.senderType === 'AI') return 'AI';
+    return t('messages.staff', 'Staff');
+  };
+
+  const formatTime = (iso: string | null) => {
+    if (!iso) return '';
     const d = new Date(iso);
     const now = new Date();
     const isToday =
@@ -472,25 +339,25 @@ export default function MessagesPage() {
                   type="text"
                   placeholder="Search conversations..."
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                   className="w-full ps-10 pe-4 py-2 rounded-lg bg-surface-container-low text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-secondary/30 transition-all"
                 />
               </div>
               <div className="flex gap-2">
                 <select
                   value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
+                  onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
                   className="flex-1 px-3 py-1.5 rounded-lg bg-surface-container-low text-xs text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30 transition-all"
                 >
                   <option value="all">All Statuses</option>
                   <option value="OPEN">Open</option>
-                  <option value="PENDING">Pending</option>
+                  <option value="AWAITING_REPLY">Awaiting Reply</option>
                   <option value="RESOLVED">Resolved</option>
                   <option value="CLOSED">Closed</option>
                 </select>
                 <select
                   value={channelFilter}
-                  onChange={(e) => setChannelFilter(e.target.value)}
+                  onChange={(e) => { setChannelFilter(e.target.value); setPage(1); }}
                   className="flex-1 px-3 py-1.5 rounded-lg bg-surface-container-low text-xs text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30 transition-all"
                 >
                   <option value="all">All Channels</option>
@@ -498,19 +365,28 @@ export default function MessagesPage() {
                   <option value="SMS">SMS</option>
                   <option value="WHATSAPP">WhatsApp</option>
                   <option value="IN_APP">In-App</option>
+                  <option value="AIRBNB">Airbnb</option>
+                  <option value="BOOKING_COM">Booking.com</option>
                 </select>
               </div>
             </div>
 
             {/* Thread Cards */}
             <div className="flex-1 overflow-y-auto">
-              {filtered.map((thread) => {
-                const ChannelIcon = channelIcons[thread.channel];
+              {threadsLoading && (
+                <div className="flex items-center justify-center p-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-on-surface-variant" />
+                </div>
+              )}
+              {!threadsLoading && threads.map((thread) => {
+                const ChannelIcon = channelIcons[thread.channel] ?? MessageCircle;
                 const isSelected = selectedThreadId === thread.id;
+                const participantName = getParticipantName(thread);
+                const hasUnread = thread.unreadCount > 0;
                 return (
                   <button
                     key={thread.id}
-                    onClick={() => setSelectedThreadId(thread.id)}
+                    onClick={() => handleSelectThread(thread.id)}
                     className={`w-full text-start p-4 border-b border-outline-variant/10 transition-colors ${
                       isSelected
                         ? 'bg-secondary/5'
@@ -519,12 +395,12 @@ export default function MessagesPage() {
                   >
                     <div className="flex items-start gap-3">
                       <div className="w-10 h-10 rounded-full gradient-accent flex items-center justify-center text-white font-headline font-bold text-sm flex-shrink-0">
-                        {thread.guestName.charAt(0)}
+                        {participantName.charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
-                          <p className={`text-sm truncate ${thread.unread ? 'font-bold text-on-surface' : 'font-medium text-on-surface'}`}>
-                            {thread.guestName}
+                          <p className={`text-sm truncate ${hasUnread ? 'font-bold text-on-surface' : 'font-medium text-on-surface'}`}>
+                            {participantName}
                           </p>
                           <span className="text-[10px] text-on-surface-variant whitespace-nowrap flex-shrink-0">
                             {formatTime(thread.lastMessageAt)}
@@ -532,28 +408,23 @@ export default function MessagesPage() {
                         </div>
                         <div className="flex items-center gap-1.5 mt-0.5">
                           <ChannelIcon className="w-3 h-3 text-on-surface-variant flex-shrink-0" />
-                          <p className={`text-xs truncate ${thread.unread ? 'font-semibold text-on-surface' : 'text-on-surface-variant'}`}>
-                            {thread.subject}
+                          <p className={`text-xs truncate ${hasUnread ? 'font-semibold text-on-surface' : 'text-on-surface-variant'}`}>
+                            {thread.subject || t('messages.noSubject', 'No subject')}
                           </p>
                         </div>
                         <p className="text-xs text-on-surface-variant truncate mt-0.5">
-                          {thread.lastMessagePreview}
+                          {thread.property?.name || ''}
                         </p>
                         <div className="flex items-center gap-1.5 mt-1.5">
                           <span
                             className={`px-2 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-wider ${statusStyles[thread.status]}`}
                           >
-                            {thread.status}
+                            {thread.status.replace('_', ' ')}
                           </span>
-                          {thread.priority !== 'LOW' && (
-                            <span
-                              className={`px-2 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-wider ${priorityStyles[thread.priority]}`}
-                            >
-                              {thread.priority}
+                          {hasUnread && (
+                            <span className="min-w-[18px] h-[18px] rounded-full bg-secondary flex items-center justify-center text-[9px] font-bold text-white px-1 flex-shrink-0">
+                              {thread.unreadCount}
                             </span>
-                          )}
-                          {thread.unread && (
-                            <span className="w-2 h-2 rounded-full bg-secondary flex-shrink-0" />
                           )}
                         </div>
                       </div>
@@ -562,9 +433,31 @@ export default function MessagesPage() {
                   </button>
                 );
               })}
-              {filtered.length === 0 && (
+              {!threadsLoading && threads.length === 0 && (
                 <div className="p-8 text-center text-on-surface-variant text-sm">
                   No conversations found
+                </div>
+              )}
+              {/* Pagination */}
+              {meta && meta.totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 p-3 border-t border-outline-variant/10">
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page <= 1}
+                    className="px-3 py-1 text-xs rounded-lg bg-surface-container-low text-on-surface-variant disabled:opacity-40"
+                  >
+                    Prev
+                  </button>
+                  <span className="text-xs text-on-surface-variant">
+                    {page} / {meta.totalPages}
+                  </span>
+                  <button
+                    onClick={() => setPage((p) => Math.min(meta.totalPages, p + 1))}
+                    disabled={page >= meta.totalPages}
+                    className="px-3 py-1 text-xs rounded-lg bg-surface-container-low text-on-surface-variant disabled:opacity-40"
+                  >
+                    Next
+                  </button>
                 </div>
               )}
             </div>
@@ -576,7 +469,11 @@ export default function MessagesPage() {
               selectedThread ? 'flex' : 'hidden md:flex'
             } flex-col flex-1 h-full`}
           >
-            {selectedThread ? (
+            {selectedThreadId && detailLoading ? (
+              <div className="flex-1 flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-on-surface-variant" />
+              </div>
+            ) : selectedThread ? (
               <>
                 {/* Thread Header */}
                 <div className="p-4 border-b border-outline-variant/20 flex-shrink-0">
@@ -590,37 +487,66 @@ export default function MessagesPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="font-headline text-base font-semibold text-on-surface truncate">
-                          {selectedThread.subject}
+                          {selectedThread.subject || t('messages.noSubject', 'No subject')}
                         </h3>
                         <span
                           className={`px-2 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-wider ${statusStyles[selectedThread.status]}`}
                         >
-                          {selectedThread.status}
+                          {selectedThread.status.replace('_', ' ')}
                         </span>
                       </div>
                       <div className="flex items-center gap-3 mt-1 text-xs text-on-surface-variant">
-                        <span>{selectedThread.guestName}</span>
-                        <span className="w-1 h-1 rounded-full bg-outline-variant" />
-                        <span>{selectedThread.propertyName}</span>
+                        <span>{getParticipantName(selectedThread)}</span>
+                        {selectedThread.property && (
+                          <>
+                            <span className="w-1 h-1 rounded-full bg-outline-variant" />
+                            <span>{selectedThread.property.name}</span>
+                          </>
+                        )}
                         <span className="w-1 h-1 rounded-full bg-outline-variant" />
                         {(() => {
-                          const Icon = channelIcons[selectedThread.channel];
+                          const Icon = channelIcons[selectedThread.channel] ?? MessageCircle;
                           return (
                             <span className="flex items-center gap-1">
                               <Icon className="w-3 h-3" />
-                              {channelLabels[selectedThread.channel]}
+                              {channelLabels[selectedThread.channel] ?? selectedThread.channel}
                             </span>
                           );
                         })()}
                       </div>
+                    </div>
+                    {/* Thread actions */}
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      {selectedThread.status === 'OPEN' || selectedThread.status === 'AWAITING_REPLY' ? (
+                        <button
+                          onClick={() => resolveThreadMutation.mutate(selectedThread.id)}
+                          disabled={resolveThreadMutation.isPending}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-success bg-success/10 hover:bg-success/20 transition-colors disabled:opacity-40"
+                          title="Resolve"
+                        >
+                          <CheckCircle className="w-3.5 h-3.5" />
+                          <span className="hidden lg:inline">Resolve</span>
+                        </button>
+                      ) : null}
+                      {selectedThread.status !== 'CLOSED' && (
+                        <button
+                          onClick={() => archiveThreadMutation.mutate(selectedThread.id)}
+                          disabled={archiveThreadMutation.isPending}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-on-surface-variant bg-outline-variant/10 hover:bg-outline-variant/20 transition-colors disabled:opacity-40"
+                          title="Close"
+                        >
+                          <Archive className="w-3.5 h-3.5" />
+                          <span className="hidden lg:inline">Close</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
 
                 {/* Messages */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                  {selectedThread.messages.map((msg) => {
-                    const isOutbound = msg.direction === 'OUTBOUND';
+                  {selectedThread.messages?.map((msg) => {
+                    const isOutbound = msg.senderType === 'STAFF' || msg.senderType === 'SYSTEM' || msg.senderType === 'AI';
                     return (
                       <div
                         key={msg.id}
@@ -633,7 +559,7 @@ export default function MessagesPage() {
                               : 'bg-surface-container-low text-on-surface rounded-es-sm'
                           }`}
                         >
-                          <p className="text-sm leading-relaxed">{msg.content}</p>
+                          <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                           <div
                             className={`flex items-center gap-2 mt-2 ${
                               isOutbound ? 'justify-end' : 'justify-start'
@@ -644,14 +570,14 @@ export default function MessagesPage() {
                                 isOutbound ? 'text-white/70' : 'text-on-surface-variant'
                               }`}
                             >
-                              {msg.senderName}
+                              {getMessageSenderName(msg)}
                             </span>
                             <span
                               className={`text-[10px] ${
                                 isOutbound ? 'text-white/50' : 'text-on-surface-variant/50'
                               }`}
                             >
-                              {new Date(msg.timestamp).toLocaleTimeString([], {
+                              {new Date(msg.createdAt).toLocaleTimeString([], {
                                 hour: '2-digit',
                                 minute: '2-digit',
                               })}
@@ -665,30 +591,36 @@ export default function MessagesPage() {
                 </div>
 
                 {/* Compose Area */}
-                <div className="p-4 border-t border-outline-variant/20 flex-shrink-0">
-                  <div className="flex items-end gap-3">
-                    <textarea
-                      value={composeText}
-                      onChange={(e) => setComposeText(e.target.value)}
-                      placeholder={t('messages.compose')}
-                      rows={2}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSend();
-                        }
-                      }}
-                      className="flex-1 px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-secondary/30 transition-all resize-none border border-outline-variant/30"
-                    />
-                    <button
-                      onClick={handleSend}
-                      disabled={!composeText.trim()}
-                      className="flex items-center justify-center w-10 h-10 rounded-lg gradient-accent text-white hover:shadow-ambient-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
-                    >
-                      <Send className="w-4 h-4" />
-                    </button>
+                {selectedThread.status !== 'CLOSED' && (
+                  <div className="p-4 border-t border-outline-variant/20 flex-shrink-0">
+                    <div className="flex items-end gap-3">
+                      <textarea
+                        value={composeText}
+                        onChange={(e) => setComposeText(e.target.value)}
+                        placeholder={t('messages.compose')}
+                        rows={2}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleSend();
+                          }
+                        }}
+                        className="flex-1 px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-secondary/30 transition-all resize-none border border-outline-variant/30"
+                      />
+                      <button
+                        onClick={handleSend}
+                        disabled={!composeText.trim() || sendMessageMutation.isPending}
+                        className="flex items-center justify-center w-10 h-10 rounded-lg gradient-accent text-white hover:shadow-ambient-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
+                      >
+                        {sendMessageMutation.isPending ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Send className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
               </>
             ) : (
               <div className="flex-1 flex items-center justify-center">

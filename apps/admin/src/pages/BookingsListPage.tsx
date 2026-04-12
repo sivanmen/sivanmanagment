@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, Link } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Plus,
   Search,
@@ -12,18 +13,27 @@ import {
   ChevronRight,
   Eye,
   Filter,
+  XCircle,
+  LogIn,
+  LogOut,
+  Loader2,
+  AlertTriangle,
 } from 'lucide-react';
+import { toast } from 'sonner';
+import apiClient from '../lib/api-client';
 
 type BookingStatus = 'INQUIRY' | 'PENDING' | 'CONFIRMED' | 'CHECKED_IN' | 'CHECKED_OUT' | 'CANCELLED' | 'NO_SHOW';
-type PaymentStatus = 'UNPAID' | 'PARTIAL' | 'PAID' | 'REFUNDED';
-type BookingSource = 'DIRECT' | 'AIRBNB' | 'BOOKING_COM' | 'VRBO' | 'WEBSITE' | 'PHONE';
+type PaymentStatus = 'PENDING' | 'PARTIAL' | 'PAID' | 'REFUNDED' | 'FAILED';
+type BookingSource = 'DIRECT' | 'AIRBNB' | 'BOOKING_COM' | 'VRBO' | 'ICAL' | 'MANUAL' | 'WIDGET';
 
 interface Booking {
   id: string;
-  guestName: string;
-  guestEmail: string;
-  propertyName: string;
   propertyId: string;
+  unitId?: string | null;
+  guestId?: string | null;
+  guestName: string;
+  guestEmail?: string | null;
+  guestPhone?: string | null;
   checkIn: string;
   checkOut: string;
   nights: number;
@@ -32,8 +42,49 @@ interface Booking {
   status: BookingStatus;
   paymentStatus: PaymentStatus;
   source: BookingSource;
+  guestsCount: number;
   adults: number;
   children: number;
+  infants: number;
+  pets: number;
+  property: {
+    id: string;
+    name: string;
+    city?: string;
+    internalCode?: string;
+  };
+  guest?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email?: string;
+    phone?: string;
+  } | null;
+  unit?: {
+    id: string;
+    unitNumber: string;
+    unitType: string;
+  } | null;
+}
+
+interface BookingsResponse {
+  data: Booking[];
+  meta: {
+    page: number;
+    perPage: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+interface BookingStatsResponse {
+  data: {
+    byStatus: { status: string; count: number }[];
+    monthlyRevenue: number;
+    monthlyBookings: number;
+    upcomingCheckIns: number;
+    upcomingCheckOuts: number;
+  };
 }
 
 const statusStyles: Record<BookingStatus, string> = {
@@ -47,154 +98,17 @@ const statusStyles: Record<BookingStatus, string> = {
 };
 
 const paymentStyles: Record<PaymentStatus, string> = {
-  UNPAID: 'bg-error/10 text-error',
+  PENDING: 'bg-warning/10 text-warning',
   PARTIAL: 'bg-warning/10 text-warning',
   PAID: 'bg-success/10 text-success',
   REFUNDED: 'bg-outline-variant/20 text-on-surface-variant',
+  FAILED: 'bg-error/10 text-error',
 };
-
-const demoBookings: Booking[] = [
-  {
-    id: 'bk-a1b2c3d4-e5f6-7890',
-    guestName: 'Maria Papadopoulos',
-    guestEmail: 'maria.p@gmail.com',
-    propertyName: 'Elounda Breeze Villa',
-    propertyId: 'prop-001',
-    checkIn: '2026-04-15',
-    checkOut: '2026-04-22',
-    nights: 7,
-    totalAmount: 2450,
-    currency: 'EUR',
-    status: 'CONFIRMED',
-    paymentStatus: 'PAID',
-    source: 'AIRBNB',
-    adults: 2,
-    children: 1,
-  },
-  {
-    id: 'bk-b2c3d4e5-f6a7-8901',
-    guestName: 'Hans Mueller',
-    guestEmail: 'h.mueller@outlook.de',
-    propertyName: 'Heraklion Harbor Suite',
-    propertyId: 'prop-002',
-    checkIn: '2026-04-18',
-    checkOut: '2026-04-25',
-    nights: 7,
-    totalAmount: 1890,
-    currency: 'EUR',
-    status: 'PENDING',
-    paymentStatus: 'UNPAID',
-    source: 'BOOKING_COM',
-    adults: 2,
-    children: 0,
-  },
-  {
-    id: 'bk-c3d4e5f6-a7b8-9012',
-    guestName: 'Sophie Laurent',
-    guestEmail: 'sophie.l@yahoo.fr',
-    propertyName: 'Chania Old Town Residence',
-    propertyId: 'prop-003',
-    checkIn: '2026-04-10',
-    checkOut: '2026-04-14',
-    nights: 4,
-    totalAmount: 1120,
-    currency: 'EUR',
-    status: 'CHECKED_IN',
-    paymentStatus: 'PAID',
-    source: 'DIRECT',
-    adults: 2,
-    children: 2,
-  },
-  {
-    id: 'bk-d4e5f6a7-b8c9-0123',
-    guestName: 'James Thompson',
-    guestEmail: 'j.thompson@gmail.com',
-    propertyName: 'Rethymno Sunset Apartment',
-    propertyId: 'prop-004',
-    checkIn: '2026-04-05',
-    checkOut: '2026-04-09',
-    nights: 4,
-    totalAmount: 880,
-    currency: 'EUR',
-    status: 'CHECKED_OUT',
-    paymentStatus: 'PAID',
-    source: 'VRBO',
-    adults: 1,
-    children: 0,
-  },
-  {
-    id: 'bk-e5f6a7b8-c9d0-1234',
-    guestName: 'Elena Ivanova',
-    guestEmail: 'e.ivanova@mail.ru',
-    propertyName: 'Elounda Breeze Villa',
-    propertyId: 'prop-001',
-    checkIn: '2026-04-25',
-    checkOut: '2026-05-02',
-    nights: 7,
-    totalAmount: 2650,
-    currency: 'EUR',
-    status: 'INQUIRY',
-    paymentStatus: 'UNPAID',
-    source: 'WEBSITE',
-    adults: 2,
-    children: 0,
-  },
-  {
-    id: 'bk-f6a7b8c9-d0e1-2345',
-    guestName: 'Marco Rossi',
-    guestEmail: 'm.rossi@libero.it',
-    propertyName: 'Chania Old Town Residence',
-    propertyId: 'prop-003',
-    checkIn: '2026-04-20',
-    checkOut: '2026-04-27',
-    nights: 7,
-    totalAmount: 1960,
-    currency: 'EUR',
-    status: 'CONFIRMED',
-    paymentStatus: 'PARTIAL',
-    source: 'AIRBNB',
-    adults: 2,
-    children: 1,
-  },
-  {
-    id: 'bk-a7b8c9d0-e1f2-3456',
-    guestName: 'Anna Schmidt',
-    guestEmail: 'anna.s@web.de',
-    propertyName: 'Heraklion Harbor Suite',
-    propertyId: 'prop-002',
-    checkIn: '2026-03-28',
-    checkOut: '2026-04-02',
-    nights: 5,
-    totalAmount: 1350,
-    currency: 'EUR',
-    status: 'CANCELLED',
-    paymentStatus: 'REFUNDED',
-    source: 'BOOKING_COM',
-    adults: 2,
-    children: 0,
-  },
-  {
-    id: 'bk-b8c9d0e1-f2a3-4567',
-    guestName: 'David Chen',
-    guestEmail: 'd.chen@gmail.com',
-    propertyName: 'Rethymno Sunset Apartment',
-    propertyId: 'prop-004',
-    checkIn: '2026-04-12',
-    checkOut: '2026-04-17',
-    nights: 5,
-    totalAmount: 1100,
-    currency: 'EUR',
-    status: 'CONFIRMED',
-    paymentStatus: 'PAID',
-    source: 'PHONE',
-    adults: 2,
-    children: 1,
-  },
-];
 
 export default function BookingsListPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -206,42 +120,120 @@ export default function BookingsListPage() {
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
-  const filtered = useMemo(() => {
-    return demoBookings.filter((b) => {
-      if (search) {
-        const q = search.toLowerCase();
-        if (!b.guestName.toLowerCase().includes(q) && !b.guestEmail.toLowerCase().includes(q)) return false;
-      }
-      if (statusFilter !== 'all' && b.status !== statusFilter) return false;
-      if (propertyFilter !== 'all' && b.propertyId !== propertyFilter) return false;
-      if (sourceFilter !== 'all' && b.source !== sourceFilter) return false;
-      if (paymentFilter !== 'all' && b.paymentStatus !== paymentFilter) return false;
-      if (dateFrom && b.checkIn < dateFrom) return false;
-      if (dateTo && b.checkIn > dateTo) return false;
-      return true;
-    });
-  }, [search, statusFilter, propertyFilter, sourceFilter, paymentFilter, dateFrom, dateTo]);
+  // Fetch bookings from API with server-side filtering and pagination
+  const { data: bookingsData, isLoading, isError, error } = useQuery<BookingsResponse>({
+    queryKey: ['bookings', { search, status: statusFilter, propertyId: propertyFilter, source: sourceFilter, paymentStatus: paymentFilter, dateFrom, dateTo, page, limit: pageSize }],
+    queryFn: async () => {
+      const params: Record<string, string | number> = { page, limit: pageSize };
+      if (search) params.search = search;
+      if (statusFilter !== 'all') params.status = statusFilter;
+      if (propertyFilter !== 'all') params.propertyId = propertyFilter;
+      if (sourceFilter !== 'all') params.source = sourceFilter;
+      if (paymentFilter !== 'all') params.paymentStatus = paymentFilter;
+      if (dateFrom) params.dateFrom = dateFrom;
+      if (dateTo) params.dateTo = dateTo;
+      params.sortBy = 'checkIn';
+      params.sortOrder = 'desc';
+      const res = await apiClient.get('/bookings', { params });
+      return res.data;
+    },
+  });
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
+  // Fetch stats from dedicated endpoint
+  const { data: statsData } = useQuery<BookingStatsResponse>({
+    queryKey: ['bookings-stats'],
+    queryFn: async () => {
+      const res = await apiClient.get('/bookings/stats');
+      return res.data;
+    },
+  });
 
-  const confirmedCount = demoBookings.filter((b) => b.status === 'CONFIRMED').length;
-  const revenueThisMonth = demoBookings
-    .filter((b) => b.checkIn.startsWith('2026-04') && b.paymentStatus !== 'REFUNDED')
-    .reduce((sum, b) => sum + b.totalAmount, 0);
-  const avgStay =
-    demoBookings.length > 0
-      ? (demoBookings.reduce((sum, b) => sum + b.nights, 0) / demoBookings.length).toFixed(1)
+  // Fetch properties for the filter dropdown
+  const { data: propertiesData } = useQuery<{ data: { id: string; name: string }[] }>({
+    queryKey: ['properties-list-minimal'],
+    queryFn: async () => {
+      const res = await apiClient.get('/properties', { params: { pageSize: 100 } });
+      return res.data;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Cancel booking mutation
+  const cancelMutation = useMutation({
+    mutationFn: (id: string) => apiClient.post(`/bookings/${id}/cancel`),
+    onSuccess: () => {
+      toast.success(t('bookings.cancelSuccess', 'Booking cancelled successfully'));
+      queryClient.invalidateQueries({ queryKey: ['bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['bookings-stats'] });
+    },
+    onError: () => {
+      toast.error(t('bookings.cancelError', 'Failed to cancel booking'));
+    },
+  });
+
+  // Check-in mutation (update status to CHECKED_IN)
+  const checkInMutation = useMutation({
+    mutationFn: (id: string) => apiClient.put(`/bookings/${id}`, { status: 'CHECKED_IN' }),
+    onSuccess: () => {
+      toast.success(t('bookings.checkInSuccess', 'Guest checked in successfully'));
+      queryClient.invalidateQueries({ queryKey: ['bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['bookings-stats'] });
+    },
+    onError: () => {
+      toast.error(t('bookings.checkInError', 'Failed to check in guest'));
+    },
+  });
+
+  // Check-out mutation (update status to CHECKED_OUT)
+  const checkOutMutation = useMutation({
+    mutationFn: (id: string) => apiClient.put(`/bookings/${id}`, { status: 'CHECKED_OUT' }),
+    onSuccess: () => {
+      toast.success(t('bookings.checkOutSuccess', 'Guest checked out successfully'));
+      queryClient.invalidateQueries({ queryKey: ['bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['bookings-stats'] });
+    },
+    onError: () => {
+      toast.error(t('bookings.checkOutError', 'Failed to check out guest'));
+    },
+  });
+
+  const handleCancel = (e: React.MouseEvent, id: string, guestName: string) => {
+    e.stopPropagation();
+    if (window.confirm(t('bookings.confirmCancel', { name: guestName, defaultValue: `Cancel booking for ${guestName}?` }))) {
+      cancelMutation.mutate(id);
+    }
+  };
+
+  const handleCheckIn = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    checkInMutation.mutate(id);
+  };
+
+  const handleCheckOut = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    checkOutMutation.mutate(id);
+  };
+
+  const bookings = bookingsData?.data ?? [];
+  const meta = bookingsData?.meta ?? { total: 0, page: 1, perPage: pageSize, totalPages: 1 };
+  const totalPages = meta.totalPages;
+
+  const properties = propertiesData?.data ?? [];
+
+  // Stats from API
+  const statsByStatus = statsData?.data?.byStatus ?? [];
+  const totalBookings = statsByStatus.reduce((sum, s) => sum + s.count, 0);
+  const confirmedCount = statsByStatus.find((s) => s.status === 'CONFIRMED')?.count ?? 0;
+  const monthlyRevenue = statsData?.data?.monthlyRevenue ?? 0;
+  const avgStayFromBookings =
+    bookings.length > 0
+      ? (bookings.reduce((sum, b) => sum + b.nights, 0) / bookings.length).toFixed(1)
       : '0';
-
-  const properties = Array.from(new Set(demoBookings.map((b) => JSON.stringify({ id: b.propertyId, name: b.propertyName })))).map(
-    (s) => JSON.parse(s) as { id: string; name: string },
-  );
 
   const stats = [
     {
       label: t('bookings.title'),
-      value: demoBookings.length,
+      value: totalBookings,
       icon: Calendar,
       color: 'bg-secondary/10',
       iconColor: 'text-secondary',
@@ -255,14 +247,14 @@ export default function BookingsListPage() {
     },
     {
       label: t('bookings.revenueMonth'),
-      value: `\u20AC${revenueThisMonth.toLocaleString()}`,
+      value: `\u20AC${Number(monthlyRevenue).toLocaleString()}`,
       icon: DollarSign,
       color: 'bg-warning/10',
       iconColor: 'text-warning',
     },
     {
       label: t('bookings.avgStay'),
-      value: `${avgStay} ${t('bookings.nights')}`,
+      value: `${avgStayFromBookings} ${t('bookings.nights')}`,
       icon: Moon,
       color: 'bg-secondary/10',
       iconColor: 'text-secondary',
@@ -336,15 +328,17 @@ export default function BookingsListPage() {
             <option value="AIRBNB">Airbnb</option>
             <option value="BOOKING_COM">Booking.com</option>
             <option value="VRBO">VRBO</option>
-            <option value="WEBSITE">Website</option>
-            <option value="PHONE">Phone</option>
+            <option value="ICAL">iCal</option>
+            <option value="MANUAL">Manual</option>
+            <option value="WIDGET">Widget</option>
           </select>
           <select value={paymentFilter} onChange={(e) => { setPaymentFilter(e.target.value); setPage(1); }} className={inputClass}>
             <option value="all">{t('bookings.allPayments')}</option>
-            <option value="UNPAID">Unpaid</option>
+            <option value="PENDING">Pending</option>
             <option value="PARTIAL">Partial</option>
             <option value="PAID">Paid</option>
             <option value="REFUNDED">Refunded</option>
+            <option value="FAILED">Failed</option>
           </select>
         </div>
       </div>
@@ -368,73 +362,130 @@ export default function BookingsListPage() {
 
       {/* Table */}
       <div className="bg-surface-container-lowest rounded-xl ambient-shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-outline-variant/20">
-                <th className="text-start px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">{t('bookings.guest')}</th>
-                <th className="text-start px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">{t('bookings.property')}</th>
-                <th className="text-start px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">{t('bookings.checkIn')}</th>
-                <th className="text-start px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">{t('bookings.checkOut')}</th>
-                <th className="text-start px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">{t('bookings.nights')}</th>
-                <th className="text-start px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">{t('bookings.total')}</th>
-                <th className="text-start px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">{t('bookings.status')}</th>
-                <th className="text-start px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">{t('bookings.payment')}</th>
-                <th className="text-start px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">{t('bookings.source')}</th>
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginated.map((booking) => (
-                <tr
-                  key={booking.id}
-                  onClick={() => navigate(`/bookings/${booking.id}`)}
-                  className="border-b border-outline-variant/10 hover:bg-surface-container-low transition-colors cursor-pointer"
-                >
-                  <td className="px-4 py-3">
-                    <div>
-                      <p className="font-medium text-on-surface">{booking.guestName}</p>
-                      <p className="text-xs text-on-surface-variant">{booking.guestEmail}</p>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-on-surface">{booking.propertyName}</td>
-                  <td className="px-4 py-3 text-on-surface whitespace-nowrap">{new Date(booking.checkIn).toLocaleDateString()}</td>
-                  <td className="px-4 py-3 text-on-surface whitespace-nowrap">{new Date(booking.checkOut).toLocaleDateString()}</td>
-                  <td className="px-4 py-3 text-on-surface">{booking.nights}</td>
-                  <td className="px-4 py-3 font-semibold text-on-surface whitespace-nowrap">
-                    {booking.currency === 'EUR' ? '\u20AC' : '$'}{booking.totalAmount.toLocaleString()}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider ${statusStyles[booking.status]}`}>
-                      {booking.status.replace('_', ' ')}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider ${paymentStyles[booking.paymentStatus]}`}>
-                      {booking.paymentStatus}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-on-surface-variant text-xs">{booking.source.replace('_', '.')}</td>
-                  <td className="px-4 py-3">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); navigate(`/bookings/${booking.id}`); }}
-                      className="flex items-center justify-center p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </button>
-                  </td>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-6 h-6 animate-spin text-secondary" />
+            <span className="ms-2 text-sm text-on-surface-variant">{t('common.loading', 'Loading...')}</span>
+          </div>
+        ) : isError ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-2">
+            <AlertTriangle className="w-8 h-8 text-error" />
+            <p className="text-sm text-error">
+              {(error as any)?.response?.data?.error?.message || t('common.error', 'An error occurred')}
+            </p>
+            <button
+              onClick={() => queryClient.invalidateQueries({ queryKey: ['bookings'] })}
+              className="mt-2 px-4 py-2 rounded-lg text-sm font-medium text-white gradient-accent hover:shadow-ambient-lg transition-all"
+            >
+              {t('common.retry', 'Retry')}
+            </button>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-outline-variant/20">
+                  <th className="text-start px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">{t('bookings.guest')}</th>
+                  <th className="text-start px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">{t('bookings.property')}</th>
+                  <th className="text-start px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">{t('bookings.checkIn')}</th>
+                  <th className="text-start px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">{t('bookings.checkOut')}</th>
+                  <th className="text-start px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">{t('bookings.nights')}</th>
+                  <th className="text-start px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">{t('bookings.total')}</th>
+                  <th className="text-start px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">{t('bookings.status')}</th>
+                  <th className="text-start px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">{t('bookings.payment')}</th>
+                  <th className="text-start px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">{t('bookings.source')}</th>
+                  <th className="px-4 py-3"></th>
                 </tr>
-              ))}
-              {paginated.length === 0 && (
-                <tr>
-                  <td colSpan={10} className="px-4 py-12 text-center text-on-surface-variant">
-                    {t('common.noData')}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {bookings.map((booking) => (
+                  <tr
+                    key={booking.id}
+                    onClick={() => navigate(`/bookings/${booking.id}`)}
+                    className="border-b border-outline-variant/10 hover:bg-surface-container-low transition-colors cursor-pointer"
+                  >
+                    <td className="px-4 py-3">
+                      <div>
+                        <p className="font-medium text-on-surface">{booking.guestName}</p>
+                        <p className="text-xs text-on-surface-variant">{booking.guestEmail}</p>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-on-surface">{booking.property?.name ?? ''}</td>
+                    <td className="px-4 py-3 text-on-surface whitespace-nowrap">{new Date(booking.checkIn).toLocaleDateString()}</td>
+                    <td className="px-4 py-3 text-on-surface whitespace-nowrap">{new Date(booking.checkOut).toLocaleDateString()}</td>
+                    <td className="px-4 py-3 text-on-surface">{booking.nights}</td>
+                    <td className="px-4 py-3 font-semibold text-on-surface whitespace-nowrap">
+                      {booking.currency === 'EUR' ? '\u20AC' : '$'}{Number(booking.totalAmount).toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider ${statusStyles[booking.status]}`}>
+                        {booking.status.replace('_', ' ')}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider ${paymentStyles[booking.paymentStatus] ?? 'bg-outline-variant/20 text-on-surface-variant'}`}>
+                        {booking.paymentStatus}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-on-surface-variant text-xs">{booking.source.replace('_', '.')}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1">
+                        {/* View button */}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); navigate(`/bookings/${booking.id}`); }}
+                          className="flex items-center justify-center p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
+                          title={t('common.view', 'View')}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        {/* Check-in button: show for CONFIRMED bookings */}
+                        {booking.status === 'CONFIRMED' && (
+                          <button
+                            onClick={(e) => handleCheckIn(e, booking.id)}
+                            disabled={checkInMutation.isPending}
+                            className="flex items-center justify-center p-1.5 rounded-lg text-success hover:bg-success/10 transition-colors disabled:opacity-40"
+                            title={t('bookings.checkIn', 'Check In')}
+                          >
+                            <LogIn className="w-4 h-4" />
+                          </button>
+                        )}
+                        {/* Check-out button: show for CHECKED_IN bookings */}
+                        {booking.status === 'CHECKED_IN' && (
+                          <button
+                            onClick={(e) => handleCheckOut(e, booking.id)}
+                            disabled={checkOutMutation.isPending}
+                            className="flex items-center justify-center p-1.5 rounded-lg text-secondary hover:bg-secondary/10 transition-colors disabled:opacity-40"
+                            title={t('bookings.checkOut', 'Check Out')}
+                          >
+                            <LogOut className="w-4 h-4" />
+                          </button>
+                        )}
+                        {/* Cancel button: show for non-cancelled, non-checked-out, non-no-show bookings */}
+                        {!['CANCELLED', 'CHECKED_OUT', 'NO_SHOW'].includes(booking.status) && (
+                          <button
+                            onClick={(e) => handleCancel(e, booking.id, booking.guestName)}
+                            disabled={cancelMutation.isPending}
+                            className="flex items-center justify-center p-1.5 rounded-lg text-error hover:bg-error/10 transition-colors disabled:opacity-40"
+                            title={t('bookings.cancel', 'Cancel')}
+                          >
+                            <XCircle className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {bookings.length === 0 && (
+                  <tr>
+                    <td colSpan={10} className="px-4 py-12 text-center text-on-surface-variant">
+                      {t('common.noData')}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Pagination */}

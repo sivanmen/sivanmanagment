@@ -68,6 +68,7 @@ model User {
   threadAssignments  MessageThread[] @relation("ThreadAssignee")
   sentMessages       GuestMessage[]  @relation("MessageSender")
   notificationSettings UserNotificationSetting[]
+  reviewResponses      Review[]            @relation("ReviewResponder")
 
   @@map("users")
 }
@@ -205,6 +206,7 @@ model Property {
   directBookingSettings DirectBookingSetting?
   managementFeeCalcs  ManagementFeeCalculation[]
   messagingAssignments MessagingPropertyAssignment[]
+  reviews              Review[]
 
   @@index([ownerId, status])
   @@index([city, status])
@@ -435,6 +437,7 @@ model Booking {
   affiliateReferrals AffiliateReferral[] @relation("ReferredBooking")
   paymentTransactions PaymentTransaction[]
   guestScreenings  GuestScreening[]
+  reviews          Review[]
 
   @@index([propertyId, checkIn, checkOut])
   @@index([guestEmail])
@@ -2124,4 +2127,62 @@ model AiProviderConfig {
   updatedAt  DateTime   @updatedAt @map("updated_at")
 
   @@map("ai_provider_configs")
+}
+
+// ==========================================
+// GUEST REVIEWS
+// ==========================================
+
+enum ReviewSource {
+  AIRBNB
+  BOOKING_COM
+  VRBO
+  GOOGLE
+  DIRECT
+  TRIPADVISOR
+}
+
+enum ReviewStatus {
+  PENDING_RESPONSE
+  RESPONDED
+  FLAGGED
+  ARCHIVED
+}
+
+enum ReviewSentiment {
+  POSITIVE
+  NEUTRAL
+  NEGATIVE
+}
+
+model Review {
+  id               String          @id @default(uuid())
+  propertyId       String          @map("property_id")
+  bookingId        String?         @map("booking_id")
+  guestName        String          @map("guest_name")
+  guestEmail       String?         @map("guest_email")
+  source           ReviewSource
+  rating           Int
+  categoryRatings  Json?           @map("category_ratings") // { cleanliness, communication, checkIn, accuracy, location, value }
+  title            String?
+  content          String
+  language         String          @default("en")
+  response         String?
+  respondedAt      DateTime?       @map("responded_at")
+  respondedBy      String?         @map("responded_by")
+  status           ReviewStatus    @default(PENDING_RESPONSE)
+  sentiment        ReviewSentiment @default(NEUTRAL)
+  publishedAt      DateTime        @map("published_at")
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
+
+  property    Property  @relation(fields: [propertyId], references: [id])
+  booking     Booking?  @relation(fields: [bookingId], references: [id])
+  responder   User?     @relation("ReviewResponder", fields: [respondedBy], references: [id])
+
+  @@index([propertyId, publishedAt])
+  @@index([status])
+  @@index([source])
+  @@index([sentiment])
+  @@map("reviews")
 }

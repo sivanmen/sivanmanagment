@@ -1,170 +1,152 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Plus,
   Search,
   Users,
   Mail,
   Phone,
-  Globe,
-  DollarSign,
-  Calendar,
   Shield,
   ShieldCheck,
   ShieldAlert,
+  ShieldX,
+  Loader2,
+  AlertTriangle,
+  ChevronLeft,
+  ChevronRight,
+  Trash2,
 } from 'lucide-react';
+import { toast } from 'sonner';
+import apiClient from '../lib/api-client';
 
-type ScreeningStatus = 'VERIFIED' | 'PENDING' | 'FLAGGED' | 'NONE';
+type ScreeningStatus = 'APPROVED' | 'PENDING' | 'FLAGGED' | 'REJECTED';
 
 interface Guest {
   id: string;
-  name: string;
-  email: string;
-  phone: string;
-  nationality: string;
-  nationalityFlag: string;
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  phone: string | null;
+  nationality: string | null;
   totalStays: number;
-  totalRevenue: number;
-  screeningStatus: ScreeningStatus;
-  lastStay: string;
+  totalRevenue: number | string;
+  screeningStatus: ScreeningStatus | null;
+  notes: string | null;
+  tags: string[] | null;
+  createdAt: string;
+  _count?: {
+    bookings: number;
+    screenings: number;
+  };
 }
 
-const screeningStyles: Record<ScreeningStatus, { bg: string; text: string; icon: typeof Shield }> = {
-  VERIFIED: { bg: 'bg-success/10', text: 'text-success', icon: ShieldCheck },
+interface GuestsResponse {
+  data: Guest[];
+  meta: {
+    page: number;
+    perPage: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+const screeningStyles: Record<ScreeningStatus | 'NONE', { bg: string; text: string; icon: typeof Shield }> = {
+  APPROVED: { bg: 'bg-success/10', text: 'text-success', icon: ShieldCheck },
   PENDING: { bg: 'bg-warning/10', text: 'text-warning', icon: Shield },
   FLAGGED: { bg: 'bg-error/10', text: 'text-error', icon: ShieldAlert },
+  REJECTED: { bg: 'bg-error/10', text: 'text-error', icon: ShieldX },
   NONE: { bg: 'bg-outline-variant/20', text: 'text-on-surface-variant', icon: Shield },
 };
 
-const demoGuests: Guest[] = [
-  {
-    id: 'guest-001',
-    name: 'Maria Papadopoulos',
-    email: 'maria.p@gmail.com',
-    phone: '+30 694 123 4567',
-    nationality: 'Greece',
-    nationalityFlag: '\uD83C\uDDEC\uD83C\uDDF7',
-    totalStays: 5,
-    totalRevenue: 8400,
-    screeningStatus: 'VERIFIED',
-    lastStay: '2026-04-22',
-  },
-  {
-    id: 'guest-002',
-    name: 'Hans Mueller',
-    email: 'h.mueller@outlook.de',
-    phone: '+49 170 987 6543',
-    nationality: 'Germany',
-    nationalityFlag: '\uD83C\uDDE9\uD83C\uDDEA',
-    totalStays: 1,
-    totalRevenue: 1890,
-    screeningStatus: 'PENDING',
-    lastStay: '2026-04-25',
-  },
-  {
-    id: 'guest-003',
-    name: 'Sophie Laurent',
-    email: 'sophie.l@yahoo.fr',
-    phone: '+33 6 12 34 56 78',
-    nationality: 'France',
-    nationalityFlag: '\uD83C\uDDEB\uD83C\uDDF7',
-    totalStays: 2,
-    totalRevenue: 3200,
-    screeningStatus: 'VERIFIED',
-    lastStay: '2026-04-14',
-  },
-  {
-    id: 'guest-004',
-    name: 'James Thompson',
-    email: 'j.thompson@gmail.com',
-    phone: '+44 7700 900123',
-    nationality: 'United Kingdom',
-    nationalityFlag: '\uD83C\uDDEC\uD83C\uDDE7',
-    totalStays: 3,
-    totalRevenue: 4500,
-    screeningStatus: 'VERIFIED',
-    lastStay: '2026-04-09',
-  },
-  {
-    id: 'guest-005',
-    name: 'Elena Ivanova',
-    email: 'e.ivanova@mail.ru',
-    phone: '+7 916 123 4567',
-    nationality: 'Russia',
-    nationalityFlag: '\uD83C\uDDF7\uD83C\uDDFA',
-    totalStays: 0,
-    totalRevenue: 0,
-    screeningStatus: 'NONE',
-    lastStay: '',
-  },
-  {
-    id: 'guest-006',
-    name: 'Marco Rossi',
-    email: 'm.rossi@libero.it',
-    phone: '+39 333 456 7890',
-    nationality: 'Italy',
-    nationalityFlag: '\uD83C\uDDEE\uD83C\uDDF9',
-    totalStays: 2,
-    totalRevenue: 3800,
-    screeningStatus: 'VERIFIED',
-    lastStay: '2026-04-27',
-  },
-  {
-    id: 'guest-007',
-    name: 'Anna Schmidt',
-    email: 'anna.s@web.de',
-    phone: '+49 176 234 5678',
-    nationality: 'Germany',
-    nationalityFlag: '\uD83C\uDDE9\uD83C\uDDEA',
-    totalStays: 1,
-    totalRevenue: 1350,
-    screeningStatus: 'FLAGGED',
-    lastStay: '2026-04-02',
-  },
-  {
-    id: 'guest-008',
-    name: 'David Chen',
-    email: 'd.chen@gmail.com',
-    phone: '+1 415 555 0123',
-    nationality: 'United States',
-    nationalityFlag: '\uD83C\uDDFA\uD83C\uDDF8',
-    totalStays: 1,
-    totalRevenue: 1100,
-    screeningStatus: 'VERIFIED',
-    lastStay: '2026-04-17',
-  },
-];
+/** Convert a 2-letter ISO country code to its flag emoji. */
+function countryCodeToFlag(code: string | null | undefined): string {
+  if (!code || code.length !== 2) return '';
+  const upper = code.toUpperCase();
+  return String.fromCodePoint(
+    ...Array.from(upper).map((c) => 0x1f1e6 + c.charCodeAt(0) - 65),
+  );
+}
 
 export default function GuestsListPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const [search, setSearch] = useState('');
   const [screeningFilter, setScreeningFilter] = useState('all');
   const [nationalityFilter, setNationalityFilter] = useState('all');
+  const [page, setPage] = useState(1);
+  const pageSize = 20;
 
-  const nationalities = useMemo(
-    () => Array.from(new Set(demoGuests.map((g) => g.nationality))).sort(),
-    [],
-  );
+  // Fetch guests from API
+  const { data: guestsData, isLoading, isError, error } = useQuery<GuestsResponse>({
+    queryKey: ['guests', { search, screeningStatus: screeningFilter, nationality: nationalityFilter, page, limit: pageSize }],
+    queryFn: async () => {
+      const params: Record<string, string | number> = { page, limit: pageSize };
+      if (search) params.search = search;
+      if (screeningFilter !== 'all') params.screeningStatus = screeningFilter;
+      if (nationalityFilter !== 'all') params.nationality = nationalityFilter;
+      params.sortBy = 'createdAt';
+      params.sortOrder = 'desc';
+      const res = await apiClient.get('/guests', { params });
+      return res.data;
+    },
+  });
 
-  const filtered = useMemo(() => {
-    return demoGuests.filter((g) => {
-      if (search) {
-        const q = search.toLowerCase();
-        if (
-          !g.name.toLowerCase().includes(q) &&
-          !g.email.toLowerCase().includes(q) &&
-          !g.phone.includes(q)
-        )
-          return false;
-      }
-      if (screeningFilter !== 'all' && g.screeningStatus !== screeningFilter) return false;
-      if (nationalityFilter !== 'all' && g.nationality !== nationalityFilter) return false;
-      return true;
-    });
-  }, [search, screeningFilter, nationalityFilter]);
+  // Fetch all guests once for the nationality filter dropdown
+  const { data: allGuestsForFilters } = useQuery<GuestsResponse>({
+    queryKey: ['guests-nationalities'],
+    queryFn: async () => {
+      const res = await apiClient.get('/guests', { params: { limit: 100 } });
+      return res.data;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Delete guest mutation
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => apiClient.delete(`/guests/${id}`),
+    onSuccess: () => {
+      toast.success(t('guests.deleteSuccess', 'Guest deleted successfully'));
+      queryClient.invalidateQueries({ queryKey: ['guests'] });
+    },
+    onError: () => {
+      toast.error(t('guests.deleteError', 'Failed to delete guest'));
+    },
+  });
+
+  const guests = guestsData?.data ?? [];
+  const meta = guestsData?.meta;
+  const totalPages = meta?.totalPages ?? 1;
+
+  // Extract unique nationalities for filter dropdown
+  const nationalities = useMemo(() => {
+    const all = allGuestsForFilters?.data ?? [];
+    return Array.from(new Set(all.map((g) => g.nationality).filter(Boolean) as string[])).sort();
+  }, [allGuestsForFilters]);
+
+  // Reset page when filters change
+  const handleSearchChange = (val: string) => {
+    setSearch(val);
+    setPage(1);
+  };
+  const handleScreeningChange = (val: string) => {
+    setScreeningFilter(val);
+    setPage(1);
+  };
+  const handleNationalityChange = (val: string) => {
+    setNationalityFilter(val);
+    setPage(1);
+  };
+
+  const handleDelete = (e: React.MouseEvent, guestId: string) => {
+    e.stopPropagation();
+    if (window.confirm(t('guests.confirmDelete', 'Are you sure you want to delete this guest?'))) {
+      deleteMutation.mutate(guestId);
+    }
+  };
 
   const inputClass =
     'px-4 py-2.5 rounded-lg bg-surface-container-lowest ambient-shadow text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-secondary/30 transition-all';
@@ -180,6 +162,11 @@ export default function GuestsListPage() {
           <h1 className="font-headline text-2xl lg:text-3xl font-bold text-on-surface">
             {t('guests.title')}
           </h1>
+          {meta && (
+            <p className="text-xs text-on-surface-variant mt-1">
+              {meta.total} {t('guests.totalGuests', 'guests total')}
+            </p>
+          )}
         </div>
         <button
           onClick={() => navigate('/guests/new')}
@@ -198,35 +185,56 @@ export default function GuestsListPage() {
             type="text"
             placeholder="Search by name, email, phone..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="w-full ps-10 pe-4 py-2.5 rounded-lg bg-surface-container-lowest ambient-shadow text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-secondary/30 transition-all"
           />
         </div>
         <select
           value={screeningFilter}
-          onChange={(e) => setScreeningFilter(e.target.value)}
+          onChange={(e) => handleScreeningChange(e.target.value)}
           className={inputClass}
         >
           <option value="all">All Screening</option>
-          <option value="VERIFIED">Verified</option>
+          <option value="APPROVED">Approved</option>
           <option value="PENDING">Pending</option>
           <option value="FLAGGED">Flagged</option>
-          <option value="NONE">Not Screened</option>
+          <option value="REJECTED">Rejected</option>
         </select>
         <select
           value={nationalityFilter}
-          onChange={(e) => setNationalityFilter(e.target.value)}
+          onChange={(e) => handleNationalityChange(e.target.value)}
           className={inputClass}
         >
           <option value="all">All Nationalities</option>
           {nationalities.map((n) => (
-            <option key={n} value={n}>{n}</option>
+            <option key={n} value={n}>{countryCodeToFlag(n)} {n.toUpperCase()}</option>
           ))}
         </select>
       </div>
 
-      {/* Guest Grid */}
-      {filtered.length === 0 ? (
+      {/* Loading State */}
+      {isLoading && (
+        <div className="bg-surface-container-lowest rounded-xl p-12 ambient-shadow text-center">
+          <Loader2 className="w-10 h-10 mx-auto text-secondary animate-spin mb-4" />
+          <p className="text-sm text-on-surface-variant">{t('common.loading', 'Loading...')}</p>
+        </div>
+      )}
+
+      {/* Error State */}
+      {isError && (
+        <div className="bg-surface-container-lowest rounded-xl p-12 ambient-shadow text-center">
+          <AlertTriangle className="w-12 h-12 mx-auto text-error/60 mb-4" />
+          <h3 className="font-headline text-lg font-semibold text-on-surface mb-1">
+            {t('common.error', 'Error')}
+          </h3>
+          <p className="text-sm text-on-surface-variant">
+            {(error as any)?.response?.data?.error?.message || t('guests.loadError', 'Failed to load guests. Please try again.')}
+          </p>
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!isLoading && !isError && guests.length === 0 && (
         <div className="bg-surface-container-lowest rounded-xl p-12 ambient-shadow text-center">
           <Users className="w-12 h-12 mx-auto text-on-surface-variant/40 mb-4" />
           <h3 className="font-headline text-lg font-semibold text-on-surface mb-1">
@@ -236,77 +244,132 @@ export default function GuestsListPage() {
             Try adjusting your search or filters.
           </p>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filtered.map((guest) => {
-            const screening = screeningStyles[guest.screeningStatus];
-            const ScreeningIcon = screening.icon;
-            return (
-              <div
-                key={guest.id}
-                onClick={() => navigate(`/guests/${guest.id}`)}
-                className="bg-surface-container-lowest rounded-xl p-5 ambient-shadow hover:shadow-ambient-lg transition-all cursor-pointer group"
-              >
-                {/* Avatar & Name */}
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-full gradient-accent flex items-center justify-center text-white font-headline font-bold text-lg flex-shrink-0">
-                    {guest.name.split(' ').map((n) => n[0]).join('').slice(0, 2)}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-semibold text-on-surface truncate">{guest.name}</p>
-                    <div className="flex items-center gap-1 text-xs text-on-surface-variant">
-                      <span>{guest.nationalityFlag}</span>
-                      <span>{guest.nationality}</span>
+      )}
+
+      {/* Guest Grid */}
+      {!isLoading && !isError && guests.length > 0 && (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {guests.map((guest) => {
+              const status = guest.screeningStatus || 'NONE';
+              const screening = screeningStyles[status] || screeningStyles.NONE;
+              const ScreeningIcon = screening.icon;
+              const fullName = `${guest.firstName} ${guest.lastName}`;
+              const initials = `${guest.firstName?.[0] ?? ''}${guest.lastName?.[0] ?? ''}`.toUpperCase();
+              const flag = countryCodeToFlag(guest.nationality);
+              const revenue = typeof guest.totalRevenue === 'string' ? parseFloat(guest.totalRevenue) : guest.totalRevenue;
+              return (
+                <div
+                  key={guest.id}
+                  onClick={() => navigate(`/guests/${guest.id}`)}
+                  className="bg-surface-container-lowest rounded-xl p-5 ambient-shadow hover:shadow-ambient-lg transition-all cursor-pointer group relative"
+                >
+                  {/* Delete button */}
+                  <button
+                    onClick={(e) => handleDelete(e, guest.id)}
+                    disabled={deleteMutation.isPending}
+                    className="absolute top-3 end-3 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-error/10 text-on-surface-variant hover:text-error transition-all"
+                    title={t('common.delete', 'Delete')}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+
+                  {/* Avatar & Name */}
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 rounded-full gradient-accent flex items-center justify-center text-white font-headline font-bold text-lg flex-shrink-0">
+                      {initials}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-on-surface truncate">{fullName}</p>
+                      {guest.nationality && (
+                        <div className="flex items-center gap-1 text-xs text-on-surface-variant">
+                          <span>{flag}</span>
+                          <span>{guest.nationality.toUpperCase()}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
-                </div>
 
-                {/* Contact */}
-                <div className="space-y-1.5 mb-4">
-                  <div className="flex items-center gap-2 text-xs text-on-surface-variant truncate">
-                    <Mail className="w-3.5 h-3.5 flex-shrink-0" />
-                    <span className="truncate">{guest.email}</span>
+                  {/* Contact */}
+                  <div className="space-y-1.5 mb-4">
+                    {guest.email && (
+                      <div className="flex items-center gap-2 text-xs text-on-surface-variant truncate">
+                        <Mail className="w-3.5 h-3.5 flex-shrink-0" />
+                        <span className="truncate">{guest.email}</span>
+                      </div>
+                    )}
+                    {guest.phone && (
+                      <div className="flex items-center gap-2 text-xs text-on-surface-variant">
+                        <Phone className="w-3.5 h-3.5 flex-shrink-0" />
+                        <span>{guest.phone}</span>
+                      </div>
+                    )}
+                    {!guest.email && !guest.phone && (
+                      <div className="flex items-center gap-2 text-xs text-on-surface-variant/50">
+                        <Mail className="w-3.5 h-3.5 flex-shrink-0" />
+                        <span>{t('guests.noContact', 'No contact info')}</span>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-on-surface-variant">
-                    <Phone className="w-3.5 h-3.5 flex-shrink-0" />
-                    <span>{guest.phone}</span>
-                  </div>
-                </div>
 
-                {/* Stats */}
-                <div className="grid grid-cols-2 gap-2 mb-3">
-                  <div className="p-2 rounded-lg bg-surface-container-low">
-                    <p className="text-[10px] text-on-surface-variant uppercase tracking-wider">
-                      {t('guests.totalStays')}
-                    </p>
-                    <p className="text-sm font-semibold text-on-surface">{guest.totalStays}</p>
+                  {/* Stats */}
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                    <div className="p-2 rounded-lg bg-surface-container-low">
+                      <p className="text-[10px] text-on-surface-variant uppercase tracking-wider">
+                        {t('guests.totalStays')}
+                      </p>
+                      <p className="text-sm font-semibold text-on-surface">{guest.totalStays}</p>
+                    </div>
+                    <div className="p-2 rounded-lg bg-surface-container-low">
+                      <p className="text-[10px] text-on-surface-variant uppercase tracking-wider">
+                        {t('guests.totalRevenue')}
+                      </p>
+                      <p className="text-sm font-semibold text-on-surface">
+                        {'\u20AC'}{revenue.toLocaleString()}
+                      </p>
+                    </div>
                   </div>
-                  <div className="p-2 rounded-lg bg-surface-container-low">
-                    <p className="text-[10px] text-on-surface-variant uppercase tracking-wider">
-                      {t('guests.totalRevenue')}
-                    </p>
-                    <p className="text-sm font-semibold text-on-surface">
-                      {'\u20AC'}{guest.totalRevenue.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
 
-                {/* Screening Badge */}
-                <div className="flex items-center justify-between">
-                  <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider ${screening.bg} ${screening.text}`}>
-                    <ScreeningIcon className="w-3 h-3" />
-                    {guest.screeningStatus}
-                  </span>
-                  {guest.lastStay && (
-                    <span className="text-[10px] text-on-surface-variant">
-                      Last: {new Date(guest.lastStay).toLocaleDateString()}
+                  {/* Screening Badge */}
+                  <div className="flex items-center justify-between">
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider ${screening.bg} ${screening.text}`}>
+                      <ScreeningIcon className="w-3 h-3" />
+                      {status}
                     </span>
-                  )}
+                    {guest.createdAt && (
+                      <span className="text-[10px] text-on-surface-variant">
+                        {new Date(guest.createdAt).toLocaleDateString()}
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+                className="p-2 rounded-lg bg-surface-container-lowest ambient-shadow disabled:opacity-40 hover:bg-surface-container-low transition-all"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span className="text-sm text-on-surface-variant">
+                {t('common.pageOf', 'Page {{page}} of {{total}}', { page, total: totalPages })}
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+                className="p-2 rounded-lg bg-surface-container-lowest ambient-shadow disabled:opacity-40 hover:bg-surface-container-low transition-all"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

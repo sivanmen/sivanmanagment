@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft,
   Pencil,
@@ -21,43 +22,70 @@ import {
   MapPin,
   MessageSquare,
   Clock,
+  Loader2,
+  AlertTriangle,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import apiClient from '../lib/api-client';
 
 type BookingStatus = 'INQUIRY' | 'PENDING' | 'CONFIRMED' | 'CHECKED_IN' | 'CHECKED_OUT' | 'CANCELLED' | 'NO_SHOW';
-type PaymentStatus = 'UNPAID' | 'PARTIAL' | 'PAID' | 'REFUNDED';
+type PaymentStatus = 'PENDING' | 'PARTIAL' | 'PAID' | 'REFUNDED' | 'FAILED';
 
 interface BookingDetail {
   id: string;
-  guestName: string;
-  guestEmail: string;
-  guestPhone: string;
-  guestNationality: string;
-  guestTotalStays: number;
-  propertyName: string;
   propertyId: string;
-  propertyAddress: string;
-  propertyType: string;
-  unitName?: string;
+  unitId?: string | null;
+  guestId?: string | null;
+  source: string;
+  externalId?: string | null;
+  status: BookingStatus;
   checkIn: string;
   checkOut: string;
   nights: number;
+  guestsCount: number;
   adults: number;
   children: number;
   infants: number;
   pets: number;
-  specialRequests: string;
   nightlyRate: number;
+  subtotal: number;
   cleaningFee: number;
   serviceFee: number;
   taxes: number;
   totalAmount: number;
   currency: string;
-  status: BookingStatus;
   paymentStatus: PaymentStatus;
-  source: string;
-  internalNotes: string;
+  guestName: string;
+  guestEmail?: string | null;
+  guestPhone?: string | null;
+  specialRequests?: string | null;
+  internalNotes?: string | null;
+  icalUid?: string | null;
+  confirmedAt?: string | null;
+  cancelledAt?: string | null;
+  cancellationReason?: string | null;
   createdAt: string;
+  updatedAt: string;
+  property: {
+    id: string;
+    name: string;
+    city?: string;
+    internalCode?: string;
+  };
+  unit?: {
+    id: string;
+    unitNumber: string;
+    unitType: string;
+  } | null;
+  guest?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email?: string;
+    phone?: string;
+    nationality?: string;
+    totalStays?: number;
+  } | null;
 }
 
 const statusStyles: Record<BookingStatus, string> = {
@@ -71,134 +99,183 @@ const statusStyles: Record<BookingStatus, string> = {
 };
 
 const paymentStyles: Record<PaymentStatus, string> = {
-  UNPAID: 'bg-error/10 text-error',
+  PENDING: 'bg-warning/10 text-warning',
   PARTIAL: 'bg-warning/10 text-warning',
   PAID: 'bg-success/10 text-success',
   REFUNDED: 'bg-outline-variant/20 text-on-surface-variant',
+  FAILED: 'bg-error/10 text-error',
 };
-
-const demoBookings: Record<string, BookingDetail> = {
-  'bk-a1b2c3d4-e5f6-7890': {
-    id: 'bk-a1b2c3d4-e5f6-7890',
-    guestName: 'Maria Papadopoulos',
-    guestEmail: 'maria.p@gmail.com',
-    guestPhone: '+30 694 123 4567',
-    guestNationality: 'GR',
-    guestTotalStays: 3,
-    propertyName: 'Elounda Breeze Villa',
-    propertyId: 'prop-001',
-    propertyAddress: '12 Coastal Road, Elounda, Crete',
-    propertyType: 'Villa',
-    checkIn: '2026-04-15',
-    checkOut: '2026-04-22',
-    nights: 7,
-    adults: 2,
-    children: 1,
-    infants: 0,
-    pets: 0,
-    specialRequests: 'Late check-in around 22:00. Baby cot needed.',
-    nightlyRate: 320,
-    cleaningFee: 90,
-    serviceFee: 75,
-    taxes: 45,
-    totalAmount: 2450,
-    currency: 'EUR',
-    status: 'CONFIRMED',
-    paymentStatus: 'PAID',
-    source: 'Airbnb',
-    internalNotes: 'Returning guest. VIP treatment recommended.',
-    createdAt: '2026-03-20T14:30:00Z',
-  },
-  'bk-b2c3d4e5-f6a7-8901': {
-    id: 'bk-b2c3d4e5-f6a7-8901',
-    guestName: 'Hans Mueller',
-    guestEmail: 'h.mueller@outlook.de',
-    guestPhone: '+49 170 987 6543',
-    guestNationality: 'DE',
-    guestTotalStays: 1,
-    propertyName: 'Heraklion Harbor Suite',
-    propertyId: 'prop-002',
-    propertyAddress: '8 Venetian Port Street, Heraklion, Crete',
-    propertyType: 'Apartment',
-    unitName: 'Suite A',
-    checkIn: '2026-04-18',
-    checkOut: '2026-04-25',
-    nights: 7,
-    adults: 2,
-    children: 0,
-    infants: 0,
-    pets: 0,
-    specialRequests: 'Quiet room preferred. Allergic to feathers.',
-    nightlyRate: 250,
-    cleaningFee: 60,
-    serviceFee: 55,
-    taxes: 25,
-    totalAmount: 1890,
-    currency: 'EUR',
-    status: 'PENDING',
-    paymentStatus: 'UNPAID',
-    source: 'Booking.com',
-    internalNotes: '',
-    createdAt: '2026-04-01T09:15:00Z',
-  },
-  'bk-c3d4e5f6-a7b8-9012': {
-    id: 'bk-c3d4e5f6-a7b8-9012',
-    guestName: 'Sophie Laurent',
-    guestEmail: 'sophie.l@yahoo.fr',
-    guestPhone: '+33 6 12 34 56 78',
-    guestNationality: 'FR',
-    guestTotalStays: 2,
-    propertyName: 'Chania Old Town Residence',
-    propertyId: 'prop-003',
-    propertyAddress: '5 Zambeliou Street, Chania, Crete',
-    propertyType: 'House',
-    checkIn: '2026-04-10',
-    checkOut: '2026-04-14',
-    nights: 4,
-    adults: 2,
-    children: 2,
-    infants: 0,
-    pets: 1,
-    specialRequests: 'Traveling with a small dog (~5kg). Need parking.',
-    nightlyRate: 250,
-    cleaningFee: 70,
-    serviceFee: 40,
-    taxes: 10,
-    totalAmount: 1120,
-    currency: 'EUR',
-    status: 'CHECKED_IN',
-    paymentStatus: 'PAID',
-    source: 'Direct',
-    internalNotes: 'Guest confirmed arrival. Dog-friendly setup done.',
-    createdAt: '2026-03-15T18:00:00Z',
-  },
-};
-
-const timeline = [
-  { date: '2026-03-20 14:30', event: 'Booking created', type: 'create' },
-  { date: '2026-03-21 10:00', event: 'Payment received', type: 'payment' },
-  { date: '2026-03-22 09:00', event: 'Booking confirmed', type: 'status' },
-  { date: '2026-04-14 11:00', event: 'Reminder sent to guest', type: 'communication' },
-];
 
 export default function BookingDetailPage() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [notes, setNotes] = useState('');
+  const queryClient = useQueryClient();
 
-  // Find from demo data or create fallback
-  const booking = id ? demoBookings[id] : undefined;
+  // Fetch booking from API
+  const { data: bookingResponse, isLoading, isError, error } = useQuery<{ data: BookingDetail }>({
+    queryKey: ['booking', id],
+    queryFn: async () => {
+      const res = await apiClient.get(`/bookings/${id}`);
+      return res.data;
+    },
+    enabled: !!id,
+  });
 
-  // Use the first demo booking as fallback for any ID
-  const data = booking ?? Object.values(demoBookings)[0];
-  const [notesValue, setNotesValue] = useState(data.internalNotes);
+  const data = bookingResponse?.data;
 
-  const handleAction = (action: string) => {
-    toast.success(`${action} action triggered for booking ${data.id.slice(0, 8)}`);
+  // Local state for internal notes (initialized from fetched data)
+  const [notesValue, setNotesValue] = useState<string | null>(null);
+
+  // Once data loads, sync notes if not yet set by user
+  const displayNotes = notesValue !== null ? notesValue : (data?.internalNotes ?? '');
+
+  // Save notes mutation
+  const saveNotesMutation = useMutation({
+    mutationFn: (notes: string) => apiClient.put(`/bookings/${id}`, { internalNotes: notes }),
+    onSuccess: () => {
+      toast.success(t('bookings.notesSaved', 'Notes saved'));
+      queryClient.invalidateQueries({ queryKey: ['booking', id] });
+    },
+    onError: () => {
+      toast.error(t('bookings.notesSaveError', 'Failed to save notes'));
+    },
+  });
+
+  // Cancel booking mutation
+  const cancelMutation = useMutation({
+    mutationFn: (reason?: string) => apiClient.post(`/bookings/${id}/cancel`, { reason }),
+    onSuccess: () => {
+      toast.success(t('bookings.cancelSuccess', 'Booking cancelled successfully'));
+      queryClient.invalidateQueries({ queryKey: ['booking', id] });
+      queryClient.invalidateQueries({ queryKey: ['bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['bookings-stats'] });
+    },
+    onError: () => {
+      toast.error(t('bookings.cancelError', 'Failed to cancel booking'));
+    },
+  });
+
+  // Confirm booking mutation (PENDING -> CONFIRMED)
+  const confirmMutation = useMutation({
+    mutationFn: () => apiClient.put(`/bookings/${id}`, { status: 'CONFIRMED' }),
+    onSuccess: () => {
+      toast.success(t('bookings.confirmSuccess', 'Booking confirmed'));
+      queryClient.invalidateQueries({ queryKey: ['booking', id] });
+      queryClient.invalidateQueries({ queryKey: ['bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['bookings-stats'] });
+    },
+    onError: () => {
+      toast.error(t('bookings.confirmError', 'Failed to confirm booking'));
+    },
+  });
+
+  // Check-in mutation (CONFIRMED -> CHECKED_IN)
+  const checkInMutation = useMutation({
+    mutationFn: () => apiClient.put(`/bookings/${id}`, { status: 'CHECKED_IN' }),
+    onSuccess: () => {
+      toast.success(t('bookings.checkInSuccess', 'Guest checked in successfully'));
+      queryClient.invalidateQueries({ queryKey: ['booking', id] });
+      queryClient.invalidateQueries({ queryKey: ['bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['bookings-stats'] });
+    },
+    onError: () => {
+      toast.error(t('bookings.checkInError', 'Failed to check in guest'));
+    },
+  });
+
+  // Check-out mutation (CHECKED_IN -> CHECKED_OUT)
+  const checkOutMutation = useMutation({
+    mutationFn: () => apiClient.put(`/bookings/${id}`, { status: 'CHECKED_OUT' }),
+    onSuccess: () => {
+      toast.success(t('bookings.checkOutSuccess', 'Guest checked out successfully'));
+      queryClient.invalidateQueries({ queryKey: ['booking', id] });
+      queryClient.invalidateQueries({ queryKey: ['bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['bookings-stats'] });
+    },
+    onError: () => {
+      toast.error(t('bookings.checkOutError', 'Failed to check out guest'));
+    },
+  });
+
+  const handleCancel = () => {
+    const reason = window.prompt(t('bookings.cancelReasonPrompt', 'Reason for cancellation (optional):'));
+    if (reason !== null) {
+      cancelMutation.mutate(reason || undefined);
+    }
   };
 
+  const isActionPending = cancelMutation.isPending || confirmMutation.isPending || checkInMutation.isPending || checkOutMutation.isPending;
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-secondary mx-auto mb-3" />
+          <p className="text-sm text-on-surface-variant">{t('common.loading', 'Loading...')}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (isError || !data) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center max-w-md">
+          <AlertTriangle className="w-10 h-10 text-error mx-auto mb-3" />
+          <h2 className="font-headline text-lg font-semibold text-on-surface mb-2">
+            {t('bookings.notFound', 'Booking not found')}
+          </h2>
+          <p className="text-sm text-on-surface-variant mb-4">
+            {(error as Error)?.message || t('bookings.loadError', 'Could not load booking details. Please try again.')}
+          </p>
+          <button
+            onClick={() => navigate('/bookings')}
+            className="flex items-center gap-2 mx-auto px-4 py-2 rounded-lg text-sm font-medium text-white gradient-accent hover:shadow-ambient-lg transition-all"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            {t('bookings.backToList', 'Back to Bookings')}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const ref = data.id.slice(0, 14).toUpperCase();
+  const guestDisplayName = data.guest
+    ? `${data.guest.firstName} ${data.guest.lastName}`
+    : data.guestName;
+  const guestEmail = data.guest?.email || data.guestEmail || '';
+  const guestPhone = data.guest?.phone || data.guestPhone || '';
+  const guestNationality = data.guest?.nationality || '';
+  const guestTotalStays = data.guest?.totalStays ?? 0;
+  const currencySymbol = data.currency === 'EUR' ? '\u20AC' : data.currency === 'USD' ? '$' : data.currency;
+
+  // Build a simple timeline from available data
+  const timeline: { date: string; event: string; type: string }[] = [];
+  if (data.createdAt) {
+    timeline.push({
+      date: new Date(data.createdAt).toLocaleString(),
+      event: 'Booking created',
+      type: 'create',
+    });
+  }
+  if (data.confirmedAt) {
+    timeline.push({
+      date: new Date(data.confirmedAt).toLocaleString(),
+      event: 'Booking confirmed',
+      type: 'status',
+    });
+  }
+  if (data.cancelledAt) {
+    timeline.push({
+      date: new Date(data.cancelledAt).toLocaleString(),
+      event: `Booking cancelled${data.cancellationReason ? `: ${data.cancellationReason}` : ''}`,
+      type: 'cancel',
+    });
+  }
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
@@ -218,43 +295,47 @@ export default function BookingDetailPage() {
                 {data.status.replace('_', ' ')}
               </span>
             </div>
-            <p className="text-sm text-on-surface-variant mt-0.5">{data.propertyName}</p>
+            <p className="text-sm text-on-surface-variant mt-0.5">{data.property.name}</p>
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {data.status === 'PENDING' && (
             <button
-              onClick={() => handleAction('Confirm')}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white gradient-accent hover:shadow-ambient-lg transition-all"
+              onClick={() => confirmMutation.mutate()}
+              disabled={isActionPending}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white gradient-accent hover:shadow-ambient-lg transition-all disabled:opacity-50"
             >
-              <CheckCircle className="w-4 h-4" />
+              {confirmMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
               <span>Confirm</span>
             </button>
           )}
           {data.status === 'CONFIRMED' && (
             <button
-              onClick={() => handleAction('Check-in')}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white gradient-accent hover:shadow-ambient-lg transition-all"
+              onClick={() => checkInMutation.mutate()}
+              disabled={isActionPending}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white gradient-accent hover:shadow-ambient-lg transition-all disabled:opacity-50"
             >
-              <LogIn className="w-4 h-4" />
+              {checkInMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}
               <span>Check In</span>
             </button>
           )}
           {data.status === 'CHECKED_IN' && (
             <button
-              onClick={() => handleAction('Check-out')}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white gradient-accent hover:shadow-ambient-lg transition-all"
+              onClick={() => checkOutMutation.mutate()}
+              disabled={isActionPending}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white gradient-accent hover:shadow-ambient-lg transition-all disabled:opacity-50"
             >
-              <LogOut className="w-4 h-4" />
+              {checkOutMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
               <span>Check Out</span>
             </button>
           )}
           {!['CANCELLED', 'CHECKED_OUT', 'NO_SHOW'].includes(data.status) && (
             <button
-              onClick={() => handleAction('Cancel')}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-error bg-error/5 hover:bg-error/10 transition-colors"
+              onClick={handleCancel}
+              disabled={isActionPending}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-error bg-error/5 hover:bg-error/10 transition-colors disabled:opacity-50"
             >
-              <XCircle className="w-4 h-4" />
+              {cancelMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
               <span>Cancel</span>
             </button>
           )}
@@ -276,26 +357,34 @@ export default function BookingDetailPage() {
             <h3 className="font-headline text-lg font-semibold text-on-surface mb-4">Guest Information</h3>
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 rounded-full gradient-accent flex items-center justify-center text-white font-headline font-bold text-lg">
-                {data.guestName.charAt(0)}
+                {guestDisplayName.charAt(0)}
               </div>
               <div>
-                <p className="font-semibold text-on-surface">{data.guestName}</p>
-                <p className="text-xs text-on-surface-variant">{data.guestTotalStays} previous stays</p>
+                <p className="font-semibold text-on-surface">{guestDisplayName}</p>
+                {guestTotalStays > 0 && (
+                  <p className="text-xs text-on-surface-variant">{guestTotalStays} previous stays</p>
+                )}
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="flex items-center gap-2 text-sm text-on-surface-variant">
-                <Mail className="w-4 h-4 flex-shrink-0" />
-                <span>{data.guestEmail}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-on-surface-variant">
-                <Phone className="w-4 h-4 flex-shrink-0" />
-                <span>{data.guestPhone}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-on-surface-variant">
-                <Globe className="w-4 h-4 flex-shrink-0" />
-                <span>{data.guestNationality}</span>
-              </div>
+              {guestEmail && (
+                <div className="flex items-center gap-2 text-sm text-on-surface-variant">
+                  <Mail className="w-4 h-4 flex-shrink-0" />
+                  <span>{guestEmail}</span>
+                </div>
+              )}
+              {guestPhone && (
+                <div className="flex items-center gap-2 text-sm text-on-surface-variant">
+                  <Phone className="w-4 h-4 flex-shrink-0" />
+                  <span>{guestPhone}</span>
+                </div>
+              )}
+              {guestNationality && (
+                <div className="flex items-center gap-2 text-sm text-on-surface-variant">
+                  <Globe className="w-4 h-4 flex-shrink-0" />
+                  <span>{guestNationality}</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -328,7 +417,7 @@ export default function BookingDetailPage() {
                 <Users className="w-5 h-5 text-secondary" />
                 <div>
                   <p className="text-[10px] text-on-surface-variant uppercase tracking-wider">Guests</p>
-                  <p className="text-sm font-semibold text-on-surface">{data.adults + data.children}</p>
+                  <p className="text-sm font-semibold text-on-surface">{data.guestsCount}</p>
                 </div>
               </div>
             </div>
@@ -367,7 +456,7 @@ export default function BookingDetailPage() {
               Internal Notes
             </h3>
             <textarea
-              value={notesValue}
+              value={displayNotes}
               onChange={(e) => setNotesValue(e.target.value)}
               rows={3}
               className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-secondary/30 transition-all resize-none border border-outline-variant/30"
@@ -375,32 +464,36 @@ export default function BookingDetailPage() {
             />
             <div className="flex justify-end mt-2">
               <button
-                onClick={() => toast.success('Notes saved')}
-                className="px-4 py-2 rounded-lg text-sm font-medium text-white gradient-accent hover:shadow-ambient-lg transition-all"
+                onClick={() => saveNotesMutation.mutate(displayNotes)}
+                disabled={saveNotesMutation.isPending}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white gradient-accent hover:shadow-ambient-lg transition-all disabled:opacity-50"
               >
+                {saveNotesMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                 Save Notes
               </button>
             </div>
           </div>
 
           {/* Timeline */}
-          <div className="bg-surface-container-lowest rounded-xl p-5 ambient-shadow">
-            <h3 className="font-headline text-lg font-semibold text-on-surface mb-4">
-              <Clock className="w-5 h-5 inline-block me-2 text-secondary" />
-              Activity Timeline
-            </h3>
-            <div className="space-y-3">
-              {timeline.map((item, idx) => (
-                <div key={idx} className="flex items-start gap-3">
-                  <div className="mt-1 w-2 h-2 rounded-full bg-secondary flex-shrink-0" />
-                  <div>
-                    <p className="text-sm font-medium text-on-surface">{item.event}</p>
-                    <p className="text-xs text-on-surface-variant">{item.date}</p>
+          {timeline.length > 0 && (
+            <div className="bg-surface-container-lowest rounded-xl p-5 ambient-shadow">
+              <h3 className="font-headline text-lg font-semibold text-on-surface mb-4">
+                <Clock className="w-5 h-5 inline-block me-2 text-secondary" />
+                Activity Timeline
+              </h3>
+              <div className="space-y-3">
+                {timeline.map((item, idx) => (
+                  <div key={idx} className="flex items-start gap-3">
+                    <div className="mt-1 w-2 h-2 rounded-full bg-secondary flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-on-surface">{item.event}</p>
+                      <p className="text-xs text-on-surface-variant">{item.date}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Right column */}
@@ -414,25 +507,31 @@ export default function BookingDetailPage() {
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-on-surface-variant">Nightly rate x {data.nights} nights</span>
-                <span className="text-on-surface font-medium">{data.currency === 'EUR' ? '\u20AC' : '$'}{(data.nightlyRate * data.nights).toLocaleString()}</span>
+                <span className="text-on-surface font-medium">{currencySymbol}{Number(Number(data.nightlyRate) * data.nights).toLocaleString()}</span>
               </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-on-surface-variant">Cleaning fee</span>
-                <span className="text-on-surface font-medium">{data.currency === 'EUR' ? '\u20AC' : '$'}{data.cleaningFee}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-on-surface-variant">Service fee</span>
-                <span className="text-on-surface font-medium">{data.currency === 'EUR' ? '\u20AC' : '$'}{data.serviceFee}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-on-surface-variant">Taxes</span>
-                <span className="text-on-surface font-medium">{data.currency === 'EUR' ? '\u20AC' : '$'}{data.taxes}</span>
-              </div>
+              {Number(data.cleaningFee) > 0 && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-on-surface-variant">Cleaning fee</span>
+                  <span className="text-on-surface font-medium">{currencySymbol}{Number(data.cleaningFee).toLocaleString()}</span>
+                </div>
+              )}
+              {Number(data.serviceFee) > 0 && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-on-surface-variant">Service fee</span>
+                  <span className="text-on-surface font-medium">{currencySymbol}{Number(data.serviceFee).toLocaleString()}</span>
+                </div>
+              )}
+              {Number(data.taxes) > 0 && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-on-surface-variant">Taxes</span>
+                  <span className="text-on-surface font-medium">{currencySymbol}{Number(data.taxes).toLocaleString()}</span>
+                </div>
+              )}
               <div className="border-t border-outline-variant/20 pt-2 mt-2">
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-on-surface">{t('bookings.total')}</span>
                   <span className="font-headline text-xl font-bold text-on-surface">
-                    {data.currency === 'EUR' ? '\u20AC' : '$'}{data.totalAmount.toLocaleString()}
+                    {currencySymbol}{Number(data.totalAmount).toLocaleString()}
                   </span>
                 </div>
               </div>
@@ -455,22 +554,26 @@ export default function BookingDetailPage() {
               <Building2 className="w-5 h-5 inline-block me-2 text-secondary" />
               Property
             </h3>
-            <p className="font-semibold text-on-surface mb-1">{data.propertyName}</p>
-            <div className="flex items-start gap-2 text-sm text-on-surface-variant mb-2">
-              <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
-              <span>{data.propertyAddress}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-on-surface-variant mb-2">
-              <Building2 className="w-4 h-4" />
-              <span>{data.propertyType}</span>
-            </div>
-            {data.unitName && (
+            <p className="font-semibold text-on-surface mb-1">{data.property.name}</p>
+            {data.property.city && (
+              <div className="flex items-start gap-2 text-sm text-on-surface-variant mb-2">
+                <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <span>{data.property.city}</span>
+              </div>
+            )}
+            {data.property.internalCode && (
+              <div className="flex items-center gap-2 text-sm text-on-surface-variant mb-2">
+                <Building2 className="w-4 h-4" />
+                <span>{data.property.internalCode}</span>
+              </div>
+            )}
+            {data.unit && (
               <div className="flex items-center gap-2 text-sm text-on-surface-variant">
-                <span>Unit: <span className="font-medium text-on-surface">{data.unitName}</span></span>
+                <span>Unit: <span className="font-medium text-on-surface">{data.unit.unitNumber}</span></span>
               </div>
             )}
             <Link
-              to={`/properties/${data.propertyId}`}
+              to={`/properties/${data.property.id}`}
               className="flex items-center justify-center gap-2 w-full mt-4 px-4 py-2.5 rounded-lg text-sm font-medium text-on-surface-variant bg-surface-container-low hover:bg-surface-container-high transition-colors"
             >
               View Property

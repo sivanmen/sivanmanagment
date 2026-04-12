@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Plus,
   Search,
@@ -18,8 +19,12 @@ import {
   ArrowUp,
   ArrowDown,
   CheckCircle,
+  Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import apiClient from '../lib/api-client';
+
+// ── Types matching API / Prisma ────────────────────────────────────────
 
 type DocumentCategory =
   | 'CONTRACT'
@@ -33,27 +38,84 @@ type DocumentCategory =
   | 'REPORT'
   | 'OTHER';
 
-type AccessLevel = 'PUBLIC' | 'INTERNAL' | 'CONFIDENTIAL' | 'OWNER_ONLY';
+type AccessLevel = 'PUBLIC' | 'OWNER_VISIBLE' | 'ADMIN_ONLY';
 
-type UploadDocumentType = 'LEASE' | 'CONTRACT' | 'INVOICE' | 'ID' | 'INSURANCE' | 'TAX' | 'OTHER';
+type UploadDocumentType = 'CONTRACT' | 'INVOICE' | 'LICENSE' | 'INSURANCE' | 'TAX' | 'ID_DOCUMENT' | 'OTHER';
 
 interface DocumentRecord {
   id: string;
   title: string;
-  propertyName: string;
-  propertyId: string;
+  propertyId: string | null;
+  ownerId: string | null;
+  bookingId: string | null;
+  uploadedById: string;
+  fileUrl: string;
+  fileSize: number;
+  mimeType: string;
   category: DocumentCategory;
+  tags: string[] | null;
+  version: number;
   accessLevel: AccessLevel;
-  fileSize: string;
-  fileSizeBytes: number;
-  uploadedBy: string;
-  uploadDate: string;
-  expiryDate?: string;
-  fileName: string;
+  expiresAt: string | null;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
+  property: { id: string; name: string; internalCode: string } | null;
+  owner: {
+    id: string;
+    companyName: string | null;
+    user: { firstName: string; lastName: string };
+  } | null;
+  uploadedBy: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+  };
 }
 
-type SortField = 'title' | 'propertyName' | 'category' | 'fileSize' | 'uploadDate' | 'expiryDate';
+interface DocumentsResponse {
+  success: boolean;
+  data: DocumentRecord[];
+  meta: {
+    total: number;
+    page: number;
+    perPage: number;
+    totalPages: number;
+  };
+}
+
+interface PropertyOption {
+  id: string;
+  name: string;
+}
+
+interface OwnerOption {
+  id: string;
+  companyName: string | null;
+  user: { firstName: string; lastName: string };
+}
+
+interface UploadedFile {
+  key: string;
+  url: string;
+  size: number;
+  originalName: string;
+  mimeType: string;
+}
+
+type SortField = 'title' | 'category' | 'fileSize' | 'createdAt';
 type SortDirection = 'asc' | 'desc';
+
+// Maps SortField UI values to API sortBy parameter values
+const sortFieldToApi: Record<SortField, string> = {
+  title: 'title',
+  category: 'category',
+  fileSize: 'fileSize',
+  createdAt: 'createdAt',
+};
+
+// ── Visual constants (unchanged) ───────────────────────────────────────
 
 const categoryStyles: Record<DocumentCategory, string> = {
   CONTRACT: 'bg-blue-500/10 text-blue-600',
@@ -70,168 +132,24 @@ const categoryStyles: Record<DocumentCategory, string> = {
 
 const accessStyles: Record<AccessLevel, string> = {
   PUBLIC: 'bg-success/10 text-success',
-  INTERNAL: 'bg-blue-500/10 text-blue-600',
-  CONFIDENTIAL: 'bg-warning/10 text-warning',
-  OWNER_ONLY: 'bg-error/10 text-error',
+  OWNER_VISIBLE: 'bg-blue-500/10 text-blue-600',
+  ADMIN_ONLY: 'bg-error/10 text-error',
+};
+
+const accessLabels: Record<AccessLevel, string> = {
+  PUBLIC: 'Public',
+  OWNER_VISIBLE: 'Owner Visible',
+  ADMIN_ONLY: 'Admin Only',
 };
 
 const uploadDocTypes: { value: UploadDocumentType; label: string }[] = [
-  { value: 'LEASE', label: 'Lease' },
   { value: 'CONTRACT', label: 'Contract' },
   { value: 'INVOICE', label: 'Invoice' },
-  { value: 'ID', label: 'ID Document' },
+  { value: 'LICENSE', label: 'License' },
   { value: 'INSURANCE', label: 'Insurance' },
   { value: 'TAX', label: 'Tax Document' },
+  { value: 'ID_DOCUMENT', label: 'ID Document' },
   { value: 'OTHER', label: 'Other' },
-];
-
-const demoProperties = [
-  { id: 'prop-001', name: 'Elounda Breeze Villa' },
-  { id: 'prop-002', name: 'Heraklion Harbor Suite' },
-  { id: 'prop-003', name: 'Chania Old Town Residence' },
-  { id: 'prop-004', name: 'Rethymno Sunset Apartment' },
-];
-
-const demoOwners = [
-  { id: 'owner-001', name: 'Sivan M.' },
-  { id: 'owner-002', name: 'Elena K.' },
-  { id: 'owner-003', name: 'Nikos D.' },
-];
-
-const demoDocuments: DocumentRecord[] = [
-  {
-    id: 'doc-001',
-    title: 'Lease Agreement - Elounda Villa',
-    propertyName: 'Elounda Breeze Villa',
-    propertyId: 'prop-001',
-    category: 'CONTRACT',
-    accessLevel: 'CONFIDENTIAL',
-    fileSize: '2.4 MB',
-    fileSizeBytes: 2516582,
-    uploadedBy: 'Sivan M.',
-    uploadDate: '2026-01-15',
-    expiryDate: '2027-01-15',
-    fileName: 'lease_elounda_2026.pdf',
-  },
-  {
-    id: 'doc-002',
-    title: 'Property Insurance Policy',
-    propertyName: 'Heraklion Harbor Suite',
-    propertyId: 'prop-002',
-    category: 'INSURANCE',
-    accessLevel: 'INTERNAL',
-    fileSize: '1.8 MB',
-    fileSizeBytes: 1887436,
-    uploadedBy: 'Sivan M.',
-    uploadDate: '2026-02-10',
-    expiryDate: '2027-02-10',
-    fileName: 'insurance_heraklion_2026.pdf',
-  },
-  {
-    id: 'doc-003',
-    title: 'March 2026 Invoice - Cleaning',
-    propertyName: 'Chania Old Town Residence',
-    propertyId: 'prop-003',
-    category: 'INVOICE',
-    accessLevel: 'INTERNAL',
-    fileSize: '340 KB',
-    fileSizeBytes: 348160,
-    uploadedBy: 'Elena K.',
-    uploadDate: '2026-03-31',
-    fileName: 'inv_cleaning_mar2026.pdf',
-  },
-  {
-    id: 'doc-004',
-    title: 'Tourist Accommodation License',
-    propertyName: 'Elounda Breeze Villa',
-    propertyId: 'prop-001',
-    category: 'LICENSE',
-    accessLevel: 'CONFIDENTIAL',
-    fileSize: '560 KB',
-    fileSizeBytes: 573440,
-    uploadedBy: 'Sivan M.',
-    uploadDate: '2025-11-20',
-    expiryDate: '2026-11-20',
-    fileName: 'license_elounda.pdf',
-  },
-  {
-    id: 'doc-005',
-    title: 'Tax Declaration 2025',
-    propertyName: 'Rethymno Sunset Apartment',
-    propertyId: 'prop-004',
-    category: 'TAX',
-    accessLevel: 'OWNER_ONLY',
-    fileSize: '1.2 MB',
-    fileSizeBytes: 1258291,
-    uploadedBy: 'Sivan M.',
-    uploadDate: '2026-03-15',
-    fileName: 'tax_rethymno_2025.pdf',
-  },
-  {
-    id: 'doc-006',
-    title: 'Guest ID Copy - Maria P.',
-    propertyName: 'Elounda Breeze Villa',
-    propertyId: 'prop-001',
-    category: 'ID_DOCUMENT',
-    accessLevel: 'CONFIDENTIAL',
-    fileSize: '420 KB',
-    fileSizeBytes: 430080,
-    uploadedBy: 'System',
-    uploadDate: '2026-04-10',
-    fileName: 'id_maria_p.jpg',
-  },
-  {
-    id: 'doc-007',
-    title: 'Pool Area Photos',
-    propertyName: 'Heraklion Harbor Suite',
-    propertyId: 'prop-002',
-    category: 'PHOTO',
-    accessLevel: 'PUBLIC',
-    fileSize: '8.5 MB',
-    fileSizeBytes: 8912896,
-    uploadedBy: 'Elena K.',
-    uploadDate: '2026-03-20',
-    fileName: 'pool_photos.zip',
-  },
-  {
-    id: 'doc-008',
-    title: 'Maintenance Receipt - Plumbing',
-    propertyName: 'Chania Old Town Residence',
-    propertyId: 'prop-003',
-    category: 'RECEIPT',
-    accessLevel: 'INTERNAL',
-    fileSize: '180 KB',
-    fileSizeBytes: 184320,
-    uploadedBy: 'Nikos D.',
-    uploadDate: '2026-04-05',
-    fileName: 'receipt_plumbing_apr.pdf',
-  },
-  {
-    id: 'doc-009',
-    title: 'Monthly Revenue Report - Q1',
-    propertyName: 'Rethymno Sunset Apartment',
-    propertyId: 'prop-004',
-    category: 'REPORT',
-    accessLevel: 'OWNER_ONLY',
-    fileSize: '950 KB',
-    fileSizeBytes: 972800,
-    uploadedBy: 'Sivan M.',
-    uploadDate: '2026-04-01',
-    fileName: 'report_q1_rethymno.pdf',
-  },
-  {
-    id: 'doc-010',
-    title: 'Wifi & Utilities Setup Guide',
-    propertyName: 'Elounda Breeze Villa',
-    propertyId: 'prop-001',
-    category: 'OTHER',
-    accessLevel: 'PUBLIC',
-    fileSize: '220 KB',
-    fileSizeBytes: 225280,
-    uploadedBy: 'Sivan M.',
-    uploadDate: '2025-12-01',
-    fileName: 'setup_guide_elounda.pdf',
-  },
 ];
 
 const categories: DocumentCategory[] = [
@@ -247,17 +165,20 @@ const categories: DocumentCategory[] = [
   'OTHER',
 ];
 
-const accessLevels: AccessLevel[] = ['PUBLIC', 'INTERNAL', 'CONFIDENTIAL', 'OWNER_ONLY'];
+const accessLevels: AccessLevel[] = ['PUBLIC', 'OWNER_VISIBLE', 'ADMIN_ONLY'];
+
+// ── Component ──────────────────────────────────────────────────────────
 
 export default function DocumentsListPage() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
 
   const [search, setSearch] = useState('');
   const [propertyFilter, setPropertyFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [accessFilter, setAccessFilter] = useState('all');
   const [page, setPage] = useState(1);
-  const [sortField, setSortField] = useState<SortField>('uploadDate');
+  const [sortField, setSortField] = useState<SortField>('createdAt');
   const [sortDir, setSortDir] = useState<SortDirection>('desc');
   const pageSize = 10;
 
@@ -267,15 +188,96 @@ export default function DocumentsListPage() {
   const [uploadProperty, setUploadProperty] = useState('');
   const [uploadOwner, setUploadOwner] = useState('');
   const [uploadTitle, setUploadTitle] = useState('');
+  const [uploadAccessLevel, setUploadAccessLevel] = useState<AccessLevel>('OWNER_VISIBLE');
   const [dragOver, setDragOver] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const properties = useMemo(() => {
-    return Array.from(
-      new Set(demoDocuments.map((d) => JSON.stringify({ id: d.propertyId, name: d.propertyName }))),
-    ).map((s) => JSON.parse(s) as { id: string; name: string });
-  }, []);
+  // ── API Queries ────────────────────────────────────────────────────
+
+  const { data: docsResponse, isLoading } = useQuery<DocumentsResponse>({
+    queryKey: [
+      'documents',
+      {
+        search,
+        propertyId: propertyFilter !== 'all' ? propertyFilter : undefined,
+        category: categoryFilter !== 'all' ? categoryFilter : undefined,
+        accessLevel: accessFilter !== 'all' ? accessFilter : undefined,
+        page,
+        limit: pageSize,
+        sortBy: sortFieldToApi[sortField],
+        sortOrder: sortDir,
+      },
+    ],
+    queryFn: async () => {
+      const params: Record<string, string | number> = { page, limit: pageSize };
+      if (search) params.search = search;
+      if (propertyFilter !== 'all') params.propertyId = propertyFilter;
+      if (categoryFilter !== 'all') params.category = categoryFilter;
+      if (accessFilter !== 'all') params.accessLevel = accessFilter;
+      params.sortBy = sortFieldToApi[sortField];
+      params.sortOrder = sortDir;
+      const res = await apiClient.get('/documents', { params });
+      return res.data;
+    },
+  });
+
+  const documents = docsResponse?.data ?? [];
+  const meta = docsResponse?.meta ?? { total: 0, page: 1, perPage: pageSize, totalPages: 1 };
+  const totalPages = Math.max(1, meta.totalPages);
+
+  // Properties list for filter + upload modal
+  const { data: propertiesData } = useQuery<{ data: PropertyOption[] }>({
+    queryKey: ['properties-list-mini'],
+    queryFn: async () => {
+      const res = await apiClient.get('/properties', { params: { pageSize: 200 } });
+      return res.data;
+    },
+    staleTime: 60_000,
+  });
+  const properties: PropertyOption[] = (propertiesData?.data ?? []).map((p: any) => ({
+    id: p.id,
+    name: p.name,
+  }));
+
+  // Owners list for upload modal
+  const { data: ownersData } = useQuery<{ data: OwnerOption[] }>({
+    queryKey: ['owners-list-mini'],
+    queryFn: async () => {
+      const res = await apiClient.get('/owners', { params: { pageSize: 200 } });
+      return res.data;
+    },
+    staleTime: 60_000,
+  });
+  const owners: OwnerOption[] = ownersData?.data ?? [];
+
+  // ── Delete mutation ────────────────────────────────────────────────
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => apiClient.delete(`/documents/${id}`),
+    onSuccess: () => {
+      toast.success('Document deleted');
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+    },
+    onError: () => {
+      toast.error('Failed to delete document');
+    },
+  });
+
+  const handleDelete = (id: string, title: string) => {
+    if (window.confirm(`Are you sure you want to delete "${title}"?`)) {
+      deleteMutation.mutate(id);
+    }
+  };
+
+  // ── Computed stats ────────────────────────────────────────────────
+
+  // Stats are based on total counts from meta + what we can see on the current page.
+  // For accurate global counts, we compute from the documents array where possible.
+  const totalDocuments = meta.total;
+
+  // ── Sort handler ──────────────────────────────────────────────────
 
   const handleSort = useCallback(
     (field: SortField) => {
@@ -285,64 +287,22 @@ export default function DocumentsListPage() {
         setSortField(field);
         setSortDir('asc');
       }
+      setPage(1);
     },
     [sortField],
   );
 
-  const filtered = useMemo(() => {
-    const result = demoDocuments.filter((d) => {
-      if (search) {
-        const q = search.toLowerCase();
-        if (!d.title.toLowerCase().includes(q) && !d.fileName.toLowerCase().includes(q)) return false;
-      }
-      if (propertyFilter !== 'all' && d.propertyId !== propertyFilter) return false;
-      if (categoryFilter !== 'all' && d.category !== categoryFilter) return false;
-      if (accessFilter !== 'all' && d.accessLevel !== accessFilter) return false;
-      return true;
-    });
-
-    result.sort((a, b) => {
-      const dir = sortDir === 'asc' ? 1 : -1;
-      switch (sortField) {
-        case 'title':
-          return dir * a.title.localeCompare(b.title);
-        case 'propertyName':
-          return dir * a.propertyName.localeCompare(b.propertyName);
-        case 'category':
-          return dir * a.category.localeCompare(b.category);
-        case 'fileSize':
-          return dir * (a.fileSizeBytes - b.fileSizeBytes);
-        case 'uploadDate':
-          return dir * a.uploadDate.localeCompare(b.uploadDate);
-        case 'expiryDate': {
-          const aDate = a.expiryDate || '';
-          const bDate = b.expiryDate || '';
-          return dir * aDate.localeCompare(bDate);
-        }
-        default:
-          return 0;
-      }
-    });
-
-    return result;
-  }, [search, propertyFilter, categoryFilter, accessFilter, sortField, sortDir]);
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
-
-  const inputClass =
-    'px-4 py-2.5 rounded-lg bg-surface-container-lowest ambient-shadow text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-secondary/30 transition-all';
-
-  const modalInputClass =
-    'w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 transition-all';
+  // ── Upload helpers ────────────────────────────────────────────────
 
   const resetUploadForm = () => {
     setUploadDocType('OTHER');
     setUploadProperty('');
     setUploadOwner('');
     setUploadTitle('');
+    setUploadAccessLevel('OWNER_VISIBLE');
     setSelectedFile(null);
     setDragOver(false);
+    setIsUploading(false);
   };
 
   const handleOpenUpload = () => {
@@ -355,7 +315,7 @@ export default function DocumentsListPage() {
     resetUploadForm();
   };
 
-  const handleUploadSubmit = () => {
+  const handleUploadSubmit = async () => {
     if (!selectedFile) {
       toast.error('Please select a file to upload');
       return;
@@ -364,12 +324,56 @@ export default function DocumentsListPage() {
       toast.error('Please enter a document title');
       return;
     }
-    setShowUploadModal(false);
-    toast.success(`"${uploadTitle}" uploaded successfully`, {
-      description: `${selectedFile.name} (${formatBytes(selectedFile.size)})`,
-      icon: <CheckCircle className="w-4 h-4" />,
-    });
-    resetUploadForm();
+
+    setIsUploading(true);
+
+    try {
+      // Step 1: Upload file to R2 via /uploads/documents
+      const formData = new FormData();
+      formData.append('files', selectedFile);
+
+      const uploadRes = await apiClient.post<{ data: UploadedFile[] }>('/uploads/documents', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      const uploaded = uploadRes.data.data[0];
+
+      // Step 2: Create document record in the database
+      const docPayload: Record<string, unknown> = {
+        title: uploadTitle.trim(),
+        fileUrl: uploaded.url,
+        fileSize: uploaded.size,
+        mimeType: uploaded.mimeType,
+        category: uploadDocType,
+        accessLevel: uploadAccessLevel,
+      };
+      if (uploadProperty) docPayload.propertyId = uploadProperty;
+      if (uploadOwner) docPayload.ownerId = uploadOwner;
+
+      await apiClient.post('/documents', docPayload);
+
+      // Success
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      setShowUploadModal(false);
+      toast.success(`"${uploadTitle}" uploaded successfully`, {
+        description: `${selectedFile.name} (${formatBytes(selectedFile.size)})`,
+        icon: <CheckCircle className="w-4 h-4" />,
+      });
+      resetUploadForm();
+    } catch (err: any) {
+      const message = err?.response?.data?.error?.message || err?.message || 'Upload failed';
+      toast.error(message);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDownload = (doc: DocumentRecord) => {
+    if (doc.fileUrl) {
+      window.open(doc.fileUrl, '_blank');
+    } else {
+      toast.error('File URL not available');
+    }
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -414,6 +418,34 @@ export default function DocumentsListPage() {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   };
+
+  const getUploaderName = (doc: DocumentRecord): string => {
+    if (doc.uploadedBy) {
+      return `${doc.uploadedBy.firstName} ${doc.uploadedBy.lastName}`.trim() || doc.uploadedBy.email;
+    }
+    return '-';
+  };
+
+  const getPropertyName = (doc: DocumentRecord): string => {
+    return doc.property?.name ?? '-';
+  };
+
+  const getFileName = (doc: DocumentRecord): string => {
+    // Extract filename from the fileUrl or use title
+    if (doc.fileUrl) {
+      const parts = doc.fileUrl.split('/');
+      return parts[parts.length - 1] || doc.title;
+    }
+    return doc.title;
+  };
+
+  // ── Style constants ───────────────────────────────────────────────
+
+  const inputClass =
+    'px-4 py-2.5 rounded-lg bg-surface-container-lowest ambient-shadow text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-secondary/30 transition-all';
+
+  const modalInputClass =
+    'w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 transition-all';
 
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) return <ArrowUpDown className="w-3 h-3 opacity-40" />;
@@ -468,7 +500,9 @@ export default function DocumentsListPage() {
               <FileText className="w-3.5 h-3.5 text-secondary" />
             </div>
           </div>
-          <p className="font-headline text-xl font-bold text-on-surface">{demoDocuments.length}</p>
+          <p className="font-headline text-xl font-bold text-on-surface">
+            {isLoading ? '-' : totalDocuments}
+          </p>
         </div>
         <div className="bg-surface-container-lowest rounded-xl p-4 ambient-shadow">
           <div className="flex items-center justify-between mb-2">
@@ -480,7 +514,7 @@ export default function DocumentsListPage() {
             </div>
           </div>
           <p className="font-headline text-xl font-bold text-on-surface">
-            {demoDocuments.filter((d) => d.category === 'CONTRACT').length}
+            {isLoading ? '-' : documents.filter((d) => d.category === 'CONTRACT').length}
           </p>
         </div>
         <div className="bg-surface-container-lowest rounded-xl p-4 ambient-shadow">
@@ -493,20 +527,28 @@ export default function DocumentsListPage() {
             </div>
           </div>
           <p className="font-headline text-xl font-bold text-on-surface">
-            {demoDocuments.filter((d) => d.expiryDate && d.expiryDate < '2026-12-31').length}
+            {isLoading
+              ? '-'
+              : documents.filter((d) => {
+                  if (!d.expiresAt) return false;
+                  const exp = new Date(d.expiresAt);
+                  const sixMonths = new Date();
+                  sixMonths.setMonth(sixMonths.getMonth() + 6);
+                  return exp <= sixMonths;
+                }).length}
           </p>
         </div>
         <div className="bg-surface-container-lowest rounded-xl p-4 ambient-shadow">
           <div className="flex items-center justify-between mb-2">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
-              Confidential
+              Admin Only
             </p>
             <div className="w-7 h-7 rounded-lg bg-error/10 flex items-center justify-center">
               <Shield className="w-3.5 h-3.5 text-error" />
             </div>
           </div>
           <p className="font-headline text-xl font-bold text-on-surface">
-            {demoDocuments.filter((d) => d.accessLevel === 'CONFIDENTIAL' || d.accessLevel === 'OWNER_ONLY').length}
+            {isLoading ? '-' : documents.filter((d) => d.accessLevel === 'ADMIN_ONLY').length}
           </p>
         </div>
       </div>
@@ -567,7 +609,7 @@ export default function DocumentsListPage() {
           <option value="all">All Access Levels</option>
           {accessLevels.map((a) => (
             <option key={a} value={a}>
-              {a.replace('_', ' ')}
+              {accessLabels[a]}
             </option>
           ))}
         </select>
@@ -580,7 +622,9 @@ export default function DocumentsListPage() {
             <thead>
               <tr className="border-b border-outline-variant/20">
                 <SortableHeader field="title">Title</SortableHeader>
-                <SortableHeader field="propertyName">Property</SortableHeader>
+                <th className="text-start px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                  Property
+                </th>
                 <SortableHeader field="category">{t('documents.category')}</SortableHeader>
                 <th className="text-start px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
                   {t('documents.accessLevel')}
@@ -589,81 +633,94 @@ export default function DocumentsListPage() {
                 <th className="text-start px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
                   Uploaded By
                 </th>
-                <SortableHeader field="uploadDate">Upload Date</SortableHeader>
-                <SortableHeader field="expiryDate">Expiry</SortableHeader>
+                <SortableHeader field="createdAt">Upload Date</SortableHeader>
+                <th className="text-start px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                  Expiry
+                </th>
                 <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant text-center">
                   Actions
                 </th>
               </tr>
             </thead>
             <tbody>
-              {paginated.map((doc) => (
-                <tr
-                  key={doc.id}
-                  className="border-b border-outline-variant/10 hover:bg-surface-container-low transition-colors"
-                >
-                  <td className="px-4 py-3">
-                    <div>
-                      <p className="font-medium text-on-surface">{doc.title}</p>
-                      <p className="text-xs text-on-surface-variant">{doc.fileName}</p>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-on-surface">{doc.propertyName}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider ${categoryStyles[doc.category]}`}
-                    >
-                      {doc.category.replace('_', ' ')}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider ${accessStyles[doc.accessLevel]}`}
-                    >
-                      {doc.accessLevel.replace('_', ' ')}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-on-surface-variant">{doc.fileSize}</td>
-                  <td className="px-4 py-3 text-on-surface-variant">{doc.uploadedBy}</td>
-                  <td className="px-4 py-3 text-on-surface whitespace-nowrap">
-                    {new Date(doc.uploadDate).toLocaleDateString()}
-                  </td>
-                  <td className="px-4 py-3 text-on-surface-variant whitespace-nowrap">
-                    {doc.expiryDate ? new Date(doc.expiryDate).toLocaleDateString() : '-'}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-center gap-1">
-                      <button
-                        onClick={() => toast.success('Download started')}
-                        className="flex items-center justify-center p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
-                        title="Download"
-                      >
-                        <Download className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => toast.success('Edit dialog coming soon')}
-                        className="flex items-center justify-center p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
-                        title="Edit"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => toast.success('Document deleted')}
-                        className="flex items-center justify-center p-1.5 rounded-lg text-error hover:bg-error/10 transition-colors"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={9} className="px-4 py-12 text-center text-on-surface-variant">
+                    <div className="flex items-center justify-center gap-2">
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>Loading documents...</span>
                     </div>
                   </td>
                 </tr>
-              ))}
-              {paginated.length === 0 && (
+              ) : documents.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="px-4 py-12 text-center text-on-surface-variant">
                     {t('common.noData')}
                   </td>
                 </tr>
+              ) : (
+                documents.map((doc) => (
+                  <tr
+                    key={doc.id}
+                    className="border-b border-outline-variant/10 hover:bg-surface-container-low transition-colors"
+                  >
+                    <td className="px-4 py-3">
+                      <div>
+                        <p className="font-medium text-on-surface">{doc.title}</p>
+                        <p className="text-xs text-on-surface-variant">{getFileName(doc)}</p>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-on-surface">{getPropertyName(doc)}</td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider ${categoryStyles[doc.category]}`}
+                      >
+                        {doc.category.replace('_', ' ')}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider ${accessStyles[doc.accessLevel]}`}
+                      >
+                        {accessLabels[doc.accessLevel]}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-on-surface-variant">{formatBytes(doc.fileSize)}</td>
+                    <td className="px-4 py-3 text-on-surface-variant">{getUploaderName(doc)}</td>
+                    <td className="px-4 py-3 text-on-surface whitespace-nowrap">
+                      {new Date(doc.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-4 py-3 text-on-surface-variant whitespace-nowrap">
+                      {doc.expiresAt ? new Date(doc.expiresAt).toLocaleDateString() : '-'}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-center gap-1">
+                        <button
+                          onClick={() => handleDownload(doc)}
+                          className="flex items-center justify-center p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
+                          title="Download"
+                        >
+                          <Download className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => toast.success('Edit dialog coming soon')}
+                          className="flex items-center justify-center p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-colors"
+                          title="Edit"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(doc.id, doc.title)}
+                          disabled={deleteMutation.isPending}
+                          className="flex items-center justify-center p-1.5 rounded-lg text-error hover:bg-error/10 transition-colors disabled:opacity-40"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>
@@ -775,7 +832,7 @@ export default function DocumentsListPage() {
                         <span className="text-secondary">browse</span>
                       </p>
                       <p className="text-xs text-on-surface-variant mt-1">
-                        PDF, DOC, XLS, JPG, PNG, ZIP up to 50 MB
+                        PDF, DOC, XLS, JPG, PNG, ZIP up to 25 MB
                       </p>
                     </div>
                   </div>
@@ -818,6 +875,28 @@ export default function DocumentsListPage() {
                 </div>
               </div>
 
+              {/* Access Level */}
+              <div>
+                <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-2">
+                  Access Level
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {accessLevels.map((level) => (
+                    <button
+                      key={level}
+                      onClick={() => setUploadAccessLevel(level)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                        uploadAccessLevel === level
+                          ? 'bg-secondary text-white'
+                          : 'bg-surface-container-low text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high'
+                      }`}
+                    >
+                      {accessLabels[level]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Property & Owner */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -830,7 +909,7 @@ export default function DocumentsListPage() {
                     className={modalInputClass}
                   >
                     <option value="">Select property...</option>
-                    {demoProperties.map((p) => (
+                    {properties.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.name}
                       </option>
@@ -847,9 +926,11 @@ export default function DocumentsListPage() {
                     className={modalInputClass}
                   >
                     <option value="">Select owner...</option>
-                    {demoOwners.map((o) => (
+                    {owners.map((o) => (
                       <option key={o.id} value={o.id}>
-                        {o.name}
+                        {o.user
+                          ? `${o.user.firstName} ${o.user.lastName}`.trim()
+                          : o.companyName || o.id}
                       </option>
                     ))}
                   </select>
@@ -866,11 +947,20 @@ export default function DocumentsListPage() {
                 </button>
                 <button
                   onClick={handleUploadSubmit}
-                  disabled={!selectedFile || !uploadTitle.trim()}
+                  disabled={!selectedFile || !uploadTitle.trim() || isUploading}
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium text-white gradient-accent hover:shadow-ambient-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  <Upload className="w-4 h-4" />
-                  Upload
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4" />
+                      Upload
+                    </>
+                  )}
                 </button>
               </div>
             </div>
