@@ -736,8 +736,109 @@
     "testSuccess": "\u05D4\u05D7\u05D9\u05D1\u05D5\u05E8 \u05D4\u05E6\u05DC\u05D9\u05D7",
     "testFailed": "\u05D4\u05D7\u05D9\u05D1\u05D5\u05E8 \u05E0\u05DB\u05E9\u05DC",
     "usage": "\u05D4\u05D7\u05D5\u05D3\u05E9",
-    "apiCalls": "\u05E7\u05E8\u05D9\u05D0\u05D5\u05EA API",
-    "tokensUsed": "\u05D8\u05D5\u05E7\u05E0\u05D9\u05DD \u05E9\u05E0\u05D5\u05E6\u05DC\u05D5",
-    "estimatedCost": "\u05E2\u05DC\u05D5\u05EA \u05DE\u05E9\u05D5\u05E2\u05E8\u05EA"
+    "apiCalls": "קריאות API",
+    "tokensUsed": "טוקנים שנוצלו",
+    "estimatedCost": "עלות משוערת"
+  },
+  "reviews": {
+    "title": "ביקורות",
+    "subtitle": "ניהול ביקורות אורחים",
+    "totalReviews": "סה\"כ ביקורות",
+    "avgRating": "דירוג ממוצע",
+    "responseRate": "אחוז מענה",
+    "ratingTrend": "מגמת דירוג",
+    "respond": "הגב",
+    "aiResponse": "תגובת AI",
+    "positive": "חיובי",
+    "negative": "שלילי",
+    "neutral": "ניטרלי"
+  },
+  "iot": {
+    "title": "IoT ומנעולים חכמים",
+    "subtitle": "ניהול מכשירים",
+    "totalDevices": "סה\"כ מכשירים",
+    "online": "מחובר",
+    "offline": "מנותק",
+    "batteryLow": "סוללה נמוכה",
+    "smartLockCodes": "קודי מנעול חכם",
+    "generateCode": "צור קוד",
+    "alerts": "התראות"
+  },
+  "automations": {
+    "title": "אוטומציות",
+    "subtitle": "אוטומציית תהליכים",
+    "createAutomation": "צור אוטומציה",
+    "trigger": "טריגר",
+    "conditions": "תנאים",
+    "actions": "פעולות",
+    "activate": "הפעל",
+    "deactivate": "השבת",
+    "runHistory": "היסטוריית הרצות",
+    "templates": "תבניות",
+    "successRate": "אחוז הצלחה"
+  },
+  "screening": {
+    "title": "סינון אורחים",
+    "subtitle": "הערכת סיכונים",
+    "riskScore": "ציון סיכון",
+    "approve": "אשר",
+    "flag": "סמן",
+    "block": "חסום",
+    "blacklist": "רשימה שחורה"
+  },
+  "portfolio": {
+    "title": "סקירת תיק",
+    "subtitle": "סיכום השקעות",
+    "label": "תיק נכסים",
+    "totalValue": "שווי תיק",
+    "monthlyIncome": "הכנסה חודשית",
+    "netYield": "תשואה נטו",
+    "totalProperties": "סה\"כ נכסים",
+    "occupancy": "תפוסה",
+    "income": "הכנסות",
+    "expenses": "הוצאות",
+    "net": "נטו",
+    "score": "ציון",
+    "myProperties": "הנכסים שלי",
+    "monthlyTrend": "מגמה חודשית",
+    "propertyComparison": "השוואת נכסים",
+    "incomeComparison": "השוואת הכנסות",
+    "propertyPerformance": "ביצועי נכסים",
+    "portfolioTrend": "מגמת תיק",
+    "totalIncome": "סה\"כ הכנסות",
+    "totals": "סה\"כ",
+    "property": "נכס"
+  },
+  "payments": {
+    "title": "תשלומים",
+    "subtitle": "ניהול עסקאות",
+    "transactions": "עסקאות",
+    "refund": "החזר",
+    "pending": "ממתין",
+    "completed": "הושלם",
+    "failed": "נכשל"
+  },
+  "teams": {
+    "title": "ניהול צוות",
+    "subtitle": "צוות ותפקידים",
+    "teamMembers": "חברי צוות",
+    "role": "תפקיד",
+    "permissions": "הרשאות",
+    "performance": "ביצועים"
+  },
+  "loyalty": {
+    "title": "תוכנית נאמנות",
+    "subtitle": "Stars - תגמולים",
+    "members": "חברים",
+    "tiers": "דרגות",
+    "points": "נקודות",
+    "benefits": "הטבות"
+  },
+  "affiliates": {
+    "title": "תוכנית שותפים",
+    "subtitle": "רשת שותפים",
+    "totalAffiliates": "סה\"כ שותפים",
+    "totalReferrals": "סה\"כ הפניות",
+    "totalCommission": "סה\"כ עמלות"
   }
 }
