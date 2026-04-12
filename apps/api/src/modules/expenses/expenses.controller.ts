@@ -99,7 +99,7 @@ export class ExpensesController {
 
       // Check if expense needs owner approval via WhatsApp
       let approvalRequest = null;
-      if (expenseApprovalService.needsApproval(expense.propertyId, expense.amount)) {
+      if (expense.propertyId && await expenseApprovalService.needsApproval(expense.propertyId, Number(expense.amount))) {
         try {
           // Update the expense status to PENDING (it's already PENDING by default,
           // but this makes the intent explicit for the approval workflow)
@@ -207,7 +207,7 @@ export class ExpensesController {
   async getApprovalRequests(req: Request, res: Response, next: NextFunction) {
     try {
       const filters = approvalQuerySchema.parse(req.query);
-      const result = expenseApprovalService.getApprovalRequests(filters);
+      const result = await expenseApprovalService.getApprovalRequests(filters);
       sendPaginated(res, result.approvalRequests, result.total, result.page, result.limit);
     } catch (error) {
       next(error);
@@ -217,7 +217,7 @@ export class ExpensesController {
   async getApprovalThreshold(req: Request, res: Response, next: NextFunction) {
     try {
       const propertyId = req.params.propertyId as string;
-      const threshold = expenseApprovalService.getApprovalThreshold(propertyId);
+      const threshold = await expenseApprovalService.getApprovalThreshold(propertyId);
       sendSuccess(res, { propertyId, threshold });
     } catch (error) {
       next(error);
@@ -227,7 +227,7 @@ export class ExpensesController {
   async getPendingApprovalsForOwner(req: Request, res: Response, next: NextFunction) {
     try {
       const ownerId = req.params.ownerId as string;
-      const pending = expenseApprovalService.getPendingForOwner(ownerId);
+      const pending = await expenseApprovalService.getPendingForOwner(ownerId);
 
       // Enrich with expense details
       const enriched = [];
@@ -249,7 +249,7 @@ export class ExpensesController {
   async getApprovalHistoryForOwner(req: Request, res: Response, next: NextFunction) {
     try {
       const ownerId = req.params.ownerId as string;
-      const history = expenseApprovalService.getHistoryForOwner(ownerId);
+      const history = await expenseApprovalService.getHistoryForOwner(ownerId);
 
       const enriched = [];
       for (const req of history) {

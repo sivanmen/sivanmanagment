@@ -2,6 +2,7 @@ import { config } from './config';
 import app from './app';
 import { prisma } from './prisma/client';
 import { initRedis, disconnectRedis } from './lib/redis';
+import { startAllJobs } from './jobs';
 
 async function main() {
   try {
@@ -23,6 +24,11 @@ async function main() {
 ║  Deep:   http://localhost:${config.port}/api/v1/health/deep
 ╚══════════════════════════════════════════════╝
       `);
+
+      // Start background cron jobs (skip in test environment)
+      if (config.env !== 'test') {
+        startAllJobs();
+      }
     });
   } catch (error) {
     console.error('Failed to start server:', error);

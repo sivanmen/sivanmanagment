@@ -52,6 +52,7 @@ import expensesRoutes from './modules/expenses/expenses.routes';
 import whatsappRoutes from './modules/whatsapp/whatsapp.routes';
 import uploadsRoutes from './modules/uploads/uploads.routes';
 import messagingInstancesRoutes from './modules/messaging-instances/messaging-instances.routes';
+import whatsappWebhookRoutes from './modules/whatsapp/whatsapp-webhook.routes';
 import { stripeWebhookHandler } from './modules/payments/stripe-webhook.controller';
 import { requestLogger } from './middleware/request-logger.middleware';
 import { apiRateLimit, authRateLimit } from './middleware/rate-limit.middleware';
@@ -277,6 +278,9 @@ app.post('/api/v1/setup/reseed', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+// WhatsApp webhook (no auth — called by Evolution API, must be before auth-protected routes)
+app.use('/api/v1/webhooks/whatsapp', whatsappWebhookRoutes);
 
 // Routes
 app.use('/api/v1/auth', authRoutes);

@@ -2491,6 +2491,189 @@ export async function main(externalPrisma?: PrismaClient) {
   }
 
   // ══════════════════════════════════════════════════════════════
+  // 14. MESSAGING INSTANCES (WhatsApp / Evolution API)
+  // ══════════════════════════════════════════════════════════════
+
+  try {
+  console.log('[SEED] Section 14: Creating messaging instances...');
+
+  const evolutionApiUrl = process.env.EVOLUTION_API_URL || 'https://evolution-api-production-aad.up.railway.app';
+  const evolutionApiKey = process.env.EVOLUTION_API_KEY || '94e804e4c3ccdbb72db53ca80be5940b4b2da818e1692b7b022e656f15a95d6f';
+
+  const mainInstance = await prisma.messagingInstance.upsert({
+    where: { id: 'msg-inst-001' },
+    update: {},
+    create: {
+      id: 'msg-inst-001',
+      name: 'Sivan Management - Main',
+      provider: 'EVOLUTION_API',
+      instanceName: 'sivan-pms',
+      apiUrl: evolutionApiUrl,
+      apiKey: evolutionApiKey,
+      phoneNumber: '+306900000001',
+      isDefault: true,
+      isActive: true,
+      status: 'MSG_DISCONNECTED',
+      config: { maxMessagesPerDay: 1000, businessHoursOnly: false },
+    },
+  });
+
+  await prisma.messagingInstance.upsert({
+    where: { id: 'msg-inst-002' },
+    update: {},
+    create: {
+      id: 'msg-inst-002',
+      name: 'Backup WhatsApp Line',
+      provider: 'EVOLUTION_API',
+      instanceName: 'sivan-backup',
+      apiUrl: evolutionApiUrl,
+      apiKey: evolutionApiKey,
+      phoneNumber: '+306900000002',
+      isDefault: false,
+      isActive: true,
+      status: 'MSG_DISCONNECTED',
+      config: { maxMessagesPerDay: 500 },
+    },
+  });
+
+  // Assign properties to main instance
+  if (prop1) {
+    await prisma.messagingPropertyAssignment.upsert({
+      where: { instanceId_propertyId: { instanceId: mainInstance.id, propertyId: prop1.id } },
+      update: {},
+      create: { instanceId: mainInstance.id, propertyId: prop1.id },
+    });
+  }
+  if (prop2) {
+    await prisma.messagingPropertyAssignment.upsert({
+      where: { instanceId_propertyId: { instanceId: mainInstance.id, propertyId: prop2.id } },
+      update: {},
+      create: { instanceId: mainInstance.id, propertyId: prop2.id },
+    });
+  }
+  if (prop3) {
+    await prisma.messagingPropertyAssignment.upsert({
+      where: { instanceId_propertyId: { instanceId: mainInstance.id, propertyId: prop3.id } },
+      update: {},
+      create: { instanceId: mainInstance.id, propertyId: prop3.id },
+    });
+  }
+
+  console.log('[SEED] Created 2 messaging instances with property assignments');
+  } catch (err: any) {
+    console.error(`[SEED] ERROR in Section 14 (Messaging Instances): ${err.message}`);
+    errors.push(`Messaging Instances: ${err.message}`);
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // 15. iCAL FEEDS & CHANNEL CONNECTIONS
+  // ══════════════════════════════════════════════════════════════
+
+  try {
+  console.log('[SEED] Section 15: Creating iCal feeds & channel connections...');
+
+  // Channel connections (sample — no real OTA credentials)
+  const channels = [
+    { propertyRef: prop1, channel: 'AIRBNB' as const, externalId: 'airbnb-listing-elounda-001' },
+    { propertyRef: prop1, channel: 'BOOKING_COM' as const, externalId: 'bdc-prop-elounda-001' },
+    { propertyRef: prop2, channel: 'AIRBNB' as const, externalId: 'airbnb-listing-chania-002' },
+    { propertyRef: prop2, channel: 'BOOKING_COM' as const, externalId: 'bdc-prop-chania-002' },
+    { propertyRef: prop3, channel: 'AIRBNB' as const, externalId: 'airbnb-listing-rethymno-003' },
+    { propertyRef: prop3, channel: 'VRBO' as const, externalId: 'vrbo-listing-rethymno-003' },
+    { propertyRef: prop4, channel: 'AIRBNB' as const, externalId: 'airbnb-listing-heraklion-004' },
+    { propertyRef: prop5, channel: 'BOOKING_COM' as const, externalId: 'bdc-prop-agios-005' },
+  ];
+
+  for (const ch of channels) {
+    if (!ch.propertyRef) continue;
+    try {
+      await prisma.channelConnection.upsert({
+        where: { propertyId_channel: { propertyId: ch.propertyRef.id, channel: ch.channel } },
+        update: {},
+        create: {
+          propertyId: ch.propertyRef.id,
+          channel: ch.channel,
+          status: 'CONNECTED',
+          externalListingId: ch.externalId,
+          credentials: {},
+          settings: { autoSync: true, syncInterval: 15 },
+        },
+      });
+    } catch { /* skip if channel enum value doesn't exist */ }
+  }
+
+  // iCal feeds (sample URLs — not real, but demonstrate the structure)
+  const icalFeeds = [
+    { propertyRef: prop1, channelName: 'Airbnb', importUrl: 'https://www.airbnb.com/calendar/ical/12345678.ics?s=example_token_elounda' },
+    { propertyRef: prop1, channelName: 'Booking.com', importUrl: 'https://admin.booking.com/hotel/hoteladmin/ical.html?t=example_token_elounda' },
+    { propertyRef: prop2, channelName: 'Airbnb', importUrl: 'https://www.airbnb.com/calendar/ical/23456789.ics?s=example_token_chania' },
+    { propertyRef: prop2, channelName: 'Booking.com', importUrl: 'https://admin.booking.com/hotel/hoteladmin/ical.html?t=example_token_chania' },
+    { propertyRef: prop3, channelName: 'Airbnb', importUrl: 'https://www.airbnb.com/calendar/ical/34567890.ics?s=example_token_rethymno' },
+    { propertyRef: prop3, channelName: 'VRBO', importUrl: 'https://www.vrbo.com/icalendar/example_token_rethymno.ics' },
+  ];
+
+  for (const feed of icalFeeds) {
+    if (!feed.propertyRef) continue;
+    const existingFeed = await prisma.icalFeed.findFirst({
+      where: { propertyId: feed.propertyRef.id, channelName: feed.channelName },
+    });
+    if (!existingFeed) {
+      await prisma.icalFeed.create({
+        data: {
+          propertyId: feed.propertyRef.id,
+          channelName: feed.channelName,
+          importUrl: feed.importUrl,
+          syncIntervalMinutes: 15,
+          isActive: true,
+          syncStatus: 'PENDING',
+        },
+      });
+    }
+  }
+
+  console.log('[SEED] Created 8 channel connections and 6 iCal feeds');
+  } catch (err: any) {
+    console.error(`[SEED] ERROR in Section 15 (iCal Feeds & Channels): ${err.message}`);
+    errors.push(`iCal Feeds & Channels: ${err.message}`);
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // 16. SYSTEM SETTINGS
+  // ══════════════════════════════════════════════════════════════
+
+  try {
+  console.log('[SEED] Section 16: Creating system settings...');
+
+  const settings = [
+    { key: 'company.name', value: 'Sivan Management', category: 'general', label: 'Company Name' },
+    { key: 'company.currency', value: 'EUR', category: 'general', label: 'Default Currency' },
+    { key: 'company.timezone', value: 'Europe/Athens', category: 'general', label: 'Default Timezone' },
+    { key: 'company.locale', value: 'en', category: 'general', label: 'Default Locale' },
+    { key: 'messaging.default_provider', value: 'EVOLUTION_API', category: 'messaging', label: 'Default Messaging Provider' },
+    { key: 'messaging.business_hours_only', value: 'false', category: 'messaging', label: 'Send Only During Business Hours' },
+    { key: 'expense.auto_approve_threshold', value: '100', category: 'finance', label: 'Auto-Approve Expenses Below (EUR)' },
+    { key: 'expense.approval_expiry_hours', value: '24', category: 'finance', label: 'Approval Request Expiry (Hours)' },
+    { key: 'booking.default_checkin_time', value: '15:00', category: 'bookings', label: 'Default Check-in Time' },
+    { key: 'booking.default_checkout_time', value: '11:00', category: 'bookings', label: 'Default Check-out Time' },
+    { key: 'ical.sync_interval_minutes', value: '15', category: 'calendar', label: 'iCal Sync Interval (Minutes)' },
+    { key: 'ical.conflict_strategy', value: 'SKIP', category: 'calendar', label: 'iCal Conflict Strategy' },
+  ];
+
+  for (const setting of settings) {
+    await prisma.systemSetting.upsert({
+      where: { key: setting.key },
+      update: {},
+      create: setting,
+    });
+  }
+
+  console.log('[SEED] Created 12 system settings');
+  } catch (err: any) {
+    console.error(`[SEED] ERROR in Section 16 (System Settings): ${err.message}`);
+    errors.push(`System Settings: ${err.message}`);
+  }
+
+  // ══════════════════════════════════════════════════════════════
   // SUMMARY
   // ══════════════════════════════════════════════════════════════
 
@@ -2500,7 +2683,7 @@ export async function main(externalPrisma?: PrismaClient) {
   } else {
     console.log('\n[SEED] Seeding completed successfully!');
   }
-  console.log('[SEED] Summary: 12 properties, 20 guests, 29 bookings, 35 income records, 28 expense records, 12 maintenance requests, 12 notification templates');
+  console.log('[SEED] Summary: 12 properties, 20 guests, 29 bookings, 35 income records, 28 expense records, 12 maintenance requests, 12 notification templates, 2 messaging instances, 6 iCal feeds, 8 channel connections, 12 system settings');
   return { success: errors.length === 0, errors };
 }
 

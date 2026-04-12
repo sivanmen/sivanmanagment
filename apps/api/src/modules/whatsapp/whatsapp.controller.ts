@@ -300,7 +300,7 @@ export class WhatsAppController {
       }
 
       // Look up a pending approval request for this phone number
-      const pendingRequest = expenseApprovalService.findPendingByPhone(senderPhone);
+      const pendingRequest = await expenseApprovalService.findPendingByPhone(senderPhone);
 
       if (!pendingRequest) {
         return sendSuccess(res, {
