@@ -68,4 +68,19 @@ export const config = {
   n8n: {
     webhookUrl: process.env.N8N_WEBHOOK_URL || 'http://localhost:5678',
   },
+
+  company: {
+    name: process.env.COMPANY_NAME || 'Sivan Management',
+    address: process.env.COMPANY_ADDRESS || '',
+    taxNo: process.env.COMPANY_TAX_NO || '',
+    bankName: process.env.COMPANY_BANK_NAME || '',
+    bankBranch: process.env.COMPANY_BANK_BRANCH || '',
+    bankSwift: process.env.COMPANY_BANK_SWIFT || '',
+    bankIban: process.env.COMPANY_BANK_IBAN || '',
+    bankAddress: process.env.COMPANY_BANK_ADDRESS || '',
+  },
+
+  admin: {
+    whatsappPhone: process.env.ADMIN_WHATSAPP_PHONE || '',
+  },
 } as const;

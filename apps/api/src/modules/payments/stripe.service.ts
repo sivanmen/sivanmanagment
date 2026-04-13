@@ -11,6 +11,8 @@ import Stripe from 'stripe';
 import { config } from '../../config';
 import { prisma } from '../../prisma/client';
 import { ApiError } from '../../utils/api-error';
+import { WhatsAppService } from '../notifications/channels/whatsapp.service';
+import { systemSettingsService } from '../system-settings/system-settings.service';
 
 class StripeService {
   private stripe: Stripe;
@@ -284,7 +286,10 @@ class StripeService {
       // Update booking payment status
       const booking = await prisma.booking.findUnique({
         where: { id: bookingId },
-        include: { property: { select: { ownerId: true, id: true } } },
+        include: {
+          property: { select: { ownerId: true, id: true, name: true } },
+          guest: { select: { firstName: true, lastName: true, email: true, phone: true } },
+        },
       });
 
       if (booking) {
@@ -313,7 +318,29 @@ class StripeService {
             },
           },
         });
+
+        // Notify admin via WhatsApp
+        await this.notifyAdminPayment({
+          type: 'payment_received',
+          amount: amountInCurrency,
+          currency: paymentIntent.currency.toUpperCase(),
+          guestName: booking.guestName,
+          guestPhone: booking.guest?.phone || booking.guestPhone,
+          guestEmail: booking.guest?.email || booking.guestEmail,
+          propertyName: booking.property.name,
+          bookingId: booking.id,
+        });
       }
+    } else {
+      // Payment without booking — still notify admin
+      await this.notifyAdminPayment({
+        type: 'payment_received',
+        amount: amountInCurrency,
+        currency: paymentIntent.currency.toUpperCase(),
+        guestName: paymentIntent.metadata?.guestName || 'Unknown',
+        guestPhone: null,
+        propertyName: paymentIntent.metadata?.propertyName,
+      });
     }
   }
 
@@ -339,12 +366,41 @@ class StripeService {
       },
     });
 
+    // Notify admin about failed payment
+    let guestName = paymentIntent.metadata?.guestName || 'Unknown';
+    let guestPhone: string | null = null;
+    let propertyName = paymentIntent.metadata?.propertyName;
+
     if (bookingId) {
-      await prisma.booking.update({
+      const booking = await prisma.booking.findUnique({
         where: { id: bookingId },
-        data: { paymentStatus: 'FAILED' },
+        include: {
+          property: { select: { name: true } },
+          guest: { select: { phone: true } },
+        },
       });
+
+      if (booking) {
+        await prisma.booking.update({
+          where: { id: bookingId },
+          data: { paymentStatus: 'FAILED' },
+        });
+        guestName = booking.guestName;
+        guestPhone = booking.guest?.phone || booking.guestPhone;
+        propertyName = booking.property.name;
+      }
     }
+
+    await this.notifyAdminPayment({
+      type: 'payment_failed',
+      amount: amountInCurrency,
+      currency: paymentIntent.currency.toUpperCase(),
+      guestName,
+      guestPhone,
+      propertyName,
+      bookingId: bookingId || undefined,
+      errorMessage: paymentIntent.last_payment_error?.message || 'Unknown failure',
+    });
   }
 
   private async handleChargeRefunded(charge: Stripe.Charge): Promise<void> {
@@ -381,12 +437,42 @@ class StripeService {
     });
 
     // If fully refunded, update booking
-    if (originalTransaction?.bookingId && charge.refunded) {
-      await prisma.booking.update({
+    let guestName = 'Unknown';
+    let guestPhone: string | null = null;
+    let propertyName: string | undefined;
+
+    if (originalTransaction?.bookingId) {
+      const booking = await prisma.booking.findUnique({
         where: { id: originalTransaction.bookingId },
-        data: { paymentStatus: 'REFUNDED' },
+        include: {
+          property: { select: { name: true } },
+          guest: { select: { phone: true } },
+        },
       });
+      if (booking) {
+        guestName = booking.guestName;
+        guestPhone = booking.guest?.phone || booking.guestPhone;
+        propertyName = booking.property.name;
+      }
+
+      if (charge.refunded) {
+        await prisma.booking.update({
+          where: { id: originalTransaction.bookingId },
+          data: { paymentStatus: 'REFUNDED' },
+        });
+      }
     }
+
+    // Notify admin about refund
+    await this.notifyAdminPayment({
+      type: 'refund',
+      amount: refundedAmount,
+      currency: charge.currency.toUpperCase(),
+      guestName,
+      guestPhone,
+      propertyName,
+      bookingId: originalTransaction?.bookingId || undefined,
+    });
   }
 
   private async handleCheckoutSessionCompleted(session: Stripe.Checkout.Session): Promise<void> {
@@ -430,7 +516,10 @@ class StripeService {
     if (bookingId) {
       const booking = await prisma.booking.findUnique({
         where: { id: bookingId },
-        include: { property: { select: { ownerId: true, id: true } } },
+        include: {
+          property: { select: { ownerId: true, id: true, name: true } },
+          guest: { select: { firstName: true, lastName: true, email: true, phone: true } },
+        },
       });
 
       if (booking) {
@@ -459,7 +548,135 @@ class StripeService {
             },
           },
         });
+
+        // Notify admin via WhatsApp (checkout session)
+        await this.notifyAdminPayment({
+          type: 'payment_received',
+          amount: amountTotal,
+          currency,
+          guestName: booking.guestName,
+          guestPhone: booking.guest?.phone || booking.guestPhone,
+          guestEmail: booking.guest?.email || booking.guestEmail || session.customer_email,
+          propertyName: booking.property.name,
+          bookingId: booking.id,
+        });
       }
+    }
+  }
+
+  // ==========================================
+  // WhatsApp Admin Notification
+  // ==========================================
+
+  private async notifyAdminPayment(params: {
+    type: 'payment_received' | 'payment_failed' | 'refund';
+    amount: number;
+    currency: string;
+    guestName: string;
+    guestPhone?: string | null;
+    guestEmail?: string | null;
+    propertyName?: string;
+    bookingId?: string;
+    errorMessage?: string;
+  }): Promise<void> {
+    try {
+      // Check if admin phone is configured (DB setting first, then env fallback)
+      const adminPhone =
+        await systemSettingsService.getRawValue('notifications.admin_whatsapp_phone')
+        || config.admin.whatsappPhone;
+      if (!adminPhone) {
+        console.log('[StripeService] Admin WhatsApp phone not configured, skipping notification');
+        return;
+      }
+
+      // Check if payment notifications are enabled
+      const paymentNotifEnabled = await systemSettingsService.getRawValue('notifications.whatsapp.paymentReceived');
+      if (paymentNotifEnabled === 'false') {
+        console.log('[StripeService] WhatsApp payment notifications disabled, skipping');
+        return;
+      }
+
+      // Get WhatsApp config from messaging instance or config
+      const instance = await prisma.messagingInstance.findFirst({
+        where: { isActive: true, isDefault: true },
+      });
+
+      const whatsappConfig = instance
+        ? {
+            apiUrl: instance.apiUrl,
+            apiKey: instance.apiKey,
+            instanceName: instance.instanceName,
+          }
+        : {
+            apiUrl: config.whatsapp.apiUrl,
+            apiKey: config.whatsapp.apiKey,
+            instanceName: 'default',
+          };
+
+      if (!whatsappConfig.apiUrl || !whatsappConfig.apiKey) {
+        console.log('[StripeService] WhatsApp not configured, skipping admin notification');
+        return;
+      }
+
+      const wa = new WhatsAppService();
+      const now = new Date();
+      const timeStr = now.toLocaleString('en-GB', {
+        timeZone: 'Europe/Athens',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+
+      let message = '';
+
+      if (params.type === 'payment_received') {
+        message = [
+          `💰 *Payment Received*`,
+          ``,
+          `*Amount:* ${params.currency} ${params.amount.toFixed(2)}`,
+          `*Guest:* ${params.guestName}`,
+          params.guestPhone ? `*Phone:* ${params.guestPhone}` : null,
+          params.guestEmail ? `*Email:* ${params.guestEmail}` : null,
+          params.propertyName ? `*Property:* ${params.propertyName}` : null,
+          params.bookingId ? `*Booking:* ${params.bookingId.substring(0, 8)}...` : null,
+          `*Time:* ${timeStr}`,
+          `*Provider:* Stripe`,
+        ].filter(Boolean).join('\n');
+      } else if (params.type === 'payment_failed') {
+        message = [
+          `❌ *Payment Failed*`,
+          ``,
+          `*Amount:* ${params.currency} ${params.amount.toFixed(2)}`,
+          `*Guest:* ${params.guestName}`,
+          params.guestPhone ? `*Phone:* ${params.guestPhone}` : null,
+          params.propertyName ? `*Property:* ${params.propertyName}` : null,
+          params.errorMessage ? `*Error:* ${params.errorMessage}` : null,
+          `*Time:* ${timeStr}`,
+        ].filter(Boolean).join('\n');
+      } else if (params.type === 'refund') {
+        message = [
+          `🔄 *Refund Processed*`,
+          ``,
+          `*Amount:* ${params.currency} ${params.amount.toFixed(2)}`,
+          `*Guest:* ${params.guestName}`,
+          params.guestPhone ? `*Phone:* ${params.guestPhone}` : null,
+          params.propertyName ? `*Property:* ${params.propertyName}` : null,
+          params.bookingId ? `*Booking:* ${params.bookingId.substring(0, 8)}...` : null,
+          `*Time:* ${timeStr}`,
+        ].filter(Boolean).join('\n');
+      }
+
+      await wa.sendMessage(whatsappConfig, {
+        phone: adminPhone,
+        message,
+      });
+
+      console.log(`[StripeService] Admin WhatsApp notification sent (${params.type}) to ${adminPhone.substring(0, 6)}...`);
+    } catch (error) {
+      // Never let notification failure block payment processing
+      console.error('[StripeService] Failed to send admin WhatsApp notification:', error);
     }
   }
 

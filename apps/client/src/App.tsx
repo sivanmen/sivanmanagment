@@ -25,6 +25,8 @@ const AffiliatePage = lazy(() => import('./pages/AffiliatePage'));
 const MessagesPage = lazy(() => import('./pages/MessagesPage'));
 const PendingApprovalsPage = lazy(() => import('./pages/PendingApprovalsPage'));
 const PropertyDetailPage = lazy(() => import('./pages/PropertyDetailPage'));
+const BookingPaymentPage = lazy(() => import('./pages/BookingPaymentPage'));
+const BookingConfirmationPage = lazy(() => import('./pages/BookingConfirmationPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 // Loading screen component - Sivan Obsidian design
@@ -84,6 +86,8 @@ export default function App() {
             <Route path="/statements" element={<StatementsPage />} />
             <Route path="/affiliate" element={<AffiliatePage />} />
             <Route path="/approvals" element={<PendingApprovalsPage />} />
+            <Route path="/booking/:bookingId/pay" element={<BookingPaymentPage />} />
+            <Route path="/booking/confirmation" element={<BookingConfirmationPage />} />
           </Route>
           <Route path="*" element={<NotFoundPage />} />
         </Routes>

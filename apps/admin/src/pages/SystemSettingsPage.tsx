@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useApiQuery, useApiMutation } from '../hooks/useApi';
+import apiClient from '../lib/api-client';
 
 // ── Types ───────────────────────────────────────────────────────
 interface SystemSetting {
@@ -127,14 +128,14 @@ function MaskedInput({
 
 // ── Default State Shapes ─────────────────────────────────────────
 const defaultGeneral = {
-  companyName: '',
+  companyName: 'SIVAN MENAHEM MANAGEMENT',
   logoUrl: '',
-  supportEmail: '',
-  supportPhone: '',
+  supportEmail: 'info@sivanmanagement.com',
+  supportPhone: '+972524518134',
   defaultCurrency: 'EUR',
   timezone: 'Europe/Athens',
   defaultLanguage: 'en',
-  businessAddress: '',
+  businessAddress: '2, Pl. Eleftherias, 73132 Chania',
 };
 
 const defaultBooking = {
@@ -157,9 +158,9 @@ const defaultFinancial = {
   invoicePrefix: 'SM-',
   taxRate: 24,
   paymentTermsDays: 30,
-  bankIban: '',
-  bankBic: '',
-  bankName: '',
+  bankIban: 'GR3401727580005758113272935',
+  bankBic: 'PIRBGRAA',
+  bankName: 'Piraeus',
 };
 
 const defaultNotifications = {
@@ -174,7 +175,7 @@ const defaultNotifications = {
     newBooking: true,
     cancellation: false,
     checkInReminder: true,
-    paymentReceived: false,
+    paymentReceived: true,
     expenseApproval: true,
   },
   sms: {
@@ -186,6 +187,7 @@ const defaultNotifications = {
   },
   checkInReminderLead: '24',
   documentExpiryLead: '14',
+  adminWhatsappPhone: '+972524518134',
 };
 
 const defaultIntegrations = {
@@ -195,6 +197,16 @@ const defaultIntegrations = {
   vrboUser: '',
   vrboPass: '',
   stripeApiKey: '',
+  stripePublishableKey: '',
+  stripeWebhookSecret: '',
+  companyLegalName: 'SIVAN MENAHEM MANAGEMENT',
+  companyTaxNo: 'EL802555027',
+  companyAddress: '2, Pl. Eleftherias, 73132 Chania',
+  bankName: 'Piraeus',
+  bankBranch: '2758',
+  bankIban: 'GR3401727580005758113272935',
+  bankSwift: 'PIRBGRAA',
+  bankAddress: '79, Chatzimichali Giannari street TK 73135 Chania GREECE',
   whatsappToken: '',
   smtpHost: '',
   smtpPort: '587',
@@ -258,6 +270,7 @@ const NOTIF_EVENTS = ['newBooking', 'cancellation', 'checkInReminder', 'paymentR
 const NOTIFICATION_MISC_MAP: Record<string, string> = {
   checkInReminderLead: 'notifications.checkin_reminder_lead',
   documentExpiryLead: 'notifications.document_expiry_lead',
+  adminWhatsappPhone: 'notifications.admin_whatsapp_phone',
 };
 
 const INTEGRATION_KEY_MAP: Record<string, string> = {
@@ -267,6 +280,16 @@ const INTEGRATION_KEY_MAP: Record<string, string> = {
   vrboUser: 'integrations.vrbo_user',
   vrboPass: 'integrations.vrbo_pass',
   stripeApiKey: 'integrations.stripe_api_key',
+  stripePublishableKey: 'integrations.stripe_publishable_key',
+  stripeWebhookSecret: 'integrations.stripe_webhook_secret',
+  companyLegalName: 'company.legal_name',
+  companyTaxNo: 'company.tax_no',
+  companyAddress: 'company.address',
+  bankName: 'company.bank_name',
+  bankBranch: 'company.bank_branch',
+  bankIban: 'company.bank_iban',
+  bankSwift: 'company.bank_swift',
+  bankAddress: 'company.bank_address',
   whatsappToken: 'integrations.whatsapp_token',
   smtpHost: 'integrations.smtp_host',
   smtpPort: 'integrations.smtp_port',
@@ -402,7 +425,43 @@ export default function SystemSettingsPage() {
   const [integrations, setIntegrations] = useState({ ...defaultIntegrations });
   const [appearance, setAppearance] = useState({ ...defaultAppearance });
   const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [stripeTestLoading, setStripeTestLoading] = useState(false);
+  const [stripeTestResult, setStripeTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [stripeStatus, setStripeStatus] = useState<any>(null);
   const initializedRef = useRef(false);
+
+  // ── Load Stripe status when integrations tab is active ──
+  useEffect(() => {
+    if (activeTab === 'integrations') {
+      apiClient.get('/payments/stripe/status')
+        .then(res => setStripeStatus(res.data?.data || res.data))
+        .catch(() => setStripeStatus(null));
+    }
+  }, [activeTab]);
+
+  const testStripeConnection = async () => {
+    setStripeTestLoading(true);
+    setStripeTestResult(null);
+    try {
+      const res = await apiClient.post('/payments/stripe/test');
+      const data = res.data?.data || res.data;
+      setStripeTestResult({
+        success: data.success,
+        message: data.success
+          ? `Connected! Balance: ${data.balance?.available?.map((b: any) => `${b.amount} ${b.currency}`).join(', ') || 'N/A'}`
+          : data.message || 'Connection failed',
+      });
+      if (data.success) {
+        // Refresh status
+        const statusRes = await apiClient.get('/payments/stripe/status');
+        setStripeStatus(statusRes.data?.data || statusRes.data);
+      }
+    } catch (e: any) {
+      setStripeTestResult({ success: false, message: e.response?.data?.message || 'Connection failed' });
+    } finally {
+      setStripeTestLoading(false);
+    }
+  };
 
   // ── Populate state from API data ──
   useEffect(() => {
@@ -1112,6 +1171,51 @@ export default function SystemSettingsPage() {
               </div>
             </div>
           </div>
+
+          <div className={sectionCard}>
+            <h3 className="font-headline text-lg font-semibold text-on-surface flex items-center gap-2">
+              <span className="text-xl">📱</span>
+              Admin Real-Time Alerts
+            </h3>
+            <p className="text-xs text-on-surface-variant -mt-2">
+              Receive instant WhatsApp notifications on your personal number for critical events like payments, cancellations, and new bookings.
+            </p>
+            <div>
+              <label className={labelClasses}>Admin WhatsApp Number</label>
+              <input
+                type="text"
+                value={notifications.adminWhatsappPhone}
+                onChange={(e) =>
+                  setNotifications({
+                    ...notifications,
+                    adminWhatsappPhone: e.target.value,
+                  })
+                }
+                placeholder="+30 694 XXX XXXX"
+                className={inputClasses}
+              />
+              <p className="text-[10px] text-on-surface-variant mt-1">
+                Full phone number with country code (e.g. +306941234567). Payment alerts, booking confirmations, and expense approvals will be sent here.
+              </p>
+            </div>
+            <div className="bg-secondary/5 border border-secondary/10 rounded-lg p-3">
+              <p className="text-xs font-medium text-secondary mb-1.5">Alerts you'll receive:</p>
+              <ul className="text-xs text-on-surface-variant space-y-1">
+                <li className="flex items-center gap-2">
+                  <span className="text-green-500">✓</span> Payment received — amount, guest name, phone, property
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-green-500">✓</span> Payment failed — with error details
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-green-500">✓</span> Refund processed — amount and booking reference
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-green-500">✓</span> New booking confirmed — guest details and dates
+                </li>
+              </ul>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1173,16 +1277,215 @@ export default function SystemSettingsPage() {
           </div>
 
           <div className={sectionCard}>
-            <h3 className="font-headline text-lg font-semibold text-on-surface">
-              {t('settings.paymentIntegrations')}
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="font-headline text-lg font-semibold text-on-surface">
+                Payment Gateway — Stripe
+              </h3>
+              {stripeStatus?.connected ? (
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-green-500">
+                  <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                  Connected
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-on-surface-variant">
+                  <span className="w-2 h-2 rounded-full bg-on-surface-variant/40" />
+                  Not configured
+                </span>
+              )}
+            </div>
+
+            <div className="bg-surface-container-low rounded-lg p-4 border border-outline-variant/10">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-lg bg-[#635BFF] flex items-center justify-center flex-shrink-0">
+                  <svg viewBox="0 0 24 24" className="w-5 h-5 text-white" fill="currentColor">
+                    <path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z" />
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-on-surface">Stripe Connect</p>
+                  <p className="text-xs text-on-surface-variant mt-0.5">
+                    Process payments securely with Stripe. All charges, refunds, and payouts flow through your connected Stripe account.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={labelClasses}>Publishable Key</label>
+                <MaskedInput
+                  value={integrations.stripePublishableKey}
+                  onChange={(v) => setIntegrations({ ...integrations, stripePublishableKey: v })}
+                  placeholder="pk_live_..."
+                />
+              </div>
+              <div>
+                <label className={labelClasses}>Secret Key</label>
+                <MaskedInput
+                  value={integrations.stripeApiKey}
+                  onChange={(v) => setIntegrations({ ...integrations, stripeApiKey: v })}
+                  placeholder="sk_live_..."
+                />
+              </div>
+            </div>
             <div>
-              <label className={labelClasses}>Stripe API Key</label>
+              <label className={labelClasses}>Webhook Secret</label>
               <MaskedInput
-                value={integrations.stripeApiKey}
-                onChange={(v) => setIntegrations({ ...integrations, stripeApiKey: v })}
-                placeholder="sk_live_..."
+                value={integrations.stripeWebhookSecret}
+                onChange={(v) => setIntegrations({ ...integrations, stripeWebhookSecret: v })}
+                placeholder="whsec_..."
               />
+              <p className="text-[10px] text-on-surface-variant mt-1">
+                Configure webhook at: <span className="font-mono text-secondary">https://your-api.com/api/v1/payments/stripe/webhook</span>
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => testStripeConnection()}
+                disabled={stripeTestLoading}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-[#635BFF] text-white hover:bg-[#5851DB] transition-all disabled:opacity-60"
+              >
+                {stripeTestLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plug className="w-4 h-4" />}
+                Test Connection
+              </button>
+              {stripeTestResult && (
+                <span className={`text-xs font-medium ${stripeTestResult.success ? 'text-green-500' : 'text-red-400'}`}>
+                  {stripeTestResult.message}
+                </span>
+              )}
+            </div>
+
+            {stripeStatus?.connected && stripeStatus.account && (
+              <div className="bg-green-500/5 border border-green-500/20 rounded-lg p-4 space-y-2">
+                <p className="text-sm font-medium text-green-500 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                  Connected Account
+                </p>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                  <span className="text-on-surface-variant">Account ID:</span>
+                  <span className="text-on-surface font-mono">{stripeStatus.account.id}</span>
+                  <span className="text-on-surface-variant">Business:</span>
+                  <span className="text-on-surface">{stripeStatus.account.businessName}</span>
+                  <span className="text-on-surface-variant">Country:</span>
+                  <span className="text-on-surface">{stripeStatus.account.country}</span>
+                  <span className="text-on-surface-variant">Currency:</span>
+                  <span className="text-on-surface">{stripeStatus.account.defaultCurrency}</span>
+                  <span className="text-on-surface-variant">Charges:</span>
+                  <span className={stripeStatus.account.chargesEnabled ? 'text-green-500' : 'text-red-400'}>
+                    {stripeStatus.account.chargesEnabled ? 'Enabled' : 'Disabled'}
+                  </span>
+                  <span className="text-on-surface-variant">Payouts:</span>
+                  <span className={stripeStatus.account.payoutsEnabled ? 'text-green-500' : 'text-red-400'}>
+                    {stripeStatus.account.payoutsEnabled ? 'Enabled' : 'Disabled'}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className={sectionCard}>
+            <h3 className="font-headline text-lg font-semibold text-on-surface flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-on-surface-variant" />
+              Company Billing Information
+            </h3>
+            <p className="text-xs text-on-surface-variant -mt-2">
+              Displayed on invoices, receipts, and payment confirmations sent to guests.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={labelClasses}>Company Name</label>
+                <input
+                  type="text"
+                  value={integrations.companyLegalName}
+                  onChange={(e) => setIntegrations({ ...integrations, companyLegalName: e.target.value })}
+                  placeholder="SIVAN MENAHEM MANAGEMENT"
+                  className={inputClasses}
+                />
+              </div>
+              <div>
+                <label className={labelClasses}>Tax Number (VAT/TIN)</label>
+                <input
+                  type="text"
+                  value={integrations.companyTaxNo}
+                  onChange={(e) => setIntegrations({ ...integrations, companyTaxNo: e.target.value })}
+                  placeholder="EL802555027"
+                  className={inputClasses}
+                />
+              </div>
+            </div>
+            <div>
+              <label className={labelClasses}>Company Address</label>
+              <input
+                type="text"
+                value={integrations.companyAddress}
+                onChange={(e) => setIntegrations({ ...integrations, companyAddress: e.target.value })}
+                placeholder="2, Pl. Eleftherias, 73132 Chania"
+                className={inputClasses}
+              />
+            </div>
+          </div>
+
+          <div className={sectionCard}>
+            <h3 className="font-headline text-lg font-semibold text-on-surface flex items-center gap-2">
+              <DollarSign className="w-5 h-5 text-on-surface-variant" />
+              Bank Account Details
+            </h3>
+            <p className="text-xs text-on-surface-variant -mt-2">
+              Used for bank transfer payments and displayed on owner statements.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={labelClasses}>Bank Name</label>
+                <input
+                  type="text"
+                  value={integrations.bankName}
+                  onChange={(e) => setIntegrations({ ...integrations, bankName: e.target.value })}
+                  placeholder="Piraeus Bank"
+                  className={inputClasses}
+                />
+              </div>
+              <div>
+                <label className={labelClasses}>Branch Number</label>
+                <input
+                  type="text"
+                  value={integrations.bankBranch}
+                  onChange={(e) => setIntegrations({ ...integrations, bankBranch: e.target.value })}
+                  placeholder="2758"
+                  className={inputClasses}
+                />
+              </div>
+            </div>
+            <div>
+              <label className={labelClasses}>IBAN</label>
+              <MaskedInput
+                value={integrations.bankIban}
+                onChange={(v) => setIntegrations({ ...integrations, bankIban: v })}
+                placeholder="GR34..."
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={labelClasses}>SWIFT / BIC</label>
+                <input
+                  type="text"
+                  value={integrations.bankSwift}
+                  onChange={(e) => setIntegrations({ ...integrations, bankSwift: e.target.value })}
+                  className={inputClasses}
+                  placeholder="PIRBGRAA"
+                />
+              </div>
+              <div>
+                <label className={labelClasses}>Bank Address</label>
+                <input
+                  type="text"
+                  value={integrations.bankAddress}
+                  onChange={(e) => setIntegrations({ ...integrations, bankAddress: e.target.value })}
+                  className={inputClasses}
+                  placeholder="79, Chatzimichali Giannari street..."
+                />
+              </div>
             </div>
           </div>
 

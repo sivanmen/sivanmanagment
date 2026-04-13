@@ -24,6 +24,9 @@ import {
   Clock,
   Loader2,
   AlertTriangle,
+  ExternalLink,
+  Send,
+  Copy,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import apiClient from '../lib/api-client';
@@ -546,6 +549,69 @@ export default function BookingDetailPage() {
               <span className="text-xs text-on-surface-variant">Currency:</span>
               <span className="text-xs font-medium text-on-surface">{data.currency}</span>
             </div>
+
+            {/* Payment Actions */}
+            {(data.paymentStatus === 'PENDING' || data.paymentStatus === 'PARTIAL') && (
+              <div className="mt-4 pt-4 border-t border-outline-variant/20 space-y-2">
+                <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Payment Actions</p>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={async () => {
+                      try {
+                        toast.loading('Generating payment link...', { id: 'payment-link' });
+                        const res = await apiClient.post('/payments/create-link', {
+                          bookingId: data.id,
+                          amount: Number(data.totalAmount),
+                          currency: data.currency || 'EUR',
+                          description: `Booking at ${data.property.name} - ${data.guestName}`,
+                        });
+                        const url = res.data?.data?.url || res.data?.url;
+                        if (url) {
+                          await navigator.clipboard.writeText(url);
+                          toast.success('Payment link copied to clipboard!', { id: 'payment-link' });
+                        } else {
+                          toast.error('Failed to generate link', { id: 'payment-link' });
+                        }
+                      } catch (e: any) {
+                        toast.error(e.response?.data?.message || 'Failed to generate payment link', { id: 'payment-link' });
+                      }
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#635BFF] text-white hover:bg-[#5851DB] transition-all"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    Copy Payment Link
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!data.guestEmail) {
+                        toast.error('No guest email on file');
+                        return;
+                      }
+                      try {
+                        toast.loading('Sending payment link...', { id: 'send-link' });
+                        const res = await apiClient.post('/payments/create-link', {
+                          bookingId: data.id,
+                          amount: Number(data.totalAmount),
+                          currency: data.currency || 'EUR',
+                          description: `Booking at ${data.property.name} - ${data.guestName}`,
+                        });
+                        const url = res.data?.data?.url || res.data?.url;
+                        if (url) {
+                          window.open(`https://wa.me/${data.guestPhone?.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi ${data.guestName}, here is your payment link for your booking at ${data.property.name}: ${url}`)}`, '_blank');
+                          toast.success('WhatsApp opened with payment link', { id: 'send-link' });
+                        }
+                      } catch (e: any) {
+                        toast.error(e.response?.data?.message || 'Failed', { id: 'send-link' });
+                      }
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-green-600 text-white hover:bg-green-700 transition-all"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    Send via WhatsApp
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Property Card */}

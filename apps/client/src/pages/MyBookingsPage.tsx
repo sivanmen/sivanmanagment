@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -121,6 +122,7 @@ function SkeletonCard() {
 
 export default function MyBookingsPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<StatusFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -402,11 +404,26 @@ export default function MyBookingsPage() {
                           {'\u20AC'}{total.toLocaleString()}
                         </p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-[10px] text-on-surface-variant uppercase tracking-wider">{t('bookings.payment')}</p>
-                        <div className="flex items-center gap-1">
-                          <CreditCard className={`w-3 h-3 ${paymentCfg.color}`} />
-                          <p className={`text-sm font-medium ${paymentCfg.color}`}>{paymentCfg.label}</p>
+                      <div className="flex items-center gap-3">
+                        {['PENDING', 'PARTIAL', 'partial'].includes(paymentKey) &&
+                          !['CANCELLED', 'cancelled', 'NO_SHOW'].includes(statusKey) && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/booking/${booking.id}/pay`);
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white gradient-accent hover:shadow-lg transition-all"
+                          >
+                            <CreditCard className="w-3 h-3" />
+                            Pay Now
+                          </button>
+                        )}
+                        <div className="text-right">
+                          <p className="text-[10px] text-on-surface-variant uppercase tracking-wider">{t('bookings.payment')}</p>
+                          <div className="flex items-center gap-1">
+                            <CreditCard className={`w-3 h-3 ${paymentCfg.color}`} />
+                            <p className={`text-sm font-medium ${paymentCfg.color}`}>{paymentCfg.label}</p>
+                          </div>
                         </div>
                       </div>
                     </div>
