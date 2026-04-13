@@ -1,5 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import apiClient from '../lib/api-client';
 import { toast } from 'sonner';
 import {
   FileText,
@@ -15,6 +17,7 @@ import {
   CheckCircle,
   Clock,
   XCircle,
+  Loader2,
 } from 'lucide-react';
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -95,12 +98,6 @@ interface GroupReservation {
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
-const demoProperties = [
-  { id: 'prop-1', name: 'Elounda Breeze Villa' },
-  { id: 'prop-2', name: 'Rethymno Sunset Apartment' },
-  { id: 'prop-3', name: 'Chania Harbor Studio' },
-];
-
 const quoteStatusConfig: Record<QuoteStatus, { label: string; color: string; icon: typeof Clock }> = {
   DRAFT: { label: 'Draft', color: 'bg-outline-variant/20 text-on-surface-variant', icon: FileText },
   SENT: { label: 'Sent', color: 'bg-blue-500/10 text-blue-600', icon: Send },
@@ -127,166 +124,95 @@ const folioTypeConfig: Record<FolioItemType, { label: string; color: string }> =
   TAX: { label: 'Tax', color: 'bg-amber-500/10 text-amber-600' },
 };
 
-// ── Seed Data ──────────────────────────────────────────────────────────────
-
-const seedQuotes: GuestQuote[] = [
-  {
-    id: 'q-1',
-    propertyId: 'prop-1',
-    guestName: 'Anna Schmidt',
-    guestEmail: 'anna.schmidt@gmail.com',
-    checkIn: '2026-06-15',
-    checkOut: '2026-06-22',
-    guests: 4,
-    pricing: {
-      baseRate: 150,
-      nights: 7,
-      subtotal: 945,
-      adjustments: [{ ruleName: 'Weekly Discount', ruleType: 'LENGTH_OF_STAY', adjustmentType: 'PERCENTAGE', amount: -105 }],
-      cleaningFee: 80,
-      serviceFee: 47.25,
-      taxes: 133.25,
-      total: 1205.50,
-    },
-    status: 'SENT',
-    expiresAt: '2026-04-20T23:59:59Z',
-    personalMessage: 'We would love to host you at our villa in Elounda!',
-    sentAt: '2026-04-08T10:00:00Z',
-    createdAt: '2026-04-08',
-  },
-  {
-    id: 'q-2',
-    propertyId: 'prop-2',
-    guestName: 'James Wilson',
-    guestEmail: 'jwilson@outlook.com',
-    checkIn: '2026-07-01',
-    checkOut: '2026-07-10',
-    guests: 2,
-    pricing: {
-      baseRate: 150,
-      nights: 9,
-      subtotal: 1620,
-      adjustments: [
-        { ruleName: 'Summer Peak', ruleType: 'SEASONAL', adjustmentType: 'PERCENTAGE', amount: 405 },
-        { ruleName: 'Weekly Discount', ruleType: 'LENGTH_OF_STAY', adjustmentType: 'PERCENTAGE', amount: -135 },
-      ],
-      cleaningFee: 80,
-      serviceFee: 81.00,
-      taxes: 221.00,
-      total: 2002.00,
-    },
-    status: 'DRAFT',
-    expiresAt: '2026-04-25T23:59:59Z',
-    createdAt: '2026-04-10',
-  },
-  {
-    id: 'q-3',
-    propertyId: 'prop-1',
-    guestName: 'Maria Papadopoulos',
-    guestEmail: 'maria.p@gmail.com',
-    checkIn: '2026-05-20',
-    checkOut: '2026-05-25',
-    guests: 3,
-    pricing: {
-      baseRate: 150,
-      nights: 5,
-      subtotal: 750,
-      adjustments: [],
-      cleaningFee: 80,
-      serviceFee: 37.50,
-      taxes: 107.90,
-      total: 975.40,
-    },
-    status: 'ACCEPTED',
-    expiresAt: '2026-04-15T23:59:59Z',
-    sentAt: '2026-04-05T09:00:00Z',
-    respondedAt: '2026-04-06T14:30:00Z',
-    convertedBookingId: 'bk-2026-0420',
-    createdAt: '2026-04-05',
-  },
-];
-
-const seedFolios: GuestFolio[] = [
-  {
-    id: 'f-1',
-    bookingId: 'bk-2026-0401',
-    guestName: 'Hans Mueller',
-    items: [
-      { id: 'fi-1', type: 'ACCOMMODATION', description: '5 nights - Elounda Breeze Villa', amount: 750, date: '2026-04-01', category: 'CHARGE' },
-      { id: 'fi-2', type: 'CLEANING', description: 'Cleaning fee', amount: 80, date: '2026-04-01', category: 'CHARGE' },
-      { id: 'fi-3', type: 'TAX', description: 'VAT 13%', amount: 107.90, date: '2026-04-01', category: 'CHARGE' },
-      { id: 'fi-4', type: 'PAYMENT', description: 'Credit card payment (deposit)', amount: -400, date: '2026-04-02', category: 'PAYMENT' },
-      { id: 'fi-5', type: 'UPSELL', description: 'Airport transfer', amount: 65, date: '2026-04-05', category: 'CHARGE' },
-      { id: 'fi-6', type: 'PAYMENT', description: 'Credit card payment (balance)', amount: -602.90, date: '2026-04-06', category: 'PAYMENT' },
-    ],
-    totalCharges: 1002.90,
-    totalPayments: 1002.90,
-    balance: 0,
-    currency: 'EUR',
-  },
-  {
-    id: 'f-2',
-    bookingId: 'bk-2026-0410',
-    guestName: 'Sophie Laurent',
-    items: [
-      { id: 'fi-7', type: 'ACCOMMODATION', description: '3 nights - Rethymno Sunset Apartment', amount: 450, date: '2026-04-10', category: 'CHARGE' },
-      { id: 'fi-8', type: 'CLEANING', description: 'Cleaning fee', amount: 80, date: '2026-04-10', category: 'CHARGE' },
-      { id: 'fi-9', type: 'TAX', description: 'VAT 13%', amount: 68.90, date: '2026-04-10', category: 'CHARGE' },
-      { id: 'fi-10', type: 'PAYMENT', description: 'Bank transfer (full)', amount: -598.90, date: '2026-04-10', category: 'PAYMENT' },
-    ],
-    totalCharges: 598.90,
-    totalPayments: 598.90,
-    balance: 0,
-    currency: 'EUR',
-  },
-];
-
-const seedGroups: GroupReservation[] = [
-  {
-    id: 'g-1',
-    name: 'Mueller Family Reunion',
-    organizer: { name: 'Hans Mueller', email: 'hans.m@email.de', phone: '+49171234567' },
-    propertyId: 'prop-1',
-    bookingIds: ['bk-2026-0401', 'bk-2026-0402'],
-    totalGuests: 8,
-    totalAmount: 3200,
-    notes: 'Family reunion, need two adjacent properties',
-    status: 'CONFIRMED',
-    createdAt: '2026-03-15',
-  },
-  {
-    id: 'g-2',
-    name: 'Corporate Retreat - TechStart GmbH',
-    organizer: { name: 'Lisa Weber', email: 'lisa@techstart.de' },
-    propertyId: 'prop-2',
-    bookingIds: ['bk-2026-0501', 'bk-2026-0502', 'bk-2026-0503'],
-    totalGuests: 12,
-    totalAmount: 5400,
-    notes: 'Corporate retreat, need meeting space nearby',
-    status: 'TENTATIVE',
-    createdAt: '2026-04-01',
-  },
-];
-
-const demoBookings = [
-  { id: 'bk-2026-0401', label: 'BK-0401 - Hans Mueller (Elounda)' },
-  { id: 'bk-2026-0410', label: 'BK-0410 - Sophie Laurent (Rethymno)' },
-  { id: 'bk-2026-0420', label: 'BK-0420 - Maria Papadopoulos (Elounda)' },
-];
-
 // ── Component ──────────────────────────────────────────────────────────────
 
 type Tab = 'quotes' | 'folio' | 'groups';
 
 export default function BookingExtrasPage() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>('quotes');
 
-  // Quotes state
-  const [quotes, setQuotes] = useState<GuestQuote[]>(seedQuotes);
+  // ── API Queries ─────────────────────────────────────────────────
+  const { data: quotesData, isLoading: loadingQuotes } = useQuery<GuestQuote[]>({
+    queryKey: ['booking-extras', 'quotes'],
+    queryFn: async () => {
+      const res = await apiClient.get('/booking-extras', { params: { type: 'quotes' } });
+      return res.data.data ?? res.data ?? [];
+    },
+  });
+
+  const { data: foliosData } = useQuery<GuestFolio[]>({
+    queryKey: ['booking-extras', 'folios'],
+    queryFn: async () => {
+      const res = await apiClient.get('/booking-extras', { params: { type: 'folios' } });
+      return res.data.data ?? res.data ?? [];
+    },
+  });
+
+  const { data: groupsData } = useQuery<GroupReservation[]>({
+    queryKey: ['booking-extras', 'groups'],
+    queryFn: async () => {
+      const res = await apiClient.get('/booking-extras', { params: { type: 'groups' } });
+      return res.data.data ?? res.data ?? [];
+    },
+  });
+
+  const { data: propertiesData } = useQuery<{ id: string; name: string }[]>({
+    queryKey: ['properties-list'],
+    queryFn: async () => {
+      const res = await apiClient.get('/properties', { params: { perPage: 100 } });
+      const props = res.data.data ?? res.data ?? [];
+      return props.map((p: any) => ({ id: p.id, name: p.name }));
+    },
+  });
+
+  const quotes = quotesData ?? [];
+  const folios = foliosData ?? [];
+  const groups = groupsData ?? [];
+  const demoProperties = propertiesData ?? [];
+  const demoBookings = folios.map((f) => ({ id: f.bookingId, label: `${f.bookingId} - ${f.guestName}` }));
+
+  // ── Mutations ──────────────────────────────────────────────────
+  const createQuoteMutation = useMutation({
+    mutationFn: async (payload: any) => {
+      const res = await apiClient.post('/booking-extras', { ...payload, type: 'quote' });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['booking-extras'] });
+      toast.success(t('bookingExtras.quoteCreated', 'Quote created'));
+    },
+    onError: () => toast.error('Failed to create quote'),
+  });
+
+  const updateQuoteMutation = useMutation({
+    mutationFn: async ({ id, ...payload }: { id: string; [key: string]: any }) => {
+      const res = await apiClient.put(`/booking-extras/${id}`, payload);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['booking-extras'] });
+    },
+    onError: () => toast.error('Failed to update'),
+  });
+
+  const createGroupMutation = useMutation({
+    mutationFn: async (payload: any) => {
+      const res = await apiClient.post('/booking-extras', { ...payload, type: 'group' });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['booking-extras'] });
+      toast.success(t('bookingExtras.groupCreated', 'Group reservation created'));
+    },
+    onError: () => toast.error('Failed to create group'),
+  });
+
+  // Quotes form state
   const [showQuoteForm, setShowQuoteForm] = useState(false);
   const [quoteForm, setQuoteForm] = useState({
-    propertyId: 'prop-1',
+    propertyId: '',
     guestName: '',
     guestEmail: '',
     checkIn: '',
@@ -297,8 +223,7 @@ export default function BookingExtrasPage() {
   const [viewingQuote, setViewingQuote] = useState<GuestQuote | null>(null);
 
   // Folio state
-  const [folios, setFolios] = useState<GuestFolio[]>(seedFolios);
-  const [selectedBookingId, setSelectedBookingId] = useState('bk-2026-0401');
+  const [selectedBookingId, setSelectedBookingId] = useState('');
   const [showAddCharge, setShowAddCharge] = useState(false);
   const [chargeForm, setChargeForm] = useState({
     type: 'UPSELL' as FolioItemType,
@@ -309,14 +234,13 @@ export default function BookingExtrasPage() {
   });
 
   // Groups state
-  const [groups, setGroups] = useState<GroupReservation[]>(seedGroups);
   const [showGroupForm, setShowGroupForm] = useState(false);
   const [groupForm, setGroupForm] = useState({
     name: '',
     organizerName: '',
     organizerEmail: '',
     organizerPhone: '',
-    propertyId: 'prop-1',
+    propertyId: '',
     totalGuests: 2,
     totalAmount: 0,
     notes: '',
@@ -341,46 +265,20 @@ export default function BookingExtrasPage() {
       toast.error('Check-out must be after check-in');
       return;
     }
-    const subtotal = 150 * nights;
-    const cleaningFee = 80;
-    const serviceFee = Math.round(subtotal * 0.05 * 100) / 100;
-    const taxes = Math.round((subtotal + cleaningFee) * 0.13 * 100) / 100;
-    const total = Math.round((subtotal + cleaningFee + serviceFee + taxes) * 100) / 100;
-
-    const newQuote: GuestQuote = {
-      id: `q-${Date.now()}`,
-      propertyId: quoteForm.propertyId,
-      guestName: quoteForm.guestName,
-      guestEmail: quoteForm.guestEmail,
-      checkIn: quoteForm.checkIn,
-      checkOut: quoteForm.checkOut,
-      guests: quoteForm.guests,
-      pricing: { baseRate: 150, nights, subtotal, adjustments: [], cleaningFee, serviceFee, taxes, total },
-      status: 'DRAFT',
-      expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-      personalMessage: quoteForm.personalMessage || undefined,
-      createdAt: new Date().toISOString(),
-    };
-    setQuotes((prev) => [newQuote, ...prev]);
+    createQuoteMutation.mutate(quoteForm);
     setShowQuoteForm(false);
-    setQuoteForm({ propertyId: 'prop-1', guestName: '', guestEmail: '', checkIn: '', checkOut: '', guests: 2, personalMessage: '' });
-    toast.success(t('bookingExtras.quoteCreated', 'Quote created'));
-  }, [quoteForm, t]);
+    setQuoteForm({ propertyId: '', guestName: '', guestEmail: '', checkIn: '', checkOut: '', guests: 2, personalMessage: '' });
+  }, [quoteForm, createQuoteMutation]);
 
   const handleSendQuote = useCallback((id: string) => {
-    setQuotes((prev) => prev.map((q) => q.id === id ? { ...q, status: 'SENT' as QuoteStatus, sentAt: new Date().toISOString() } : q));
+    updateQuoteMutation.mutate({ id, status: 'SENT' });
     toast.success(t('bookingExtras.quoteSent', 'Quote sent to guest'));
-  }, [t]);
+  }, [t, updateQuoteMutation]);
 
   const handleConvertQuote = useCallback((id: string) => {
-    setQuotes((prev) => prev.map((q) => q.id === id ? {
-      ...q,
-      status: 'ACCEPTED' as QuoteStatus,
-      respondedAt: new Date().toISOString(),
-      convertedBookingId: `bk-${Date.now()}`,
-    } : q));
+    updateQuoteMutation.mutate({ id, status: 'ACCEPTED', convertToBooking: true });
     toast.success(t('bookingExtras.quoteConverted', 'Quote converted to booking'));
-  }, [t]);
+  }, [t, updateQuoteMutation]);
 
   // ── Handlers: Folio ────────────────────────────────────────────────
 
@@ -398,30 +296,18 @@ export default function BookingExtrasPage() {
       category: chargeForm.category,
     };
 
-    setFolios((prev) => prev.map((f) => {
-      if (f.bookingId !== selectedBookingId) return f;
-      const items = [...f.items, newItem];
-      const totalCharges = items.filter((i) => i.category === 'CHARGE').reduce((s, i) => s + i.amount, 0);
-      const totalPayments = Math.abs(items.filter((i) => i.category === 'PAYMENT').reduce((s, i) => s + i.amount, 0));
-      const credits = items.filter((i) => i.category === 'CREDIT').reduce((s, i) => s + Math.abs(i.amount), 0);
-      return { ...f, items, totalCharges, totalPayments, balance: Math.round((totalCharges - totalPayments - credits) * 100) / 100 };
-    }));
+    updateQuoteMutation.mutate({ id: selectedBookingId, addFolioItem: newItem });
     setShowAddCharge(false);
     setChargeForm({ type: 'UPSELL', description: '', amount: 0, date: new Date().toISOString().split('T')[0], category: 'CHARGE' });
     toast.success(t('bookingExtras.folioItemAdded', 'Folio item added'));
-  }, [chargeForm, selectedBookingId, t]);
+    queryClient.invalidateQueries({ queryKey: ['booking-extras', 'folios'] });
+  }, [chargeForm, selectedBookingId, t, updateQuoteMutation, queryClient]);
 
   const handleRemoveFolioItem = useCallback((itemId: string) => {
-    setFolios((prev) => prev.map((f) => {
-      if (f.bookingId !== selectedBookingId) return f;
-      const items = f.items.filter((i) => i.id !== itemId);
-      const totalCharges = items.filter((i) => i.category === 'CHARGE').reduce((s, i) => s + i.amount, 0);
-      const totalPayments = Math.abs(items.filter((i) => i.category === 'PAYMENT').reduce((s, i) => s + i.amount, 0));
-      const credits = items.filter((i) => i.category === 'CREDIT').reduce((s, i) => s + Math.abs(i.amount), 0);
-      return { ...f, items, totalCharges, totalPayments, balance: Math.round((totalCharges - totalPayments - credits) * 100) / 100 };
-    }));
+    updateQuoteMutation.mutate({ id: selectedBookingId, removeFolioItemId: itemId });
     toast.success(t('bookingExtras.folioItemRemoved', 'Folio item removed'));
-  }, [selectedBookingId, t]);
+    queryClient.invalidateQueries({ queryKey: ['booking-extras', 'folios'] });
+  }, [selectedBookingId, t, updateQuoteMutation, queryClient]);
 
   // ── Handlers: Groups ───────────────────────────────────────────────
 
@@ -430,28 +316,15 @@ export default function BookingExtrasPage() {
       toast.error('Please fill in all required fields');
       return;
     }
-    const newGroup: GroupReservation = {
-      id: `g-${Date.now()}`,
-      name: groupForm.name,
-      organizer: { name: groupForm.organizerName, email: groupForm.organizerEmail, phone: groupForm.organizerPhone || undefined },
-      propertyId: groupForm.propertyId,
-      bookingIds: [],
-      totalGuests: groupForm.totalGuests,
-      totalAmount: groupForm.totalAmount,
-      notes: groupForm.notes || undefined,
-      status: 'TENTATIVE',
-      createdAt: new Date().toISOString(),
-    };
-    setGroups((prev) => [newGroup, ...prev]);
+    createGroupMutation.mutate(groupForm);
     setShowGroupForm(false);
-    setGroupForm({ name: '', organizerName: '', organizerEmail: '', organizerPhone: '', propertyId: 'prop-1', totalGuests: 2, totalAmount: 0, notes: '' });
-    toast.success(t('bookingExtras.groupCreated', 'Group reservation created'));
-  }, [groupForm, t]);
+    setGroupForm({ name: '', organizerName: '', organizerEmail: '', organizerPhone: '', propertyId: '', totalGuests: 2, totalAmount: 0, notes: '' });
+  }, [groupForm, createGroupMutation]);
 
   const handleUpdateGroupStatus = useCallback((id: string, status: GroupStatus) => {
-    setGroups((prev) => prev.map((g) => (g.id === id ? { ...g, status } : g)));
+    updateQuoteMutation.mutate({ id, status });
     toast.success(t('bookingExtras.groupStatusUpdated', 'Group status updated'));
-  }, [t]);
+  }, [t, updateQuoteMutation]);
 
   // ── Styles ────────────────────────────────────────────────────────
 

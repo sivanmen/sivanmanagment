@@ -1,6 +1,10 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import apiClient from '../lib/api-client';
+import { toast } from 'sonner';
 import {
+  Loader2,
   Users,
   Plus,
   Edit3,
@@ -332,8 +336,8 @@ const ANNOUNCEMENTS: Announcement[] = [
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-function getMemberName(id: string): string {
-  return TEAM_MEMBERS.find(m => m.id === id)?.name ?? id;
+function getMemberName(id: string, members: TeamMember[] = []): string {
+  return members.find(m => m.id === id)?.name ?? id;
 }
 
 function getInitials(name: string): string {
@@ -1048,7 +1052,7 @@ function CommunicationsTab({ members, announcements }: { members: TeamMember[]; 
     if (to === 'all') return 'Everyone';
     const roleMatch = ROLE_HIERARCHY.find(r => r.role === to);
     if (roleMatch) return `All ${roleMatch.label}s`;
-    return getMemberName(to);
+    return getMemberName(to, members);
   };
 
   return (
@@ -1176,15 +1180,74 @@ const TABS: { id: TabId; label: string; icon: typeof Users }[] = [
 
 export default function TeamManagementPage() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<StaffRole | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<StaffStatus | 'all'>('all');
 
-  const onlineCount = TEAM_MEMBERS.filter(m => m.status === 'online').length;
-  const awayCount = TEAM_MEMBERS.filter(m => m.status === 'away').length;
-  const avgPerformance = Math.round(TEAM_MEMBERS.reduce((s, m) => s + m.performanceScore, 0) / TEAM_MEMBERS.length);
-  const totalActiveTasks = TEAM_MEMBERS.reduce((s, m) => s + m.activeTasks, 0);
+  // ── API Queries ────────────────────────────────────────────────────────
+  const { data: teamsData, isLoading: loadingTeams } = useQuery<{
+    members: TeamMember[];
+    assignments: PropertyAssignment[];
+    announcements: Announcement[];
+  }>({
+    queryKey: ['teams'],
+    queryFn: async () => {
+      const res = await apiClient.get('/teams');
+      return res.data.data ?? res.data ?? { members: [], assignments: [], announcements: [] };
+    },
+  });
+
+  const { data: usersData } = useQuery<TeamMember[]>({
+    queryKey: ['users'],
+    queryFn: async () => {
+      const res = await apiClient.get('/users');
+      return res.data.data ?? res.data ?? [];
+    },
+  });
+
+  const createTeamMutation = useMutation({
+    mutationFn: async (payload: any) => {
+      const res = await apiClient.post('/teams', payload);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teams'] });
+      toast.success('Team member added');
+    },
+    onError: () => toast.error('Failed to add team member'),
+  });
+
+  const updateTeamMutation = useMutation({
+    mutationFn: async ({ id, ...payload }: { id: string; [key: string]: any }) => {
+      const res = await apiClient.put(`/teams/${id}`, payload);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teams'] });
+      toast.success('Team updated');
+    },
+    onError: () => toast.error('Failed to update team'),
+  });
+
+  // Merge API members with users fallback, then mock fallback
+  const members = teamsData?.members ?? usersData ?? TEAM_MEMBERS;
+  const assignments = teamsData?.assignments ?? PROPERTY_ASSIGNMENTS;
+  const announcements = teamsData?.announcements ?? ANNOUNCEMENTS;
+
+  const onlineCount = members.filter(m => m.status === 'online').length;
+  const awayCount = members.filter(m => m.status === 'away').length;
+  const avgPerformance = members.length > 0 ? Math.round(members.reduce((s, m) => s + m.performanceScore, 0) / members.length) : 0;
+  const totalActiveTasks = members.reduce((s, m) => s + m.activeTasks, 0);
+
+  if (loadingTeams) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="w-8 h-8 animate-spin text-secondary" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
@@ -1209,7 +1272,7 @@ export default function TeamManagementPage() {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <div className="glass-card p-4 rounded-xl">
           <p className="text-xs text-on-surface-variant">Total Members</p>
-          <p className="text-2xl font-headline font-bold mt-1">{TEAM_MEMBERS.length}</p>
+          <p className="text-2xl font-headline font-bold mt-1">{members.length}</p>
         </div>
         <div className="glass-card p-4 rounded-xl">
           <p className="text-xs text-on-surface-variant flex items-center gap-1">
@@ -1296,22 +1359,22 @@ export default function TeamManagementPage() {
 
       {/* Tab Content */}
       {activeTab === 'overview' && (
-        <TeamOverviewTab members={TEAM_MEMBERS} search={search} roleFilter={roleFilter} statusFilter={statusFilter} />
+        <TeamOverviewTab members={members} search={search} roleFilter={roleFilter} statusFilter={statusFilter} />
       )}
       {activeTab === 'roles' && (
-        <RoleManagementTab members={TEAM_MEMBERS} />
+        <RoleManagementTab members={members} />
       )}
       {activeTab === 'assignments' && (
-        <PropertyAssignmentsTab members={TEAM_MEMBERS} assignments={PROPERTY_ASSIGNMENTS} />
+        <PropertyAssignmentsTab members={members} assignments={assignments} />
       )}
       {activeTab === 'schedule' && (
-        <ShiftScheduleTab members={TEAM_MEMBERS} />
+        <ShiftScheduleTab members={members} />
       )}
       {activeTab === 'performance' && (
-        <PerformanceTab members={TEAM_MEMBERS} />
+        <PerformanceTab members={members} />
       )}
       {activeTab === 'communications' && (
-        <CommunicationsTab members={TEAM_MEMBERS} announcements={ANNOUNCEMENTS} />
+        <CommunicationsTab members={members} announcements={announcements} />
       )}
     </div>
   );

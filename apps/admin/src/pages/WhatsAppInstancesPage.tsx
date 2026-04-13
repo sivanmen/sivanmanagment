@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import {
   Phone,
   Plus,
@@ -14,7 +16,6 @@ import {
   Check,
   X,
   RefreshCw,
-  MessageSquare,
   Building2,
   Shield,
   AlertTriangle,
@@ -25,7 +26,9 @@ import {
   Smartphone,
   Link2,
   Unlink,
+  Loader2,
 } from 'lucide-react';
+import apiClient from '../lib/api-client';
 
 // Types
 interface MessagingInstance {
@@ -51,51 +54,11 @@ interface MessagingInstance {
   }[];
 }
 
-// Mock data for demo
-const mockInstances: MessagingInstance[] = [
-  {
-    id: 'mi-001',
-    name: 'Main WhatsApp',
-    provider: 'EVOLUTION_API',
-    status: 'MSG_ACTIVE',
-    phoneNumber: '+30 2810 123456',
-    instanceName: 'sivan-main',
-    apiUrl: 'https://evolution-api-production-aad.up.railway.app',
-    apiKey: '94e804e4...95d6f',
-    webhookUrl: 'https://api.sivanmanagment.com/api/v1/whatsapp/webhook',
-    isDefault: true,
-    isActive: true,
-    config: { autoReply: true, businessHours: '08:00-22:00' },
-    lastConnectedAt: '2026-04-12T08:00:00Z',
-    lastErrorMsg: null,
-    messagesSent: 1847,
-    messagesReceived: 923,
-    propertyAssignments: [
-      { id: 'pa-001', property: { id: 'p-001', name: 'Villa Elounda Seafront', internalCode: 'VES-001' } },
-      { id: 'pa-002', property: { id: 'p-002', name: 'Chania Old Town Apt', internalCode: 'COT-001' } },
-      { id: 'pa-003', property: { id: 'p-003', name: 'Rethymno Beach House', internalCode: 'RBH-001' } },
-    ],
-  },
-  {
-    id: 'mi-002',
-    name: 'Backup Line',
-    provider: 'EVOLUTION_API',
-    status: 'MSG_DISCONNECTED',
-    phoneNumber: '+30 2810 654321',
-    instanceName: 'sivan-backup',
-    apiUrl: 'https://evolution-api-production-aad.up.railway.app',
-    apiKey: '94e804e4...95d6f',
-    webhookUrl: null,
-    isDefault: false,
-    isActive: true,
-    config: {},
-    lastConnectedAt: '2026-04-10T15:30:00Z',
-    lastErrorMsg: 'Connection timed out',
-    messagesSent: 245,
-    messagesReceived: 112,
-    propertyAssignments: [],
-  },
-];
+interface Property {
+  id: string;
+  name: string;
+  internalCode: string;
+}
 
 const statusLabels: Record<string, { label: string; color: string; icon: typeof Wifi }> = {
   MSG_ACTIVE: { label: 'Connected', color: 'text-emerald-400 bg-emerald-500/10', icon: Wifi },
@@ -112,25 +75,10 @@ const providerLabels: Record<string, string> = {
   CUSTOM: 'Custom Provider',
 };
 
-// Mock properties for assignment
-const allProperties = [
-  { id: 'p-001', name: 'Villa Elounda Seafront', internalCode: 'VES-001' },
-  { id: 'p-002', name: 'Chania Old Town Apt', internalCode: 'COT-001' },
-  { id: 'p-003', name: 'Rethymno Beach House', internalCode: 'RBH-001' },
-  { id: 'p-004', name: 'Heraklion City Suite', internalCode: 'HCS-001' },
-  { id: 'p-005', name: 'Agios Nikolaos Villa', internalCode: 'ANV-001' },
-  { id: 'p-006', name: 'Plakias Beachfront', internalCode: 'PBF-001' },
-  { id: 'p-007', name: 'Kissamos Retreat', internalCode: 'KIS-001' },
-  { id: 'p-008', name: 'Ierapetra Penthouse', internalCode: 'IRP-001' },
-  { id: 'p-009', name: 'Sitia Panorama', internalCode: 'SPN-001' },
-  { id: 'p-010', name: 'Malia Coast Villa', internalCode: 'MCV-001' },
-  { id: 'p-011', name: 'Falasarna Sunset', internalCode: 'FSS-001' },
-  { id: 'p-012', name: 'Spinalonga View', internalCode: 'SPV-001' },
-];
-
 export default function WhatsAppInstancesPage() {
   const { t } = useTranslation();
-  const [instances, setInstances] = useState<MessagingInstance[]>(mockInstances);
+  const queryClient = useQueryClient();
+
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingInstance, setEditingInstance] = useState<MessagingInstance | null>(null);
   const [expandedInstance, setExpandedInstance] = useState<string | null>(null);
@@ -138,6 +86,9 @@ export default function WhatsAppInstancesPage() {
   const [testingConnection, setTestingConnection] = useState<string | null>(null);
   const [showAssignModal, setShowAssignModal] = useState<string | null>(null);
   const [showTestMessageModal, setShowTestMessageModal] = useState<string | null>(null);
+  const [selectedPropertyIds, setSelectedPropertyIds] = useState<string[]>([]);
+  const [qrData, setQrData] = useState<{ base64?: string; code?: string; pairingCode?: string } | null>(null);
+  const [qrLoading, setQrLoading] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -153,27 +104,173 @@ export default function WhatsAppInstancesPage() {
 
   const [testMessageData, setTestMessageData] = useState({ to: '', message: '' });
 
+  // ── Queries ────────────────────────────────────────────────────────
+
+  const { data: instances = [], isLoading, isError } = useQuery<MessagingInstance[]>({
+    queryKey: ['messaging-instances'],
+    queryFn: async () => {
+      const res = await apiClient.get('/messaging-instances');
+      return res.data.data;
+    },
+  });
+
+  const { data: allProperties = [] } = useQuery<Property[]>({
+    queryKey: ['properties-for-assignment'],
+    queryFn: async () => {
+      const res = await apiClient.get('/properties', { params: { limit: 200 } });
+      // The properties endpoint may return paginated data or a flat array
+      const raw = res.data.data;
+      return Array.isArray(raw)
+        ? raw.map((p: any) => ({ id: p.id, name: p.name, internalCode: p.internalCode }))
+        : (raw.items || raw.rows || []).map((p: any) => ({ id: p.id, name: p.name, internalCode: p.internalCode }));
+    },
+  });
+
+  // ── Mutations ──────────────────────────────────────────────────────
+
+  const createMutation = useMutation({
+    mutationFn: async (data: typeof formData) => {
+      const res = await apiClient.post('/messaging-instances', data);
+      return res.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['messaging-instances'] });
+      toast.success('Instance created successfully');
+      resetForm();
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message || 'Failed to create instance');
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: typeof formData }) => {
+      const res = await apiClient.put(`/messaging-instances/${id}`, data);
+      return res.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['messaging-instances'] });
+      toast.success('Instance updated successfully');
+      resetForm();
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message || 'Failed to update instance');
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiClient.delete(`/messaging-instances/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['messaging-instances'] });
+      toast.success('Instance deleted');
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message || 'Failed to delete instance');
+    },
+  });
+
+  const testConnectionMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiClient.post(`/messaging-instances/${id}/test`);
+      return res.data.data;
+    },
+    onSuccess: (data, id) => {
+      queryClient.invalidateQueries({ queryKey: ['messaging-instances'] });
+      if (data?.connected) {
+        toast.success('Connection successful');
+      } else {
+        toast.warning(data?.error || 'Connection test returned no errors but instance is not connected');
+      }
+      setTestingConnection(null);
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message || 'Connection test failed');
+      setTestingConnection(null);
+    },
+  });
+
+  const disconnectMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiClient.post(`/messaging-instances/${id}/disconnect`);
+      return res.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['messaging-instances'] });
+      toast.success('Instance disconnected');
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message || 'Failed to disconnect');
+    },
+  });
+
+  const sendMessageMutation = useMutation({
+    mutationFn: async (data: { instanceId: string; to: string; message: string }) => {
+      const res = await apiClient.post('/messaging-instances/send', data);
+      return res.data.data;
+    },
+    onSuccess: () => {
+      toast.success('Test message sent');
+      setShowTestMessageModal(null);
+      setTestMessageData({ to: '', message: '' });
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message || 'Failed to send message');
+    },
+  });
+
+  const assignPropertiesMutation = useMutation({
+    mutationFn: async ({ id, propertyIds }: { id: string; propertyIds: string[] }) => {
+      const res = await apiClient.post(`/messaging-instances/${id}/assign-properties`, { propertyIds });
+      return res.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['messaging-instances'] });
+      toast.success('Properties assigned');
+      setShowAssignModal(null);
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message || 'Failed to assign properties');
+    },
+  });
+
+  const setDefaultMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiClient.put(`/messaging-instances/${id}`, { isDefault: true });
+      return res.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['messaging-instances'] });
+      toast.success('Default instance updated');
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message || 'Failed to set default');
+    },
+  });
+
+  const toggleActiveMutation = useMutation({
+    mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
+      const res = await apiClient.put(`/messaging-instances/${id}`, { isActive });
+      return res.data.data;
+    },
+    onSuccess: (_data, vars) => {
+      queryClient.invalidateQueries({ queryKey: ['messaging-instances'] });
+      toast.success(vars.isActive ? 'Instance activated' : 'Instance disabled');
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message || 'Failed to toggle status');
+    },
+  });
+
+  // ── Handlers ───────────────────────────────────────────────────────
+
   const handleCreateOrEdit = () => {
     if (editingInstance) {
-      setInstances(prev => prev.map(i =>
-        i.id === editingInstance.id ? { ...i, ...formData } : i,
-      ));
+      updateMutation.mutate({ id: editingInstance.id, data: formData });
     } else {
-      const newInstance: MessagingInstance = {
-        id: `mi-${Date.now()}`,
-        ...formData,
-        status: 'MSG_DISCONNECTED',
-        isActive: true,
-        config: {},
-        lastConnectedAt: null,
-        lastErrorMsg: null,
-        messagesSent: 0,
-        messagesReceived: 0,
-        propertyAssignments: [],
-      };
-      setInstances(prev => [...prev, newInstance]);
+      createMutation.mutate(formData);
     }
-    resetForm();
   };
 
   const resetForm = () => {
@@ -202,30 +299,61 @@ export default function WhatsAppInstancesPage() {
 
   const handleDelete = (id: string) => {
     if (window.confirm('Are you sure you want to delete this messaging instance? This cannot be undone.')) {
-      setInstances(prev => prev.filter(i => i.id !== id));
+      deleteMutation.mutate(id);
     }
   };
 
   const handleTestConnection = async (id: string) => {
     setTestingConnection(id);
-    // Simulate API call
-    setTimeout(() => {
-      setInstances(prev => prev.map(i =>
-        i.id === id ? { ...i, status: 'MSG_ACTIVE', lastConnectedAt: new Date().toISOString(), lastErrorMsg: null } : i,
-      ));
-      setTestingConnection(null);
-    }, 2000);
+    testConnectionMutation.mutate(id);
   };
 
   const handleSetDefault = (id: string) => {
-    setInstances(prev => prev.map(i => ({ ...i, isDefault: i.id === id })));
+    setDefaultMutation.mutate(id);
   };
 
   const handleToggleActive = (id: string) => {
-    setInstances(prev => prev.map(i =>
-      i.id === id ? { ...i, isActive: !i.isActive } : i,
-    ));
+    const inst = instances.find(i => i.id === id);
+    if (inst) {
+      toggleActiveMutation.mutate({ id, isActive: !inst.isActive });
+    }
   };
+
+  const handleShowQr = async (id: string) => {
+    setShowQrModal(id);
+    setQrData(null);
+    setQrLoading(true);
+    try {
+      const res = await apiClient.get(`/messaging-instances/${id}/qr`);
+      setQrData(res.data.data);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Failed to load QR code');
+    } finally {
+      setQrLoading(false);
+    }
+  };
+
+  const handleOpenAssignModal = (id: string) => {
+    const inst = instances.find(i => i.id === id);
+    setSelectedPropertyIds(inst?.propertyAssignments.map(pa => pa.property.id) || []);
+    setShowAssignModal(id);
+  };
+
+  const handleSaveAssignments = () => {
+    if (showAssignModal) {
+      assignPropertiesMutation.mutate({ id: showAssignModal, propertyIds: selectedPropertyIds });
+    }
+  };
+
+  const togglePropertySelection = (propertyId: string) => {
+    setSelectedPropertyIds(prev =>
+      prev.includes(propertyId)
+        ? prev.filter(id => id !== propertyId)
+        : [...prev, propertyId],
+    );
+  };
+
+  const isMutating = createMutation.isPending || updateMutation.isPending;
 
   return (
     <div className="p-6 space-y-6">
@@ -251,268 +379,302 @@ export default function WhatsAppInstancesPage() {
         </button>
       </div>
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="glass-card rounded-xl p-4">
-          <p className="text-xs text-on-surface-variant uppercase tracking-wider">Total Instances</p>
-          <p className="text-2xl font-bold text-on-surface mt-1">{instances.length}</p>
+      {/* Loading / Error states */}
+      {isLoading && (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 animate-spin text-secondary" />
         </div>
-        <div className="glass-card rounded-xl p-4">
-          <p className="text-xs text-on-surface-variant uppercase tracking-wider">Connected</p>
-          <p className="text-2xl font-bold text-emerald-400 mt-1">
-            {instances.filter(i => i.status === 'MSG_ACTIVE').length}
-          </p>
+      )}
+
+      {isError && (
+        <div className="glass-card rounded-2xl p-8 text-center">
+          <AlertTriangle className="w-10 h-10 text-red-400 mx-auto mb-3" />
+          <h3 className="text-lg font-semibold text-on-surface mb-2">Failed to load instances</h3>
+          <p className="text-sm text-on-surface-variant mb-4">Check your connection and try again.</p>
+          <button
+            onClick={() => queryClient.invalidateQueries({ queryKey: ['messaging-instances'] })}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl gradient-accent text-white text-sm font-medium"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Retry
+          </button>
         </div>
-        <div className="glass-card rounded-xl p-4">
-          <p className="text-xs text-on-surface-variant uppercase tracking-wider">Messages Sent</p>
-          <p className="text-2xl font-bold text-on-surface mt-1">
-            {instances.reduce((sum, i) => sum + i.messagesSent, 0).toLocaleString()}
-          </p>
-        </div>
-        <div className="glass-card rounded-xl p-4">
-          <p className="text-xs text-on-surface-variant uppercase tracking-wider">Messages Received</p>
-          <p className="text-2xl font-bold text-on-surface mt-1">
-            {instances.reduce((sum, i) => sum + i.messagesReceived, 0).toLocaleString()}
-          </p>
-        </div>
-      </div>
+      )}
 
-      {/* Instance Cards */}
-      <div className="space-y-4">
-        {instances.map((inst) => {
-          const statusInfo = statusLabels[inst.status] || statusLabels.MSG_DISCONNECTED;
-          const StatusIcon = statusInfo.icon;
-          const isExpanded = expandedInstance === inst.id;
+      {!isLoading && !isError && (
+        <>
+          {/* Stats Overview */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="glass-card rounded-xl p-4">
+              <p className="text-xs text-on-surface-variant uppercase tracking-wider">Total Instances</p>
+              <p className="text-2xl font-bold text-on-surface mt-1">{instances.length}</p>
+            </div>
+            <div className="glass-card rounded-xl p-4">
+              <p className="text-xs text-on-surface-variant uppercase tracking-wider">Connected</p>
+              <p className="text-2xl font-bold text-emerald-400 mt-1">
+                {instances.filter(i => i.status === 'MSG_ACTIVE').length}
+              </p>
+            </div>
+            <div className="glass-card rounded-xl p-4">
+              <p className="text-xs text-on-surface-variant uppercase tracking-wider">Messages Sent</p>
+              <p className="text-2xl font-bold text-on-surface mt-1">
+                {instances.reduce((sum, i) => sum + (i.messagesSent || 0), 0).toLocaleString()}
+              </p>
+            </div>
+            <div className="glass-card rounded-xl p-4">
+              <p className="text-xs text-on-surface-variant uppercase tracking-wider">Messages Received</p>
+              <p className="text-2xl font-bold text-on-surface mt-1">
+                {instances.reduce((sum, i) => sum + (i.messagesReceived || 0), 0).toLocaleString()}
+              </p>
+            </div>
+          </div>
 
-          return (
-            <div key={inst.id} className="glass-card rounded-2xl overflow-hidden">
-              {/* Main Card */}
-              <div className="p-5">
-                <div className="flex items-start justify-between gap-4">
-                  {/* Left: Info */}
-                  <div className="flex items-start gap-4">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${statusInfo.color}`}>
-                      <StatusIcon className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-lg font-semibold text-on-surface">{inst.name}</h3>
-                        {inst.isDefault && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary/10 text-secondary text-[10px] font-semibold uppercase">
-                            <Star className="w-3 h-3" /> Default
-                          </span>
-                        )}
-                        {!inst.isActive && (
-                          <span className="px-2 py-0.5 rounded-full bg-gray-500/10 text-gray-400 text-[10px] font-semibold uppercase">
-                            Disabled
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-on-surface-variant">
-                        <span className="flex items-center gap-1">
-                          <Smartphone className="w-3.5 h-3.5" />
-                          {inst.phoneNumber || 'No number'}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Settings className="w-3.5 h-3.5" />
-                          {providerLabels[inst.provider]}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Building2 className="w-3.5 h-3.5" />
-                          {inst.propertyAssignments.length} properties
-                        </span>
-                        <span className={`flex items-center gap-1 ${statusInfo.color.split(' ')[0]}`}>
-                          <StatusIcon className="w-3.5 h-3.5" />
-                          {statusInfo.label}
-                        </span>
-                      </div>
-                      {inst.lastErrorMsg && (
-                        <p className="text-xs text-red-400 mt-1 flex items-center gap-1">
-                          <AlertTriangle className="w-3 h-3" />
-                          {inst.lastErrorMsg}
-                        </p>
-                      )}
-                    </div>
-                  </div>
+          {/* Instance Cards */}
+          <div className="space-y-4">
+            {instances.map((inst) => {
+              const statusInfo = statusLabels[inst.status] || statusLabels.MSG_DISCONNECTED;
+              const StatusIcon = statusInfo.icon;
+              const isExpanded = expandedInstance === inst.id;
 
-                  {/* Right: Actions */}
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleTestConnection(inst.id)}
-                      disabled={testingConnection === inst.id}
-                      className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant/50 transition-colors disabled:opacity-50"
-                      title="Test Connection"
-                    >
-                      {testingConnection === inst.id ? (
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <TestTube className="w-4 h-4" />
-                      )}
-                    </button>
-                    <button
-                      onClick={() => setShowQrModal(inst.id)}
-                      className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant/50 transition-colors"
-                      title="QR Code"
-                    >
-                      <QrCode className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => setShowTestMessageModal(inst.id)}
-                      className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant/50 transition-colors"
-                      title="Send Test Message"
-                    >
-                      <Send className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleEdit(inst)}
-                      className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant/50 transition-colors"
-                      title="Edit"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => setExpandedInstance(isExpanded ? null : inst.id)}
-                      className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant/50 transition-colors"
-                    >
-                      {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Stats Row */}
-                <div className="flex items-center gap-6 mt-4 pt-4 border-t border-border/50">
-                  <div className="text-center">
-                    <p className="text-lg font-bold text-on-surface">{inst.messagesSent.toLocaleString()}</p>
-                    <p className="text-[10px] text-on-surface-variant uppercase">Sent</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-lg font-bold text-on-surface">{inst.messagesReceived.toLocaleString()}</p>
-                    <p className="text-[10px] text-on-surface-variant uppercase">Received</p>
-                  </div>
-                  <div className="flex-1" />
-                  <div className="flex items-center gap-2">
-                    {!inst.isDefault && (
-                      <button
-                        onClick={() => handleSetDefault(inst.id)}
-                        className="text-xs text-on-surface-variant hover:text-secondary transition-colors flex items-center gap-1"
-                      >
-                        <Star className="w-3 h-3" /> Set Default
-                      </button>
-                    )}
-                    <button
-                      onClick={() => handleToggleActive(inst.id)}
-                      className={`text-xs ${inst.isActive ? 'text-emerald-400' : 'text-gray-400'} hover:opacity-80 transition-colors flex items-center gap-1`}
-                    >
-                      {inst.isActive ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
-                      {inst.isActive ? 'Active' : 'Disabled'}
-                    </button>
-                    <button
-                      onClick={() => handleDelete(inst.id)}
-                      className="text-xs text-red-400 hover:text-red-300 transition-colors flex items-center gap-1"
-                    >
-                      <Trash2 className="w-3 h-3" /> Delete
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Expanded Details */}
-              {isExpanded && (
-                <div className="border-t border-border/50 p-5 bg-surface-variant/10">
-                  <div className="grid md:grid-cols-2 gap-6">
-                    {/* Connection Details */}
-                    <div>
-                      <h4 className="text-sm font-semibold text-on-surface mb-3 flex items-center gap-2">
-                        <Settings className="w-4 h-4 text-secondary" /> Connection Details
-                      </h4>
-                      <div className="space-y-2 text-xs">
-                        <div className="flex justify-between">
-                          <span className="text-on-surface-variant">Instance Name</span>
-                          <span className="text-on-surface font-mono">{inst.instanceName}</span>
+              return (
+                <div key={inst.id} className="glass-card rounded-2xl overflow-hidden">
+                  {/* Main Card */}
+                  <div className="p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      {/* Left: Info */}
+                      <div className="flex items-start gap-4">
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${statusInfo.color}`}>
+                          <StatusIcon className="w-6 h-6" />
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-on-surface-variant">API URL</span>
-                          <span className="text-on-surface font-mono truncate ms-4 max-w-[200px]">{inst.apiUrl}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-on-surface-variant">API Key</span>
-                          <div className="flex items-center gap-1">
-                            <span className="text-on-surface font-mono">{inst.apiKey}</span>
-                            <button
-                              onClick={() => navigator.clipboard.writeText(inst.apiKey)}
-                              className="p-0.5 rounded hover:bg-surface-variant"
-                            >
-                              <Copy className="w-3 h-3 text-on-surface-variant" />
-                            </button>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-lg font-semibold text-on-surface">{inst.name}</h3>
+                            {inst.isDefault && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary/10 text-secondary text-[10px] font-semibold uppercase">
+                                <Star className="w-3 h-3" /> Default
+                              </span>
+                            )}
+                            {!inst.isActive && (
+                              <span className="px-2 py-0.5 rounded-full bg-gray-500/10 text-gray-400 text-[10px] font-semibold uppercase">
+                                Disabled
+                              </span>
+                            )}
                           </div>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-on-surface-variant">Webhook URL</span>
-                          <span className="text-on-surface font-mono truncate ms-4 max-w-[200px]">
-                            {inst.webhookUrl || 'Not configured'}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-on-surface-variant">Last Connected</span>
-                          <span className="text-on-surface">
-                            {inst.lastConnectedAt ? new Date(inst.lastConnectedAt).toLocaleString() : 'Never'}
-                          </span>
+                          <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-on-surface-variant">
+                            <span className="flex items-center gap-1">
+                              <Smartphone className="w-3.5 h-3.5" />
+                              {inst.phoneNumber || 'No number'}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Settings className="w-3.5 h-3.5" />
+                              {providerLabels[inst.provider]}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Building2 className="w-3.5 h-3.5" />
+                              {inst.propertyAssignments?.length || 0} properties
+                            </span>
+                            <span className={`flex items-center gap-1 ${statusInfo.color.split(' ')[0]}`}>
+                              <StatusIcon className="w-3.5 h-3.5" />
+                              {statusInfo.label}
+                            </span>
+                          </div>
+                          {inst.lastErrorMsg && (
+                            <p className="text-xs text-red-400 mt-1 flex items-center gap-1">
+                              <AlertTriangle className="w-3 h-3" />
+                              {inst.lastErrorMsg}
+                            </p>
+                          )}
                         </div>
                       </div>
-                    </div>
 
-                    {/* Property Assignments */}
-                    <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="text-sm font-semibold text-on-surface flex items-center gap-2">
-                          <Building2 className="w-4 h-4 text-secondary" /> Assigned Properties
-                        </h4>
+                      {/* Right: Actions */}
+                      <div className="flex items-center gap-2">
                         <button
-                          onClick={() => setShowAssignModal(inst.id)}
-                          className="text-xs text-secondary hover:text-secondary/80 flex items-center gap-1"
+                          onClick={() => handleTestConnection(inst.id)}
+                          disabled={testingConnection === inst.id}
+                          className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant/50 transition-colors disabled:opacity-50"
+                          title="Test Connection"
                         >
-                          <Link2 className="w-3 h-3" /> Manage
+                          {testingConnection === inst.id ? (
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <TestTube className="w-4 h-4" />
+                          )}
+                        </button>
+                        <button
+                          onClick={() => handleShowQr(inst.id)}
+                          className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant/50 transition-colors"
+                          title="QR Code"
+                        >
+                          <QrCode className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => setShowTestMessageModal(inst.id)}
+                          className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant/50 transition-colors"
+                          title="Send Test Message"
+                        >
+                          <Send className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleEdit(inst)}
+                          className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant/50 transition-colors"
+                          title="Edit"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => setExpandedInstance(isExpanded ? null : inst.id)}
+                          className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-variant/50 transition-colors"
+                        >
+                          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                         </button>
                       </div>
-                      {inst.propertyAssignments.length === 0 ? (
-                        <p className="text-xs text-on-surface-variant italic">
-                          No properties assigned. This instance will be available as fallback only.
-                        </p>
-                      ) : (
-                        <div className="space-y-1.5">
-                          {inst.propertyAssignments.map((pa) => (
-                            <div key={pa.id} className="flex items-center justify-between text-xs p-2 rounded-lg bg-surface/50">
-                              <span className="text-on-surface">{pa.property.name}</span>
-                              <span className="text-on-surface-variant font-mono">{pa.property.internalCode}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                    </div>
+
+                    {/* Stats Row */}
+                    <div className="flex items-center gap-6 mt-4 pt-4 border-t border-border/50">
+                      <div className="text-center">
+                        <p className="text-lg font-bold text-on-surface">{(inst.messagesSent || 0).toLocaleString()}</p>
+                        <p className="text-[10px] text-on-surface-variant uppercase">Sent</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-lg font-bold text-on-surface">{(inst.messagesReceived || 0).toLocaleString()}</p>
+                        <p className="text-[10px] text-on-surface-variant uppercase">Received</p>
+                      </div>
+                      <div className="flex-1" />
+                      <div className="flex items-center gap-2">
+                        {!inst.isDefault && (
+                          <button
+                            onClick={() => handleSetDefault(inst.id)}
+                            className="text-xs text-on-surface-variant hover:text-secondary transition-colors flex items-center gap-1"
+                          >
+                            <Star className="w-3 h-3" /> Set Default
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleToggleActive(inst.id)}
+                          className={`text-xs ${inst.isActive ? 'text-emerald-400' : 'text-gray-400'} hover:opacity-80 transition-colors flex items-center gap-1`}
+                        >
+                          {inst.isActive ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                          {inst.isActive ? 'Active' : 'Disabled'}
+                        </button>
+                        {inst.status === 'MSG_ACTIVE' && (
+                          <button
+                            onClick={() => disconnectMutation.mutate(inst.id)}
+                            className="text-xs text-orange-400 hover:text-orange-300 transition-colors flex items-center gap-1"
+                          >
+                            <Unlink className="w-3 h-3" /> Disconnect
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDelete(inst.id)}
+                          className="text-xs text-red-400 hover:text-red-300 transition-colors flex items-center gap-1"
+                        >
+                          <Trash2 className="w-3 h-3" /> Delete
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
 
-        {instances.length === 0 && (
-          <div className="glass-card rounded-2xl p-12 text-center">
-            <Phone className="w-12 h-12 text-on-surface-variant/30 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-on-surface mb-2">No WhatsApp Instances</h3>
-            <p className="text-sm text-on-surface-variant mb-6">
-              Add your first Evolution API instance to start sending WhatsApp messages.
-            </p>
-            <button
-              onClick={() => { resetForm(); setShowCreateModal(true); }}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl gradient-accent text-white text-sm font-medium"
-            >
-              <Plus className="w-4 h-4" />
-              Add Instance
-            </button>
+                  {/* Expanded Details */}
+                  {isExpanded && (
+                    <div className="border-t border-border/50 p-5 bg-surface-variant/10">
+                      <div className="grid md:grid-cols-2 gap-6">
+                        {/* Connection Details */}
+                        <div>
+                          <h4 className="text-sm font-semibold text-on-surface mb-3 flex items-center gap-2">
+                            <Settings className="w-4 h-4 text-secondary" /> Connection Details
+                          </h4>
+                          <div className="space-y-2 text-xs">
+                            <div className="flex justify-between">
+                              <span className="text-on-surface-variant">Instance Name</span>
+                              <span className="text-on-surface font-mono">{inst.instanceName}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-on-surface-variant">API URL</span>
+                              <span className="text-on-surface font-mono truncate ms-4 max-w-[200px]">{inst.apiUrl}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-on-surface-variant">API Key</span>
+                              <div className="flex items-center gap-1">
+                                <span className="text-on-surface font-mono">{inst.apiKey}</span>
+                                <button
+                                  onClick={() => navigator.clipboard.writeText(inst.apiKey)}
+                                  className="p-0.5 rounded hover:bg-surface-variant"
+                                >
+                                  <Copy className="w-3 h-3 text-on-surface-variant" />
+                                </button>
+                              </div>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-on-surface-variant">Webhook URL</span>
+                              <span className="text-on-surface font-mono truncate ms-4 max-w-[200px]">
+                                {inst.webhookUrl || 'Not configured'}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-on-surface-variant">Last Connected</span>
+                              <span className="text-on-surface">
+                                {inst.lastConnectedAt ? new Date(inst.lastConnectedAt).toLocaleString() : 'Never'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Property Assignments */}
+                        <div>
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="text-sm font-semibold text-on-surface flex items-center gap-2">
+                              <Building2 className="w-4 h-4 text-secondary" /> Assigned Properties
+                            </h4>
+                            <button
+                              onClick={() => handleOpenAssignModal(inst.id)}
+                              className="text-xs text-secondary hover:text-secondary/80 flex items-center gap-1"
+                            >
+                              <Link2 className="w-3 h-3" /> Manage
+                            </button>
+                          </div>
+                          {(!inst.propertyAssignments || inst.propertyAssignments.length === 0) ? (
+                            <p className="text-xs text-on-surface-variant italic">
+                              No properties assigned. This instance will be available as fallback only.
+                            </p>
+                          ) : (
+                            <div className="space-y-1.5">
+                              {inst.propertyAssignments.map((pa) => (
+                                <div key={pa.id} className="flex items-center justify-between text-xs p-2 rounded-lg bg-surface/50">
+                                  <span className="text-on-surface">{pa.property.name}</span>
+                                  <span className="text-on-surface-variant font-mono">{pa.property.internalCode}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {instances.length === 0 && (
+              <div className="glass-card rounded-2xl p-12 text-center">
+                <Phone className="w-12 h-12 text-on-surface-variant/30 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-on-surface mb-2">No WhatsApp Instances</h3>
+                <p className="text-sm text-on-surface-variant mb-6">
+                  Add your first Evolution API instance to start sending WhatsApp messages.
+                </p>
+                <button
+                  onClick={() => { resetForm(); setShowCreateModal(true); }}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl gradient-accent text-white text-sm font-medium"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Instance
+                </button>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </>
+      )}
 
       {/* Create/Edit Modal */}
       {showCreateModal && (
@@ -638,9 +800,10 @@ export default function WhatsAppInstancesPage() {
                 </button>
                 <button
                   onClick={handleCreateOrEdit}
-                  disabled={!formData.name || !formData.instanceName || !formData.apiUrl || !formData.apiKey}
-                  className="px-4 py-2.5 rounded-xl gradient-accent text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                  disabled={!formData.name || !formData.instanceName || !formData.apiUrl || !formData.apiKey || isMutating}
+                  className="px-4 py-2.5 rounded-xl gradient-accent text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
                 >
+                  {isMutating && <Loader2 className="w-4 h-4 animate-spin" />}
                   {editingInstance ? 'Save Changes' : 'Create Instance'}
                 </button>
               </div>
@@ -658,18 +821,43 @@ export default function WhatsAppInstancesPage() {
             <p className="text-sm text-on-surface-variant mb-6">
               Open WhatsApp on your phone and scan this QR code to connect this instance.
             </p>
-            <div className="w-48 h-48 mx-auto bg-white rounded-xl flex items-center justify-center mb-6">
-              <div className="text-gray-400 text-xs text-center p-4">
-                <RefreshCw className="w-6 h-6 mx-auto mb-2 animate-spin text-gray-300" />
-                Loading QR code...
-              </div>
+            <div className="w-48 h-48 mx-auto bg-white rounded-xl flex items-center justify-center mb-6 overflow-hidden">
+              {qrLoading ? (
+                <div className="text-gray-400 text-xs text-center p-4">
+                  <RefreshCw className="w-6 h-6 mx-auto mb-2 animate-spin text-gray-300" />
+                  Loading QR code...
+                </div>
+              ) : qrData?.base64 ? (
+                <img src={qrData.base64} alt="QR Code" className="w-full h-full object-contain" />
+              ) : qrData?.code ? (
+                <img src={`data:image/png;base64,${qrData.code}`} alt="QR Code" className="w-full h-full object-contain" />
+              ) : qrData?.pairingCode ? (
+                <div className="text-gray-700 text-center p-4">
+                  <p className="text-xs mb-2">Pairing Code:</p>
+                  <p className="text-lg font-mono font-bold">{qrData.pairingCode}</p>
+                </div>
+              ) : (
+                <div className="text-gray-400 text-xs text-center p-4">
+                  <AlertTriangle className="w-6 h-6 mx-auto mb-2 text-gray-300" />
+                  QR code unavailable
+                </div>
+              )}
             </div>
-            <button
-              onClick={() => setShowQrModal(null)}
-              className="px-4 py-2.5 rounded-xl border border-border text-sm text-on-surface hover:bg-surface-variant/50 transition-colors"
-            >
-              Close
-            </button>
+            <div className="flex items-center justify-center gap-3">
+              <button
+                onClick={() => handleShowQr(showQrModal)}
+                className="px-4 py-2.5 rounded-xl border border-border text-sm text-on-surface hover:bg-surface-variant/50 transition-colors flex items-center gap-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Refresh
+              </button>
+              <button
+                onClick={() => { setShowQrModal(null); setQrData(null); }}
+                className="px-4 py-2.5 rounded-xl border border-border text-sm text-on-surface hover:bg-surface-variant/50 transition-colors"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -717,15 +905,20 @@ export default function WhatsAppInstancesPage() {
               </button>
               <button
                 onClick={() => {
-                  // In production: call API
-                  alert(`Sending "${testMessageData.message}" to ${testMessageData.to}`);
-                  setShowTestMessageModal(null);
-                  setTestMessageData({ to: '', message: '' });
+                  sendMessageMutation.mutate({
+                    instanceId: showTestMessageModal,
+                    to: testMessageData.to,
+                    message: testMessageData.message,
+                  });
                 }}
-                disabled={!testMessageData.to || !testMessageData.message}
+                disabled={!testMessageData.to || !testMessageData.message || sendMessageMutation.isPending}
                 className="px-4 py-2.5 rounded-xl gradient-accent text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
               >
-                <Send className="w-4 h-4" />
+                {sendMessageMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
                 Send Test
               </button>
             </div>
@@ -746,8 +939,7 @@ export default function WhatsAppInstancesPage() {
             </p>
             <div className="space-y-2">
               {allProperties.map((prop) => {
-                const inst = instances.find(i => i.id === showAssignModal);
-                const isAssigned = inst?.propertyAssignments.some(pa => pa.property.id === prop.id);
+                const isAssigned = selectedPropertyIds.includes(prop.id);
                 return (
                   <label
                     key={prop.id}
@@ -755,7 +947,8 @@ export default function WhatsAppInstancesPage() {
                   >
                     <input
                       type="checkbox"
-                      defaultChecked={isAssigned}
+                      checked={isAssigned}
+                      onChange={() => togglePropertySelection(prop.id)}
                       className="w-4 h-4 rounded border-border text-secondary focus:ring-secondary"
                     />
                     <div className="flex-1">
@@ -770,6 +963,11 @@ export default function WhatsAppInstancesPage() {
                   </label>
                 );
               })}
+              {allProperties.length === 0 && (
+                <p className="text-xs text-on-surface-variant italic text-center py-4">
+                  No properties found. Create properties first.
+                </p>
+              )}
             </div>
             <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-border/50">
               <button
@@ -779,9 +977,11 @@ export default function WhatsAppInstancesPage() {
                 Cancel
               </button>
               <button
-                onClick={() => setShowAssignModal(null)}
-                className="px-4 py-2.5 rounded-xl gradient-accent text-white text-sm font-medium hover:opacity-90 transition-opacity"
+                onClick={handleSaveAssignments}
+                disabled={assignPropertiesMutation.isPending}
+                className="px-4 py-2.5 rounded-xl gradient-accent text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
               >
+                {assignPropertiesMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                 Save Assignments
               </button>
             </div>

@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import apiClient from '../lib/api-client';
 import {
   Webhook,
   Plus,
@@ -15,6 +17,7 @@ import {
   Copy,
   X,
   BookOpen,
+  Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -104,34 +107,7 @@ const methodColors: Record<string, string> = {
   DELETE: 'bg-error/15 text-error',
 };
 
-const demoEndpoints: WebhookEndpoint[] = [
-  {
-    id: 'wh-1', url: 'https://accounting.example.com/webhooks/pms',
-    events: ['booking.created', 'booking.confirmed', 'booking.cancelled', 'payment.received', 'payment.failed'],
-    secret: 'whsec_abc123def456...', isActive: true,
-    lastTriggeredAt: '2026-04-10T14:30:00Z', lastStatus: 200, failCount: 0, createdAt: '2026-01-15',
-  },
-  {
-    id: 'wh-2', url: 'https://crm.example.com/api/incoming/pms',
-    events: ['guest.created', 'guest.updated', 'checkin.submitted', 'checkout.completed'],
-    secret: 'whsec_xyz789ghi012...', isActive: true,
-    lastTriggeredAt: '2026-04-09T09:15:00Z', lastStatus: 200, failCount: 1, createdAt: '2026-02-01',
-  },
-  {
-    id: 'wh-3', url: 'https://old-system.example.com/webhook',
-    events: ['booking.created'],
-    secret: 'whsec_old000legacy...', isActive: false,
-    lastTriggeredAt: '2026-03-01T11:00:00Z', lastStatus: 500, failCount: 12, createdAt: '2025-10-01',
-  },
-];
-
-const demoDeliveries: WebhookDelivery[] = [
-  { id: 'del-1', endpointId: 'wh-1', event: 'booking.created', payload: { bookingId: 'BK-2026-1201', guest: 'Marcus Lindqvist' }, status: 200, responseBody: '{"received": true}', deliveredAt: '2026-04-10T14:30:00Z', duration: 234 },
-  { id: 'del-2', endpointId: 'wh-1', event: 'payment.received', payload: { bookingId: 'BK-2026-1201', amount: 1960 }, status: 200, deliveredAt: '2026-04-10T14:31:00Z', duration: 189 },
-  { id: 'del-3', endpointId: 'wh-2', event: 'guest.created', payload: { guestId: 'g-101', name: 'Sophie Dubois' }, status: 200, deliveredAt: '2026-04-09T09:15:00Z', duration: 312 },
-  { id: 'del-4', endpointId: 'wh-2', event: 'checkin.submitted', payload: { bookingId: 'BK-2026-1198' }, status: 502, responseBody: 'Bad Gateway', deliveredAt: '2026-04-08T16:45:00Z', duration: 5012 },
-  { id: 'del-5', endpointId: 'wh-3', event: 'booking.created', payload: { bookingId: 'BK-2026-1175' }, status: 500, responseBody: 'Internal Server Error', deliveredAt: '2026-03-01T11:00:00Z', duration: 8045 },
-];
+// Demo data removed - now fetched from API
 
 function formatDate(d: string) {
   return new Date(d).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -139,8 +115,7 @@ function formatDate(d: string) {
 
 export default function WebhooksPage() {
   const { t } = useTranslation();
-  const [endpoints, setEndpoints] = useState(demoEndpoints);
-  const [deliveries] = useState(demoDeliveries);
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'endpoints' | 'deliveries' | 'docs'>('endpoints');
   const [showCreate, setShowCreate] = useState(false);
   const [newUrl, setNewUrl] = useState('');
@@ -148,18 +123,84 @@ export default function WebhooksPage() {
   const [expandedDoc, setExpandedDoc] = useState<string | null>(null);
   const [viewPayload, setViewPayload] = useState<any>(null);
 
+  // ── API Queries ────────────────────────────────────────────────────────
+  const { data: endpointsData, isLoading: loadingEndpoints } = useQuery<WebhookEndpoint[]>({
+    queryKey: ['webhooks'],
+    queryFn: async () => {
+      const res = await apiClient.get('/webhooks');
+      return res.data.data ?? res.data ?? [];
+    },
+  });
+
+  const { data: deliveriesData, isLoading: loadingDeliveries } = useQuery<WebhookDelivery[]>({
+    queryKey: ['webhooks', 'deliveries'],
+    queryFn: async () => {
+      const res = await apiClient.get('/webhooks/deliveries');
+      return res.data.data ?? res.data ?? [];
+    },
+  });
+
+  const endpoints = endpointsData ?? [];
+  const deliveries = deliveriesData ?? [];
+
+  // ── Mutations ──────────────────────────────────────────────────────────
+  const createMutation = useMutation({
+    mutationFn: async (payload: { url: string; events: string[] }) => {
+      const res = await apiClient.post('/webhooks', payload);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['webhooks'] });
+      toast.success(t('webhooks.endpointCreated'));
+      setShowCreate(false);
+      setNewUrl('');
+      setNewEvents([]);
+    },
+    onError: () => toast.error('Failed to create endpoint'),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, ...payload }: { id: string; isActive?: boolean }) => {
+      const res = await apiClient.put(`/webhooks/${id}`, payload);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['webhooks'] });
+      toast.success(t('webhooks.endpointToggled'));
+    },
+    onError: () => toast.error('Failed to update endpoint'),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiClient.delete(`/webhooks/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['webhooks'] });
+      toast.success(t('webhooks.endpointDeleted'));
+    },
+    onError: () => toast.error('Failed to delete endpoint'),
+  });
+
+  const testMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiClient.post(`/webhooks/${id}/test`);
+    },
+    onSuccess: () => toast.success(t('webhooks.testSent')),
+    onError: () => toast.error('Test failed'),
+  });
+
   const handleToggle = (id: string) => {
-    setEndpoints((prev) => prev.map((e) => e.id === id ? { ...e, isActive: !e.isActive } : e));
-    toast.success(t('webhooks.endpointToggled'));
+    const ep = endpoints.find((e) => e.id === id);
+    if (ep) updateMutation.mutate({ id, isActive: !ep.isActive });
   };
 
   const handleDelete = (id: string) => {
-    setEndpoints((prev) => prev.filter((e) => e.id !== id));
-    toast.success(t('webhooks.endpointDeleted'));
+    deleteMutation.mutate(id);
   };
 
   const handleTest = (id: string) => {
-    toast.success(t('webhooks.testSent'));
+    testMutation.mutate(id);
   };
 
   const handleCreate = () => {
@@ -167,16 +208,7 @@ export default function WebhooksPage() {
       toast.error(t('webhooks.urlAndEventsRequired'));
       return;
     }
-    const ep: WebhookEndpoint = {
-      id: `wh-${Date.now()}`, url: newUrl, events: newEvents,
-      secret: 'whsec_' + Math.random().toString(36).slice(2, 18),
-      isActive: true, failCount: 0, createdAt: new Date().toISOString(),
-    };
-    setEndpoints((prev) => [ep, ...prev]);
-    setShowCreate(false);
-    setNewUrl('');
-    setNewEvents([]);
-    toast.success(t('webhooks.endpointCreated'));
+    createMutation.mutate({ url: newUrl, events: newEvents });
   };
 
   const toggleEvent = (event: string) => {

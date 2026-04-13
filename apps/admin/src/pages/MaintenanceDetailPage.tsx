@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import apiClient from '../lib/api-client';
 import {
   ArrowLeft,
   UserPlus,
@@ -14,6 +16,7 @@ import {
   Clock,
   Wrench,
   ImageIcon,
+  Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -40,6 +43,24 @@ interface MaintenanceDetail {
   completionNotes?: string;
   createdAt: string;
   images: string[];
+  timeline?: { date: string; event: string; type: string }[];
+  vendors?: string[];
+  property?: {
+    id: string;
+    name: string;
+    address?: string;
+    city?: string;
+  };
+  reportedByUser?: {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+  };
+  assignedToUser?: {
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+  };
 }
 
 const statusStyles: Record<MaintenanceStatus, string> = {
@@ -58,91 +79,141 @@ const priorityStyles: Record<Priority, string> = {
   URGENT: 'bg-error/10 text-error',
 };
 
-const demoDetails: Record<string, MaintenanceDetail> = {
-  'mnt-001': {
-    id: 'mnt-001',
-    title: 'Kitchen faucet leaking',
-    description:
-      'The kitchen faucet has been dripping continuously since yesterday. Water is pooling under the sink and may cause damage to the cabinet. Guest reported hearing dripping sounds at night. Needs urgent attention to prevent water damage.',
-    propertyName: 'Elounda Breeze Villa',
-    propertyId: 'prop-001',
-    propertyAddress: '12 Coastal Road, Elounda, Crete',
-    category: 'PLUMBING',
-    priority: 'HIGH',
-    status: 'OPEN',
-    reportedBy: 'Maria Papadopoulos',
-    reportedByEmail: 'maria.p@gmail.com',
-    estimatedCost: 180,
-    createdAt: '2026-04-10T09:30:00Z',
-    images: ['placeholder-1.jpg', 'placeholder-2.jpg'],
-  },
-  'mnt-002': {
-    id: 'mnt-002',
-    title: 'AC unit not cooling properly',
-    description:
-      'Air conditioning unit in the main bedroom is running but not cooling. Temperature stays at 28C despite being set to 22C. Guest has complained multiple times. Filter was cleaned last month so likely a refrigerant issue.',
-    propertyName: 'Heraklion Harbor Suite',
-    propertyId: 'prop-002',
-    propertyAddress: '8 Venetian Port Street, Heraklion, Crete',
-    category: 'HVAC',
-    priority: 'URGENT',
-    status: 'ASSIGNED',
-    reportedBy: 'Hans Mueller',
-    reportedByEmail: 'h.mueller@outlook.de',
-    assignedTo: 'Cool Air Services',
-    assignedToPhone: '+30 694 555 1234',
-    scheduledDate: '2026-04-12',
-    estimatedCost: 350,
-    createdAt: '2026-04-09T14:15:00Z',
-    images: ['placeholder-3.jpg'],
-  },
-  'mnt-003': {
-    id: 'mnt-003',
-    title: 'Broken window latch - bedroom 2',
-    description:
-      'The latch on the second bedroom window is broken and the window cannot be secured. This is a security concern. The latch mechanism appears to have worn out over time.',
-    propertyName: 'Chania Old Town Residence',
-    propertyId: 'prop-003',
-    propertyAddress: '5 Zambeliou Street, Chania, Crete',
-    category: 'STRUCTURAL',
-    priority: 'MEDIUM',
-    status: 'IN_PROGRESS',
-    reportedBy: 'Sophie Laurent',
-    reportedByEmail: 'sophie.l@yahoo.fr',
-    assignedTo: 'Dimitri Repairs',
-    assignedToPhone: '+30 694 555 5678',
-    scheduledDate: '2026-04-11',
-    estimatedCost: 90,
-    actualCost: 75,
-    createdAt: '2026-04-08T11:00:00Z',
-    images: ['placeholder-4.jpg', 'placeholder-5.jpg', 'placeholder-6.jpg'],
-  },
-};
-
-const timeline = [
-  { date: '2026-04-10 09:30', event: 'Request created', type: 'create' },
-  { date: '2026-04-10 10:00', event: 'Priority set to HIGH', type: 'update' },
-  { date: '2026-04-10 14:00', event: 'Vendor contacted', type: 'communication' },
-  { date: '2026-04-11 09:00', event: 'Scheduled for repair', type: 'status' },
-];
-
-const vendors = ['Nikos Plumbing Co.', 'Cool Air Services', 'Dimitri Repairs', 'Pool Masters GR', 'SparkClean Crete', 'Green Garden Co.'];
-
 export default function MaintenanceDetailPage() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
-  const detail = id ? demoDetails[id] : undefined;
-  const data = detail ?? Object.values(demoDetails)[0];
+  const [completionNotes, setCompletionNotes] = useState('');
+  const [actualCost, setActualCost] = useState('');
+  const [selectedVendor, setSelectedVendor] = useState('');
 
-  const [completionNotes, setCompletionNotes] = useState(data.completionNotes ?? '');
-  const [actualCost, setActualCost] = useState(data.actualCost?.toString() ?? '');
-  const [selectedVendor, setSelectedVendor] = useState(data.assignedTo ?? '');
+  // Fetch maintenance detail from API
+  const { data: rawData, isLoading, error } = useQuery({
+    queryKey: ['maintenance', id],
+    queryFn: async () => {
+      const res = await apiClient.get(`/maintenance/${id}`);
+      return res.data.data;
+    },
+    enabled: !!id,
+  });
 
-  const handleAction = (action: string) => {
-    toast.success(`${action} action triggered for ${data.id}`);
+  // Normalize API data to the expected shape
+  const data: MaintenanceDetail | undefined = rawData
+    ? {
+        id: rawData.id,
+        title: rawData.title,
+        description: rawData.description ?? '',
+        propertyName: rawData.property?.name ?? rawData.propertyName ?? '',
+        propertyId: rawData.propertyId ?? rawData.property?.id ?? '',
+        propertyAddress:
+          rawData.propertyAddress ??
+          (rawData.property ? `${rawData.property.address ?? ''}, ${rawData.property.city ?? ''}` : ''),
+        category: rawData.category ?? '',
+        priority: rawData.priority ?? 'MEDIUM',
+        status: rawData.status ?? 'OPEN',
+        reportedBy:
+          rawData.reportedBy ??
+          (rawData.reportedByUser
+            ? `${rawData.reportedByUser.firstName ?? ''} ${rawData.reportedByUser.lastName ?? ''}`.trim()
+            : ''),
+        reportedByEmail: rawData.reportedByEmail ?? rawData.reportedByUser?.email ?? '',
+        assignedTo:
+          rawData.assignedTo ??
+          (rawData.assignedToUser
+            ? `${rawData.assignedToUser.firstName ?? ''} ${rawData.assignedToUser.lastName ?? ''}`.trim()
+            : undefined),
+        assignedToPhone: rawData.assignedToPhone ?? rawData.assignedToUser?.phone ?? undefined,
+        scheduledDate: rawData.scheduledDate ?? undefined,
+        estimatedCost: rawData.estimatedCost != null ? Number(rawData.estimatedCost) : undefined,
+        actualCost: rawData.actualCost != null ? Number(rawData.actualCost) : undefined,
+        completionNotes: rawData.completionNotes ?? rawData.notes ?? '',
+        createdAt: rawData.createdAt,
+        images: rawData.images ?? [],
+        timeline: rawData.timeline ?? [],
+        vendors: rawData.vendors ?? [],
+      }
+    : undefined;
+
+  // Initialize local state from fetched data
+  useState(() => {
+    if (data) {
+      setCompletionNotes(data.completionNotes ?? '');
+      setActualCost(data.actualCost?.toString() ?? '');
+      setSelectedVendor(data.assignedTo ?? '');
+    }
+  });
+
+  // Update maintenance request mutation
+  const updateMutation = useMutation({
+    mutationFn: async (updates: Record<string, unknown>) => {
+      const res = await apiClient.put(`/maintenance/${id}`, updates);
+      return res.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['maintenance', id] });
+      queryClient.invalidateQueries({ queryKey: ['maintenance'] });
+    },
+    onError: () => {
+      toast.error('Failed to update request');
+    },
+  });
+
+  const handleStatusChange = (newStatus: MaintenanceStatus) => {
+    const updates: Record<string, unknown> = { status: newStatus };
+    if (newStatus === 'ASSIGNED' && selectedVendor) {
+      updates.assignedTo = selectedVendor;
+    }
+    updateMutation.mutate(updates, {
+      onSuccess: () => toast.success(`Status updated to ${newStatus.replace(/_/g, ' ')}`),
+    });
   };
+
+  const handleSaveNotes = () => {
+    const updates: Record<string, unknown> = {};
+    if (completionNotes) updates.completionNotes = completionNotes;
+    if (actualCost) updates.actualCost = parseFloat(actualCost);
+    updateMutation.mutate(updates, {
+      onSuccess: () => toast.success('Notes saved'),
+    });
+  };
+
+  const handleAssign = () => {
+    if (!selectedVendor) {
+      toast.error('Please select a vendor');
+      return;
+    }
+    updateMutation.mutate(
+      { status: 'ASSIGNED', assignedTo: selectedVendor },
+      { onSuccess: () => toast.success('Vendor assigned') },
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="w-8 h-8 animate-spin text-secondary" />
+      </div>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <div className="p-4 lg:p-6 text-center py-24">
+        <p className="text-on-surface-variant">Maintenance request not found.</p>
+        <button
+          onClick={() => navigate('/maintenance')}
+          className="mt-4 px-4 py-2 rounded-lg text-sm font-medium text-white gradient-accent"
+        >
+          Back to List
+        </button>
+      </div>
+    );
+  }
+
+  const timeline = data.timeline ?? [];
+  const vendors = data.vendors ?? ['Nikos Plumbing Co.', 'Cool Air Services', 'Dimitri Repairs', 'Pool Masters GR', 'SparkClean Crete', 'Green Garden Co.'];
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
@@ -177,8 +248,9 @@ export default function MaintenanceDetailPage() {
         <div className="flex items-center gap-2 flex-wrap">
           {data.status === 'OPEN' && (
             <button
-              onClick={() => handleAction('Assign')}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white gradient-accent hover:shadow-ambient-lg transition-all"
+              onClick={handleAssign}
+              disabled={updateMutation.isPending}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white gradient-accent hover:shadow-ambient-lg transition-all disabled:opacity-50"
             >
               <UserPlus className="w-4 h-4" />
               <span>Assign</span>
@@ -186,8 +258,9 @@ export default function MaintenanceDetailPage() {
           )}
           {(data.status === 'ASSIGNED' || data.status === 'WAITING_PARTS') && (
             <button
-              onClick={() => handleAction('Start')}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white gradient-accent hover:shadow-ambient-lg transition-all"
+              onClick={() => handleStatusChange('IN_PROGRESS')}
+              disabled={updateMutation.isPending}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white gradient-accent hover:shadow-ambient-lg transition-all disabled:opacity-50"
             >
               <Play className="w-4 h-4" />
               <span>Start Work</span>
@@ -195,8 +268,9 @@ export default function MaintenanceDetailPage() {
           )}
           {data.status === 'IN_PROGRESS' && (
             <button
-              onClick={() => handleAction('Complete')}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white gradient-accent hover:shadow-ambient-lg transition-all"
+              onClick={() => handleStatusChange('COMPLETED')}
+              disabled={updateMutation.isPending}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white gradient-accent hover:shadow-ambient-lg transition-all disabled:opacity-50"
             >
               <CheckCircle className="w-4 h-4" />
               <span>Complete</span>
@@ -204,8 +278,9 @@ export default function MaintenanceDetailPage() {
           )}
           {!['COMPLETED', 'CANCELLED'].includes(data.status) && (
             <button
-              onClick={() => handleAction('Cancel')}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-error bg-error/5 hover:bg-error/10 transition-colors"
+              onClick={() => handleStatusChange('CANCELLED')}
+              disabled={updateMutation.isPending}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-error bg-error/5 hover:bg-error/10 transition-colors disabled:opacity-50"
             >
               <XCircle className="w-4 h-4" />
               <span>Cancel</span>
@@ -227,25 +302,27 @@ export default function MaintenanceDetailPage() {
           </div>
 
           {/* Images */}
-          <div className="bg-surface-container-lowest rounded-xl p-5 ambient-shadow">
-            <h3 className="font-headline text-lg font-semibold text-on-surface mb-4">
-              <ImageIcon className="w-5 h-5 inline-block me-2 text-secondary" />
-              Attached Images
-            </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {data.images.map((img, idx) => (
-                <div
-                  key={idx}
-                  className="aspect-video rounded-lg bg-surface-container-high flex items-center justify-center border border-outline-variant/20"
-                >
-                  <div className="text-center">
-                    <ImageIcon className="w-8 h-8 text-on-surface-variant mx-auto mb-1" />
-                    <p className="text-[10px] text-on-surface-variant">{img}</p>
+          {data.images.length > 0 && (
+            <div className="bg-surface-container-lowest rounded-xl p-5 ambient-shadow">
+              <h3 className="font-headline text-lg font-semibold text-on-surface mb-4">
+                <ImageIcon className="w-5 h-5 inline-block me-2 text-secondary" />
+                Attached Images
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {data.images.map((img, idx) => (
+                  <div
+                    key={idx}
+                    className="aspect-video rounded-lg bg-surface-container-high flex items-center justify-center border border-outline-variant/20"
+                  >
+                    <div className="text-center">
+                      <ImageIcon className="w-8 h-8 text-on-surface-variant mx-auto mb-1" />
+                      <p className="text-[10px] text-on-surface-variant">{typeof img === 'string' ? img : `Image ${idx + 1}`}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Assignment */}
           <div className="bg-surface-container-lowest rounded-xl p-5 ambient-shadow">
@@ -258,7 +335,7 @@ export default function MaintenanceDetailPage() {
                 <p className="text-[10px] text-on-surface-variant uppercase tracking-wider mb-1">
                   Reported By
                 </p>
-                <p className="text-sm font-semibold text-on-surface">{data.reportedBy}</p>
+                <p className="text-sm font-semibold text-on-surface">{data.reportedBy || '--'}</p>
                 <p className="text-xs text-on-surface-variant">{data.reportedByEmail}</p>
               </div>
               <div className="p-3 rounded-lg bg-surface-container-low">
@@ -325,33 +402,36 @@ export default function MaintenanceDetailPage() {
               </div>
               <div className="flex justify-end">
                 <button
-                  onClick={() => toast.success('Notes saved')}
-                  className="px-4 py-2 rounded-lg text-sm font-medium text-white gradient-accent hover:shadow-ambient-lg transition-all"
+                  onClick={handleSaveNotes}
+                  disabled={updateMutation.isPending}
+                  className="px-4 py-2 rounded-lg text-sm font-medium text-white gradient-accent hover:shadow-ambient-lg transition-all disabled:opacity-50"
                 >
-                  Save
+                  {updateMutation.isPending ? 'Saving...' : 'Save'}
                 </button>
               </div>
             </div>
           </div>
 
           {/* Timeline */}
-          <div className="bg-surface-container-lowest rounded-xl p-5 ambient-shadow">
-            <h3 className="font-headline text-lg font-semibold text-on-surface mb-4">
-              <Clock className="w-5 h-5 inline-block me-2 text-secondary" />
-              Activity Timeline
-            </h3>
-            <div className="space-y-3">
-              {timeline.map((item, idx) => (
-                <div key={idx} className="flex items-start gap-3">
-                  <div className="mt-1 w-2 h-2 rounded-full bg-secondary flex-shrink-0" />
-                  <div>
-                    <p className="text-sm font-medium text-on-surface">{item.event}</p>
-                    <p className="text-xs text-on-surface-variant">{item.date}</p>
+          {timeline.length > 0 && (
+            <div className="bg-surface-container-lowest rounded-xl p-5 ambient-shadow">
+              <h3 className="font-headline text-lg font-semibold text-on-surface mb-4">
+                <Clock className="w-5 h-5 inline-block me-2 text-secondary" />
+                Activity Timeline
+              </h3>
+              <div className="space-y-3">
+                {timeline.map((item, idx) => (
+                  <div key={idx} className="flex items-start gap-3">
+                    <div className="mt-1 w-2 h-2 rounded-full bg-secondary flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-on-surface">{item.event}</p>
+                      <p className="text-xs text-on-surface-variant">{item.date}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Right column */}

@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
   Plus,
@@ -21,7 +22,10 @@ import {
   Zap,
   BarChart3,
   Eye,
+  RefreshCw,
+  AlertCircle,
 } from 'lucide-react';
+import apiClient from '../lib/api-client';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -78,10 +82,13 @@ interface DailyPrice {
   appliedRules: string[];
 }
 
-// ── Constants ──────────────────────────────────────────────────────────────
+interface SeasonalData {
+  baseRate: number;
+  cleaningFee: number;
+  properties: { id: string; name: string }[];
+}
 
-const BASE_RATE = 150;
-const CLEANING_FEE = 80;
+// ── Constants ──────────────────────────────────────────────────────────────
 
 const typeConfig: Record<PricingRuleType, { label: string; color: string; icon: typeof Sun }> = {
   SEASONAL: { label: 'Seasonal', color: 'bg-amber-500/10 text-amber-600', icon: Sun },
@@ -94,97 +101,6 @@ const typeConfig: Record<PricingRuleType, { label: string; color: string; icon: 
 };
 
 const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-const demoProperties = [
-  { id: 'prop-1', name: 'Elounda Breeze Villa' },
-  { id: 'prop-2', name: 'Rethymno Sunset Apartment' },
-  { id: 'prop-3', name: 'Chania Harbor Studio' },
-];
-
-// ── Seed Rules ──────────────────────────────────────────────────────────────
-
-const seedRules: PricingRule[] = [
-  {
-    id: 'pr-1',
-    name: 'Summer Peak',
-    type: 'SEASONAL',
-    priority: 100,
-    isActive: true,
-    conditions: { dateRange: { start: '07-01', end: '08-31' } },
-    adjustment: { type: 'PERCENTAGE', value: 30, applyTo: 'NIGHTLY_RATE' },
-    createdAt: '2026-01-15',
-  },
-  {
-    id: 'pr-2',
-    name: 'Winter Low',
-    type: 'SEASONAL',
-    priority: 90,
-    isActive: true,
-    conditions: { dateRange: { start: '11-01', end: '02-28' } },
-    adjustment: { type: 'PERCENTAGE', value: -20, applyTo: 'NIGHTLY_RATE' },
-    createdAt: '2026-01-15',
-  },
-  {
-    id: 'pr-3',
-    name: 'Weekend Premium',
-    type: 'DAY_OF_WEEK',
-    priority: 80,
-    isActive: true,
-    conditions: { daysOfWeek: [5, 6] },
-    adjustment: { type: 'PERCENTAGE', value: 15, applyTo: 'NIGHTLY_RATE' },
-    createdAt: '2026-01-20',
-  },
-  {
-    id: 'pr-4',
-    name: 'Weekly Discount',
-    type: 'LENGTH_OF_STAY',
-    priority: 70,
-    isActive: true,
-    conditions: { minNights: 7 },
-    adjustment: { type: 'PERCENTAGE', value: -10, applyTo: 'TOTAL' },
-    createdAt: '2026-02-01',
-  },
-  {
-    id: 'pr-5',
-    name: 'Monthly Discount',
-    type: 'LENGTH_OF_STAY',
-    priority: 75,
-    isActive: true,
-    conditions: { minNights: 28 },
-    adjustment: { type: 'PERCENTAGE', value: -25, applyTo: 'TOTAL' },
-    createdAt: '2026-02-01',
-  },
-  {
-    id: 'pr-6',
-    name: 'Last Minute',
-    type: 'LAST_MINUTE',
-    priority: 60,
-    isActive: true,
-    conditions: { maxDaysBeforeCheckin: 3 },
-    adjustment: { type: 'PERCENTAGE', value: -15, applyTo: 'NIGHTLY_RATE' },
-    createdAt: '2026-02-10',
-  },
-  {
-    id: 'pr-7',
-    name: 'Early Bird',
-    type: 'EARLY_BIRD',
-    priority: 50,
-    isActive: true,
-    conditions: { minDaysBeforeCheckin: 60 },
-    adjustment: { type: 'PERCENTAGE', value: -5, applyTo: 'NIGHTLY_RATE' },
-    createdAt: '2026-02-10',
-  },
-  {
-    id: 'pr-8',
-    name: 'High Occupancy',
-    type: 'OCCUPANCY',
-    priority: 40,
-    isActive: true,
-    conditions: { minOccupancyPercent: 80 },
-    adjustment: { type: 'PERCENTAGE', value: 10, applyTo: 'NIGHTLY_RATE' },
-    createdAt: '2026-03-01',
-  },
-];
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -225,8 +141,8 @@ function dateInRange(date: Date, rangeStart: string, rangeEnd: string): boolean 
     d.month < end.month || (d.month === end.month && d.day <= end.day);
 }
 
-function computeDailyPrice(date: Date, rules: PricingRule[]): { price: number; appliedRules: string[] } {
-  let price = BASE_RATE;
+function computeDailyPrice(date: Date, rules: PricingRule[], baseRate: number): { price: number; appliedRules: string[] } {
+  let price = baseRate;
   const applied: string[] = [];
   const active = rules
     .filter((r) => r.isActive && r.adjustment.applyTo === 'NIGHTLY_RATE')
@@ -251,6 +167,8 @@ function simulatePrice(
   checkOut: string,
   guests: number,
   rules: PricingRule[],
+  baseRate: number,
+  cleaningFee: number,
 ): { subtotal: number; adjustments: PriceAdjustmentDetail[]; cleaningFee: number; serviceFee: number; taxes: number; total: number; nights: number } {
   const ciDate = new Date(checkIn);
   const coDate = new Date(checkOut);
@@ -265,7 +183,7 @@ function simulatePrice(
   for (let i = 0; i < nights; i++) {
     const d = new Date(ciDate);
     d.setDate(d.getDate() + i);
-    let rate = BASE_RATE;
+    let rate = baseRate;
     for (const rule of activeRules) {
       if (rule.adjustment.applyTo !== 'NIGHTLY_RATE') continue;
       const c = rule.conditions;
@@ -303,7 +221,6 @@ function simulatePrice(
     if (adj !== 0) adjustments.push({ ruleName: rule.name, ruleType: rule.type, adjustmentType: rule.adjustment.type, amount: Math.round(adj * 100) / 100 });
   }
 
-  const cleaningFee = CLEANING_FEE;
   const serviceFee = Math.round(subtotal * 0.05 * 100) / 100;
   const taxes = Math.round((subtotal + cleaningFee) * 0.13 * 100) / 100;
   const total = Math.round((subtotal + cleaningFee + serviceFee + taxes) * 100) / 100;
@@ -316,13 +233,13 @@ type ViewMode = 'rules' | 'simulator' | 'calendar';
 
 export default function PricingPage() {
   const { t } = useTranslation();
-  const [rules, setRules] = useState<PricingRule[]>(seedRules);
+  const queryClient = useQueryClient();
   const [view, setView] = useState<ViewMode>('rules');
   const [editingRule, setEditingRule] = useState<Partial<PricingRule> | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   // Simulator state
-  const [simPropertyId, setSimPropertyId] = useState('prop-1');
+  const [simPropertyId, setSimPropertyId] = useState('');
   const [simCheckIn, setSimCheckIn] = useState('2026-07-15');
   const [simCheckOut, setSimCheckOut] = useState('2026-07-22');
   const [simGuests, setSimGuests] = useState(2);
@@ -332,8 +249,79 @@ export default function PricingPage() {
   const [calYear, setCalYear] = useState(2026);
   const [hoveredDay, setHoveredDay] = useState<DailyPrice | null>(null);
 
+  // ── API Queries ──────────────────────────────────────────────
+  const { data: rulesData, isLoading, isError, error } = useQuery<PricingRule[]>({
+    queryKey: ['pricing-rates'],
+    queryFn: async () => {
+      const res = await apiClient.get('/pricing/rates');
+      return res.data.data;
+    },
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const { data: seasonalData } = useQuery<SeasonalData>({
+    queryKey: ['pricing-seasonal'],
+    queryFn: async () => {
+      const res = await apiClient.get('/pricing/seasonal');
+      return res.data.data;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // ── Mutations ──────────────────────────────────────────────
+  const createRateMutation = useMutation({
+    mutationFn: (data: Partial<PricingRule>) =>
+      apiClient.post('/pricing/rates', data),
+    onSuccess: () => {
+      toast.success(t('pricing.ruleCreated', 'Rule created'));
+      queryClient.invalidateQueries({ queryKey: ['pricing-rates'] });
+    },
+    onError: () => {
+      toast.error('Failed to create pricing rule');
+    },
+  });
+
+  const updateRateMutation = useMutation({
+    mutationFn: ({ id, ...data }: Partial<PricingRule> & { id: string }) =>
+      apiClient.put(`/pricing/rates/${id}`, data),
+    onSuccess: () => {
+      toast.success(t('pricing.ruleUpdated', 'Rule updated'));
+      queryClient.invalidateQueries({ queryKey: ['pricing-rates'] });
+    },
+    onError: () => {
+      toast.error('Failed to update pricing rule');
+    },
+  });
+
+  const deleteRateMutation = useMutation({
+    mutationFn: (id: string) =>
+      apiClient.delete(`/pricing/rates/${id}`),
+    onSuccess: () => {
+      toast.success(t('pricing.ruleDeleted', 'Rule deleted'));
+      queryClient.invalidateQueries({ queryKey: ['pricing-rates'] });
+    },
+    onError: () => {
+      toast.error('Failed to delete pricing rule');
+    },
+  });
+
+  const rules = rulesData ?? [];
+  const BASE_RATE = seasonalData?.baseRate ?? 150;
+  const CLEANING_FEE = seasonalData?.cleaningFee ?? 80;
+  const properties = seasonalData?.properties ?? [];
+
+  // Set default simPropertyId once properties load
+  if (simPropertyId === '' && properties.length > 0) {
+    setSimPropertyId(properties[0].id);
+  }
+
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['pricing-rates'] });
+    queryClient.invalidateQueries({ queryKey: ['pricing-seasonal'] });
+  };
+
   // Stats
-  const activeRules = rules.filter((r) => r.isActive).length;
+  const activeRulesCount = rules.filter((r) => r.isActive).length;
   const avgAdjustment = rules.length > 0
     ? Math.round(rules.reduce((s, r) => s + Math.abs(r.adjustment.value), 0) / rules.length)
     : 0;
@@ -346,7 +334,7 @@ export default function PricingPage() {
     const prices: DailyPrice[] = [];
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(calYear, calMonth - 1, day);
-      const { price, appliedRules } = computeDailyPrice(date, rules);
+      const { price, appliedRules } = computeDailyPrice(date, rules, BASE_RATE);
       prices.push({
         date: `${calYear}-${String(calMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
         price,
@@ -354,7 +342,7 @@ export default function PricingPage() {
       });
     }
     return { prices, firstDayOfWeek, daysInMonth };
-  }, [calMonth, calYear, rules]);
+  }, [calMonth, calYear, rules, BASE_RATE]);
 
   const priceRange = useMemo(() => {
     const prices = calendarData.prices.map((p) => p.price);
@@ -363,8 +351,8 @@ export default function PricingPage() {
 
   // Simulator result
   const simResult = useMemo(() => {
-    return simulatePrice(simCheckIn, simCheckOut, simGuests, rules);
-  }, [simCheckIn, simCheckOut, simGuests, rules]);
+    return simulatePrice(simCheckIn, simCheckOut, simGuests, rules, BASE_RATE, CLEANING_FEE);
+  }, [simCheckIn, simCheckOut, simGuests, rules, BASE_RATE, CLEANING_FEE]);
 
   const simWithoutRules = useMemo(() => {
     const nights = simResult.nights;
@@ -373,18 +361,19 @@ export default function PricingPage() {
     const serviceFee = Math.round(subtotal * 0.05 * 100) / 100;
     const taxes = Math.round((subtotal + CLEANING_FEE) * 0.13 * 100) / 100;
     return { subtotal, cleaningFee: CLEANING_FEE, serviceFee, taxes, total: Math.round((subtotal + CLEANING_FEE + serviceFee + taxes) * 100) / 100 };
-  }, [simResult]);
+  }, [simResult, BASE_RATE, CLEANING_FEE]);
 
   // Handlers
   const handleToggle = useCallback((id: string) => {
-    setRules((prev) => prev.map((r) => (r.id === id ? { ...r, isActive: !r.isActive } : r)));
-    toast.success(t('pricing.ruleToggled', 'Rule toggled'));
-  }, [t]);
+    const rule = rules.find((r) => r.id === id);
+    if (rule) {
+      updateRateMutation.mutate({ id, isActive: !rule.isActive } as any);
+    }
+  }, [rules, updateRateMutation]);
 
   const handleDelete = useCallback((id: string) => {
-    setRules((prev) => prev.filter((r) => r.id !== id));
-    toast.success(t('pricing.ruleDeleted', 'Rule deleted'));
-  }, [t]);
+    deleteRateMutation.mutate(id);
+  }, [deleteRateMutation]);
 
   const handleEdit = useCallback((rule: PricingRule) => {
     setEditingRule({ ...rule });
@@ -409,26 +398,13 @@ export default function PricingPage() {
       return;
     }
     if (editingId) {
-      setRules((prev) => prev.map((r) => (r.id === editingId ? { ...r, ...editingRule } as PricingRule : r)));
-      toast.success(t('pricing.ruleUpdated', 'Rule updated'));
+      updateRateMutation.mutate({ id: editingId, ...editingRule } as any);
     } else {
-      const newRule: PricingRule = {
-        id: `pr-${Date.now()}`,
-        name: editingRule.name || '',
-        type: editingRule.type || 'CUSTOM',
-        priority: editingRule.priority || 50,
-        isActive: editingRule.isActive ?? true,
-        conditions: editingRule.conditions || {},
-        adjustment: editingRule.adjustment || { type: 'PERCENTAGE', value: 0, applyTo: 'NIGHTLY_RATE' },
-        propertyId: editingRule.propertyId,
-        createdAt: new Date().toISOString(),
-      };
-      setRules((prev) => [...prev, newRule]);
-      toast.success(t('pricing.ruleCreated', 'Rule created'));
+      createRateMutation.mutate(editingRule);
     }
     setEditingRule(null);
     setEditingId(null);
-  }, [editingRule, editingId, t]);
+  }, [editingRule, editingId, t, updateRateMutation, createRateMutation]);
 
   const handleCancelEdit = useCallback(() => {
     setEditingRule(null);
@@ -439,8 +415,8 @@ export default function PricingPage() {
 
   const inputClass = 'px-4 py-2.5 rounded-lg bg-surface-container-lowest ambient-shadow text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-2 focus:ring-secondary/30 transition-all';
 
-  const stats = [
-    { label: t('pricing.activeRules', 'Active Rules'), value: activeRules, icon: Zap, color: 'bg-secondary/10', iconColor: 'text-secondary' },
+  const statsCards = [
+    { label: t('pricing.activeRules', 'Active Rules'), value: activeRulesCount, icon: Zap, color: 'bg-secondary/10', iconColor: 'text-secondary' },
     { label: t('pricing.avgAdjustment', 'Avg Adjustment'), value: `${avgAdjustment}%`, icon: Percent, color: 'bg-blue-500/10', iconColor: 'text-blue-600' },
     { label: t('pricing.highestPremium', 'Highest Premium'), value: `+${highestPremium}%`, icon: TrendingUp, color: 'bg-success/10', iconColor: 'text-success' },
   ];
@@ -453,6 +429,65 @@ export default function PricingPage() {
     if (ratio < 0.33) return 'bg-success/20 text-success';
     if (ratio < 0.66) return 'bg-amber-500/20 text-amber-600';
     return 'bg-error/20 text-error';
+  }
+
+  // ── Error State ──────────────────────────────────────────────
+  if (isError) {
+    return (
+      <div className="p-6">
+        <div className="bg-surface-container-lowest rounded-xl p-8 ambient-shadow flex flex-col items-center justify-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-error/10 flex items-center justify-center">
+            <AlertCircle className="w-7 h-7 text-error" />
+          </div>
+          <h2 className="font-headline text-xl font-bold text-on-surface">
+            Failed to load pricing data
+          </h2>
+          <p className="text-sm text-on-surface-variant text-center max-w-md">
+            {(error as any)?.message || 'An unexpected error occurred while loading pricing rules.'}
+          </p>
+          <button
+            onClick={handleRefresh}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium text-on-secondary gradient-accent hover:opacity-90 transition-opacity"
+          >
+            <RefreshCw className="w-4 h-4" />
+            <span>Try Again</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Loading State ──────────────────────────────────────────────
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-headline font-semibold text-on-surface">
+              {t('pricing.title', 'Revenue Management')}
+            </h1>
+            <p className="text-sm text-on-surface-variant mt-1">
+              {t('pricing.subtitle', 'Dynamic pricing rules and rate optimization')}
+            </p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="bg-surface-container rounded-2xl p-5 ambient-shadow animate-pulse">
+              <div className="h-3 w-24 bg-outline-variant/20 rounded mb-3" />
+              <div className="h-7 w-16 bg-outline-variant/20 rounded" />
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="bg-surface-container rounded-2xl p-5 ambient-shadow animate-pulse">
+              <div className="h-24 bg-outline-variant/10 rounded-lg" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   // ── Render ────────────────────────────────────────────────────────────
@@ -490,7 +525,7 @@ export default function PricingPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {stats.map((s) => {
+        {statsCards.map((s) => {
           const Icon = s.icon;
           return (
             <div key={s.label} className="bg-surface-container rounded-2xl p-5 ambient-shadow">
@@ -522,7 +557,7 @@ export default function PricingPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {rules.sort((a, b) => b.priority - a.priority).map((rule) => {
+            {[...rules].sort((a, b) => b.priority - a.priority).map((rule) => {
               const cfg = typeConfig[rule.type];
               const TypeIcon = cfg.icon;
               return (
@@ -548,7 +583,7 @@ export default function PricingPage() {
                           </span>
                           {rule.propertyId ? (
                             <span className="text-xs text-on-surface-variant">
-                              {demoProperties.find((p) => p.id === rule.propertyId)?.name || rule.propertyId}
+                              {properties.find((p) => p.id === rule.propertyId)?.name || rule.propertyId}
                             </span>
                           ) : (
                             <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-outline-variant/20 text-on-surface-variant">
@@ -596,6 +631,12 @@ export default function PricingPage() {
               );
             })}
           </div>
+
+          {rules.length === 0 && (
+            <div className="bg-surface-container rounded-2xl p-12 ambient-shadow text-center">
+              <p className="text-on-surface-variant">No pricing rules found. Create your first rule to get started.</p>
+            </div>
+          )}
         </div>
       )}
 
@@ -616,7 +657,7 @@ export default function PricingPage() {
                   onChange={(e) => setSimPropertyId(e.target.value)}
                   className={inputClass + ' w-full'}
                 >
-                  {demoProperties.map((p) => (
+                  {properties.map((p) => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
                 </select>
@@ -872,7 +913,7 @@ export default function PricingPage() {
                   className={inputClass + ' w-full'}
                 >
                   <option value="">Global (all properties)</option>
-                  {demoProperties.map((p) => (
+                  {properties.map((p) => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
                 </select>
@@ -1065,7 +1106,8 @@ export default function PricingPage() {
                 </button>
                 <button
                   onClick={handleSave}
-                  className="px-6 py-2.5 bg-secondary text-on-secondary rounded-xl text-sm font-medium hover:bg-secondary/90 transition-all shadow-md"
+                  disabled={createRateMutation.isPending || updateRateMutation.isPending}
+                  className="px-6 py-2.5 bg-secondary text-on-secondary rounded-xl text-sm font-medium hover:bg-secondary/90 transition-all shadow-md disabled:opacity-50"
                 >
                   {t('common.save', 'Save')}
                 </button>

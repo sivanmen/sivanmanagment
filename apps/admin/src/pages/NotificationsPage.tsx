@@ -1,5 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import apiClient from '../lib/api-client';
 import {
   Bell,
   BellOff,
@@ -9,10 +12,8 @@ import {
   MessageSquare,
   AlertTriangle,
   CheckCircle,
-  Users,
-  Home,
   Check,
-  Filter,
+  Loader2,
 } from 'lucide-react';
 
 type NotificationType = 'booking' | 'payment' | 'maintenance' | 'message' | 'alert' | 'system';
@@ -35,19 +36,6 @@ const typeConfig: Record<NotificationType, { icon: typeof Bell; color: string; b
   system: { icon: CheckCircle, color: 'text-on-surface-variant', bgColor: 'bg-outline-variant/20' },
 };
 
-const demoNotifications: Notification[] = [
-  { id: '1', type: 'booking', title: 'New Booking Confirmed', message: 'Maria Papadopoulos booked Elounda Breeze Villa for Apr 15-22. Total: \u20AC2,450.', timestamp: '2026-04-11T09:30:00Z', read: false },
-  { id: '2', type: 'payment', title: 'Payment Received', message: 'Payment of \u20AC1,890 received for booking BK-B2C3 at Heraklion Harbor Suite.', timestamp: '2026-04-11T08:15:00Z', read: false },
-  { id: '3', type: 'maintenance', title: 'Maintenance Request Opened', message: 'Hot water issue reported at Chania Old Town Residence. Priority: High.', timestamp: '2026-04-10T16:45:00Z', read: false },
-  { id: '4', type: 'alert', title: 'Channel Sync Error', message: 'Booking.com sync failed for 1 listing. Please check channel settings.', timestamp: '2026-04-10T14:20:00Z', read: false },
-  { id: '5', type: 'message', title: 'New Guest Message', message: 'Sophie Laurent asked about early check-in at Chania Old Town Residence.', timestamp: '2026-04-10T12:00:00Z', read: true },
-  { id: '6', type: 'booking', title: 'Booking Cancelled', message: 'Anna Schmidt cancelled booking at Heraklion Harbor Suite. Refund: \u20AC1,350.', timestamp: '2026-04-10T10:30:00Z', read: true },
-  { id: '7', type: 'system', title: 'Monthly Report Ready', message: 'Your March 2026 financial report is ready for review.', timestamp: '2026-04-09T09:00:00Z', read: true },
-  { id: '8', type: 'payment', title: 'Management Fee Collected', message: 'Management fees of \u20AC4,240 collected for March 2026.', timestamp: '2026-04-08T15:00:00Z', read: true },
-  { id: '9', type: 'maintenance', title: 'Maintenance Completed', message: 'AC repair at Rethymno Sunset Apartment completed. Cost: \u20AC280.', timestamp: '2026-04-07T11:30:00Z', read: true },
-  { id: '10', type: 'alert', title: 'Low Occupancy Alert', message: 'Rethymno Sunset Apartment has no bookings for the next 14 days.', timestamp: '2026-04-06T08:00:00Z', read: true },
-];
-
 function formatTimestamp(dateStr: string): string {
   const date = new Date(dateStr);
   const now = new Date();
@@ -63,9 +51,40 @@ function formatTimestamp(dateStr: string): string {
 
 export default function NotificationsPage() {
   const { t } = useTranslation();
-  const [notifications, setNotifications] = useState(demoNotifications);
+  const queryClient = useQueryClient();
   const [filterRead, setFilterRead] = useState<'all' | 'unread'>('all');
   const [filterType, setFilterType] = useState<NotificationType | 'all'>('all');
+
+  // Fetch notifications from API
+  const { data: notificationsData, isLoading } = useQuery({
+    queryKey: ['notifications'],
+    queryFn: async () => {
+      const res = await apiClient.get('/notifications');
+      return res.data.data as Notification[];
+    },
+  });
+
+  const notifications = notificationsData ?? [];
+
+  // Mark single notification as read
+  const markReadMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiClient.put(`/notifications/${id}/read`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
+
+  // Mark all as read
+  const markAllReadMutation = useMutation({
+    mutationFn: async () => {
+      await apiClient.put('/notifications/read-all');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
 
   const filtered = useMemo(() => {
     return notifications.filter((n) => {
@@ -78,13 +97,11 @@ export default function NotificationsPage() {
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   const handleMarkAllRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    markAllReadMutation.mutate();
   };
 
   const handleToggleRead = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: !n.read } : n)),
-    );
+    markReadMutation.mutate(id);
   };
 
   const inputClass =
@@ -110,10 +127,14 @@ export default function NotificationsPage() {
           )}
           <button
             onClick={handleMarkAllRead}
-            disabled={unreadCount === 0}
+            disabled={unreadCount === 0 || markAllReadMutation.isPending}
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-white gradient-accent hover:shadow-ambient-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            <Check className="w-4 h-4" />
+            {markAllReadMutation.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Check className="w-4 h-4" />
+            )}
             <span>{t('notifications.markAllRead')}</span>
           </button>
         </div>
@@ -158,52 +179,61 @@ export default function NotificationsPage() {
         </select>
       </div>
 
+      {/* Loading state */}
+      {isLoading && (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-secondary" />
+        </div>
+      )}
+
       {/* Notification List */}
-      <div className="space-y-2">
-        {filtered.map((notification) => {
-          const config = typeConfig[notification.type];
-          const Icon = config.icon;
-          return (
-            <div
-              key={notification.id}
-              onClick={() => handleToggleRead(notification.id)}
-              className={`flex items-start gap-3 p-4 rounded-xl cursor-pointer transition-all ${
-                notification.read
-                  ? 'bg-surface-container-lowest ambient-shadow'
-                  : 'bg-secondary/5 border border-secondary/10 shadow-ambient-lg'
-              } hover:bg-surface-container-low`}
-            >
-              <div className={`w-10 h-10 rounded-lg ${config.bgColor} flex items-center justify-center flex-shrink-0`}>
-                <Icon className={`w-5 h-5 ${config.color}`} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <h3 className={`text-sm font-semibold text-on-surface truncate ${!notification.read ? 'font-bold' : ''}`}>
-                        {notification.title}
-                      </h3>
-                      {!notification.read && (
-                        <div className="w-2 h-2 rounded-full bg-secondary flex-shrink-0" />
-                      )}
+      {!isLoading && (
+        <div className="space-y-2">
+          {filtered.map((notification) => {
+            const config = typeConfig[notification.type];
+            const Icon = config.icon;
+            return (
+              <div
+                key={notification.id}
+                onClick={() => handleToggleRead(notification.id)}
+                className={`flex items-start gap-3 p-4 rounded-xl cursor-pointer transition-all ${
+                  notification.read
+                    ? 'bg-surface-container-lowest ambient-shadow'
+                    : 'bg-secondary/5 border border-secondary/10 shadow-ambient-lg'
+                } hover:bg-surface-container-low`}
+              >
+                <div className={`w-10 h-10 rounded-lg ${config.bgColor} flex items-center justify-center flex-shrink-0`}>
+                  <Icon className={`w-5 h-5 ${config.color}`} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <h3 className={`text-sm font-semibold text-on-surface truncate ${!notification.read ? 'font-bold' : ''}`}>
+                          {notification.title}
+                        </h3>
+                        {!notification.read && (
+                          <div className="w-2 h-2 rounded-full bg-secondary flex-shrink-0" />
+                        )}
+                      </div>
+                      <p className="text-xs text-on-surface-variant line-clamp-2">{notification.message}</p>
                     </div>
-                    <p className="text-xs text-on-surface-variant line-clamp-2">{notification.message}</p>
+                    <span className="text-[10px] text-on-surface-variant whitespace-nowrap flex-shrink-0">
+                      {formatTimestamp(notification.timestamp)}
+                    </span>
                   </div>
-                  <span className="text-[10px] text-on-surface-variant whitespace-nowrap flex-shrink-0">
-                    {formatTimestamp(notification.timestamp)}
-                  </span>
                 </div>
               </div>
+            );
+          })}
+          {filtered.length === 0 && (
+            <div className="text-center py-12 text-on-surface-variant">
+              <BellOff className="w-12 h-12 mx-auto mb-3 opacity-30" />
+              <p className="text-sm">{t('notifications.empty')}</p>
             </div>
-          );
-        })}
-        {filtered.length === 0 && (
-          <div className="text-center py-12 text-on-surface-variant">
-            <BellOff className="w-12 h-12 mx-auto mb-3 opacity-30" />
-            <p className="text-sm">{t('notifications.empty')}</p>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

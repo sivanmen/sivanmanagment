@@ -12,11 +12,20 @@ import {
   CalendarDays,
   ArrowRight,
   X,
+  Loader2,
+  AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useApiQuery, useApiMutation } from '../hooks/useApi';
 
 type ReservationType = 'OWNER_STAY' | 'FRIENDS_FAMILY';
 type ReservationStatus = 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
+
+interface Property {
+  id: string;
+  name: string;
+}
 
 interface OwnerReservation {
   id: string;
@@ -40,37 +49,6 @@ const statusConfig: Record<ReservationStatus, { label: string; color: string; ic
   CANCELLED: { label: 'Cancelled', color: 'bg-outline-variant/20 text-on-surface-variant', icon: Ban },
 };
 
-const demoProperties = [
-  { id: 'prop-1', name: 'Aegean Sunset Villa' },
-  { id: 'prop-2', name: 'Heraklion Harbor Suite' },
-  { id: 'prop-3', name: 'Chania Old Town Residence' },
-];
-
-const demoReservations: OwnerReservation[] = [
-  {
-    id: 'or-1', propertyId: 'prop-1', propertyName: 'Aegean Sunset Villa',
-    type: 'OWNER_STAY', checkIn: '2026-05-10', checkOut: '2026-05-17', nights: 7,
-    notes: 'Summer vacation with family', status: 'APPROVED', createdAt: '2026-04-01',
-  },
-  {
-    id: 'or-2', propertyId: 'prop-2', propertyName: 'Heraklion Harbor Suite',
-    type: 'FRIENDS_FAMILY', guestName: 'Nikos Papadopoulos', guestRelation: 'Brother',
-    checkIn: '2026-06-01', checkOut: '2026-06-05', nights: 4,
-    notes: 'Brother visiting from Athens', status: 'PENDING_APPROVAL', createdAt: '2026-04-05',
-  },
-  {
-    id: 'or-3', propertyId: 'prop-3', propertyName: 'Chania Old Town Residence',
-    type: 'OWNER_STAY', checkIn: '2026-04-20', checkOut: '2026-04-25', nights: 5,
-    status: 'APPROVED', createdAt: '2026-03-28',
-  },
-  {
-    id: 'or-4', propertyId: 'prop-1', propertyName: 'Aegean Sunset Villa',
-    type: 'FRIENDS_FAMILY', guestName: 'Eleni Alexiou', guestRelation: 'Friend',
-    checkIn: '2026-07-01', checkOut: '2026-07-08', nights: 7,
-    status: 'REJECTED', createdAt: '2026-04-02',
-  },
-];
-
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
@@ -78,16 +56,79 @@ function formatDate(dateStr: string) {
 export default function OwnerReservationsPage() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<ReservationType>('OWNER_STAY');
-  const [reservations, setReservations] = useState(demoReservations);
   const [showForm, setShowForm] = useState(false);
 
   // Form state
-  const [formProperty, setFormProperty] = useState('prop-1');
+  const [formProperty, setFormProperty] = useState('');
   const [formCheckIn, setFormCheckIn] = useState('');
   const [formCheckOut, setFormCheckOut] = useState('');
   const [formGuestName, setFormGuestName] = useState('');
   const [formGuestRelation, setFormGuestRelation] = useState('');
   const [formNotes, setFormNotes] = useState('');
+
+  // ── Fetch properties ──
+  const {
+    data: propertiesResponse,
+  } = useApiQuery<Property[]>(
+    ['owner-portal-properties'],
+    '/owner-portal/properties',
+  );
+
+  const properties: Property[] = propertiesResponse?.data ?? [];
+
+  // Set default property when properties load
+  if (properties.length > 0 && !formProperty) {
+    setFormProperty(properties[0].id);
+  }
+
+  // ── Fetch reservations ──
+  const {
+    data: reservationsResponse,
+    isLoading,
+    isError,
+    refetch,
+  } = useApiQuery<OwnerReservation[]>(
+    ['owner-reservations'],
+    '/owner-portal/bookings',
+  );
+
+  const reservations: OwnerReservation[] = reservationsResponse?.data ?? [];
+
+  // ── Create reservation mutation ──
+  const createMutation = useApiMutation<OwnerReservation, {
+    propertyId: string;
+    type: ReservationType;
+    checkIn: string;
+    checkOut: string;
+    guestName?: string;
+    guestRelation?: string;
+    notes?: string;
+  }>(
+    'post',
+    '/owner-portal/bookings',
+    {
+      invalidateKeys: [['owner-reservations']],
+      successMessage: t('ownerReservations.created'),
+      onSuccess: () => {
+        setShowForm(false);
+        setFormCheckIn('');
+        setFormCheckOut('');
+        setFormGuestName('');
+        setFormGuestRelation('');
+        setFormNotes('');
+      },
+    },
+  );
+
+  // ── Cancel reservation mutation ──
+  const cancelMutation = useApiMutation<unknown, { id: string }>(
+    'patch',
+    (vars) => `/owner-portal/bookings/${vars.id}/cancel`,
+    {
+      invalidateKeys: [['owner-reservations']],
+      successMessage: t('ownerReservations.cancelled'),
+    },
+  );
 
   const filteredReservations = useMemo(() => {
     return reservations.filter((r) => r.type === activeTab);
@@ -97,7 +138,7 @@ export default function OwnerReservationsPage() {
     total: reservations.length,
     pending: reservations.filter((r) => r.status === 'PENDING_APPROVAL').length,
     approved: reservations.filter((r) => r.status === 'APPROVED').length,
-    totalNights: reservations.filter((r) => r.status === 'APPROVED').reduce((sum, r) => sum + r.nights, 0),
+    totalNights: reservations.filter((r) => r.status === 'APPROVED').reduce((sum, r) => sum + (r.nights || 0), 0),
   };
 
   const handleSubmit = () => {
@@ -109,39 +150,20 @@ export default function OwnerReservationsPage() {
       toast.error(t('ownerReservations.guestNameRequired'));
       return;
     }
-    const checkInDate = new Date(formCheckIn);
-    const checkOutDate = new Date(formCheckOut);
-    const nights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
-    const property = demoProperties.find((p) => p.id === formProperty);
 
-    const newRes: OwnerReservation = {
-      id: `or-${Date.now()}`,
+    createMutation.mutate({
       propertyId: formProperty,
-      propertyName: property?.name || '',
       type: activeTab,
-      guestName: activeTab === 'FRIENDS_FAMILY' ? formGuestName : undefined,
-      guestRelation: activeTab === 'FRIENDS_FAMILY' ? formGuestRelation : undefined,
       checkIn: formCheckIn,
       checkOut: formCheckOut,
-      nights,
+      guestName: activeTab === 'FRIENDS_FAMILY' ? formGuestName : undefined,
+      guestRelation: activeTab === 'FRIENDS_FAMILY' ? formGuestRelation : undefined,
       notes: formNotes || undefined,
-      status: 'PENDING_APPROVAL',
-      createdAt: new Date().toISOString().split('T')[0],
-    };
-
-    setReservations([newRes, ...reservations]);
-    setShowForm(false);
-    setFormCheckIn('');
-    setFormCheckOut('');
-    setFormGuestName('');
-    setFormGuestRelation('');
-    setFormNotes('');
-    toast.success(t('ownerReservations.created'));
+    });
   };
 
   const handleCancel = (id: string) => {
-    setReservations((prev) => prev.map((r) => r.id === id ? { ...r, status: 'CANCELLED' as ReservationStatus } : r));
-    toast.success(t('ownerReservations.cancelled'));
+    cancelMutation.mutate({ id });
   };
 
   const tabs = [
@@ -170,167 +192,205 @@ export default function OwnerReservationsPage() {
         </button>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-surface-container-lowest rounded-xl p-4 ambient-shadow">
-          <div className="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center mb-2">
-            <CalendarDays className="w-4 h-4 text-secondary" />
-          </div>
-          <p className="font-headline text-xl font-bold text-on-surface">{stats.total}</p>
-          <p className="text-[10px] text-on-surface-variant uppercase tracking-wider">{t('ownerReservations.totalReservations')}</p>
-        </div>
-        <div className="bg-surface-container-lowest rounded-xl p-4 ambient-shadow">
-          <div className="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center mb-2">
-            <Clock className="w-4 h-4 text-warning" />
-          </div>
-          <p className="font-headline text-xl font-bold text-on-surface">{stats.pending}</p>
-          <p className="text-[10px] text-on-surface-variant uppercase tracking-wider">{t('ownerReservations.pendingApproval')}</p>
-        </div>
-        <div className="bg-surface-container-lowest rounded-xl p-4 ambient-shadow">
-          <div className="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center mb-2">
-            <CheckCircle className="w-4 h-4 text-success" />
-          </div>
-          <p className="font-headline text-xl font-bold text-on-surface">{stats.approved}</p>
-          <p className="text-[10px] text-on-surface-variant uppercase tracking-wider">{t('ownerReservations.approved')}</p>
-        </div>
-        <div className="bg-surface-container-lowest rounded-xl p-4 ambient-shadow">
-          <div className="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center mb-2">
-            <CalendarHeart className="w-4 h-4 text-secondary" />
-          </div>
-          <p className="font-headline text-xl font-bold text-on-surface">{stats.totalNights}</p>
-          <p className="text-[10px] text-on-surface-variant uppercase tracking-wider">{t('ownerReservations.blockedNights')}</p>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex items-center gap-2">
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                activeTab === tab.key
-                  ? 'gradient-accent text-on-secondary'
-                  : 'bg-surface-container-lowest ambient-shadow text-on-surface-variant hover:text-on-surface'
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Create Form */}
-      {showForm && (
-        <div className="bg-surface-container-lowest rounded-xl p-5 ambient-shadow border border-secondary/20">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-headline text-lg font-semibold text-on-surface">
-              {activeTab === 'OWNER_STAY' ? t('ownerReservations.bookForMyself') : t('ownerReservations.bookForFF')}
-            </h2>
-            <button onClick={() => setShowForm(false)} className="p-1 rounded-lg hover:bg-surface-container-high">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">{t('bookings.property')}</label>
-              <select value={formProperty} onChange={(e) => setFormProperty(e.target.value)} className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface appearance-none focus:outline-none focus:ring-2 focus:ring-secondary/30">
-                {demoProperties.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">{t('bookings.checkIn')}</label>
-              <input type="date" value={formCheckIn} onChange={(e) => setFormCheckIn(e.target.value)} className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30" />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">{t('bookings.checkOut')}</label>
-              <input type="date" value={formCheckOut} onChange={(e) => setFormCheckOut(e.target.value)} className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30" />
-            </div>
-            {activeTab === 'FRIENDS_FAMILY' && (
-              <>
-                <div>
-                  <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">{t('ownerReservations.guestName')} *</label>
-                  <input type="text" value={formGuestName} onChange={(e) => setFormGuestName(e.target.value)} placeholder={t('ownerReservations.guestNamePlaceholder')} className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-secondary/30" />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">{t('ownerReservations.guestRelation')}</label>
-                  <input type="text" value={formGuestRelation} onChange={(e) => setFormGuestRelation(e.target.value)} placeholder={t('ownerReservations.guestRelationPlaceholder')} className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-secondary/30" />
-                </div>
-              </>
-            )}
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">{t('ownerReservations.notes')}</label>
-              <textarea rows={2} value={formNotes} onChange={(e) => setFormNotes(e.target.value)} placeholder={t('ownerReservations.notesPlaceholder')} className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface resize-none placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-secondary/30" />
-            </div>
-          </div>
-          <div className="flex justify-end gap-3 mt-4">
-            <button onClick={() => setShowForm(false)} className="px-4 py-2 rounded-lg text-sm text-on-surface-variant hover:bg-surface-container-high">{t('common.cancel')}</button>
-            <button onClick={handleSubmit} className="px-5 py-2 rounded-lg text-sm font-medium text-white gradient-accent">{t('ownerReservations.submitRequest')}</button>
-          </div>
+      {/* Loading */}
+      {isLoading && (
+        <div className="bg-surface-container-lowest rounded-xl p-8 ambient-shadow text-center">
+          <Loader2 className="w-8 h-8 text-secondary animate-spin mx-auto mb-3" />
+          <p className="text-sm text-on-surface-variant">Loading reservations...</p>
         </div>
       )}
 
-      {/* Reservations List */}
-      <div className="space-y-3">
-        {filteredReservations.map((res) => {
-          const cfg = statusConfig[res.status];
-          const StatusIcon = cfg.icon;
-          return (
-            <div key={res.id} className="bg-surface-container-lowest rounded-xl p-5 ambient-shadow hover:shadow-ambient-lg transition-all">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Home className="w-4 h-4 text-secondary" />
-                    <span className="font-headline font-semibold text-on-surface">{res.propertyName}</span>
-                    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider ${cfg.color}`}>
-                      <StatusIcon className="w-3 h-3" />
-                      {cfg.label}
-                    </span>
-                  </div>
-                  {res.type === 'FRIENDS_FAMILY' && res.guestName && (
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <Users className="w-3.5 h-3.5 text-on-surface-variant" />
-                      <span className="text-sm text-on-surface">{res.guestName}</span>
-                      {res.guestRelation && <span className="text-xs text-on-surface-variant">({res.guestRelation})</span>}
-                    </div>
-                  )}
-                  <div className="flex items-center gap-2 text-xs text-on-surface-variant">
-                    <CalendarDays className="w-3.5 h-3.5" />
-                    <span>{formatDate(res.checkIn)}</span>
-                    <ArrowRight className="w-3 h-3" />
-                    <span>{formatDate(res.checkOut)}</span>
-                    <span className="px-1.5 py-0.5 rounded bg-surface-container-high text-[10px] font-semibold">
-                      {res.nights} {res.nights === 1 ? 'night' : 'nights'}
-                    </span>
-                  </div>
-                  {res.notes && (
-                    <p className="text-xs text-on-surface-variant mt-2 italic">{res.notes}</p>
-                  )}
+      {/* Error */}
+      {isError && !isLoading && (
+        <div className="bg-surface-container-lowest rounded-xl p-8 ambient-shadow text-center">
+          <div className="w-12 h-12 rounded-full bg-error/10 flex items-center justify-center mx-auto mb-3">
+            <AlertCircle className="w-6 h-6 text-error" />
+          </div>
+          <p className="text-sm font-medium text-on-surface">Failed to load reservations</p>
+          <p className="text-xs text-on-surface-variant mt-1">Please check your connection and try again.</p>
+          <button
+            onClick={() => refetch()}
+            className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-secondary bg-secondary/10 hover:bg-secondary/20 transition-colors"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Retry
+          </button>
+        </div>
+      )}
+
+      {!isLoading && !isError && (
+        <>
+          {/* Stats */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-surface-container-lowest rounded-xl p-4 ambient-shadow">
+              <div className="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center mb-2">
+                <CalendarDays className="w-4 h-4 text-secondary" />
+              </div>
+              <p className="font-headline text-xl font-bold text-on-surface">{stats.total}</p>
+              <p className="text-[10px] text-on-surface-variant uppercase tracking-wider">{t('ownerReservations.totalReservations')}</p>
+            </div>
+            <div className="bg-surface-container-lowest rounded-xl p-4 ambient-shadow">
+              <div className="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center mb-2">
+                <Clock className="w-4 h-4 text-warning" />
+              </div>
+              <p className="font-headline text-xl font-bold text-on-surface">{stats.pending}</p>
+              <p className="text-[10px] text-on-surface-variant uppercase tracking-wider">{t('ownerReservations.pendingApproval')}</p>
+            </div>
+            <div className="bg-surface-container-lowest rounded-xl p-4 ambient-shadow">
+              <div className="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center mb-2">
+                <CheckCircle className="w-4 h-4 text-success" />
+              </div>
+              <p className="font-headline text-xl font-bold text-on-surface">{stats.approved}</p>
+              <p className="text-[10px] text-on-surface-variant uppercase tracking-wider">{t('ownerReservations.approved')}</p>
+            </div>
+            <div className="bg-surface-container-lowest rounded-xl p-4 ambient-shadow">
+              <div className="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center mb-2">
+                <CalendarHeart className="w-4 h-4 text-secondary" />
+              </div>
+              <p className="font-headline text-xl font-bold text-on-surface">{stats.totalNights}</p>
+              <p className="text-[10px] text-on-surface-variant uppercase tracking-wider">{t('ownerReservations.blockedNights')}</p>
+            </div>
+          </div>
+
+          {/* Tabs */}
+          <div className="flex items-center gap-2">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    activeTab === tab.key
+                      ? 'gradient-accent text-on-secondary'
+                      : 'bg-surface-container-lowest ambient-shadow text-on-surface-variant hover:text-on-surface'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Create Form */}
+          {showForm && (
+            <div className="bg-surface-container-lowest rounded-xl p-5 ambient-shadow border border-secondary/20">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-headline text-lg font-semibold text-on-surface">
+                  {activeTab === 'OWNER_STAY' ? t('ownerReservations.bookForMyself') : t('ownerReservations.bookForFF')}
+                </h2>
+                <button onClick={() => setShowForm(false)} className="p-1 rounded-lg hover:bg-surface-container-high">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">{t('bookings.property')}</label>
+                  <select value={formProperty} onChange={(e) => setFormProperty(e.target.value)} className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface appearance-none focus:outline-none focus:ring-2 focus:ring-secondary/30">
+                    {properties.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
                 </div>
-                <div className="flex items-center gap-2">
-                  {(res.status === 'PENDING_APPROVAL' || res.status === 'APPROVED') && (
-                    <button
-                      onClick={() => handleCancel(res.id)}
-                      className="px-3 py-1.5 rounded-lg text-xs font-medium text-error bg-error/10 hover:bg-error/20 transition-colors"
-                    >
-                      {t('common.cancel')}
-                    </button>
-                  )}
+                <div>
+                  <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">{t('bookings.checkIn')}</label>
+                  <input type="date" value={formCheckIn} onChange={(e) => setFormCheckIn(e.target.value)} className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">{t('bookings.checkOut')}</label>
+                  <input type="date" value={formCheckOut} onChange={(e) => setFormCheckOut(e.target.value)} className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary/30" />
+                </div>
+                {activeTab === 'FRIENDS_FAMILY' && (
+                  <>
+                    <div>
+                      <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">{t('ownerReservations.guestName')} *</label>
+                      <input type="text" value={formGuestName} onChange={(e) => setFormGuestName(e.target.value)} placeholder={t('ownerReservations.guestNamePlaceholder')} className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-secondary/30" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">{t('ownerReservations.guestRelation')}</label>
+                      <input type="text" value={formGuestRelation} onChange={(e) => setFormGuestRelation(e.target.value)} placeholder={t('ownerReservations.guestRelationPlaceholder')} className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-secondary/30" />
+                    </div>
+                  </>
+                )}
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">{t('ownerReservations.notes')}</label>
+                  <textarea rows={2} value={formNotes} onChange={(e) => setFormNotes(e.target.value)} placeholder={t('ownerReservations.notesPlaceholder')} className="w-full px-4 py-2.5 rounded-lg bg-surface-container-low text-sm text-on-surface resize-none placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-secondary/30" />
                 </div>
               </div>
+              <div className="flex justify-end gap-3 mt-4">
+                <button onClick={() => setShowForm(false)} className="px-4 py-2 rounded-lg text-sm text-on-surface-variant hover:bg-surface-container-high">{t('common.cancel')}</button>
+                <button
+                  onClick={handleSubmit}
+                  disabled={createMutation.isPending}
+                  className="px-5 py-2 rounded-lg text-sm font-medium text-white gradient-accent disabled:opacity-50"
+                >
+                  {createMutation.isPending ? 'Submitting...' : t('ownerReservations.submitRequest')}
+                </button>
+              </div>
             </div>
-          );
-        })}
-        {filteredReservations.length === 0 && (
-          <div className="bg-surface-container-lowest rounded-xl p-12 ambient-shadow text-center">
-            <CalendarHeart className="w-12 h-12 text-on-surface-variant/30 mx-auto mb-3" />
-            <p className="text-on-surface-variant font-medium">{t('ownerReservations.noReservations')}</p>
+          )}
+
+          {/* Reservations List */}
+          <div className="space-y-3">
+            {filteredReservations.map((res) => {
+              const cfg = statusConfig[res.status] || statusConfig.PENDING_APPROVAL;
+              const StatusIcon = cfg.icon;
+              const isCancelling = cancelMutation.isPending && cancelMutation.variables?.id === res.id;
+              return (
+                <div key={res.id} className={`bg-surface-container-lowest rounded-xl p-5 ambient-shadow hover:shadow-ambient-lg transition-all ${isCancelling ? 'opacity-60 pointer-events-none' : ''}`}>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Home className="w-4 h-4 text-secondary" />
+                        <span className="font-headline font-semibold text-on-surface">{res.propertyName}</span>
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider ${cfg.color}`}>
+                          <StatusIcon className="w-3 h-3" />
+                          {cfg.label}
+                        </span>
+                      </div>
+                      {res.type === 'FRIENDS_FAMILY' && res.guestName && (
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <Users className="w-3.5 h-3.5 text-on-surface-variant" />
+                          <span className="text-sm text-on-surface">{res.guestName}</span>
+                          {res.guestRelation && <span className="text-xs text-on-surface-variant">({res.guestRelation})</span>}
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 text-xs text-on-surface-variant">
+                        <CalendarDays className="w-3.5 h-3.5" />
+                        <span>{formatDate(res.checkIn)}</span>
+                        <ArrowRight className="w-3 h-3" />
+                        <span>{formatDate(res.checkOut)}</span>
+                        <span className="px-1.5 py-0.5 rounded bg-surface-container-high text-[10px] font-semibold">
+                          {res.nights} {res.nights === 1 ? 'night' : 'nights'}
+                        </span>
+                      </div>
+                      {res.notes && (
+                        <p className="text-xs text-on-surface-variant mt-2 italic">{res.notes}</p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {(res.status === 'PENDING_APPROVAL' || res.status === 'APPROVED') && (
+                        <button
+                          onClick={() => handleCancel(res.id)}
+                          disabled={isCancelling}
+                          className="px-3 py-1.5 rounded-lg text-xs font-medium text-error bg-error/10 hover:bg-error/20 transition-colors disabled:opacity-50"
+                        >
+                          {isCancelling ? 'Cancelling...' : t('common.cancel')}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            {filteredReservations.length === 0 && (
+              <div className="bg-surface-container-lowest rounded-xl p-12 ambient-shadow text-center">
+                <CalendarHeart className="w-12 h-12 text-on-surface-variant/30 mx-auto mb-3" />
+                <p className="text-on-surface-variant font-medium">{t('ownerReservations.noReservations')}</p>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </>
+      )}
     </div>
   );
 }

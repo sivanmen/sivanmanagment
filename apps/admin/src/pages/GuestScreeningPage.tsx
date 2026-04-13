@@ -1,5 +1,8 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import apiClient from '../lib/api-client';
+import { toast } from 'sonner';
 import {
   Shield,
   ShieldAlert,
@@ -335,13 +338,40 @@ function formatDateTime(iso: string): string {
 
 export default function GuestScreeningPage() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
+
+  // ── API Queries ────────────────────────────────────────────────────────
+  const { data: screeningData } = useQuery<{
+    guests: ScreeningGuest[];
+    blacklist: BlacklistEntry[];
+    rules: ScreeningRule[];
+    history: HistoryEntry[];
+  }>({
+    queryKey: ['guests', 'screening', 'rules'],
+    queryFn: async () => {
+      const res = await apiClient.get('/guests/screening/rules');
+      return res.data.data ?? res.data ?? { guests: [], blacklist: [], rules: [], history: [] };
+    },
+  });
+
+  const updateRulesMutation = useMutation({
+    mutationFn: async (payload: any) => {
+      const res = await apiClient.put('/guests/screening/rules', payload);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['guests', 'screening', 'rules'] });
+    },
+    onError: () => toast.error('Failed to update screening rules'),
+  });
+
+  const guests = screeningData?.guests ?? mockGuests;
+  const blacklist = screeningData?.blacklist ?? mockBlacklist;
+  const rules = screeningData?.rules ?? mockRules;
+  const history = screeningData?.history ?? mockHistory;
 
   // State
   const [activeTab, setActiveTab] = useState<TabKey>('queue');
-  const [guests, setGuests] = useState(mockGuests);
-  const [blacklist, setBlacklist] = useState(mockBlacklist);
-  const [rules, setRules] = useState(mockRules);
-  const [history, setHistory] = useState(mockHistory);
   const [selectedGuestId, setSelectedGuestId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<ScreeningStatus | 'ALL'>('ALL');
@@ -399,40 +429,56 @@ export default function GuestScreeningPage() {
     return { total, avgRisk, flagged, blocked, pending };
   }, [guests]);
 
+  // ── Mutations ──────────────────────────────────────────────────────────
+  const guestActionMutation = useMutation({
+    mutationFn: async ({ guestId, action }: { guestId: string; action: ScreeningStatus }) => {
+      const res = await apiClient.put(`/guests/screening/${guestId}/action`, { action });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['guests', 'screening', 'rules'] });
+      toast.success('Guest screening status updated');
+    },
+    onError: () => toast.error('Failed to update guest status'),
+  });
+
+  const unblockMutation = useMutation({
+    mutationFn: async (entryId: string) => {
+      const res = await apiClient.delete(`/guests/screening/blacklist/${entryId}`);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['guests', 'screening', 'rules'] });
+      toast.success('Guest unblocked');
+    },
+    onError: () => toast.error('Failed to unblock guest'),
+  });
+
+  const toggleRuleMutation = useMutation({
+    mutationFn: async (ruleId: string) => {
+      const rule = rules.find((r) => r.id === ruleId);
+      const res = await apiClient.put(`/guests/screening/rules/${ruleId}`, { enabled: !rule?.enabled });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['guests', 'screening', 'rules'] });
+      toast.success('Rule updated');
+    },
+    onError: () => toast.error('Failed to toggle rule'),
+  });
+
   // Actions
   const handleAction = useCallback((guestId: string, action: ScreeningStatus) => {
-    setGuests((prev) =>
-      prev.map((g) =>
-        g.id === guestId ? { ...g, status: action, screenedAt: new Date().toISOString(), screenedBy: 'Sivan M.' } : g,
-      ),
-    );
-    const guest = guests.find((g) => g.id === guestId);
-    if (guest) {
-      const newEntry: HistoryEntry = {
-        id: `h-${Date.now()}`,
-        guestName: guest.name,
-        action,
-        reviewer: 'Sivan M.',
-        timestamp: new Date().toISOString(),
-        notes: action === 'BLOCKED' ? 'Blocked by admin.' : action === 'FLAGGED' ? 'Flagged for review.' : 'Approved by admin.',
-      };
-      setHistory((prev) => [newEntry, ...prev]);
-      if (action === 'BLOCKED') {
-        setBlacklist((prev) => [
-          ...prev,
-          { id: `bl-${Date.now()}`, guestName: guest.name, email: guest.email, reason: 'Blocked during screening review.', blockedAt: new Date().toISOString(), blockedBy: 'Sivan M.' },
-        ]);
-      }
-    }
-  }, [guests]);
+    guestActionMutation.mutate({ guestId, action });
+  }, [guestActionMutation]);
 
   const handleUnblock = useCallback((entryId: string) => {
-    setBlacklist((prev) => prev.filter((b) => b.id !== entryId));
-  }, []);
+    unblockMutation.mutate(entryId);
+  }, [unblockMutation]);
 
   const handleToggleRule = useCallback((ruleId: string) => {
-    setRules((prev) => prev.map((r) => (r.id === ruleId ? { ...r, enabled: !r.enabled } : r)));
-  }, []);
+    toggleRuleMutation.mutate(ruleId);
+  }, [toggleRuleMutation]);
 
   // Tab definitions
   const tabs: { key: TabKey; label: string; icon: typeof Shield; count?: number }[] = [

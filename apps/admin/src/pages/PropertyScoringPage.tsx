@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Star,
   TrendingUp,
@@ -27,15 +28,17 @@ import {
   Filter,
   ArrowUp,
   ArrowDown,
+  AlertCircle,
 } from 'lucide-react';
+import apiClient from '../lib/api-client';
 
-// ── Types & Demo Data ──────────────────────────────────────────────────────
+// ── Types ──────────────────────────────────────────────────────────────
 
 interface ScoreCategory {
   name: string;
   score: number;
   weight: number;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: string;
   color: string;
   factors: { name: string; value: number; benchmark: number; status: string }[];
 }
@@ -63,215 +66,24 @@ interface PropertyScore {
   history: { month: string; score: number }[];
 }
 
-const demoScores: PropertyScore[] = [
-  {
-    id: 'prop1',
-    name: 'Villa Elounda Royale',
-    score: 92,
-    grade: 'A+',
-    trend: 'UP',
-    trendPercent: 3.2,
-    categories: [
-      {
-        name: 'Revenue', score: 95, weight: 25, icon: DollarSign, color: '#10b981',
-        factors: [
-          { name: 'ADR vs Market', value: 280, benchmark: 220, status: 'EXCELLENT' },
-          { name: 'RevPAR', value: 258, benchmark: 170, status: 'EXCELLENT' },
-          { name: 'Revenue Growth', value: 12, benchmark: 5, status: 'EXCELLENT' },
-        ],
-      },
-      {
-        name: 'Occupancy', score: 94, weight: 20, icon: Bed, color: '#6b38d4',
-        factors: [
-          { name: 'Annual Occupancy', value: 92, benchmark: 75, status: 'EXCELLENT' },
-          { name: 'Off-Season Fill', value: 68, benchmark: 40, status: 'EXCELLENT' },
-          { name: 'Booking Lead Time', value: 28, benchmark: 21, status: 'GOOD' },
-        ],
-      },
-      {
-        name: 'Guest Satisfaction', score: 96, weight: 20, icon: Star, color: '#f59e0b',
-        factors: [
-          { name: 'Average Rating', value: 4.9, benchmark: 4.5, status: 'EXCELLENT' },
-          { name: 'Repeat Guest Rate', value: 35, benchmark: 15, status: 'EXCELLENT' },
-          { name: 'Review Count', value: 127, benchmark: 50, status: 'EXCELLENT' },
-        ],
-      },
-      {
-        name: 'Listing Quality', score: 88, weight: 15, icon: Camera, color: '#06b6d4',
-        factors: [
-          { name: 'Photo Count', value: 42, benchmark: 20, status: 'EXCELLENT' },
-          { name: 'Description Length', value: 850, benchmark: 500, status: 'GOOD' },
-          { name: 'Amenity Coverage', value: 92, benchmark: 80, status: 'GOOD' },
-        ],
-      },
-      {
-        name: 'Response Time', score: 98, weight: 10, icon: Clock, color: '#8b5cf6',
-        factors: [
-          { name: 'Avg Response (min)', value: 12, benchmark: 60, status: 'EXCELLENT' },
-          { name: 'Response Rate', value: 100, benchmark: 95, status: 'EXCELLENT' },
-        ],
-      },
-      {
-        name: 'Maintenance', score: 82, weight: 10, icon: Wrench, color: '#ef4444',
-        factors: [
-          { name: 'Open Issues', value: 1, benchmark: 3, status: 'GOOD' },
-          { name: 'Avg Resolution (days)', value: 2.5, benchmark: 5, status: 'EXCELLENT' },
-          { name: 'Preventive Score', value: 72, benchmark: 60, status: 'GOOD' },
-        ],
-      },
-    ],
-    recommendations: [
-      { id: 'r1', category: 'Listing', title: 'Add virtual tour', description: 'Properties with virtual tours see 30% more bookings.', priority: 'HIGH', impact: '+15% bookings', effort: 'MODERATE', status: 'NEW' },
-      { id: 'r2', category: 'Pricing', title: 'Increase winter rates', description: 'Your winter pricing is 18% below market for premium villas.', priority: 'MEDIUM', impact: '+€2,400/season', effort: 'EASY', status: 'IN_PROGRESS' },
-      { id: 'r3', category: 'Maintenance', title: 'Schedule pool inspection', description: 'Preventive maintenance reduces emergency costs by 40%.', priority: 'LOW', impact: 'Cost savings', effort: 'EASY', status: 'NEW' },
-    ],
-    history: [
-      { month: 'Oct', score: 85 }, { month: 'Nov', score: 86 }, { month: 'Dec', score: 87 },
-      { month: 'Jan', score: 88 }, { month: 'Feb', score: 90 }, { month: 'Mar', score: 92 },
-    ],
-  },
-  {
-    id: 'prop2',
-    name: 'Chania Harbor Suite',
-    score: 84,
-    grade: 'B+',
-    trend: 'UP',
-    trendPercent: 5.1,
-    categories: [
-      { name: 'Revenue', score: 82, weight: 25, icon: DollarSign, color: '#10b981', factors: [] },
-      { name: 'Occupancy', score: 88, weight: 20, icon: Bed, color: '#6b38d4', factors: [] },
-      { name: 'Guest Satisfaction', score: 90, weight: 20, icon: Star, color: '#f59e0b', factors: [] },
-      { name: 'Listing Quality', score: 75, weight: 15, icon: Camera, color: '#06b6d4', factors: [] },
-      { name: 'Response Time', score: 92, weight: 10, icon: Clock, color: '#8b5cf6', factors: [] },
-      { name: 'Maintenance', score: 78, weight: 10, icon: Wrench, color: '#ef4444', factors: [] },
-    ],
-    recommendations: [
-      { id: 'r4', category: 'Photos', title: 'Update listing photos', description: 'Photos are 14 months old. Fresh photos improve click-through by 25%.', priority: 'HIGH', impact: '+20% views', effort: 'MODERATE', status: 'NEW' },
-      { id: 'r5', category: 'Amenities', title: 'Add workspace amenities', description: 'Digital nomad demand is growing 40% YoY in Crete.', priority: 'MEDIUM', impact: '+12% off-season', effort: 'EASY', status: 'NEW' },
-    ],
-    history: [
-      { month: 'Oct', score: 76 }, { month: 'Nov', score: 78 }, { month: 'Dec', score: 79 },
-      { month: 'Jan', score: 80 }, { month: 'Feb', score: 82 }, { month: 'Mar', score: 84 },
-    ],
-  },
-  {
-    id: 'prop3',
-    name: 'Rethymno Beach House',
-    score: 79,
-    grade: 'B',
-    trend: 'STABLE',
-    trendPercent: 0.8,
-    categories: [
-      { name: 'Revenue', score: 78, weight: 25, icon: DollarSign, color: '#10b981', factors: [] },
-      { name: 'Occupancy', score: 85, weight: 20, icon: Bed, color: '#6b38d4', factors: [] },
-      { name: 'Guest Satisfaction', score: 82, weight: 20, icon: Star, color: '#f59e0b', factors: [] },
-      { name: 'Listing Quality', score: 70, weight: 15, icon: Camera, color: '#06b6d4', factors: [] },
-      { name: 'Response Time', score: 88, weight: 10, icon: Clock, color: '#8b5cf6', factors: [] },
-      { name: 'Maintenance', score: 72, weight: 10, icon: Wrench, color: '#ef4444', factors: [] },
-    ],
-    recommendations: [
-      { id: 'r6', category: 'Pricing', title: 'Enable dynamic pricing', description: 'Dynamic pricing can increase revenue by 15-25% with same occupancy.', priority: 'HIGH', impact: '+€8,000/year', effort: 'EASY', status: 'NEW' },
-    ],
-    history: [
-      { month: 'Oct', score: 77 }, { month: 'Nov', score: 78 }, { month: 'Dec', score: 78 },
-      { month: 'Jan', score: 78 }, { month: 'Feb', score: 79 }, { month: 'Mar', score: 79 },
-    ],
-  },
-  {
-    id: 'prop4',
-    name: 'Heraklion City Loft',
-    score: 72,
-    grade: 'C+',
-    trend: 'UP',
-    trendPercent: 2.8,
-    categories: [
-      { name: 'Revenue', score: 68, weight: 25, icon: DollarSign, color: '#10b981', factors: [] },
-      { name: 'Occupancy', score: 82, weight: 20, icon: Bed, color: '#6b38d4', factors: [] },
-      { name: 'Guest Satisfaction', score: 75, weight: 20, icon: Star, color: '#f59e0b', factors: [] },
-      { name: 'Listing Quality', score: 62, weight: 15, icon: Camera, color: '#06b6d4', factors: [] },
-      { name: 'Response Time', score: 80, weight: 10, icon: Clock, color: '#8b5cf6', factors: [] },
-      { name: 'Maintenance', score: 68, weight: 10, icon: Wrench, color: '#ef4444', factors: [] },
-    ],
-    recommendations: [
-      { id: 'r7', category: 'Listing', title: 'Rewrite description', description: 'Your description is below average length and missing key selling points.', priority: 'HIGH', impact: '+18% conversion', effort: 'EASY', status: 'NEW' },
-      { id: 'r8', category: 'Pricing', title: 'Lower minimum stay', description: 'Reducing minimum stay from 3 to 2 nights could fill 15+ more nights/year.', priority: 'MEDIUM', impact: '+€3,200/year', effort: 'EASY', status: 'NEW' },
-    ],
-    history: [
-      { month: 'Oct', score: 66 }, { month: 'Nov', score: 67 }, { month: 'Dec', score: 68 },
-      { month: 'Jan', score: 69 }, { month: 'Feb', score: 70 }, { month: 'Mar', score: 72 },
-    ],
-  },
-  {
-    id: 'prop5',
-    name: 'Agios Nikolaos Villa',
-    score: 68,
-    grade: 'C',
-    trend: 'DOWN',
-    trendPercent: -1.4,
-    categories: [
-      { name: 'Revenue', score: 62, weight: 25, icon: DollarSign, color: '#10b981', factors: [] },
-      { name: 'Occupancy', score: 72, weight: 20, icon: Bed, color: '#6b38d4', factors: [] },
-      { name: 'Guest Satisfaction', score: 70, weight: 20, icon: Star, color: '#f59e0b', factors: [] },
-      { name: 'Listing Quality', score: 65, weight: 15, icon: Camera, color: '#06b6d4', factors: [] },
-      { name: 'Response Time', score: 75, weight: 10, icon: Clock, color: '#8b5cf6', factors: [] },
-      { name: 'Maintenance', score: 60, weight: 10, icon: Wrench, color: '#ef4444', factors: [] },
-    ],
-    recommendations: [
-      { id: 'r9', category: 'Maintenance', title: 'Address 4 open maintenance issues', description: 'Unresolved issues are impacting guest reviews and score.', priority: 'HIGH', impact: '+8 score points', effort: 'SIGNIFICANT', status: 'NEW' },
-    ],
-    history: [
-      { month: 'Oct', score: 72 }, { month: 'Nov', score: 71 }, { month: 'Dec', score: 70 },
-      { month: 'Jan', score: 70 }, { month: 'Feb', score: 69 }, { month: 'Mar', score: 68 },
-    ],
-  },
-  {
-    id: 'prop6',
-    name: 'Plakias Seaside',
-    score: 63,
-    grade: 'C',
-    trend: 'DOWN',
-    trendPercent: -3.1,
-    categories: [
-      { name: 'Revenue', score: 55, weight: 25, icon: DollarSign, color: '#10b981', factors: [] },
-      { name: 'Occupancy', score: 68, weight: 20, icon: Bed, color: '#6b38d4', factors: [] },
-      { name: 'Guest Satisfaction', score: 65, weight: 20, icon: Star, color: '#f59e0b', factors: [] },
-      { name: 'Listing Quality', score: 58, weight: 15, icon: Camera, color: '#06b6d4', factors: [] },
-      { name: 'Response Time', score: 72, weight: 10, icon: Clock, color: '#8b5cf6', factors: [] },
-      { name: 'Maintenance', score: 60, weight: 10, icon: Wrench, color: '#ef4444', factors: [] },
-    ],
-    recommendations: [],
-    history: [
-      { month: 'Oct', score: 68 }, { month: 'Nov', score: 67 }, { month: 'Dec', score: 66 },
-      { month: 'Jan', score: 65 }, { month: 'Feb', score: 64 }, { month: 'Mar', score: 63 },
-    ],
-  },
-  {
-    id: 'prop7',
-    name: 'Sitia Countryside',
-    score: 55,
-    grade: 'D',
-    trend: 'UP',
-    trendPercent: 4.2,
-    categories: [
-      { name: 'Revenue', score: 45, weight: 25, icon: DollarSign, color: '#10b981', factors: [] },
-      { name: 'Occupancy', score: 58, weight: 20, icon: Bed, color: '#6b38d4', factors: [] },
-      { name: 'Guest Satisfaction', score: 62, weight: 20, icon: Star, color: '#f59e0b', factors: [] },
-      { name: 'Listing Quality', score: 48, weight: 15, icon: Camera, color: '#06b6d4', factors: [] },
-      { name: 'Response Time', score: 65, weight: 10, icon: Clock, color: '#8b5cf6', factors: [] },
-      { name: 'Maintenance', score: 52, weight: 10, icon: Wrench, color: '#ef4444', factors: [] },
-    ],
-    recommendations: [
-      { id: 'r10', category: 'Listing', title: 'Complete listing overhaul', description: 'Full listing refresh including photos, description, and amenities could boost score by 15+ points.', priority: 'HIGH', impact: '+15 score points', effort: 'SIGNIFICANT', status: 'NEW' },
-      { id: 'r11', category: 'Revenue', title: 'Launch direct booking page', description: 'Enable direct bookings to increase margins by 15-20%.', priority: 'MEDIUM', impact: '+€4,800/year', effort: 'MODERATE', status: 'NEW' },
-    ],
-    history: [
-      { month: 'Oct', score: 48 }, { month: 'Nov', score: 49 }, { month: 'Dec', score: 50 },
-      { month: 'Jan', score: 52 }, { month: 'Feb', score: 53 }, { month: 'Mar', score: 55 },
-    ],
-  },
-];
+interface ScoringOverview {
+  portfolioAvg: number;
+  bestProperty: { name: string; grade: string; score: number };
+  worstProperty: { name: string; grade: string; score: number };
+  totalRecommendations: number;
+}
 
-// ── Helper Components ──────────────────────────────────────────────────────
+// ── Icon map (API returns string name, we map to component) ──────────
+
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  DollarSign, Bed, Star, Camera, Clock, Wrench,
+};
+
+function resolveIcon(name: string): React.ComponentType<{ className?: string }> {
+  return iconMap[name] || DollarSign;
+}
+
+// ── Helper Components ──────────────────────────────────────────────────
 
 function gradeColor(grade: string) {
   if (grade.startsWith('A')) return 'text-emerald-400 bg-emerald-500/15';
@@ -306,27 +118,117 @@ function statusBadge(status: string) {
   return map[status] || 'bg-white/10';
 }
 
-// ── Main Component ─────────────────────────────────────────────────────────
+// ── Main Component ─────────────────────────────────────────────────────
 
 export default function PropertyScoringPage() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'score' | 'name' | 'trend'>('score');
 
-  const sorted = [...demoScores].sort((a, b) => {
+  // ── API Queries ──────────────────────────────────────────────
+  const { data: scores, isLoading, isError, error } = useQuery<PropertyScore[]>({
+    queryKey: ['scoring'],
+    queryFn: async () => {
+      const res = await apiClient.get('/scoring');
+      return res.data.data;
+    },
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const { data: overviewData } = useQuery<ScoringOverview>({
+    queryKey: ['scoring-overview'],
+    queryFn: async () => {
+      const res = await apiClient.get('/scoring/overview');
+      return res.data.data;
+    },
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['scoring'] });
+    queryClient.invalidateQueries({ queryKey: ['scoring-overview'] });
+  };
+
+  const scoresList = scores ?? [];
+
+  const sorted = [...scoresList].sort((a, b) => {
     if (sortBy === 'score') return b.score - a.score;
     if (sortBy === 'name') return a.name.localeCompare(b.name);
     return b.trendPercent - a.trendPercent;
   });
 
   const selectedProperty = selectedPropertyId
-    ? demoScores.find((p) => p.id === selectedPropertyId)
+    ? scoresList.find((p) => p.id === selectedPropertyId)
     : null;
 
-  const portfolioAvg = Math.round(demoScores.reduce((s, p) => s + p.score, 0) / demoScores.length);
-  const bestProperty = demoScores.reduce((best, p) => (p.score > best.score ? p : best));
-  const worstProperty = demoScores.reduce((worst, p) => (p.score < worst.score ? p : worst));
-  const totalRecommendations = demoScores.reduce((s, p) => s + p.recommendations.filter((r) => r.status === 'NEW').length, 0);
+  const portfolioAvg = overviewData?.portfolioAvg ?? (scoresList.length ? Math.round(scoresList.reduce((s, p) => s + p.score, 0) / scoresList.length) : 0);
+  const bestProperty = overviewData?.bestProperty ?? (scoresList.length ? scoresList.reduce((best, p) => (p.score > best.score ? p : best)) : { name: '-', grade: '-', score: 0 });
+  const worstProperty = overviewData?.worstProperty ?? (scoresList.length ? scoresList.reduce((worst, p) => (p.score < worst.score ? p : worst)) : { name: '-', grade: '-', score: 0 });
+  const totalRecommendations = overviewData?.totalRecommendations ?? scoresList.reduce((s, p) => s + p.recommendations.filter((r) => r.status === 'NEW').length, 0);
+
+  // ── Error State ──────────────────────────────────────────────
+  if (isError) {
+    return (
+      <div className="p-6">
+        <div className="bg-surface-container-lowest rounded-xl p-8 ambient-shadow flex flex-col items-center justify-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-error/10 flex items-center justify-center">
+            <AlertCircle className="w-7 h-7 text-error" />
+          </div>
+          <h2 className="font-headline text-xl font-bold text-on-surface">
+            Failed to load scoring data
+          </h2>
+          <p className="text-sm text-on-surface-variant text-center max-w-md">
+            {(error as any)?.message || 'An unexpected error occurred while loading property scores.'}
+          </p>
+          <button
+            onClick={handleRefresh}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium text-on-secondary gradient-accent hover:opacity-90 transition-opacity"
+          >
+            <RefreshCw className="w-4 h-4" />
+            <span>Try Again</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Loading State ──────────────────────────────────────────────
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-headline font-bold flex items-center gap-2">
+              <Target className="w-6 h-6 text-secondary" />
+              Property Scoring
+            </h1>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="glass-card p-4 rounded-xl animate-pulse">
+              <div className="h-3 w-20 bg-white/10 rounded mb-2" />
+              <div className="h-8 w-12 bg-white/10 rounded" />
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="glass-card p-4 rounded-xl animate-pulse">
+                <div className="h-4 w-32 bg-white/10 rounded mb-2" />
+                <div className="h-2 w-full bg-white/10 rounded" />
+              </div>
+            ))}
+          </div>
+          <div className="lg:col-span-2 glass-card p-12 rounded-xl animate-pulse">
+            <div className="h-40 bg-white/5 rounded-lg" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
@@ -341,7 +243,10 @@ export default function PropertyScoringPage() {
             AI-powered health scores with actionable recommendations
           </p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary text-white text-sm hover:bg-secondary/90">
+        <button
+          onClick={handleRefresh}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary text-white text-sm hover:bg-secondary/90"
+        >
           <RefreshCw className="w-4 h-4" />
           Recalculate All
         </button>
@@ -446,6 +351,12 @@ export default function PropertyScoringPage() {
               </div>
             </button>
           ))}
+
+          {sorted.length === 0 && (
+            <div className="glass-card p-8 rounded-xl text-center">
+              <p className="text-on-surface-variant">No properties found</p>
+            </div>
+          )}
         </div>
 
         {/* Property Detail */}
@@ -499,7 +410,7 @@ export default function PropertyScoringPage() {
                 <h3 className="text-sm font-semibold mb-4">Score Breakdown</h3>
                 <div className="space-y-3">
                   {selectedProperty.categories.map((cat) => {
-                    const CatIcon = cat.icon;
+                    const CatIcon = resolveIcon(cat.icon);
                     return (
                       <div key={cat.name} className="p-3 rounded-lg bg-white/[0.02]">
                         <div className="flex items-center justify-between mb-2">

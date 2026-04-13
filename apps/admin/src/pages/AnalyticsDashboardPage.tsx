@@ -1,5 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   TrendingUp,
   TrendingDown,
@@ -19,6 +20,7 @@ import {
   Globe,
   Target,
   Layers,
+  AlertCircle,
 } from 'lucide-react';
 import {
   BarChart,
@@ -42,91 +44,89 @@ import {
   PolarAngleAxis,
   PolarRadiusAxis,
 } from 'recharts';
+import apiClient from '../lib/api-client';
 
-// ── Demo Data ──────────────────────────────────────────────────────────────
+// ── Types ──────────────────────────────────────────────────────────────
 
-const kpiData = {
-  totalRevenue: 485200,
-  revenueTrend: 12.4,
-  occupancyRate: 78.3,
-  occupancyTrend: 5.2,
-  adr: 187.5,
-  adrTrend: 8.1,
-  revPAR: 146.8,
-  revPARTrend: 14.2,
-  totalBookings: 342,
-  bookingsTrend: 9.7,
-  avgLOS: 4.8,
-  losTrend: -2.1,
-  cancellationRate: 6.2,
-  cancellationTrend: -1.5,
-  directBookingShare: 32.8,
-  directTrend: 18.4,
-};
+interface KpiData {
+  totalRevenue: number;
+  revenueTrend: number;
+  occupancyRate: number;
+  occupancyTrend: number;
+  adr: number;
+  adrTrend: number;
+  revPAR: number;
+  revPARTrend: number;
+  totalBookings: number;
+  bookingsTrend: number;
+  avgLOS: number;
+  losTrend: number;
+  cancellationRate: number;
+  cancellationTrend: number;
+  directBookingShare: number;
+  directTrend: number;
+}
 
-const monthlyRevenue = [
-  { month: 'Jan', revenue: 14200, expenses: 5800, profit: 8400, occupancy: 32 },
-  { month: 'Feb', revenue: 15600, expenses: 6100, profit: 9500, occupancy: 38 },
-  { month: 'Mar', revenue: 22400, expenses: 7500, profit: 14900, occupancy: 55 },
-  { month: 'Apr', revenue: 28600, expenses: 8100, profit: 20500, occupancy: 65 },
-  { month: 'May', revenue: 38200, expenses: 8400, profit: 29800, occupancy: 78 },
-  { month: 'Jun', revenue: 52600, expenses: 9200, profit: 43400, occupancy: 91 },
-  { month: 'Jul', revenue: 62800, expenses: 10100, profit: 52700, occupancy: 96 },
-  { month: 'Aug', revenue: 65200, expenses: 10800, profit: 54400, occupancy: 98 },
-  { month: 'Sep', revenue: 46400, expenses: 9000, profit: 37400, occupancy: 82 },
-  { month: 'Oct', revenue: 32800, expenses: 7800, profit: 25000, occupancy: 62 },
-  { month: 'Nov', revenue: 21200, expenses: 6400, profit: 14800, occupancy: 42 },
-  { month: 'Dec', revenue: 18800, expenses: 5900, profit: 12900, occupancy: 35 },
-];
+interface MonthlyRevenue {
+  month: string;
+  revenue: number;
+  expenses: number;
+  profit: number;
+  occupancy: number;
+}
 
-const channelDistribution = [
-  { name: 'Airbnb', value: 38, revenue: 184376, bookings: 130, color: '#FF5A5F' },
-  { name: 'Booking.com', value: 25, revenue: 121300, bookings: 86, color: '#003580' },
-  { name: 'VRBO', value: 12, revenue: 58224, bookings: 41, color: '#3B5998' },
-  { name: 'Direct', value: 18, revenue: 87336, bookings: 62, color: '#6b38d4' },
-  { name: 'Expedia', value: 5, revenue: 24260, bookings: 17, color: '#F5A623' },
-  { name: 'Other', value: 2, revenue: 9704, bookings: 6, color: '#94a3b8' },
-];
+interface ChannelData {
+  name: string;
+  value: number;
+  revenue: number;
+  bookings: number;
+  color: string;
+}
 
-const propertyPerformance = [
-  { name: 'Villa Elounda Royale', occupancy: 92, adr: 280, revPAR: 258, revenue: 94080, score: 95, roi: 18.2 },
-  { name: 'Chania Harbor Suite', occupancy: 88, adr: 195, revPAR: 172, revenue: 62600, score: 88, roi: 15.6 },
-  { name: 'Rethymno Beach House', occupancy: 85, adr: 210, revPAR: 179, revenue: 65000, score: 84, roi: 14.8 },
-  { name: 'Heraklion City Loft', occupancy: 82, adr: 145, revPAR: 119, revenue: 43200, score: 79, roi: 12.1 },
-  { name: 'Agios Nikolaos Villa', occupancy: 78, adr: 175, revPAR: 137, revenue: 49700, score: 76, roi: 11.5 },
-  { name: 'Plakias Seaside', occupancy: 72, adr: 160, revPAR: 115, revenue: 41900, score: 71, roi: 10.2 },
-  { name: 'Sitia Countryside', occupancy: 65, adr: 120, revPAR: 78, revenue: 28400, score: 62, roi: 7.8 },
-];
+interface PropertyPerformance {
+  name: string;
+  occupancy: number;
+  adr: number;
+  revPAR: number;
+  revenue: number;
+  score: number;
+  roi: number;
+}
 
-const forecastData = [
-  { month: 'Apr 2026', predicted: 31500, confidence: 85, actual: null },
-  { month: 'May 2026', predicted: 42000, confidence: 80, actual: null },
-  { month: 'Jun 2026', predicted: 56000, confidence: 75, actual: null },
-  { month: 'Jul 2026', predicted: 68000, confidence: 70, actual: null },
-  { month: 'Aug 2026', predicted: 72000, confidence: 65, actual: null },
-  { month: 'Sep 2026', predicted: 48000, confidence: 60, actual: null },
-];
+interface ForecastItem {
+  month: string;
+  predicted: number;
+  confidence: number;
+  actual: number | null;
+}
 
-const ownerReports = [
-  { owner: 'David Cohen', properties: 3, revenue: 201680, expenses: 42800, fees: 50420, payout: 108460, occupancy: 85 },
-  { owner: 'Yael Levy', properties: 2, revenue: 149200, expenses: 31600, fees: 37300, payout: 80300, occupancy: 80 },
-  { owner: 'Michael Ben-Ari', properties: 2, revenue: 134320, expenses: 28400, fees: 33580, payout: 72340, occupancy: 72 },
-];
+interface OwnerReport {
+  owner: string;
+  properties: number;
+  revenue: number;
+  expenses: number;
+  fees: number;
+  payout: number;
+  occupancy: number;
+}
 
-const seasonalTrends = [
-  { month: 'Jan', '2024': 28, '2025': 32, '2026': 35 },
-  { month: 'Feb', '2024': 32, '2025': 36, '2026': 40 },
-  { month: 'Mar', '2024': 48, '2025': 52, '2026': 58 },
-  { month: 'Apr', '2024': 62, '2025': 65, '2026': 68 },
-  { month: 'May', '2024': 75, '2025': 78, '2026': 82 },
-  { month: 'Jun', '2024': 88, '2025': 90, '2026': 93 },
-  { month: 'Jul', '2024': 94, '2025': 95, '2026': 97 },
-  { month: 'Aug', '2024': 96, '2025': 97, '2026': 98 },
-  { month: 'Sep', '2024': 82, '2025': 85, '2026': 88 },
-  { month: 'Oct', '2024': 58, '2025': 62, '2026': 65 },
-  { month: 'Nov', '2024': 38, '2025': 42, '2026': 45 },
-  { month: 'Dec', '2024': 30, '2025': 34, '2026': 38 },
-];
+interface SeasonalTrend {
+  month: string;
+  [year: string]: string | number;
+}
+
+interface DashboardAnalytics {
+  kpis: KpiData;
+  monthlyRevenue: MonthlyRevenue[];
+  channelDistribution: ChannelData[];
+  propertyPerformance: PropertyPerformance[];
+  forecastData: ForecastItem[];
+  ownerReports: OwnerReport[];
+  seasonalTrends: SeasonalTrend[];
+  radarData: Array<Record<string, string | number>>;
+  peakInsights: { label: string; value: string }[];
+  offSeasonInsights: { label: string; value: string; highlight?: boolean }[];
+}
 
 // ── Component ──────────────────────────────────────────────────────────────
 
@@ -178,10 +178,58 @@ function KPICard({
 
 export default function AnalyticsDashboardPage() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [period, setPeriod] = useState<'month' | 'quarter' | 'year'>('year');
 
-  const tabs: { key: TabType; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  // ── API Queries ──────────────────────────────────────────────
+  const { data: dashboardData, isLoading, isError, error } = useQuery<DashboardAnalytics>({
+    queryKey: ['analytics-dashboard', period],
+    queryFn: async () => {
+      const res = await apiClient.get('/analytics/dashboard', { params: { period } });
+      return res.data.data;
+    },
+    staleTime: 2 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000,
+  });
+
+  const { data: occupancyData } = useQuery<MonthlyRevenue[]>({
+    queryKey: ['analytics-occupancy', period],
+    queryFn: async () => {
+      const res = await apiClient.get('/analytics/occupancy', { params: { period } });
+      return res.data.data;
+    },
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const { data: revenueData } = useQuery<MonthlyRevenue[]>({
+    queryKey: ['analytics-revenue', period],
+    queryFn: async () => {
+      const res = await apiClient.get('/analytics/revenue', { params: { period } });
+      return res.data.data;
+    },
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['analytics-dashboard'] });
+    queryClient.invalidateQueries({ queryKey: ['analytics-occupancy'] });
+    queryClient.invalidateQueries({ queryKey: ['analytics-revenue'] });
+  };
+
+  const kpiData = dashboardData?.kpis;
+  const monthlyRevenue = revenueData ?? dashboardData?.monthlyRevenue ?? [];
+  const channelDistribution = dashboardData?.channelDistribution ?? [];
+  const propertyPerformance = dashboardData?.propertyPerformance ?? [];
+  const forecastData = dashboardData?.forecastData ?? [];
+  const ownerReports = dashboardData?.ownerReports ?? [];
+  const seasonalTrends = dashboardData?.seasonalTrends ?? [];
+  const radarData = dashboardData?.radarData ?? [];
+  const peakInsights = dashboardData?.peakInsights ?? [];
+  const offSeasonInsights = dashboardData?.offSeasonInsights ?? [];
+  const occupancyMonthly = occupancyData ?? monthlyRevenue;
+
+  const tabsConfig: { key: TabType; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { key: 'overview', label: 'Revenue Overview', icon: TrendingUp },
     { key: 'properties', label: 'Property Performance', icon: Building2 },
     { key: 'channels', label: 'Channel Analytics', icon: Globe },
@@ -189,6 +237,65 @@ export default function AnalyticsDashboardPage() {
     { key: 'owners', label: 'Owner Reports', icon: Users },
     { key: 'seasonal', label: 'Seasonal Trends', icon: Calendar },
   ];
+
+  // ── Error State ──────────────────────────────────────────────
+  if (isError) {
+    return (
+      <div className="p-6">
+        <div className="bg-surface-container-lowest rounded-xl p-8 ambient-shadow flex flex-col items-center justify-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-error/10 flex items-center justify-center">
+            <AlertCircle className="w-7 h-7 text-error" />
+          </div>
+          <h2 className="font-headline text-xl font-bold text-on-surface">
+            Failed to load analytics
+          </h2>
+          <p className="text-sm text-on-surface-variant text-center max-w-md">
+            {(error as any)?.message || 'An unexpected error occurred while loading analytics data.'}
+          </p>
+          <button
+            onClick={handleRefresh}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium text-on-secondary gradient-accent hover:opacity-90 transition-opacity"
+          >
+            <RefreshCw className="w-4 h-4" />
+            <span>Try Again</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Loading State ──────────────────────────────────────────────
+  if (isLoading || !kpiData) {
+    return (
+      <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-headline font-bold">Revenue Analytics</h1>
+            <p className="text-sm text-on-surface-variant mt-0.5">
+              Comprehensive financial performance insights across your portfolio
+            </p>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="glass-card p-4 rounded-xl animate-pulse">
+              <div className="h-9 w-9 bg-white/10 rounded-lg mb-2" />
+              <div className="h-3 w-16 bg-white/10 rounded mb-1" />
+              <div className="h-6 w-20 bg-white/10 rounded" />
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 glass-card p-5 rounded-xl animate-pulse">
+            <div className="h-80 bg-white/5 rounded-lg" />
+          </div>
+          <div className="glass-card p-5 rounded-xl animate-pulse">
+            <div className="h-80 bg-white/5 rounded-lg" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
@@ -214,7 +321,10 @@ export default function AnalyticsDashboardPage() {
             <Download className="w-4 h-4" />
             Export
           </button>
-          <button className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary text-white text-sm hover:bg-secondary/90">
+          <button
+            onClick={handleRefresh}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary text-white text-sm hover:bg-secondary/90"
+          >
             <RefreshCw className="w-4 h-4" />
             Refresh
           </button>
@@ -236,7 +346,7 @@ export default function AnalyticsDashboardPage() {
       {/* Tabs */}
       <div className="border-b border-white/10">
         <div className="flex gap-1 overflow-x-auto pb-px">
-          {tabs.map(({ key, label, icon: TabIcon }) => (
+          {tabsConfig.map(({ key, label, icon: TabIcon }) => (
             <button
               key={key}
               onClick={() => setActiveTab(key)}
@@ -290,45 +400,49 @@ export default function AnalyticsDashboardPage() {
           {/* Channel Distribution */}
           <div className="glass-card p-5 rounded-xl">
             <h3 className="text-sm font-semibold mb-4">Channel Distribution</h3>
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie
-                  data={channelDistribution}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={80}
-                  paddingAngle={3}
-                  dataKey="value"
-                >
-                  {channelDistribution.map((entry) => (
-                    <Cell key={entry.name} fill={entry.color} />
+            {channelDistribution.length > 0 && (
+              <>
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie
+                      data={channelDistribution}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={80}
+                      paddingAngle={3}
+                      dataKey="value"
+                    >
+                      {channelDistribution.map((entry) => (
+                        <Cell key={entry.name} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{ background: '#1e1e2e', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                      formatter={(value: number) => [`${value}%`, '']}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="space-y-2 mt-3">
+                  {channelDistribution.map((ch) => (
+                    <div key={ch.name} className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: ch.color }} />
+                        <span className="text-on-surface-variant">{ch.name}</span>
+                      </div>
+                      <span className="font-medium">{ch.value}%</span>
+                    </div>
                   ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{ background: '#1e1e2e', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
-                  formatter={(value: number) => [`${value}%`, '']}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="space-y-2 mt-3">
-              {channelDistribution.map((ch) => (
-                <div key={ch.name} className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: ch.color }} />
-                    <span className="text-on-surface-variant">{ch.name}</span>
-                  </div>
-                  <span className="font-medium">{ch.value}%</span>
                 </div>
-              ))}
-            </div>
+              </>
+            )}
           </div>
 
           {/* Occupancy Rate Over Time */}
           <div className="lg:col-span-3 glass-card p-5 rounded-xl">
             <h3 className="text-sm font-semibold mb-4">Occupancy Rate Trend</h3>
             <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={monthlyRevenue}>
+              <BarChart data={occupancyMonthly}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
                 <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 12 }} />
                 <YAxis tick={{ fill: '#94a3b8', fontSize: 12 }} tickFormatter={(v) => `${v}%`} />
@@ -395,33 +509,38 @@ export default function AnalyticsDashboardPage() {
                       </td>
                     </tr>
                   ))}
+                  {propertyPerformance.length === 0 && (
+                    <tr>
+                      <td colSpan={8} className="px-4 py-12 text-center text-on-surface-variant">
+                        No property performance data available
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
           </div>
 
           {/* Radar comparison */}
-          <div className="glass-card p-5 rounded-xl">
-            <h3 className="text-sm font-semibold mb-4">Top 3 Properties — Performance Radar</h3>
-            <ResponsiveContainer width="100%" height={350}>
-              <RadarChart data={[
-                { metric: 'Occupancy', 'Villa Elounda': 92, 'Chania Harbor': 88, 'Rethymno Beach': 85 },
-                { metric: 'ADR', 'Villa Elounda': 93, 'Chania Harbor': 65, 'Rethymno Beach': 70 },
-                { metric: 'Reviews', 'Villa Elounda': 95, 'Chania Harbor': 90, 'Rethymno Beach': 82 },
-                { metric: 'ROI', 'Villa Elounda': 91, 'Chania Harbor': 78, 'Rethymno Beach': 74 },
-                { metric: 'Response', 'Villa Elounda': 98, 'Chania Harbor': 92, 'Rethymno Beach': 88 },
-                { metric: 'Repeat Rate', 'Villa Elounda': 85, 'Chania Harbor': 70, 'Rethymno Beach': 65 },
-              ]}>
-                <PolarGrid stroke="rgba(255,255,255,0.1)" />
-                <PolarAngleAxis dataKey="metric" tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                <PolarRadiusAxis tick={{ fill: '#64748b', fontSize: 10 }} />
-                <Radar name="Villa Elounda Royale" dataKey="Villa Elounda" stroke="#6b38d4" fill="#6b38d4" fillOpacity={0.15} />
-                <Radar name="Chania Harbor Suite" dataKey="Chania Harbor" stroke="#06b6d4" fill="#06b6d4" fillOpacity={0.1} />
-                <Radar name="Rethymno Beach House" dataKey="Rethymno Beach" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.1} />
-                <Legend />
-              </RadarChart>
-            </ResponsiveContainer>
-          </div>
+          {radarData.length > 0 && (
+            <div className="glass-card p-5 rounded-xl">
+              <h3 className="text-sm font-semibold mb-4">Top 3 Properties — Performance Radar</h3>
+              <ResponsiveContainer width="100%" height={350}>
+                <RadarChart data={radarData}>
+                  <PolarGrid stroke="rgba(255,255,255,0.1)" />
+                  <PolarAngleAxis dataKey="metric" tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                  <PolarRadiusAxis tick={{ fill: '#64748b', fontSize: 10 }} />
+                  {Object.keys(radarData[0] || {}).filter((k) => k !== 'metric').map((key, i) => {
+                    const colors = ['#6b38d4', '#06b6d4', '#f59e0b'];
+                    return (
+                      <Radar key={key} name={key} dataKey={key} stroke={colors[i % colors.length]} fill={colors[i % colors.length]} fillOpacity={i === 0 ? 0.15 : 0.1} />
+                    );
+                  })}
+                  <Legend />
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
       )}
 
@@ -467,6 +586,9 @@ export default function AnalyticsDashboardPage() {
                   </div>
                 </div>
               ))}
+              {channelDistribution.length === 0 && (
+                <p className="text-center text-on-surface-variant py-8">No channel data available</p>
+              )}
             </div>
           </div>
         </div>
@@ -551,6 +673,13 @@ export default function AnalyticsDashboardPage() {
                     </td>
                   </tr>
                 ))}
+                {ownerReports.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-12 text-center text-on-surface-variant">
+                      No owner report data available
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -570,9 +699,21 @@ export default function AnalyticsDashboardPage() {
                   contentStyle={{ background: '#1e1e2e', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
                   formatter={(value: number) => [`${value}%`, '']}
                 />
-                <Line type="monotone" dataKey="2024" stroke="#64748b" strokeWidth={1.5} dot={false} strokeDasharray="4 4" />
-                <Line type="monotone" dataKey="2025" stroke="#06b6d4" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="2026" stroke="#6b38d4" strokeWidth={2.5} />
+                {Object.keys(seasonalTrends[0] || {}).filter((k) => k !== 'month').map((year, i) => {
+                  const colors = ['#64748b', '#06b6d4', '#6b38d4'];
+                  const widths = [1.5, 2, 2.5];
+                  return (
+                    <Line
+                      key={year}
+                      type="monotone"
+                      dataKey={year}
+                      stroke={colors[i % colors.length]}
+                      strokeWidth={widths[i % widths.length]}
+                      dot={i === Object.keys(seasonalTrends[0] || {}).filter((k) => k !== 'month').length - 1}
+                      strokeDasharray={i === 0 ? '4 4' : undefined}
+                    />
+                  );
+                })}
                 <Legend />
               </LineChart>
             </ResponsiveContainer>
@@ -583,43 +724,29 @@ export default function AnalyticsDashboardPage() {
             <div className="glass-card p-5 rounded-xl">
               <h3 className="text-sm font-semibold mb-3 text-emerald-400">Peak Season Insights</h3>
               <div className="space-y-2">
-                <div className="flex justify-between text-sm p-2 rounded bg-emerald-500/5">
-                  <span className="text-on-surface-variant">Highest Occupancy</span>
-                  <span className="font-semibold">August — 98%</span>
-                </div>
-                <div className="flex justify-between text-sm p-2 rounded bg-emerald-500/5">
-                  <span className="text-on-surface-variant">Best Revenue Month</span>
-                  <span className="font-semibold">August — €65,200</span>
-                </div>
-                <div className="flex justify-between text-sm p-2 rounded bg-emerald-500/5">
-                  <span className="text-on-surface-variant">Highest ADR</span>
-                  <span className="font-semibold">July — €295/night</span>
-                </div>
-                <div className="flex justify-between text-sm p-2 rounded bg-emerald-500/5">
-                  <span className="text-on-surface-variant">Peak Season Duration</span>
-                  <span className="font-semibold">Jun–Sep (4 months)</span>
-                </div>
+                {peakInsights.map((insight) => (
+                  <div key={insight.label} className="flex justify-between text-sm p-2 rounded bg-emerald-500/5">
+                    <span className="text-on-surface-variant">{insight.label}</span>
+                    <span className="font-semibold">{insight.value}</span>
+                  </div>
+                ))}
+                {peakInsights.length === 0 && (
+                  <p className="text-sm text-on-surface-variant">No peak season data available</p>
+                )}
               </div>
             </div>
             <div className="glass-card p-5 rounded-xl">
               <h3 className="text-sm font-semibold mb-3 text-amber-400">Off-Season Opportunities</h3>
               <div className="space-y-2">
-                <div className="flex justify-between text-sm p-2 rounded bg-amber-500/5">
-                  <span className="text-on-surface-variant">Lowest Occupancy</span>
-                  <span className="font-semibold">January — 35%</span>
-                </div>
-                <div className="flex justify-between text-sm p-2 rounded bg-amber-500/5">
-                  <span className="text-on-surface-variant">YoY Improvement</span>
-                  <span className="font-semibold text-emerald-400">+7% winter occupancy</span>
-                </div>
-                <div className="flex justify-between text-sm p-2 rounded bg-amber-500/5">
-                  <span className="text-on-surface-variant">Long-Stay Opportunity</span>
-                  <span className="font-semibold">Nov–Feb digital nomads</span>
-                </div>
-                <div className="flex justify-between text-sm p-2 rounded bg-amber-500/5">
-                  <span className="text-on-surface-variant">Potential Revenue Lift</span>
-                  <span className="font-semibold text-emerald-400">+€12,400/month</span>
-                </div>
+                {offSeasonInsights.map((insight) => (
+                  <div key={insight.label} className="flex justify-between text-sm p-2 rounded bg-amber-500/5">
+                    <span className="text-on-surface-variant">{insight.label}</span>
+                    <span className={`font-semibold ${insight.highlight ? 'text-emerald-400' : ''}`}>{insight.value}</span>
+                  </div>
+                ))}
+                {offSeasonInsights.length === 0 && (
+                  <p className="text-sm text-on-surface-variant">No off-season data available</p>
+                )}
               </div>
             </div>
           </div>

@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import apiClient from '../lib/api-client';
 import {
   Globe,
   Settings,
@@ -28,9 +31,10 @@ import {
   MapPin,
   Image,
   Zap,
+  Loader2,
 } from 'lucide-react';
 
-// ── Types & Demo Data ──────────────────────────────────────────────────────
+// ── Types ──────────────────────────────────────────────────────────────────
 
 interface BookingPromotion {
   id: string;
@@ -56,23 +60,29 @@ interface PropertyConfig {
   revenue: number;
 }
 
-const demoPropertyConfigs: PropertyConfig[] = [
-  { propertyId: 'p1', propertyName: 'Villa Elounda Royale', isEnabled: true, instantBooking: true, pageUrl: 'https://book.sivanmanagment.com/villa-elounda-royale', totalDirectBookings: 28, revenue: 38600 },
-  { propertyId: 'p2', propertyName: 'Chania Harbor Suite', isEnabled: true, instantBooking: false, pageUrl: 'https://book.sivanmanagment.com/chania-harbor-suite', totalDirectBookings: 18, revenue: 22400 },
-  { propertyId: 'p3', propertyName: 'Rethymno Beach House', isEnabled: true, instantBooking: true, pageUrl: 'https://book.sivanmanagment.com/rethymno-beach-house', totalDirectBookings: 16, revenue: 19800 },
-  { propertyId: 'p4', propertyName: 'Heraklion City Loft', isEnabled: false, instantBooking: false, pageUrl: '', totalDirectBookings: 0, revenue: 0 },
-  { propertyId: 'p5', propertyName: 'Agios Nikolaos Villa', isEnabled: true, instantBooking: false, pageUrl: 'https://book.sivanmanagment.com/agios-nikolaos-villa', totalDirectBookings: 8, revenue: 9200 },
-  { propertyId: 'p6', propertyName: 'Plakias Seaside', isEnabled: false, instantBooking: false, pageUrl: '', totalDirectBookings: 0, revenue: 0 },
-  { propertyId: 'p7', propertyName: 'Sitia Countryside', isEnabled: false, instantBooking: false, pageUrl: '', totalDirectBookings: 0, revenue: 0 },
-];
-
-const demoPromotions: BookingPromotion[] = [
-  { id: 'promo1', code: 'WELCOME15', name: 'Welcome Discount', type: 'PERCENT', value: 15, minNights: 3, maxUses: 100, usedCount: 42, validFrom: '2026-01-01', validTo: '2026-12-31', isActive: true },
-  { id: 'promo2', code: 'SUMMER10', name: 'Summer Early Bird', type: 'PERCENT', value: 10, minNights: 5, maxUses: 50, usedCount: 18, validFrom: '2026-06-01', validTo: '2026-09-30', isActive: true },
-  { id: 'promo3', code: 'LONGSTAY50', name: 'Long Stay Special', type: 'FIXED', value: 50, minNights: 14, maxUses: 30, usedCount: 7, validFrom: '2026-01-01', validTo: '2026-12-31', isActive: true },
-  { id: 'promo4', code: 'EASTER20', name: 'Easter Week', type: 'PERCENT', value: 20, minNights: 4, maxUses: 20, usedCount: 20, validFrom: '2026-04-01', validTo: '2026-04-30', isActive: false },
-  { id: 'promo5', code: 'REPEAT10', name: 'Repeat Guest', type: 'PERCENT', value: 10, minNights: 2, maxUses: 0, usedCount: 31, validFrom: '2026-01-01', validTo: '2026-12-31', isActive: true },
-];
+interface BookingEngineConfig {
+  propertyConfigs: PropertyConfig[];
+  promotions: BookingPromotion[];
+  design: {
+    primaryColor: string;
+    accentColor: string;
+    logoUrl: string;
+    customCss: string;
+    displayOptions: { label: string; enabled: boolean; desc: string }[];
+  };
+  policies: {
+    cancellationPolicy: string;
+    houseRules: { label: string; value: string }[];
+    paymentMethods: { method: string; enabled: boolean }[];
+    deposit: { required: boolean; percentage: number; balanceDue: string };
+  };
+  embed: {
+    apiKey: string;
+    apiBaseUrl: string;
+    widgetCode: string;
+    publicEndpoints: { method: string; path: string; desc: string }[];
+  };
+}
 
 type TabType = 'properties' | 'promotions' | 'design' | 'policies' | 'embed';
 
@@ -80,8 +90,30 @@ type TabType = 'properties' | 'promotions' | 'design' | 'policies' | 'embed';
 
 export default function BookingEnginePage() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<TabType>('properties');
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
+
+  // ── API Queries ────────────────────────────────────────────────────────
+  const { data: config, isLoading, error } = useQuery<BookingEngineConfig>({
+    queryKey: ['booking-engine-config'],
+    queryFn: async () => {
+      const res = await apiClient.get('/booking-engine/config');
+      return res.data.data ?? res.data;
+    },
+  });
+
+  const updateConfigMutation = useMutation({
+    mutationFn: async (payload: Partial<BookingEngineConfig>) => {
+      const res = await apiClient.put('/booking-engine/config', payload);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['booking-engine-config'] });
+      toast.success('Configuration updated');
+    },
+    onError: () => toast.error('Failed to update configuration'),
+  });
 
   const tabs: { key: TabType; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { key: 'properties', label: 'Properties', icon: Building2 },
@@ -91,10 +123,29 @@ export default function BookingEnginePage() {
     { key: 'embed', label: 'Embed & API', icon: Code2 },
   ];
 
-  const enabledCount = demoPropertyConfigs.filter((p) => p.isEnabled).length;
-  const totalDirectBookings = demoPropertyConfigs.reduce((s, p) => s + p.totalDirectBookings, 0);
-  const totalDirectRevenue = demoPropertyConfigs.reduce((s, p) => s + p.revenue, 0);
-  const activePromos = demoPromotions.filter((p) => p.isActive).length;
+  const propertyConfigs = config?.propertyConfigs ?? [];
+  const promotions = config?.promotions ?? [];
+
+  const enabledCount = propertyConfigs.filter((p) => p.isEnabled).length;
+  const totalDirectBookings = propertyConfigs.reduce((s, p) => s + p.totalDirectBookings, 0);
+  const totalDirectRevenue = propertyConfigs.reduce((s, p) => s + p.revenue, 0);
+  const activePromos = promotions.filter((p) => p.isActive).length;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-secondary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 text-center text-error">
+        <p>Failed to load booking engine configuration. Please try again.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
@@ -124,7 +175,7 @@ export default function BookingEnginePage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="glass-card p-4 rounded-xl">
           <p className="text-xs text-on-surface-variant">Properties Enabled</p>
-          <p className="text-2xl font-headline font-bold mt-1">{enabledCount}<span className="text-sm text-on-surface-variant font-normal">/{demoPropertyConfigs.length}</span></p>
+          <p className="text-2xl font-headline font-bold mt-1">{enabledCount}<span className="text-sm text-on-surface-variant font-normal">/{propertyConfigs.length}</span></p>
         </div>
         <div className="glass-card p-4 rounded-xl">
           <p className="text-xs text-on-surface-variant">Direct Bookings</p>
@@ -177,7 +228,7 @@ export default function BookingEnginePage() {
                 </tr>
               </thead>
               <tbody>
-                {demoPropertyConfigs.map((config) => (
+                {propertyConfigs.map((config) => (
                   <tr key={config.propertyId} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
                     <td className="px-4 py-3 font-medium">{config.propertyName}</td>
                     <td className="px-4 py-3 text-center">
@@ -268,7 +319,7 @@ export default function BookingEnginePage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {demoPromotions.map((promo) => (
+                  {promotions.map((promo) => (
                     <tr key={promo.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
                       <td className="px-4 py-3">
                         <span className="font-mono text-xs px-2 py-1 rounded bg-secondary/10 text-secondary font-semibold">

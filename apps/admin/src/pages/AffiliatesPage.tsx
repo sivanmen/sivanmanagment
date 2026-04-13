@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Users,
   TrendingUp,
@@ -20,6 +21,8 @@ import {
   Mail,
   Globe,
   Save,
+  RefreshCw,
+  AlertCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -31,6 +34,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
+import apiClient from '../lib/api-client';
 
 /* ─── Types ─────────────────────────────────────────────────────── */
 
@@ -78,6 +82,21 @@ interface Payout {
   period: string;
 }
 
+interface AffiliateStats {
+  totalAffiliates: number;
+  activeReferrals: number;
+  totalRevenue: number;
+  totalCommission: number;
+  referralTrend: { month: string; referrals: number; bookings: number; revenue: number }[];
+  affiliateLink: string;
+}
+
+interface AffiliatesData {
+  affiliates: Affiliate[];
+  referrals: Referral[];
+  payouts: Payout[];
+}
+
 /* ─── Status styles ─────────────────────────────────────────────── */
 
 const affiliateStatusStyles: Record<AffiliateStatus, string> = {
@@ -98,71 +117,6 @@ const referralStatusStyles: Record<ReferralStatus, string> = {
   booked: 'bg-warning/10 text-warning',
   completed: 'bg-success/10 text-success',
 };
-
-/* ─── Demo Data ─────────────────────────────────────────────────── */
-
-const demoAffiliates: Affiliate[] = [
-  {
-    id: '1', name: 'Travel Greece Partners', code: 'TGP-2024', email: 'partners@travelgreece.com',
-    type: 'Travel Blogger', referrals: 245, bookingsGenerated: 68, revenue: 48600,
-    commissionRate: 8, commissionEarned: 3888, status: 'active', joinDate: '2024-03-10',
-  },
-  {
-    id: '2', name: 'Crete Luxury Living', code: 'CLL-2024', email: 'info@creteluxury.com',
-    type: 'Local Agent', referrals: 182, bookingsGenerated: 54, revenue: 41200,
-    commissionRate: 10, commissionEarned: 4120, status: 'active', joinDate: '2024-06-15',
-  },
-  {
-    id: '3', name: 'Mediterranean Homes Blog', code: 'MHB-2024', email: 'editor@medhomes.blog',
-    type: 'Travel Blogger', referrals: 128, bookingsGenerated: 32, revenue: 22400,
-    commissionRate: 7, commissionEarned: 1568, status: 'active', joinDate: '2024-09-01',
-  },
-  {
-    id: '4', name: 'Greek Islands Guide', code: 'GIG-2025', email: 'contact@greekislands.guide',
-    type: 'Local Agent', referrals: 65, bookingsGenerated: 14, revenue: 9800,
-    commissionRate: 8, commissionEarned: 784, status: 'pending', joinDate: '2025-01-20',
-  },
-  {
-    id: '5', name: 'Euro Property Network', code: 'EPN-2025', email: 'affiliates@europrop.net',
-    type: 'Partner Hotel', referrals: 38, bookingsGenerated: 8, revenue: 5600,
-    commissionRate: 6, commissionEarned: 336, status: 'suspended', joinDate: '2025-04-05',
-  },
-  {
-    id: '6', name: 'Santorini Stays Hub', code: 'SSH-2025', email: 'hello@santorinistays.com',
-    type: 'Partner Hotel', referrals: 92, bookingsGenerated: 28, revenue: 19600,
-    commissionRate: 9, commissionEarned: 1764, status: 'active', joinDate: '2025-02-14',
-  },
-];
-
-const demoReferrals: Referral[] = [
-  { id: 'R1', affiliateId: '1', affiliateName: 'Travel Greece Partners', visitorIp: '192.168.1.***', visitDate: '2026-04-08', signUpDate: '2026-04-08', bookingDate: '2026-04-09', bookingValue: 1200, status: 'completed', guestName: 'Hans Mueller' },
-  { id: 'R2', affiliateId: '2', affiliateName: 'Crete Luxury Living', visitorIp: '10.0.0.***', visitDate: '2026-04-09', signUpDate: '2026-04-09', bookingDate: '2026-04-10', bookingValue: 850, status: 'booked', guestName: 'Sophie Dubois' },
-  { id: 'R3', affiliateId: '1', affiliateName: 'Travel Greece Partners', visitorIp: '172.16.0.***', visitDate: '2026-04-10', signUpDate: '2026-04-10', status: 'signed_up', guestName: 'James Wilson' },
-  { id: 'R4', affiliateId: '6', affiliateName: 'Santorini Stays Hub', visitorIp: '192.168.2.***', visitDate: '2026-04-10', status: 'visited' },
-  { id: 'R5', affiliateId: '3', affiliateName: 'Mediterranean Homes Blog', visitorIp: '10.1.1.***', visitDate: '2026-04-11', signUpDate: '2026-04-11', bookingDate: '2026-04-11', bookingValue: 2100, status: 'completed', guestName: 'Maria Rossi' },
-  { id: 'R6', affiliateId: '2', affiliateName: 'Crete Luxury Living', visitorIp: '172.16.1.***', visitDate: '2026-04-11', signUpDate: '2026-04-11', status: 'signed_up', guestName: 'Erik Johansson' },
-  { id: 'R7', affiliateId: '4', affiliateName: 'Greek Islands Guide', visitorIp: '192.168.3.***', visitDate: '2026-04-11', status: 'visited' },
-  { id: 'R8', affiliateId: '6', affiliateName: 'Santorini Stays Hub', visitorIp: '10.2.0.***', visitDate: '2026-04-11', signUpDate: '2026-04-11', bookingDate: '2026-04-11', bookingValue: 1450, status: 'booked', guestName: 'Anna Kowalska' },
-];
-
-const demoPayouts: Payout[] = [
-  { id: 'P1', affiliateId: '1', affiliateName: 'Travel Greece Partners', amount: 1240, date: '2026-04-01', method: 'Bank Transfer', status: 'paid', period: 'Mar 2026' },
-  { id: 'P2', affiliateId: '2', affiliateName: 'Crete Luxury Living', amount: 1560, date: '2026-04-01', method: 'Bank Transfer', status: 'paid', period: 'Mar 2026' },
-  { id: 'P3', affiliateId: '6', affiliateName: 'Santorini Stays Hub', amount: 890, date: '2026-04-01', method: 'PayPal', status: 'paid', period: 'Mar 2026' },
-  { id: 'P4', affiliateId: '3', affiliateName: 'Mediterranean Homes Blog', amount: 720, date: '2026-04-01', method: 'PayPal', status: 'paid', period: 'Mar 2026' },
-  { id: 'P5', affiliateId: '1', affiliateName: 'Travel Greece Partners', amount: 1380, date: '2026-04-15', method: 'Bank Transfer', status: 'processing', period: 'Apr 2026 (partial)' },
-  { id: 'P6', affiliateId: '2', affiliateName: 'Crete Luxury Living', amount: 980, date: '2026-04-15', method: 'Bank Transfer', status: 'pending', period: 'Apr 2026 (partial)' },
-  { id: 'P7', affiliateId: '4', affiliateName: 'Greek Islands Guide', amount: 340, date: '2026-04-15', method: 'PayPal', status: 'pending', period: 'Apr 2026 (partial)' },
-];
-
-const referralTrendData = [
-  { month: 'Nov', referrals: 68, bookings: 14, revenue: 9800 },
-  { month: 'Dec', referrals: 92, bookings: 22, revenue: 15400 },
-  { month: 'Jan', referrals: 78, bookings: 18, revenue: 12600 },
-  { month: 'Feb', referrals: 105, bookings: 28, revenue: 19600 },
-  { month: 'Mar', referrals: 134, bookings: 38, revenue: 26600 },
-  { month: 'Apr', referrals: 156, bookings: 45, revenue: 31500 },
-];
 
 /* ─── Helpers ───────────────────────────────────────────────────── */
 
@@ -208,9 +162,9 @@ const tabs: { id: Tab; label: string; icon: React.ElementType }[] = [
 
 export default function AffiliatesPage() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<Tab>('affiliates');
   const [search, setSearch] = useState('');
-  const [affiliates] = useState(demoAffiliates);
   const [copiedLink, setCopiedLink] = useState(false);
 
   // Commission settings state
@@ -224,18 +178,68 @@ export default function AffiliatesPage() {
     payoutFrequency: 'monthly' as 'weekly' | 'biweekly' | 'monthly',
   });
 
+  // ── API Queries ──────────────────────────────────────────────
+  const { data: affiliatesData, isLoading, isError, error } = useQuery<AffiliatesData>({
+    queryKey: ['affiliates'],
+    queryFn: async () => {
+      const res = await apiClient.get('/affiliates');
+      return res.data.data;
+    },
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const { data: statsData } = useQuery<AffiliateStats>({
+    queryKey: ['affiliates-stats'],
+    queryFn: async () => {
+      const res = await apiClient.get('/affiliates/stats');
+      return res.data.data;
+    },
+    staleTime: 2 * 60 * 1000,
+  });
+
+  // ── Mutations ──────────────────────────────────────────────
+  const createAffiliateMutation = useMutation({
+    mutationFn: (data: Partial<Affiliate>) =>
+      apiClient.post('/affiliates', data),
+    onSuccess: () => {
+      toast.success('Affiliate created successfully');
+      queryClient.invalidateQueries({ queryKey: ['affiliates'] });
+      queryClient.invalidateQueries({ queryKey: ['affiliates-stats'] });
+    },
+    onError: () => {
+      toast.error('Failed to create affiliate');
+    },
+  });
+
+  const updateAffiliateMutation = useMutation({
+    mutationFn: ({ id, ...data }: Partial<Affiliate> & { id: string }) =>
+      apiClient.put(`/affiliates/${id}`, data),
+    onSuccess: () => {
+      toast.success('Affiliate updated successfully');
+      queryClient.invalidateQueries({ queryKey: ['affiliates'] });
+      queryClient.invalidateQueries({ queryKey: ['affiliates-stats'] });
+    },
+    onError: () => {
+      toast.error('Failed to update affiliate');
+    },
+  });
+
+  const affiliates = affiliatesData?.affiliates ?? [];
+  const referrals = affiliatesData?.referrals ?? [];
+  const payouts = affiliatesData?.payouts ?? [];
+
   const filteredAffiliates = affiliates.filter((a) => {
     if (!search) return true;
     const q = search.toLowerCase();
     return a.name.toLowerCase().includes(q) || a.code.toLowerCase().includes(q) || a.type.toLowerCase().includes(q);
   });
 
-  const totalAffiliates = affiliates.length;
-  const activeReferrals = demoReferrals.filter((r) => r.status !== 'completed').length;
-  const totalRevenue = affiliates.reduce((sum, a) => sum + a.revenue, 0);
-  const totalCommission = affiliates.reduce((sum, a) => sum + a.commissionEarned, 0);
-
-  const affiliateLink = 'https://book.yourpms.com/?ref=YOUR_CODE';
+  const totalAffiliates = statsData?.totalAffiliates ?? affiliates.length;
+  const activeReferrals = statsData?.activeReferrals ?? referrals.filter((r) => r.status !== 'completed').length;
+  const totalRevenue = statsData?.totalRevenue ?? affiliates.reduce((sum, a) => sum + a.revenue, 0);
+  const totalCommission = statsData?.totalCommission ?? affiliates.reduce((sum, a) => sum + a.commissionEarned, 0);
+  const referralTrendData = statsData?.referralTrend ?? [];
+  const affiliateLink = statsData?.affiliateLink ?? 'https://book.yourpms.com/?ref=YOUR_CODE';
 
   const handleCopyCode = (code: string) => {
     navigator.clipboard.writeText(code);
@@ -249,12 +253,72 @@ export default function AffiliatesPage() {
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['affiliates'] });
+    queryClient.invalidateQueries({ queryKey: ['affiliates-stats'] });
+  };
+
   const stats = [
     { label: 'Total Affiliates', value: totalAffiliates, icon: Users, color: 'bg-secondary/10', iconColor: 'text-secondary', change: '+2 this month', up: true },
     { label: 'Active Referrals', value: activeReferrals, icon: UserPlus, color: 'bg-success/10', iconColor: 'text-success', change: '+12% vs last month', up: true },
     { label: 'Revenue Generated', value: formatCurrency(totalRevenue), icon: DollarSign, color: 'bg-warning/10', iconColor: 'text-warning', change: '+18% vs last month', up: true },
     { label: 'Commission Paid', value: formatCurrency(totalCommission), icon: Percent, color: 'bg-secondary/10', iconColor: 'text-secondary', change: '+15% vs last month', up: true },
   ];
+
+  // ── Error State ──────────────────────────────────────────────
+  if (isError) {
+    return (
+      <div className="p-4 lg:p-6">
+        <div className="bg-surface-container-lowest rounded-xl p-8 ambient-shadow flex flex-col items-center justify-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-error/10 flex items-center justify-center">
+            <AlertCircle className="w-7 h-7 text-error" />
+          </div>
+          <h2 className="font-headline text-xl font-bold text-on-surface">
+            Failed to load affiliates
+          </h2>
+          <p className="text-sm text-on-surface-variant text-center max-w-md">
+            {(error as any)?.message || 'An unexpected error occurred while loading the affiliates data.'}
+          </p>
+          <button
+            onClick={handleRefresh}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium text-on-secondary gradient-accent hover:opacity-90 transition-opacity"
+          >
+            <RefreshCw className="w-4 h-4" />
+            <span>Try Again</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Loading State ──────────────────────────────────────────────
+  if (isLoading) {
+    return (
+      <div className="p-4 lg:p-6 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div>
+            <p className="text-[10px] font-semibold tracking-[0.2em] text-on-surface-variant uppercase mb-1">
+              {t('affiliates.label', 'Partner Program')}
+            </p>
+            <h1 className="font-headline text-2xl lg:text-3xl font-bold text-on-surface">
+              {t('affiliates.title', 'Affiliates Program')}
+            </h1>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="bg-surface-container-lowest rounded-xl p-4 ambient-shadow animate-pulse">
+              <div className="h-3 w-24 bg-outline-variant/20 rounded mb-3" />
+              <div className="h-6 w-16 bg-outline-variant/20 rounded" />
+            </div>
+          ))}
+        </div>
+        <div className="bg-surface-container-lowest rounded-xl p-5 ambient-shadow animate-pulse">
+          <div className="h-48 bg-outline-variant/10 rounded-lg" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 lg:p-6 space-y-6">
@@ -269,7 +333,7 @@ export default function AffiliatesPage() {
           </h1>
         </div>
         <button
-          onClick={() => toast.info('Add affiliate form coming soon')}
+          onClick={() => createAffiliateMutation.mutate({ name: '', email: '', code: '', type: 'Travel Blogger', commissionRate: commissionSettings.defaultRate, status: 'pending' as AffiliateStatus })}
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium text-white gradient-accent hover:shadow-ambient-lg transition-all"
         >
           <Plus className="w-4 h-4" />
@@ -301,40 +365,42 @@ export default function AffiliatesPage() {
       </div>
 
       {/* ── Referral Trend Chart ────────────────────────────────── */}
-      <div className="bg-surface-container-lowest rounded-xl p-5 ambient-shadow">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant mb-0.5">Referral Performance</p>
-            <h2 className="font-headline text-lg font-bold text-on-surface">Last 6 Months</h2>
+      {referralTrendData.length > 0 && (
+        <div className="bg-surface-container-lowest rounded-xl p-5 ambient-shadow">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant mb-0.5">Referral Performance</p>
+              <h2 className="font-headline text-lg font-bold text-on-surface">Last 6 Months</h2>
+            </div>
+            <div className="flex items-center gap-4 text-[10px]">
+              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-secondary inline-block" /> Referrals</span>
+              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-success inline-block" /> Bookings</span>
+            </div>
           </div>
-          <div className="flex items-center gap-4 text-[10px]">
-            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-secondary inline-block" /> Referrals</span>
-            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-success inline-block" /> Bookings</span>
+          <div className="h-48">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={referralTrendData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="gradientReferrals" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--color-secondary, #7c5cfc)" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="var(--color-secondary, #7c5cfc)" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="gradientBookings" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--color-success, #22c55e)" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="var(--color-success, #22c55e)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-outline-variant, #333)" strokeOpacity={0.15} />
+                <XAxis dataKey="month" tick={{ fontSize: 10, fill: 'var(--color-on-surface-variant, #999)' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 10, fill: 'var(--color-on-surface-variant, #999)' }} axisLine={false} tickLine={false} />
+                <Tooltip content={<ChartTooltip />} />
+                <Area type="monotone" dataKey="referrals" name="referrals" stroke="var(--color-secondary, #7c5cfc)" fill="url(#gradientReferrals)" strokeWidth={2} />
+                <Area type="monotone" dataKey="bookings" name="bookings" stroke="var(--color-success, #22c55e)" fill="url(#gradientBookings)" strokeWidth={2} />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </div>
-        <div className="h-48">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={referralTrendData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-              <defs>
-                <linearGradient id="gradientReferrals" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--color-secondary, #7c5cfc)" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="var(--color-secondary, #7c5cfc)" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="gradientBookings" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--color-success, #22c55e)" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="var(--color-success, #22c55e)" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-outline-variant, #333)" strokeOpacity={0.15} />
-              <XAxis dataKey="month" tick={{ fontSize: 10, fill: 'var(--color-on-surface-variant, #999)' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 10, fill: 'var(--color-on-surface-variant, #999)' }} axisLine={false} tickLine={false} />
-              <Tooltip content={<ChartTooltip />} />
-              <Area type="monotone" dataKey="referrals" name="referrals" stroke="var(--color-secondary, #7c5cfc)" fill="url(#gradientReferrals)" strokeWidth={2} />
-              <Area type="monotone" dataKey="bookings" name="bookings" stroke="var(--color-success, #22c55e)" fill="url(#gradientBookings)" strokeWidth={2} />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+      )}
 
       {/* ── Your Affiliate Link ─────────────────────────────────── */}
       <div className="bg-surface-container-lowest rounded-xl p-5 ambient-shadow">
@@ -482,7 +548,7 @@ export default function AffiliatesPage() {
                 </tr>
               </thead>
               <tbody>
-                {demoReferrals.map((ref) => (
+                {referrals.map((ref) => (
                   <tr key={ref.id} className="border-b border-outline/5 last:border-0 hover:bg-surface-container-low transition-colors">
                     <td className="px-4 py-3 font-medium text-on-surface">{ref.affiliateName}</td>
                     <td className="px-4 py-3 text-on-surface">{ref.guestName || <span className="text-on-surface-variant italic">Anonymous</span>}</td>
@@ -497,6 +563,13 @@ export default function AffiliatesPage() {
                     </td>
                   </tr>
                 ))}
+                {referrals.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-12 text-center text-on-surface-variant">
+                      {t('common.noData', 'No data available')}
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -511,19 +584,19 @@ export default function AffiliatesPage() {
             <div className="bg-surface-container-lowest rounded-xl p-4 ambient-shadow">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant mb-1">Total Paid</p>
               <p className="font-headline text-xl font-bold text-success">
-                {formatCurrency(demoPayouts.filter((p) => p.status === 'paid').reduce((s, p) => s + p.amount, 0))}
+                {formatCurrency(payouts.filter((p) => p.status === 'paid').reduce((s, p) => s + p.amount, 0))}
               </p>
             </div>
             <div className="bg-surface-container-lowest rounded-xl p-4 ambient-shadow">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant mb-1">Processing</p>
               <p className="font-headline text-xl font-bold text-secondary">
-                {formatCurrency(demoPayouts.filter((p) => p.status === 'processing').reduce((s, p) => s + p.amount, 0))}
+                {formatCurrency(payouts.filter((p) => p.status === 'processing').reduce((s, p) => s + p.amount, 0))}
               </p>
             </div>
             <div className="bg-surface-container-lowest rounded-xl p-4 ambient-shadow">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant mb-1">Pending</p>
               <p className="font-headline text-xl font-bold text-warning">
-                {formatCurrency(demoPayouts.filter((p) => p.status === 'pending').reduce((s, p) => s + p.amount, 0))}
+                {formatCurrency(payouts.filter((p) => p.status === 'pending').reduce((s, p) => s + p.amount, 0))}
               </p>
             </div>
           </div>
@@ -543,7 +616,7 @@ export default function AffiliatesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {demoPayouts.map((payout) => (
+                  {payouts.map((payout) => (
                     <tr key={payout.id} className="border-b border-outline/5 last:border-0 hover:bg-surface-container-low transition-colors">
                       <td className="px-4 py-3 text-xs text-on-surface-variant">{formatDate(payout.date)}</td>
                       <td className="px-4 py-3 font-medium text-on-surface">{payout.affiliateName}</td>
@@ -557,6 +630,13 @@ export default function AffiliatesPage() {
                       </td>
                     </tr>
                   ))}
+                  {payouts.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-12 text-center text-on-surface-variant">
+                        {t('common.noData', 'No data available')}
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -690,7 +770,9 @@ export default function AffiliatesPage() {
           {/* Save button */}
           <div className="flex justify-end">
             <button
-              onClick={() => toast.success('Commission settings saved successfully')}
+              onClick={() => {
+                updateAffiliateMutation.mutate({ id: 'settings', ...commissionSettings } as any);
+              }}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium text-white gradient-accent hover:shadow-ambient-lg transition-all"
             >
               <Save className="w-4 h-4" />

@@ -5,10 +5,8 @@ import {
   Send,
   Search,
   Paperclip,
-  Clock,
   Check,
   CheckCheck,
-  User,
   Building2,
   Plus,
   ChevronLeft,
@@ -19,13 +17,14 @@ import {
   DollarSign,
   CalendarCheck,
   Bell,
-  Star,
-  Filter,
   MoreVertical,
   Phone,
-  Mail,
   X,
+  Loader2,
+  AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
+import { useApiQuery, useApiMutation } from '../hooks/useApi';
 
 // ── Types ────────────────────────────────────────
 type ThreadType = 'admin' | 'maintenance' | 'booking' | 'finance' | 'general';
@@ -34,13 +33,12 @@ interface Thread {
   id: string;
   subject: string;
   lastMessage: string;
-  date: string;
-  time: string;
+  lastMessageAt: string;
   unread: boolean;
   unreadCount: number;
   type: ThreadType;
-  property?: string;
-  participants: string[];
+  propertyName?: string;
+  participants: { id: string; name: string }[];
   priority?: 'high' | 'normal' | 'low';
 }
 
@@ -50,165 +48,11 @@ interface Message {
   senderName: string;
   senderAvatar?: string;
   text: string;
-  time: string;
-  date: string;
+  createdAt: string;
   read: boolean;
   attachments?: { name: string; type: string; size: string; url: string }[];
   replyTo?: string;
 }
-
-// ── Demo Data ────────────────────────────────────
-const demoThreads: Thread[] = [
-  {
-    id: 't1',
-    subject: 'March Financial Statement Ready',
-    lastMessage: 'Your March financial statement is now available. Net payout: €6,450.',
-    date: '2026-04-10',
-    time: '14:32',
-    unread: true,
-    unreadCount: 2,
-    type: 'finance',
-    participants: ['Sivan Admin', 'Elena Papadopoulou'],
-    priority: 'normal',
-  },
-  {
-    id: 't2',
-    subject: 'Aegean Sunset Villa - AC Unit Repair',
-    lastMessage: 'The technician replaced the compressor. AC now works perfectly in all rooms.',
-    date: '2026-04-08',
-    time: '11:15',
-    unread: false,
-    unreadCount: 0,
-    type: 'maintenance',
-    property: 'Aegean Sunset Villa',
-    participants: ['Nikos Stavropoulos', 'Elena Papadopoulou'],
-    priority: 'high',
-  },
-  {
-    id: 't3',
-    subject: 'New Booking - Klaus Weber (Apr 18-25)',
-    lastMessage: 'Confirmed! Guest arrives from Munich, 2 adults + 2 children. Airport transfer arranged.',
-    date: '2026-04-06',
-    time: '09:45',
-    unread: true,
-    unreadCount: 1,
-    type: 'booking',
-    property: 'Aegean Sunset Villa',
-    participants: ['Sivan Admin'],
-    priority: 'normal',
-  },
-  {
-    id: 't4',
-    subject: 'Property Insurance Renewal',
-    lastMessage: 'Please review and approve the insurance renewal documents attached.',
-    date: '2026-04-04',
-    time: '16:20',
-    unread: false,
-    unreadCount: 0,
-    type: 'admin',
-    participants: ['Sivan Admin'],
-    priority: 'normal',
-  },
-  {
-    id: 't5',
-    subject: 'Summer Rate Adjustment Proposal',
-    lastMessage: 'Based on market analysis, I recommend increasing rates by 15% for Jul-Aug. See attached comparison.',
-    date: '2026-04-02',
-    time: '10:30',
-    unread: false,
-    unreadCount: 0,
-    type: 'finance',
-    participants: ['Elena Papadopoulou'],
-    priority: 'high',
-  },
-  {
-    id: 't6',
-    subject: 'Venetian Harbor Loft - Guest Review Response',
-    lastMessage: 'I drafted a response for the 4-star review. Please review before I post it.',
-    date: '2026-03-30',
-    time: '13:00',
-    unread: false,
-    unreadCount: 0,
-    type: 'general',
-    property: 'Venetian Harbor Loft',
-    participants: ['Sivan Admin'],
-    priority: 'low',
-  },
-  {
-    id: 't7',
-    subject: 'Pool Maintenance Schedule Update',
-    lastMessage: 'New pool maintenance schedule starts May 1st. Twice weekly instead of once.',
-    date: '2026-03-28',
-    time: '08:15',
-    unread: false,
-    unreadCount: 0,
-    type: 'maintenance',
-    property: 'Aegean Sunset Villa',
-    participants: ['Nikos Stavropoulos'],
-    priority: 'normal',
-  },
-  {
-    id: 't8',
-    subject: 'Tax Documentation Request',
-    lastMessage: 'We need your updated tax ID for the annual reporting. Please upload at your earliest convenience.',
-    date: '2026-03-25',
-    time: '11:00',
-    unread: false,
-    unreadCount: 0,
-    type: 'admin',
-    participants: ['Sivan Admin'],
-    priority: 'normal',
-  },
-];
-
-const demoMessages: Record<string, Message[]> = {
-  t1: [
-    {
-      id: 'm1', sender: 'admin', senderName: 'Sivan Admin', text: 'Hi David, your March financial statement has been generated.', time: '14:00', date: '2026-04-10', read: true,
-    },
-    {
-      id: 'm2', sender: 'admin', senderName: 'Elena Papadopoulou', text: 'Here are the key highlights:\n\n• Total income: €12,400\n• Expenses: €3,200\n• Management fee: €3,100\n• Net payout: €6,450\n\nThe payout will be transferred to your bank account within 3 business days.', time: '14:15', date: '2026-04-10', read: true,
-      attachments: [
-        { name: 'March_2026_Statement.pdf', type: 'pdf', size: '245 KB', url: '#' },
-        { name: 'Expense_Receipts.zip', type: 'zip', size: '1.2 MB', url: '#' },
-      ],
-    },
-    {
-      id: 'm3', sender: 'owner', senderName: 'David Cohen', text: 'Thank you! The revenue looks great. Can you explain the AC repair expense of €280?', time: '14:28', date: '2026-04-10', read: true,
-    },
-    {
-      id: 'm4', sender: 'admin', senderName: 'Elena Papadopoulou', text: 'The AC unit in bedroom 2 had a faulty compressor. We got 3 quotes and went with the most reasonable option. The repair receipt is in the attached ZIP file.', time: '14:32', date: '2026-04-10', read: false,
-    },
-  ],
-  t2: [
-    {
-      id: 'm5', sender: 'system', senderName: 'System', text: '🔧 Maintenance request created: AC not cooling in bedroom 2 at Aegean Sunset Villa', time: '08:00', date: '2026-04-06', read: true,
-    },
-    {
-      id: 'm6', sender: 'admin', senderName: 'Nikos Stavropoulos', text: 'I\'ll check this today. Scheduling a technician for tomorrow morning.', time: '09:30', date: '2026-04-06', read: true,
-    },
-    {
-      id: 'm7', sender: 'admin', senderName: 'Nikos Stavropoulos', text: 'Technician diagnosed the issue — faulty compressor. Replacement part needed. Estimated cost: €280. Shall I proceed?', time: '14:00', date: '2026-04-07', read: true,
-    },
-    {
-      id: 'm8', sender: 'owner', senderName: 'David Cohen', text: 'Yes, go ahead. Please make sure it\'s fixed before the next guest arrives on the 18th.', time: '15:30', date: '2026-04-07', read: true,
-    },
-    {
-      id: 'm9', sender: 'admin', senderName: 'Nikos Stavropoulos', text: 'The technician replaced the compressor. AC now works perfectly in all rooms. Here\'s the receipt.', time: '11:15', date: '2026-04-08', read: true,
-      attachments: [
-        { name: 'AC_Repair_Receipt.pdf', type: 'pdf', size: '89 KB', url: '#' },
-      ],
-    },
-  ],
-  t3: [
-    {
-      id: 'm10', sender: 'system', senderName: 'System', text: '📅 New booking confirmed: Klaus Weber, Apr 18-25, €1,995 via Airbnb', time: '09:00', date: '2026-04-06', read: true,
-    },
-    {
-      id: 'm11', sender: 'admin', senderName: 'Sivan Admin', text: 'Great news! New booking for your Aegean Sunset Villa.\n\nGuest: Klaus Weber (Munich, Germany)\nDates: April 18-25 (7 nights)\nGuests: 2 adults + 2 children\nTotal: €1,995\nSource: Airbnb\n\nAirport transfer has been arranged for April 18 at 14:00.', time: '09:45', date: '2026-04-06', read: false,
-    },
-  ],
-};
 
 // ── Helpers ──────────────────────────────────────
 function getTypeIcon(type: ThreadType) {
@@ -231,17 +75,99 @@ function getTypeColor(type: ThreadType) {
   }
 }
 
+function formatTime(dateStr: string): string {
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return '';
+  }
+}
+
+function formatDate(dateStr: string): string {
+  try {
+    return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  } catch {
+    return '';
+  }
+}
+
 export default function MessagesPage() {
   const { t } = useTranslation();
-  const [selectedThread, setSelectedThread] = useState<string | null>('t1');
+  const [selectedThread, setSelectedThread] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<ThreadType | 'all'>('all');
   const [showMobileThread, setShowMobileThread] = useState(false);
   const [showNewThread, setShowNewThread] = useState(false);
+  const [newThreadCategory, setNewThreadCategory] = useState('general');
+  const [newThreadProperty, setNewThreadProperty] = useState('');
+  const [newThreadSubject, setNewThreadSubject] = useState('');
+  const [newThreadMessage, setNewThreadMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const filteredThreads = demoThreads.filter((th) => {
+  // ── Fetch threads ──
+  const {
+    data: threadsResponse,
+    isLoading: threadsLoading,
+    isError: threadsError,
+    refetch: refetchThreads,
+  } = useApiQuery<Thread[]>(
+    ['communication-threads'],
+    '/communications/threads',
+  );
+
+  const threads: Thread[] = threadsResponse?.data ?? [];
+
+  // ── Fetch messages for selected thread ──
+  const {
+    data: messagesResponse,
+    isLoading: messagesLoading,
+    refetch: refetchMessages,
+  } = useApiQuery<Message[]>(
+    ['communication-messages', selectedThread ?? ''],
+    `/communications/threads/${selectedThread}/messages`,
+    undefined,
+    { enabled: !!selectedThread },
+  );
+
+  const currentMessages: Message[] = messagesResponse?.data ?? [];
+
+  // ── Send message mutation ──
+  const sendMessageMutation = useApiMutation<Message, { threadId: string; text: string }>(
+    'post',
+    (vars) => `/communications/threads/${vars.threadId}/messages`,
+    {
+      invalidateKeys: [
+        ['communication-messages', selectedThread ?? ''],
+        ['communication-threads'],
+      ],
+    },
+  );
+
+  // ── Create thread mutation ──
+  const createThreadMutation = useApiMutation<Thread, { subject: string; type: string; propertyId?: string; message: string }>(
+    'post',
+    '/communications/threads',
+    {
+      invalidateKeys: [['communication-threads']],
+      successMessage: 'Message sent',
+      onSuccess: (data) => {
+        setShowNewThread(false);
+        setNewThreadSubject('');
+        setNewThreadMessage('');
+        setNewThreadCategory('general');
+        setNewThreadProperty('');
+        if (data?.data?.id) {
+          setSelectedThread(data.data.id);
+          setShowMobileThread(true);
+        }
+      },
+    },
+  );
+
+  // ── Filtering ──
+  const filteredThreads = threads.filter((th) => {
     const matchesSearch = searchQuery === '' ||
       th.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
       th.lastMessage.toLowerCase().includes(searchQuery.toLowerCase());
@@ -249,10 +175,15 @@ export default function MessagesPage() {
     return matchesSearch && matchesType;
   });
 
-  const currentThread = demoThreads.find((t) => t.id === selectedThread);
-  const currentMessages = selectedThread ? (demoMessages[selectedThread] || []) : [];
+  const currentThread = threads.find((t) => t.id === selectedThread);
+  const totalUnread = threads.reduce((s, t) => s + (t.unreadCount || 0), 0);
 
-  const totalUnread = demoThreads.reduce((s, t) => s + t.unreadCount, 0);
+  // Auto-select first thread when loaded
+  useEffect(() => {
+    if (threads.length > 0 && !selectedThread) {
+      setSelectedThread(threads[0].id);
+    }
+  }, [threads, selectedThread]);
 
   const handleSelectThread = (id: string) => {
     setSelectedThread(id);
@@ -260,14 +191,58 @@ export default function MessagesPage() {
   };
 
   const handleSend = () => {
-    if (!newMessage.trim()) return;
-    // In a real app, this would send via API
+    if (!newMessage.trim() || !selectedThread) return;
+    sendMessageMutation.mutate({ threadId: selectedThread, text: newMessage.trim() });
     setNewMessage('');
+  };
+
+  const handleCreateThread = () => {
+    if (!newThreadSubject.trim() || !newThreadMessage.trim()) return;
+    createThreadMutation.mutate({
+      subject: newThreadSubject.trim(),
+      type: newThreadCategory,
+      propertyId: newThreadProperty || undefined,
+      message: newThreadMessage.trim(),
+    });
   };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [selectedThread]);
+  }, [currentMessages]);
+
+  // ── Loading state ──
+  if (threadsLoading) {
+    return (
+      <div className="p-4 lg:p-6 h-[calc(100vh-80px)] flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 text-secondary animate-spin mx-auto mb-3" />
+          <p className="text-sm text-on-surface-variant">Loading messages...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Error state ──
+  if (threadsError) {
+    return (
+      <div className="p-4 lg:p-6 h-[calc(100vh-80px)] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 rounded-full bg-error/10 flex items-center justify-center mx-auto mb-3">
+            <AlertCircle className="w-6 h-6 text-error" />
+          </div>
+          <p className="text-sm font-medium text-on-surface">Failed to load messages</p>
+          <p className="text-xs text-on-surface-variant mt-1">Please check your connection and try again.</p>
+          <button
+            onClick={() => refetchThreads()}
+            className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-secondary bg-secondary/10 hover:bg-secondary/20 transition-colors"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 lg:p-6 h-[calc(100vh-80px)]">
@@ -319,6 +294,12 @@ export default function MessagesPage() {
 
             {/* Thread items */}
             <div className="flex-1 overflow-y-auto">
+              {filteredThreads.length === 0 && (
+                <div className="p-6 text-center">
+                  <MessageSquare className="w-8 h-8 text-on-surface-variant/20 mx-auto mb-2" />
+                  <p className="text-xs text-on-surface-variant">No conversations found</p>
+                </div>
+              )}
               {filteredThreads.map((thread) => {
                 const TypeIcon = getTypeIcon(thread.type);
                 const isActive = selectedThread === thread.id;
@@ -338,7 +319,7 @@ export default function MessagesPage() {
                           <p className={`text-xs truncate ${thread.unread ? 'font-bold text-on-surface' : 'font-medium text-on-surface'}`}>
                             {thread.subject}
                           </p>
-                          {thread.unreadCount > 0 && (
+                          {(thread.unreadCount ?? 0) > 0 && (
                             <span className="ms-2 w-5 h-5 rounded-full bg-secondary text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">
                               {thread.unreadCount}
                             </span>
@@ -346,10 +327,10 @@ export default function MessagesPage() {
                         </div>
                         <p className="text-[11px] text-on-surface-variant truncate">{thread.lastMessage}</p>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="text-[10px] text-on-surface-variant/60">{thread.time}</span>
-                          {thread.property && (
+                          <span className="text-[10px] text-on-surface-variant/60">{formatTime(thread.lastMessageAt)}</span>
+                          {thread.propertyName && (
                             <span className="text-[10px] text-on-surface-variant/60 flex items-center gap-0.5">
-                              <Building2 className="w-2.5 h-2.5" />{thread.property}
+                              <Building2 className="w-2.5 h-2.5" />{thread.propertyName}
                             </span>
                           )}
                           {thread.priority === 'high' && (
@@ -382,10 +363,12 @@ export default function MessagesPage() {
                   <div className="flex-1 min-w-0">
                     <h3 className="text-sm font-semibold text-on-surface truncate">{currentThread.subject}</h3>
                     <div className="flex items-center gap-2">
-                      <p className="text-[10px] text-on-surface-variant">{currentThread.participants.join(', ')}</p>
-                      {currentThread.property && (
+                      <p className="text-[10px] text-on-surface-variant">
+                        {currentThread.participants?.map((p) => p.name || p).join(', ')}
+                      </p>
+                      {currentThread.propertyName && (
                         <span className="text-[10px] text-on-surface-variant flex items-center gap-0.5">
-                          · <Building2 className="w-2.5 h-2.5" /> {currentThread.property}
+                          · <Building2 className="w-2.5 h-2.5" /> {currentThread.propertyName}
                         </span>
                       )}
                     </div>
@@ -402,6 +385,16 @@ export default function MessagesPage() {
 
                 {/* Messages */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                  {messagesLoading && (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="w-6 h-6 text-secondary animate-spin" />
+                    </div>
+                  )}
+                  {!messagesLoading && currentMessages.length === 0 && (
+                    <div className="flex justify-center py-8">
+                      <p className="text-xs text-on-surface-variant">No messages yet. Start the conversation!</p>
+                    </div>
+                  )}
                   {currentMessages.map((msg) => {
                     if (msg.sender === 'system') {
                       return (
@@ -418,7 +411,7 @@ export default function MessagesPage() {
                       <div key={msg.id} className={`flex ${isOwner ? 'justify-end' : 'justify-start'} gap-2`}>
                         {!isOwner && (
                           <div className="w-7 h-7 rounded-full bg-secondary/10 flex items-center justify-center text-secondary text-[10px] font-bold flex-shrink-0 mt-1">
-                            {msg.senderName.split(' ').map(n => n[0]).join('')}
+                            {msg.senderName?.split(' ').map(n => n[0]).join('') || '?'}
                           </div>
                         )}
                         <div className={`max-w-[70%] ${isOwner ? 'items-end' : 'items-start'}`}>
@@ -442,15 +435,15 @@ export default function MessagesPage() {
                                     <p className="text-xs font-medium text-on-surface truncate">{att.name}</p>
                                     <p className="text-[10px] text-on-surface-variant">{att.size}</p>
                                   </div>
-                                  <button className="p-1 rounded hover:bg-surface-container-high transition-colors">
+                                  <a href={att.url} target="_blank" rel="noopener noreferrer" className="p-1 rounded hover:bg-surface-container-high transition-colors">
                                     <Download className="w-3.5 h-3.5 text-secondary" />
-                                  </button>
+                                  </a>
                                 </div>
                               ))}
                             </div>
                           )}
                           <div className={`flex items-center gap-1 mt-1 ${isOwner ? 'justify-end' : 'justify-start'} px-2`}>
-                            <span className="text-[9px] text-on-surface-variant/50">{msg.time}</span>
+                            <span className="text-[9px] text-on-surface-variant/50">{formatTime(msg.createdAt)}</span>
                             {isOwner && (
                               msg.read
                                 ? <CheckCheck className="w-3 h-3 text-secondary" />
@@ -490,14 +483,17 @@ export default function MessagesPage() {
                     </div>
                     <button
                       onClick={handleSend}
-                      disabled={!newMessage.trim()}
+                      disabled={!newMessage.trim() || sendMessageMutation.isPending}
                       className={`p-2.5 rounded-xl transition-all flex-shrink-0 ${
                         newMessage.trim()
                           ? 'gradient-accent text-white hover:opacity-90'
                           : 'bg-surface-container-high/60 text-on-surface-variant/30'
                       }`}
                     >
-                      <Send className="w-4 h-4" />
+                      {sendMessageMutation.isPending
+                        ? <Loader2 className="w-4 h-4 animate-spin" />
+                        : <Send className="w-4 h-4" />
+                      }
                     </button>
                   </div>
                 </div>
@@ -529,7 +525,11 @@ export default function MessagesPage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-on-surface-variant mb-1">Category</label>
-                <select className="w-full px-3 py-2 rounded-lg bg-surface-container-low text-sm text-on-surface outline-none focus:ring-1 focus:ring-secondary/30">
+                <select
+                  value={newThreadCategory}
+                  onChange={(e) => setNewThreadCategory(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg bg-surface-container-low text-sm text-on-surface outline-none focus:ring-1 focus:ring-secondary/30"
+                >
                   <option value="general">General Inquiry</option>
                   <option value="finance">Financial Question</option>
                   <option value="maintenance">Maintenance Request</option>
@@ -538,17 +538,20 @@ export default function MessagesPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-on-surface-variant mb-1">Property (optional)</label>
-                <select className="w-full px-3 py-2 rounded-lg bg-surface-container-low text-sm text-on-surface outline-none focus:ring-1 focus:ring-secondary/30">
-                  <option value="">All Properties</option>
-                  <option value="1">Aegean Sunset Villa</option>
-                  <option value="2">Venetian Harbor Loft</option>
-                  <option value="3">Spinalonga View Suite</option>
-                </select>
+                <input
+                  type="text"
+                  value={newThreadProperty}
+                  onChange={(e) => setNewThreadProperty(e.target.value)}
+                  placeholder="Property ID (optional)"
+                  className="w-full px-3 py-2 rounded-lg bg-surface-container-low text-sm text-on-surface placeholder:text-on-surface-variant/50 outline-none focus:ring-1 focus:ring-secondary/30"
+                />
               </div>
               <div>
                 <label className="block text-xs font-medium text-on-surface-variant mb-1">Subject</label>
                 <input
                   type="text"
+                  value={newThreadSubject}
+                  onChange={(e) => setNewThreadSubject(e.target.value)}
                   placeholder="Enter subject..."
                   className="w-full px-3 py-2 rounded-lg bg-surface-container-low text-sm text-on-surface outline-none focus:ring-1 focus:ring-secondary/30"
                 />
@@ -556,6 +559,8 @@ export default function MessagesPage() {
               <div>
                 <label className="block text-xs font-medium text-on-surface-variant mb-1">Message</label>
                 <textarea
+                  value={newThreadMessage}
+                  onChange={(e) => setNewThreadMessage(e.target.value)}
                   placeholder="Write your message..."
                   rows={4}
                   className="w-full px-3 py-2 rounded-lg bg-surface-container-low text-sm text-on-surface outline-none focus:ring-1 focus:ring-secondary/30 resize-none"
@@ -573,8 +578,12 @@ export default function MessagesPage() {
                 >
                   Cancel
                 </button>
-                <button className="px-4 py-2 rounded-lg gradient-accent text-white text-xs font-medium hover:opacity-90 transition-opacity">
-                  Send Message
+                <button
+                  onClick={handleCreateThread}
+                  disabled={!newThreadSubject.trim() || !newThreadMessage.trim() || createThreadMutation.isPending}
+                  className="px-4 py-2 rounded-lg gradient-accent text-white text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                >
+                  {createThreadMutation.isPending ? 'Sending...' : 'Send Message'}
                 </button>
               </div>
             </div>
