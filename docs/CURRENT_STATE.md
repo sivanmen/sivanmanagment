@@ -40,7 +40,7 @@
 
 ## API Modules — Status Map
 
-### REAL (28 modules — connected to DB with Prisma queries)
+### REAL (31 modules — connected to DB with Prisma queries)
 
 | Module | Service File | Prisma Calls | Notes |
 |--------|-------------|-------------|-------|
@@ -72,14 +72,14 @@
 | guests | guests.service.ts | 13 | Guest profiles |
 | units | units.service.ts | 13 | Property units |
 | ical-sync | ical-sync.service.ts | 12 | iCal feed parser + sync |
+| whatsapp | whatsapp.service.ts | 15+ | Evolution API integration, real message DB |
+| booking-engine | booking-engine.service.ts | 20+ | Direct booking, availability, quotes from DB |
+| pricing | pricing.service.ts | 15+ | SeasonalRate + RatePlan from DB, real calculations |
 
-### MOCK (17 modules — return hardcoded/in-memory data, 0 Prisma calls)
+### MOCK (14 modules — return hardcoded/in-memory data, 0 Prisma calls)
 
 | Module | Lines | Priority to Fix |
 |--------|-------|----------------|
-| **booking-engine** | 868 | CRITICAL — direct booking doesn't work |
-| **pricing** | 562 | CRITICAL — rate management is fake |
-| **whatsapp** | 575 | HIGH — Evolution API not connected |
 | **ai** | 251 | HIGH — Claude/GPT not connected |
 | **users** | 616 | HIGH — user management is fake |
 | **automations** | 432 | MEDIUM — no real automation engine |
@@ -150,7 +150,7 @@ Affiliate, Messages, My Calendar, Pending Approvals, Portfolio Overview, Setting
 
 ## Known Issues (as of 2026-04-14)
 
-1. **`start` script uses `prisma db push --accept-data-loss`** — dangerous in production. Should use `prisma migrate deploy`.
+1. ~~**`start` script uses `prisma db push --accept-data-loss`**~~ — FIXED 2026-04-14. Now uses `prisma migrate deploy`.
 2. **Seed file location** — lives at `src/prisma/seed.ts` instead of standard `prisma/seed.ts`. Works but non-standard.
 3. **17 API modules return mock data** — see Mock table above.
 4. **Company info endpoint is public** — `/api/v1/payments/company-info` exposes tax number and IBAN without auth.

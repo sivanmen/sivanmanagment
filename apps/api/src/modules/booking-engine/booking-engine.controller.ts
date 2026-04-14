@@ -117,7 +117,7 @@ export class BookingEngineController {
 
   async getConfig(req: Request, res: Response, next: NextFunction) {
     try {
-      const config = bookingEngineService.getEngineConfig(req.params.propertyId as string);
+      const config = await bookingEngineService.getEngineConfig(req.params.propertyId as string);
       sendSuccess(res, config);
     } catch (error) {
       next(error);
@@ -127,7 +127,7 @@ export class BookingEngineController {
   async upsertConfig(req: Request, res: Response, next: NextFunction) {
     try {
       const data = upsertConfigSchema.parse(req.body);
-      const config = bookingEngineService.upsertEngineConfig(
+      const config = await bookingEngineService.upsertEngineConfig(
         req.params.propertyId as string,
         data as any,
       );
@@ -139,7 +139,7 @@ export class BookingEngineController {
 
   async getPromotions(req: Request, res: Response, next: NextFunction) {
     try {
-      const promotions = bookingEngineService.getPromotions(req.params.propertyId as string);
+      const promotions = await bookingEngineService.getPromotions(req.params.propertyId as string);
       sendSuccess(res, promotions);
     } catch (error) {
       next(error);
@@ -149,7 +149,7 @@ export class BookingEngineController {
   async createPromotion(req: Request, res: Response, next: NextFunction) {
     try {
       const data = createPromotionSchema.parse(req.body);
-      const promotion = bookingEngineService.createPromotion(
+      const promotion = await bookingEngineService.createPromotion(
         req.params.propertyId as string,
         data,
       );
@@ -162,7 +162,7 @@ export class BookingEngineController {
   async updatePromotion(req: Request, res: Response, next: NextFunction) {
     try {
       const data = updatePromotionSchema.parse(req.body);
-      const promotion = bookingEngineService.updatePromotion(
+      const promotion = await bookingEngineService.updatePromotion(
         req.params.promoId as string,
         data,
       );
@@ -174,7 +174,7 @@ export class BookingEngineController {
 
   async deletePromotion(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = bookingEngineService.deletePromotion(req.params.promoId as string);
+      const result = await bookingEngineService.deletePromotion(req.params.promoId as string);
       sendSuccess(res, result);
     } catch (error) {
       next(error);
@@ -189,7 +189,7 @@ export class BookingEngineController {
       const amenities = filters.amenities
         ? filters.amenities.split(',').map((a) => a.trim())
         : undefined;
-      const results = bookingEngineService.searchProperties({
+      const results = await bookingEngineService.searchProperties({
         ...filters,
         amenities,
       });
@@ -201,7 +201,7 @@ export class BookingEngineController {
 
   async getPropertyPublicInfo(req: Request, res: Response, next: NextFunction) {
     try {
-      const property = bookingEngineService.getPropertyPublicInfo(
+      const property = await bookingEngineService.getPropertyPublicInfo(
         req.params.propertyId as string,
       );
       sendSuccess(res, property);
@@ -213,7 +213,7 @@ export class BookingEngineController {
   async checkAvailability(req: Request, res: Response, next: NextFunction) {
     try {
       const { checkIn, checkOut } = availabilityQuerySchema.parse(req.query);
-      const availability = bookingEngineService.checkAvailability(
+      const availability = await bookingEngineService.checkAvailability(
         req.params.propertyId as string,
         checkIn,
         checkOut,
@@ -227,7 +227,7 @@ export class BookingEngineController {
   async calculateQuote(req: Request, res: Response, next: NextFunction) {
     try {
       const data = quoteSchema.parse(req.body);
-      const quote = bookingEngineService.calculateQuote(
+      const quote = await bookingEngineService.calculateQuote(
         data.propertyId,
         data.checkIn,
         data.checkOut,
@@ -243,7 +243,7 @@ export class BookingEngineController {
   async createDirectBooking(req: Request, res: Response, next: NextFunction) {
     try {
       const data = bookingSchema.parse(req.body);
-      const booking = bookingEngineService.createDirectBooking(data);
+      const booking = await bookingEngineService.createDirectBooking(data);
       sendSuccess(res, booking, 201);
     } catch (error) {
       next(error);
@@ -253,7 +253,7 @@ export class BookingEngineController {
   async validatePromoCode(req: Request, res: Response, next: NextFunction) {
     try {
       const { propertyId, code } = validatePromoSchema.parse(req.body);
-      const result = bookingEngineService.validatePromoCode(propertyId, code);
+      const result = await bookingEngineService.validatePromoCode(propertyId, code);
       sendSuccess(res, result);
     } catch (error) {
       next(error);

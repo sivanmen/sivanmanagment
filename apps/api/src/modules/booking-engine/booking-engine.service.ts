@@ -1,3 +1,5 @@
+import { Prisma } from '@prisma/client';
+import { prisma } from '../../prisma/client';
 import { ApiError } from '../../utils/api-error';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -137,239 +139,6 @@ interface SearchFilters {
   amenities?: string[];
 }
 
-// ─── In-memory stores ────────────────────────────────────────────────────────
-
-const configs: Map<string, BookingEngineConfig> = new Map();
-const directBookings: Map<string, DirectBooking> = new Map();
-
-// ─── Demo property data (public facing) ──────────────────────────────────────
-
-const propertyPublicData: Map<string, PropertyPublicInfo> = new Map();
-
-const demoProperties: PropertyPublicInfo[] = [
-  {
-    id: 'prop_santorini_001',
-    name: 'Santorini Sunset Villa',
-    description: 'Stunning caldera-view villa in Oia with private infinity pool, traditional Cycladic architecture, and breathtaking sunset views. Perfect for couples and families seeking a luxury Greek island escape.',
-    city: 'Santorini',
-    country: 'Greece',
-    propertyType: 'VILLA',
-    maxGuests: 6,
-    bedrooms: 3,
-    bathrooms: 2,
-    amenities: ['pool', 'wifi', 'air_conditioning', 'kitchen', 'parking', 'sea_view', 'bbq', 'washer', 'dryer', 'balcony'],
-    images: [
-      'https://images.example.com/santorini-villa-1.jpg',
-      'https://images.example.com/santorini-villa-2.jpg',
-      'https://images.example.com/santorini-villa-3.jpg',
-      'https://images.example.com/santorini-villa-pool.jpg',
-    ],
-    nightlyRate: 280,
-    cleaningFee: 85,
-    currency: 'EUR',
-    rating: 4.9,
-    reviewCount: 127,
-    coordinates: { lat: 36.4618, lng: 25.3753 },
-  },
-  {
-    id: 'prop_mykonos_002',
-    name: 'Mykonos Beachfront Suite',
-    description: 'Modern beachfront suite steps from Platis Gialos beach with designer interiors, private terrace, and stunning Aegean views. Walking distance to beach bars and restaurants.',
-    city: 'Mykonos',
-    country: 'Greece',
-    propertyType: 'APARTMENT',
-    maxGuests: 4,
-    bedrooms: 2,
-    bathrooms: 1,
-    amenities: ['wifi', 'air_conditioning', 'kitchen', 'sea_view', 'balcony', 'beach_access', 'washer'],
-    images: [
-      'https://images.example.com/mykonos-suite-1.jpg',
-      'https://images.example.com/mykonos-suite-2.jpg',
-      'https://images.example.com/mykonos-suite-terrace.jpg',
-    ],
-    nightlyRate: 220,
-    cleaningFee: 65,
-    currency: 'EUR',
-    rating: 4.7,
-    reviewCount: 89,
-    coordinates: { lat: 37.4467, lng: 25.3289 },
-  },
-  {
-    id: 'prop_athens_003',
-    name: 'Athens Acropolis Penthouse',
-    description: 'Luxurious penthouse apartment with direct Acropolis views from the rooftop terrace. Located in the heart of Plaka, surrounded by historic sites, galleries, and tavernas.',
-    city: 'Athens',
-    country: 'Greece',
-    propertyType: 'APARTMENT',
-    maxGuests: 5,
-    bedrooms: 2,
-    bathrooms: 2,
-    amenities: ['wifi', 'air_conditioning', 'kitchen', 'city_view', 'balcony', 'washer', 'elevator', 'dishwasher'],
-    images: [
-      'https://images.example.com/athens-penthouse-1.jpg',
-      'https://images.example.com/athens-penthouse-2.jpg',
-      'https://images.example.com/athens-penthouse-rooftop.jpg',
-    ],
-    nightlyRate: 165,
-    cleaningFee: 50,
-    currency: 'EUR',
-    rating: 4.8,
-    reviewCount: 204,
-    coordinates: { lat: 37.9715, lng: 23.7257 },
-  },
-];
-
-demoProperties.forEach((p) => propertyPublicData.set(p.id, p));
-
-// ─── Seed booking engine configs ────────────────────────────────────────────
-
-const demoConfigs: BookingEngineConfig[] = [
-  {
-    id: 'bec_santorini_001',
-    propertyId: 'prop_santorini_001',
-    isEnabled: true,
-    widgetSettings: {
-      primaryColor: '#1a365d',
-      accentColor: '#e53e3e',
-      logoUrl: 'https://images.example.com/sivan-pms-logo.png',
-      showReviews: true,
-      showAmenities: true,
-      showMap: true,
-      maxGuestsDefault: 2,
-      instantBooking: true,
-      requireDeposit: true,
-      depositPercent: 30,
-    },
-    seoSettings: {
-      title: 'Santorini Sunset Villa - Luxury Caldera View | Book Direct',
-      description: 'Book directly and save 15%. Stunning caldera-view villa in Oia, Santorini with private infinity pool.',
-      ogImage: 'https://images.example.com/santorini-villa-og.jpg',
-    },
-    policies: {
-      cancellationPolicy: 'MODERATE',
-      cancellationDays: 5,
-      refundPercent: 50,
-      petPolicy: 'No pets allowed.',
-      smokingPolicy: 'Strictly non-smoking property.',
-      partyPolicy: 'No parties or events.',
-      childrenPolicy: 'Children welcome. Baby cot available on request.',
-    },
-    paymentMethods: ['CREDIT_CARD', 'STRIPE', 'BANK_TRANSFER'],
-    promotions: [
-      {
-        id: 'promo_early_001',
-        code: 'EARLYBIRD2026',
-        name: 'Early Bird Discount',
-        type: 'PERCENT',
-        value: 15,
-        minNights: 5,
-        maxUses: 50,
-        usedCount: 12,
-        validFrom: new Date('2026-01-01'),
-        validTo: new Date('2026-06-30'),
-        isActive: true,
-      },
-      {
-        id: 'promo_long_002',
-        code: 'LONGSTAY10',
-        name: 'Long Stay Discount',
-        type: 'PERCENT',
-        value: 10,
-        minNights: 7,
-        maxUses: 100,
-        usedCount: 28,
-        validFrom: new Date('2026-01-01'),
-        validTo: new Date('2026-12-31'),
-        isActive: true,
-      },
-    ],
-    createdAt: new Date('2025-09-01'),
-    updatedAt: new Date('2026-03-20'),
-  },
-  {
-    id: 'bec_mykonos_002',
-    propertyId: 'prop_mykonos_002',
-    isEnabled: true,
-    widgetSettings: {
-      primaryColor: '#2b6cb0',
-      accentColor: '#d69e2e',
-      showReviews: true,
-      showAmenities: true,
-      showMap: true,
-      maxGuestsDefault: 2,
-      instantBooking: true,
-      requireDeposit: true,
-      depositPercent: 25,
-    },
-    seoSettings: {
-      title: 'Mykonos Beachfront Suite - Steps from Platis Gialos | Book Direct',
-      description: 'Modern beachfront suite on Mykonos with Aegean views. Book directly for the best rate.',
-    },
-    policies: {
-      cancellationPolicy: 'STRICT',
-      cancellationDays: 14,
-      refundPercent: 50,
-      petPolicy: 'No pets allowed.',
-      smokingPolicy: 'Non-smoking property.',
-      partyPolicy: 'No parties or events. Quiet hours after 23:00.',
-      childrenPolicy: 'Children 6+ welcome.',
-    },
-    paymentMethods: ['CREDIT_CARD', 'STRIPE'],
-    promotions: [
-      {
-        id: 'promo_welcome_003',
-        code: 'WELCOME20',
-        name: 'Welcome Discount',
-        type: 'FIXED',
-        value: 50,
-        minNights: 3,
-        maxUses: 30,
-        usedCount: 8,
-        validFrom: new Date('2026-03-01'),
-        validTo: new Date('2026-09-30'),
-        isActive: true,
-      },
-    ],
-    createdAt: new Date('2025-10-15'),
-    updatedAt: new Date('2026-04-01'),
-  },
-  {
-    id: 'bec_athens_003',
-    propertyId: 'prop_athens_003',
-    isEnabled: true,
-    widgetSettings: {
-      primaryColor: '#2d3748',
-      accentColor: '#38a169',
-      showReviews: true,
-      showAmenities: true,
-      showMap: true,
-      maxGuestsDefault: 2,
-      instantBooking: false,
-      requireDeposit: false,
-      depositPercent: 0,
-    },
-    seoSettings: {
-      title: 'Athens Acropolis Penthouse - Rooftop Views | Book Direct',
-      description: 'Luxury penthouse with Acropolis views in historic Plaka. Request to book for the best rates.',
-    },
-    policies: {
-      cancellationPolicy: 'FLEXIBLE',
-      cancellationDays: 2,
-      refundPercent: 100,
-      petPolicy: 'Small pets welcome with prior approval (max 8kg). EUR 30 pet fee applies.',
-      smokingPolicy: 'Smoking allowed on the terrace only.',
-      partyPolicy: 'Small gatherings up to 8 people allowed until 22:00.',
-      childrenPolicy: 'Children of all ages welcome.',
-    },
-    paymentMethods: ['CREDIT_CARD', 'STRIPE', 'PAYPAL', 'BANK_TRANSFER'],
-    promotions: [],
-    createdAt: new Date('2025-11-01'),
-    updatedAt: new Date('2026-02-15'),
-  },
-];
-
-demoConfigs.forEach((c) => configs.set(c.propertyId, c));
-
 // ─── Helper functions ────────────────────────────────────────────────────────
 
 function getDaysBetween(checkIn: string, checkOut: string): number {
@@ -390,15 +159,126 @@ function generateDateRange(checkIn: string, checkOut: string): string[] {
   return dates;
 }
 
-function getSeasonalMultiplier(dateStr: string): number {
-  const month = new Date(dateStr).getMonth() + 1;
-  // Peak season: June-September
-  if (month >= 6 && month <= 9) return 1.4;
-  // Shoulder season: April-May, October
-  if (month >= 4 && month <= 5) return 1.15;
-  if (month === 10) return 1.1;
-  // Low season
-  return 0.85;
+/** Extract a plain-text description from the multilingual Json field */
+function extractDescription(desc: unknown): string {
+  if (!desc) return '';
+  if (typeof desc === 'string') return desc;
+  if (typeof desc === 'object') {
+    const d = desc as Record<string, string>;
+    return d.en || d.he || Object.values(d)[0] || '';
+  }
+  return '';
+}
+
+/** Map a DB property + related data into the public-facing DTO */
+function toPropertyPublicInfo(
+  prop: any,
+  images: { url: string }[],
+  avgRating: number,
+  reviewCount: number,
+): PropertyPublicInfo {
+  return {
+    id: prop.id,
+    name: prop.name,
+    description: extractDescription(prop.description),
+    city: prop.city,
+    country: prop.country,
+    propertyType: prop.propertyType,
+    maxGuests: prop.maxGuests,
+    bedrooms: prop.bedrooms,
+    bathrooms: prop.bathrooms,
+    amenities: Array.isArray(prop.amenities) ? (prop.amenities as string[]) : [],
+    images: images.map((i) => i.url),
+    nightlyRate: Number(prop.baseNightlyRate),
+    cleaningFee: Number(prop.cleaningFee),
+    currency: prop.currency,
+    rating: avgRating,
+    reviewCount,
+    coordinates:
+      prop.latitude && prop.longitude
+        ? { lat: Number(prop.latitude), lng: Number(prop.longitude) }
+        : undefined,
+  };
+}
+
+/** Build a BookingEngineConfig from DirectBookingSetting DB row + promotions */
+function toBookingEngineConfig(
+  dbs: any,
+  promotions: BookingPromotion[],
+): BookingEngineConfig {
+  const wc = (dbs.widgetConfig as Record<string, any>) || {};
+
+  const defaultWidgetSettings = {
+    primaryColor: '#1a365d',
+    accentColor: '#3182ce',
+    showReviews: true,
+    showAmenities: true,
+    showMap: true,
+    maxGuestsDefault: 2,
+    instantBooking: true,
+    requireDeposit: Boolean(dbs.requireDeposit),
+    depositPercent: Number(dbs.depositPercent),
+  };
+
+  const defaultPolicies = {
+    cancellationPolicy: 'MODERATE' as const,
+    cancellationDays: 5,
+    refundPercent: 50,
+    petPolicy: 'No pets allowed.',
+    smokingPolicy: 'Non-smoking property.',
+    partyPolicy: 'No parties or events.',
+    childrenPolicy: 'Children welcome.',
+  };
+
+  return {
+    id: dbs.id,
+    propertyId: dbs.propertyId,
+    isEnabled: dbs.isEnabled,
+    widgetSettings: { ...defaultWidgetSettings, ...wc.widgetSettings },
+    seoSettings: wc.seoSettings || {},
+    policies: { ...defaultPolicies, ...wc.policies },
+    paymentMethods: wc.paymentMethods || ['CREDIT_CARD', 'STRIPE'],
+    promotions,
+    createdAt: dbs.createdAt,
+    updatedAt: dbs.updatedAt,
+  };
+}
+
+// ─── Promotions key helper ──────────────────────────────────────────────────
+// Promotions are stored in SystemSetting under "booking_engine.promotions.<propertyId>"
+
+function promoSettingKey(propertyId: string): string {
+  return `booking_engine.promotions.${propertyId}`;
+}
+
+async function loadPromotions(propertyId: string): Promise<BookingPromotion[]> {
+  const row = await prisma.systemSetting.findUnique({
+    where: { key: promoSettingKey(propertyId) },
+  });
+  if (!row) return [];
+  try {
+    return JSON.parse(row.value) as BookingPromotion[];
+  } catch {
+    return [];
+  }
+}
+
+async function savePromotions(propertyId: string, promotions: BookingPromotion[]): Promise<void> {
+  const key = promoSettingKey(propertyId);
+  const value = JSON.stringify(promotions);
+  await prisma.systemSetting.upsert({
+    where: { key },
+    create: {
+      key,
+      value,
+      category: 'booking_engine',
+      label: `Promotions for property ${propertyId}`,
+    },
+    update: {
+      value,
+      updatedAt: new Date(),
+    },
+  });
 }
 
 // ─── Service ─────────────────────────────────────────────────────────────────
@@ -406,92 +286,120 @@ function getSeasonalMultiplier(dateStr: string): number {
 export class BookingEngineService {
   // ── Admin operations ─────────────────────────────────────────────────────
 
-  getEngineConfig(propertyId: string): BookingEngineConfig {
-    const config = configs.get(propertyId);
-    if (!config) {
+  async getEngineConfig(propertyId: string): Promise<BookingEngineConfig> {
+    const dbs = await prisma.directBookingSetting.findUnique({
+      where: { propertyId },
+    });
+    if (!dbs) {
       throw ApiError.notFound('Booking engine config');
     }
-    return config;
+
+    const promotions = await loadPromotions(propertyId);
+    return toBookingEngineConfig(dbs, promotions);
   }
 
-  upsertEngineConfig(
+  async upsertEngineConfig(
     propertyId: string,
     data: Partial<Omit<BookingEngineConfig, 'id' | 'propertyId' | 'createdAt' | 'updatedAt' | 'promotions'>>,
-  ): BookingEngineConfig {
-    const existing = configs.get(propertyId);
-    const now = new Date();
-
-    if (existing) {
-      if (data.isEnabled !== undefined) existing.isEnabled = data.isEnabled;
-      if (data.widgetSettings) existing.widgetSettings = { ...existing.widgetSettings, ...data.widgetSettings };
-      if (data.seoSettings) existing.seoSettings = { ...existing.seoSettings, ...data.seoSettings };
-      if (data.policies) existing.policies = { ...existing.policies, ...data.policies };
-      if (data.paymentMethods) existing.paymentMethods = data.paymentMethods;
-      existing.updatedAt = now;
-      configs.set(propertyId, existing);
-      return existing;
+  ): Promise<BookingEngineConfig> {
+    // Ensure property exists
+    const property = await prisma.property.findUnique({ where: { id: propertyId } });
+    if (!property) {
+      throw ApiError.notFound('Property');
     }
 
-    const config: BookingEngineConfig = {
-      id: 'bec_' + Date.now().toString(36),
-      propertyId,
-      isEnabled: data.isEnabled ?? true,
-      widgetSettings: data.widgetSettings ?? {
-        primaryColor: '#1a365d',
-        accentColor: '#3182ce',
-        showReviews: true,
-        showAmenities: true,
-        showMap: true,
-        maxGuestsDefault: 2,
-        instantBooking: true,
-        requireDeposit: true,
-        depositPercent: 25,
-      },
-      seoSettings: data.seoSettings ?? {},
-      policies: data.policies ?? {
-        cancellationPolicy: 'MODERATE',
-        cancellationDays: 5,
-        refundPercent: 50,
-        petPolicy: 'No pets allowed.',
-        smokingPolicy: 'Non-smoking property.',
-        partyPolicy: 'No parties or events.',
-        childrenPolicy: 'Children welcome.',
-      },
-      paymentMethods: data.paymentMethods ?? ['CREDIT_CARD', 'STRIPE'],
-      promotions: [],
-      createdAt: now,
-      updatedAt: now,
-    };
+    const existing = await prisma.directBookingSetting.findUnique({
+      where: { propertyId },
+    });
 
-    configs.set(propertyId, config);
-    return config;
+    let dbs: any;
+
+    if (existing) {
+      const existingWc = (existing.widgetConfig as Record<string, any>) || {};
+      const updatedWc: Record<string, any> = { ...existingWc };
+
+      if (data.widgetSettings) {
+        updatedWc.widgetSettings = { ...existingWc.widgetSettings, ...data.widgetSettings };
+      }
+      if (data.seoSettings) {
+        updatedWc.seoSettings = { ...existingWc.seoSettings, ...data.seoSettings };
+      }
+      if (data.policies) {
+        updatedWc.policies = { ...existingWc.policies, ...data.policies };
+      }
+      if (data.paymentMethods) {
+        updatedWc.paymentMethods = data.paymentMethods;
+      }
+
+      dbs = await prisma.directBookingSetting.update({
+        where: { propertyId },
+        data: {
+          isEnabled: data.isEnabled ?? existing.isEnabled,
+          requireDeposit:
+            data.widgetSettings?.requireDeposit ?? existing.requireDeposit,
+          depositPercent:
+            data.widgetSettings?.depositPercent !== undefined
+              ? data.widgetSettings.depositPercent
+              : existing.depositPercent,
+          widgetConfig: updatedWc as Prisma.InputJsonValue,
+        },
+      });
+    } else {
+      const wc: Record<string, any> = {};
+      if (data.widgetSettings) wc.widgetSettings = data.widgetSettings;
+      if (data.seoSettings) wc.seoSettings = data.seoSettings;
+      if (data.policies) wc.policies = data.policies;
+      if (data.paymentMethods) wc.paymentMethods = data.paymentMethods;
+
+      dbs = await prisma.directBookingSetting.create({
+        data: {
+          propertyId,
+          isEnabled: data.isEnabled ?? true,
+          requireDeposit: data.widgetSettings?.requireDeposit ?? true,
+          depositPercent: data.widgetSettings?.depositPercent ?? 25,
+          widgetConfig: wc as Prisma.InputJsonValue,
+        },
+      });
+    }
+
+    const promotions = await loadPromotions(propertyId);
+    return toBookingEngineConfig(dbs, promotions);
   }
 
   // ── Promotions ───────────────────────────────────────────────────────────
 
-  getPromotions(propertyId: string): BookingPromotion[] {
-    const config = configs.get(propertyId);
-    if (!config) {
+  async getPromotions(propertyId: string): Promise<BookingPromotion[]> {
+    const dbs = await prisma.directBookingSetting.findUnique({
+      where: { propertyId },
+    });
+    if (!dbs) {
       throw ApiError.notFound('Booking engine config');
     }
-    return config.promotions;
+    return loadPromotions(propertyId);
   }
 
-  createPromotion(
+  async createPromotion(
     propertyId: string,
     data: Omit<BookingPromotion, 'id' | 'usedCount'>,
-  ): BookingPromotion {
-    const config = configs.get(propertyId);
-    if (!config) {
+  ): Promise<BookingPromotion> {
+    const dbs = await prisma.directBookingSetting.findUnique({
+      where: { propertyId },
+    });
+    if (!dbs) {
       throw ApiError.notFound('Booking engine config');
     }
 
-    // Check for duplicate code across this property
-    const duplicate = config.promotions.find(
+    const promotions = await loadPromotions(propertyId);
+
+    // Check for duplicate code
+    const duplicate = promotions.find(
       (p) => p.code.toLowerCase() === data.code.toLowerCase(),
     );
     if (duplicate) {
-      throw ApiError.conflict('A promotion with this code already exists for this property', 'DUPLICATE_PROMO_CODE');
+      throw ApiError.conflict(
+        'A promotion with this code already exists for this property',
+        'DUPLICATE_PROMO_CODE',
+      );
     }
 
     const promotion: BookingPromotion = {
@@ -508,29 +416,41 @@ export class BookingEngineService {
       isActive: data.isActive,
     };
 
-    config.promotions.push(promotion);
-    config.updatedAt = new Date();
-    configs.set(propertyId, config);
+    promotions.push(promotion);
+    await savePromotions(propertyId, promotions);
 
     return promotion;
   }
 
-  updatePromotion(
+  async updatePromotion(
     promoId: string,
     data: Partial<Omit<BookingPromotion, 'id' | 'usedCount'>>,
-  ): BookingPromotion {
-    let foundPromo: BookingPromotion | undefined;
-    let foundConfig: BookingEngineConfig | undefined;
-
-    configs.forEach((config) => {
-      const promo = config.promotions.find((p) => p.id === promoId);
-      if (promo) {
-        foundPromo = promo;
-        foundConfig = config;
-      }
+  ): Promise<BookingPromotion> {
+    // Search all promotion settings for this promo
+    const allPromoSettings = await prisma.systemSetting.findMany({
+      where: { key: { startsWith: 'booking_engine.promotions.' } },
     });
 
-    if (!foundPromo || !foundConfig) {
+    let foundPromo: BookingPromotion | undefined;
+    let foundPropertyId: string | undefined;
+    let allPromotions: BookingPromotion[] = [];
+
+    for (const setting of allPromoSettings) {
+      try {
+        const promos = JSON.parse(setting.value) as BookingPromotion[];
+        const promo = promos.find((p) => p.id === promoId);
+        if (promo) {
+          foundPromo = promo;
+          foundPropertyId = setting.key.replace('booking_engine.promotions.', '');
+          allPromotions = promos;
+          break;
+        }
+      } catch {
+        continue;
+      }
+    }
+
+    if (!foundPromo || !foundPropertyId) {
       throw ApiError.notFound('Promotion');
     }
 
@@ -544,24 +464,37 @@ export class BookingEngineService {
     if (data.validTo !== undefined) foundPromo.validTo = new Date(data.validTo);
     if (data.isActive !== undefined) foundPromo.isActive = data.isActive;
 
-    foundConfig.updatedAt = new Date();
-    configs.set(foundConfig.propertyId, foundConfig);
+    // Update in the array
+    const idx = allPromotions.findIndex((p) => p.id === promoId);
+    if (idx !== -1) allPromotions[idx] = foundPromo;
+
+    await savePromotions(foundPropertyId, allPromotions);
 
     return foundPromo;
   }
 
-  deletePromotion(promoId: string): { message: string } {
+  async deletePromotion(promoId: string): Promise<{ message: string }> {
+    const allPromoSettings = await prisma.systemSetting.findMany({
+      where: { key: { startsWith: 'booking_engine.promotions.' } },
+    });
+
     let found = false;
 
-    configs.forEach((config) => {
-      const index = config.promotions.findIndex((p) => p.id === promoId);
-      if (index !== -1) {
-        config.promotions.splice(index, 1);
-        config.updatedAt = new Date();
-        configs.set(config.propertyId, config);
-        found = true;
+    for (const setting of allPromoSettings) {
+      try {
+        const promos = JSON.parse(setting.value) as BookingPromotion[];
+        const idx = promos.findIndex((p) => p.id === promoId);
+        if (idx !== -1) {
+          promos.splice(idx, 1);
+          const propertyId = setting.key.replace('booking_engine.promotions.', '');
+          await savePromotions(propertyId, promos);
+          found = true;
+          break;
+        }
+      } catch {
+        continue;
       }
-    });
+    }
 
     if (!found) {
       throw ApiError.notFound('Promotion');
@@ -572,78 +505,236 @@ export class BookingEngineService {
 
   // ── Public operations ────────────────────────────────────────────────────
 
-  searchProperties(filters: SearchFilters): PropertyPublicInfo[] {
-    let results = Array.from(propertyPublicData.values());
+  async searchProperties(filters: SearchFilters): Promise<PropertyPublicInfo[]> {
+    // Build Prisma where clause
+    const where: Prisma.PropertyWhereInput = {
+      status: 'ACTIVE',
+      deletedAt: null,
+      directBookingSettings: {
+        isEnabled: true,
+      },
+    };
 
     if (filters.city) {
-      const city = filters.city.toLowerCase();
-      results = results.filter((p) => p.city.toLowerCase().includes(city));
+      where.city = { contains: filters.city, mode: 'insensitive' };
     }
 
     if (filters.guests) {
-      results = results.filter((p) => p.maxGuests >= filters.guests!);
+      where.maxGuests = { gte: filters.guests };
     }
 
-    if (filters.minPrice) {
-      results = results.filter((p) => p.nightlyRate >= filters.minPrice!);
+    if (filters.minPrice || filters.maxPrice) {
+      where.baseNightlyRate = {};
+      if (filters.minPrice) {
+        (where.baseNightlyRate as Prisma.DecimalFilter).gte = filters.minPrice;
+      }
+      if (filters.maxPrice) {
+        (where.baseNightlyRate as Prisma.DecimalFilter).lte = filters.maxPrice;
+      }
     }
 
-    if (filters.maxPrice) {
-      results = results.filter((p) => p.nightlyRate <= filters.maxPrice!);
-    }
-
-    if (filters.amenities && filters.amenities.length > 0) {
-      results = results.filter((p) =>
-        filters.amenities!.every((a) => p.amenities.includes(a)),
-      );
-    }
-
-    // Only return properties with enabled booking engines
-    results = results.filter((p) => {
-      const config = configs.get(p.id);
-      return config && config.isEnabled;
+    const properties = await prisma.property.findMany({
+      where,
+      include: {
+        images: {
+          orderBy: { sortOrder: 'asc' },
+          select: { url: true },
+        },
+        reviews: {
+          select: { rating: true },
+        },
+      },
+      orderBy: { name: 'asc' },
     });
 
-    return results;
+    // Post-filter by amenities (stored as Json array)
+    let filtered = properties;
+    if (filters.amenities && filters.amenities.length > 0) {
+      filtered = properties.filter((p) => {
+        const propAmenities = Array.isArray(p.amenities) ? (p.amenities as string[]) : [];
+        return filters.amenities!.every((a) => propAmenities.includes(a));
+      });
+    }
+
+    // If date range provided, filter out properties with booking / block conflicts
+    if (filters.checkIn && filters.checkOut) {
+      const checkInDate = new Date(filters.checkIn);
+      const checkOutDate = new Date(filters.checkOut);
+
+      const propertyIds = filtered.map((p) => p.id);
+
+      // Find properties that have conflicting bookings
+      const conflictBookings = await prisma.booking.findMany({
+        where: {
+          propertyId: { in: propertyIds },
+          status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+          checkIn: { lt: checkOutDate },
+          checkOut: { gt: checkInDate },
+        },
+        select: { propertyId: true },
+      });
+
+      // Find properties that have conflicting calendar blocks
+      const conflictBlocks = await prisma.calendarBlock.findMany({
+        where: {
+          propertyId: { in: propertyIds },
+          startDate: { lt: checkOutDate },
+          endDate: { gt: checkInDate },
+        },
+        select: { propertyId: true },
+      });
+
+      const blockedIds = new Set([
+        ...conflictBookings.map((b) => b.propertyId),
+        ...conflictBlocks.map((b) => b.propertyId),
+      ]);
+
+      filtered = filtered.filter((p) => !blockedIds.has(p.id));
+    }
+
+    return filtered.map((p) => {
+      const reviewCount = p.reviews.length;
+      const avgRating =
+        reviewCount > 0
+          ? Math.round((p.reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount) * 10) / 10
+          : 0;
+      return toPropertyPublicInfo(p, p.images, avgRating, reviewCount);
+    });
   }
 
-  getPropertyPublicInfo(propertyId: string): PropertyPublicInfo {
-    const property = propertyPublicData.get(propertyId);
+  async getPropertyPublicInfo(propertyId: string): Promise<PropertyPublicInfo> {
+    const property = await prisma.property.findUnique({
+      where: { id: propertyId, deletedAt: null },
+      include: {
+        images: {
+          orderBy: { sortOrder: 'asc' },
+          select: { url: true },
+        },
+        reviews: {
+          select: { rating: true },
+        },
+        directBookingSettings: {
+          select: { isEnabled: true },
+        },
+      },
+    });
+
     if (!property) {
       throw ApiError.notFound('Property');
     }
 
     // Only show if booking engine is enabled
-    const config = configs.get(propertyId);
-    if (!config || !config.isEnabled) {
+    if (!property.directBookingSettings || !property.directBookingSettings.isEnabled) {
       throw ApiError.notFound('Property');
     }
 
-    return property;
+    const reviewCount = property.reviews.length;
+    const avgRating =
+      reviewCount > 0
+        ? Math.round(
+            (property.reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount) * 10,
+          ) / 10
+        : 0;
+
+    return toPropertyPublicInfo(property, property.images, avgRating, reviewCount);
   }
 
-  checkAvailability(propertyId: string, checkIn: string, checkOut: string): AvailabilityResult {
-    const property = propertyPublicData.get(propertyId);
+  async checkAvailability(
+    propertyId: string,
+    checkIn: string,
+    checkOut: string,
+  ): Promise<AvailabilityResult> {
+    const property = await prisma.property.findUnique({
+      where: { id: propertyId, deletedAt: null },
+    });
     if (!property) {
       throw ApiError.notFound('Property');
     }
 
+    const checkInDate = new Date(checkIn);
+    const checkOutDate = new Date(checkOut);
+
+    // Get all bookings that overlap the date range
+    const bookings = await prisma.booking.findMany({
+      where: {
+        propertyId,
+        status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+        checkIn: { lt: checkOutDate },
+        checkOut: { gt: checkInDate },
+      },
+      select: { checkIn: true, checkOut: true },
+    });
+
+    // Get all calendar blocks that overlap the date range
+    const blocks = await prisma.calendarBlock.findMany({
+      where: {
+        propertyId,
+        startDate: { lt: checkOutDate },
+        endDate: { gt: checkInDate },
+      },
+      select: { startDate: true, endDate: true },
+    });
+
+    // Get seasonal rates for pricing
+    const seasonalRates = await prisma.seasonalRate.findMany({
+      where: {
+        propertyId,
+        startDate: { lte: checkOutDate },
+        endDate: { gte: checkInDate },
+      },
+      orderBy: { priority: 'desc' },
+    });
+
+    // Build set of blocked dates
+    const blockedDates = new Set<string>();
+
+    for (const booking of bookings) {
+      const cur = new Date(booking.checkIn);
+      const end = new Date(booking.checkOut);
+      while (cur < end) {
+        blockedDates.add(cur.toISOString().split('T')[0]);
+        cur.setDate(cur.getDate() + 1);
+      }
+    }
+
+    for (const block of blocks) {
+      const cur = new Date(block.startDate);
+      const end = new Date(block.endDate);
+      while (cur < end) {
+        blockedDates.add(cur.toISOString().split('T')[0]);
+        cur.setDate(cur.getDate() + 1);
+      }
+    }
+
+    const baseRate = Number(property.baseNightlyRate);
     const dates = generateDateRange(checkIn, checkOut);
 
-    // Simulate availability - some dates blocked for demo
-    const blockedDates = new Set(['2026-07-15', '2026-07-16', '2026-07-17', '2026-08-10', '2026-08-11', '2026-08-12', '2026-08-13']);
+    const availabilityDates = dates.map((dateStr) => {
+      const dateObj = new Date(dateStr);
 
-    const availabilityDates = dates.map((date) => {
-      const multiplier = getSeasonalMultiplier(date);
-      const basePrice = property.nightlyRate;
-      const isWeekend = [0, 5, 6].includes(new Date(date).getDay());
-      const weekendSurcharge = isWeekend ? 1.1 : 1.0;
+      // Find best matching seasonal rate
+      let price = baseRate;
+      let minStay = property.minStayNights;
+
+      for (const sr of seasonalRates) {
+        if (dateObj >= sr.startDate && dateObj <= sr.endDate) {
+          price = Number(sr.nightlyRate);
+          if (sr.minStay) minStay = sr.minStay;
+          break; // highest priority first
+        }
+      }
+
+      // Weekend surcharge (+10%) if no seasonal override
+      const isWeekend = [0, 5, 6].includes(dateObj.getDay());
+      if (isWeekend && seasonalRates.length === 0) {
+        price = Math.round(price * 1.1);
+      }
 
       return {
-        date,
-        available: !blockedDates.has(date),
-        price: Math.round(basePrice * multiplier * weekendSurcharge),
-        minStay: multiplier > 1.2 ? 3 : 2,
+        date: dateStr,
+        available: !blockedDates.has(dateStr),
+        price: Math.round(price),
+        minStay,
       };
     });
 
@@ -653,20 +744,24 @@ export class BookingEngineService {
     };
   }
 
-  calculateQuote(
+  async calculateQuote(
     propertyId: string,
     checkIn: string,
     checkOut: string,
     guests: number,
     promoCode?: string,
-  ): BookingQuote {
-    const property = propertyPublicData.get(propertyId);
+  ): Promise<BookingQuote> {
+    const property = await prisma.property.findUnique({
+      where: { id: propertyId, deletedAt: null },
+    });
     if (!property) {
       throw ApiError.notFound('Property');
     }
 
-    const config = configs.get(propertyId);
-    if (!config || !config.isEnabled) {
+    const dbs = await prisma.directBookingSetting.findUnique({
+      where: { propertyId },
+    });
+    if (!dbs || !dbs.isEnabled) {
       throw ApiError.notFound('Booking engine config');
     }
 
@@ -682,31 +777,60 @@ export class BookingEngineService {
       throw ApiError.badRequest('Check-out must be after check-in', 'INVALID_DATES');
     }
 
-    // Calculate average nightly rate based on seasonal pricing
+    const checkInDate = new Date(checkIn);
+    const checkOutDate = new Date(checkOut);
+    const baseRate = Number(property.baseNightlyRate);
+
+    // Load seasonal rates for the date range
+    const seasonalRates = await prisma.seasonalRate.findMany({
+      where: {
+        propertyId,
+        startDate: { lte: checkOutDate },
+        endDate: { gte: checkInDate },
+      },
+      orderBy: { priority: 'desc' },
+    });
+
+    // Calculate nightly totals
     const dates = generateDateRange(checkIn, checkOut);
     let totalNightlySum = 0;
-    dates.forEach((date) => {
-      const multiplier = getSeasonalMultiplier(date);
-      const isWeekend = [0, 5, 6].includes(new Date(date).getDay());
-      const weekendSurcharge = isWeekend ? 1.1 : 1.0;
-      totalNightlySum += Math.round(property.nightlyRate * multiplier * weekendSurcharge);
+    dates.forEach((dateStr) => {
+      const dateObj = new Date(dateStr);
+      let nightRate = baseRate;
+
+      // Apply seasonal rate (highest priority first)
+      for (const sr of seasonalRates) {
+        if (dateObj >= sr.startDate && dateObj <= sr.endDate) {
+          nightRate = Number(sr.nightlyRate);
+          break;
+        }
+      }
+
+      // Weekend surcharge if no seasonal override applied
+      const isWeekend = [0, 5, 6].includes(dateObj.getDay());
+      if (isWeekend && seasonalRates.length === 0) {
+        nightRate = Math.round(nightRate * 1.1);
+      }
+
+      totalNightlySum += Math.round(nightRate);
     });
 
     const avgNightlyRate = Math.round(totalNightlySum / nights);
     const subtotal = totalNightlySum;
-    const cleaningFee = property.cleaningFee;
+    const cleaningFee = Number(property.cleaningFee);
 
     // Apply promotion
     let discount = 0;
     let appliedPromoCode: string | undefined;
 
     if (promoCode) {
-      const promo = config.promotions.find(
+      const promotions = await loadPromotions(propertyId);
+      const promo = promotions.find(
         (p) =>
           p.code.toLowerCase() === promoCode.toLowerCase() &&
           p.isActive &&
-          new Date() >= p.validFrom &&
-          new Date() <= p.validTo,
+          new Date() >= new Date(p.validFrom) &&
+          new Date() <= new Date(p.validTo),
       );
 
       if (promo) {
@@ -736,9 +860,13 @@ export class BookingEngineService {
     const taxes = Math.round(taxableAmount * taxRate);
     const total = taxableAmount + taxes;
 
-    const depositRequired = config.widgetSettings.requireDeposit
-      ? Math.round(total * (config.widgetSettings.depositPercent / 100))
-      : 0;
+    const wc = (dbs.widgetConfig as Record<string, any>) || {};
+    const widgetSettings = wc.widgetSettings || {};
+    const policies = wc.policies || {};
+
+    const requireDeposit = dbs.requireDeposit;
+    const depositPercent = Number(dbs.depositPercent);
+    const depositRequired = requireDeposit ? Math.round(total * (depositPercent / 100)) : 0;
 
     return {
       propertyId,
@@ -754,23 +882,34 @@ export class BookingEngineService {
       taxes,
       total,
       depositRequired,
-      cancellationPolicy: config.policies.cancellationPolicy,
+      cancellationPolicy: policies.cancellationPolicy || 'MODERATE',
     };
   }
 
-  createDirectBooking(data: DirectBookingInput): DirectBooking {
-    const property = propertyPublicData.get(data.propertyId);
+  async createDirectBooking(data: DirectBookingInput): Promise<DirectBooking> {
+    const property = await prisma.property.findUnique({
+      where: { id: data.propertyId, deletedAt: null },
+    });
     if (!property) {
       throw ApiError.notFound('Property');
     }
 
-    const config = configs.get(data.propertyId);
-    if (!config || !config.isEnabled) {
-      throw ApiError.badRequest('Direct booking is not available for this property', 'BOOKING_ENGINE_DISABLED');
+    const dbs = await prisma.directBookingSetting.findUnique({
+      where: { propertyId: data.propertyId },
+    });
+    if (!dbs || !dbs.isEnabled) {
+      throw ApiError.badRequest(
+        'Direct booking is not available for this property',
+        'BOOKING_ENGINE_DISABLED',
+      );
     }
 
+    const wc = (dbs.widgetConfig as Record<string, any>) || {};
+    const widgetSettings = wc.widgetSettings || {};
+    const acceptedPaymentMethods = wc.paymentMethods || ['CREDIT_CARD', 'STRIPE'];
+
     // Validate payment method
-    if (!config.paymentMethods.includes(data.paymentMethod)) {
+    if (!acceptedPaymentMethods.includes(data.paymentMethod)) {
       throw ApiError.badRequest(
         `Payment method ${data.paymentMethod} is not accepted for this property`,
         'INVALID_PAYMENT_METHOD',
@@ -778,7 +917,7 @@ export class BookingEngineService {
     }
 
     // Calculate quote
-    const quote = this.calculateQuote(
+    const quote = await this.calculateQuote(
       data.propertyId,
       data.checkIn,
       data.checkOut,
@@ -786,8 +925,8 @@ export class BookingEngineService {
       data.promotionCode,
     );
 
-    // Check availability
-    const availability = this.checkAvailability(data.propertyId, data.checkIn, data.checkOut);
+    // Check availability (real DB check)
+    const availability = await this.checkAvailability(data.propertyId, data.checkIn, data.checkOut);
     const unavailableDates = availability.dates.filter((d) => !d.available);
     if (unavailableDates.length > 0) {
       throw ApiError.badRequest(
@@ -798,18 +937,81 @@ export class BookingEngineService {
 
     // Increment promo usage if applicable
     if (data.promotionCode) {
-      const promo = config.promotions.find(
+      const promotions = await loadPromotions(data.propertyId);
+      const promo = promotions.find(
         (p) => p.code.toLowerCase() === data.promotionCode!.toLowerCase(),
       );
       if (promo) {
         promo.usedCount++;
+        await savePromotions(data.propertyId, promotions);
       }
     }
 
-    const status = config.widgetSettings.instantBooking ? 'CONFIRMED' : 'PENDING';
+    const instantBooking = widgetSettings.instantBooking ?? true;
+    const bookingStatus = instantBooking ? 'CONFIRMED' : 'PENDING';
 
-    const booking: DirectBooking = {
-      id: 'db_' + Date.now().toString(36),
+    // Upsert guest profile
+    let guestProfile = await prisma.guestProfile.findFirst({
+      where: { email: data.guestInfo.email },
+    });
+
+    if (guestProfile) {
+      guestProfile = await prisma.guestProfile.update({
+        where: { id: guestProfile.id },
+        data: {
+          firstName: data.guestInfo.firstName,
+          lastName: data.guestInfo.lastName,
+          phone: data.guestInfo.phone || guestProfile.phone,
+          nationality: data.guestInfo.nationality || guestProfile.nationality,
+        },
+      });
+    } else {
+      guestProfile = await prisma.guestProfile.create({
+        data: {
+          firstName: data.guestInfo.firstName,
+          lastName: data.guestInfo.lastName,
+          email: data.guestInfo.email,
+          phone: data.guestInfo.phone,
+          nationality: data.guestInfo.nationality,
+        },
+      });
+    }
+
+    // Create the real booking in DB
+    const checkInDate = new Date(data.checkIn);
+    const checkOutDate = new Date(data.checkOut);
+
+    const dbBooking = await prisma.booking.create({
+      data: {
+        propertyId: data.propertyId,
+        guestId: guestProfile.id,
+        source: 'DIRECT',
+        status: bookingStatus,
+        checkIn: checkInDate,
+        checkOut: checkOutDate,
+        nights: quote.nights,
+        guestsCount: data.guests,
+        nightlyRate: quote.nightlyRate,
+        subtotal: quote.subtotal,
+        cleaningFee: quote.cleaningFee,
+        taxes: quote.taxes,
+        totalAmount: quote.total,
+        currency: property.currency,
+        guestName: `${data.guestInfo.firstName} ${data.guestInfo.lastName}`,
+        guestEmail: data.guestInfo.email,
+        guestPhone: data.guestInfo.phone,
+        specialRequests: data.specialRequests,
+        confirmedAt: bookingStatus === 'CONFIRMED' ? new Date() : undefined,
+        metadata: {
+          paymentMethod: data.paymentMethod,
+          promotionCode: data.promotionCode,
+          depositRequired: quote.depositRequired,
+        },
+      },
+    });
+
+    return {
+      id: dbBooking.id,
       propertyId: data.propertyId,
       checkIn: data.checkIn,
       checkOut: data.checkOut,
@@ -819,24 +1021,24 @@ export class BookingEngineService {
       quote,
       paymentMethod: data.paymentMethod,
       specialRequests: data.specialRequests,
-      status,
-      createdAt: new Date(),
+      status: bookingStatus,
+      createdAt: dbBooking.createdAt,
     };
-
-    directBookings.set(booking.id, booking);
-    return booking;
   }
 
-  validatePromoCode(
+  async validatePromoCode(
     propertyId: string,
     code: string,
-  ): { valid: boolean; promotion?: BookingPromotion; reason?: string } {
-    const config = configs.get(propertyId);
-    if (!config) {
+  ): Promise<{ valid: boolean; promotion?: BookingPromotion; reason?: string }> {
+    const dbs = await prisma.directBookingSetting.findUnique({
+      where: { propertyId },
+    });
+    if (!dbs) {
       return { valid: false, reason: 'Property not found' };
     }
 
-    const promo = config.promotions.find(
+    const promotions = await loadPromotions(propertyId);
+    const promo = promotions.find(
       (p) => p.code.toLowerCase() === code.toLowerCase(),
     );
 
@@ -849,11 +1051,11 @@ export class BookingEngineService {
     }
 
     const now = new Date();
-    if (now < promo.validFrom) {
+    if (now < new Date(promo.validFrom)) {
       return { valid: false, reason: 'Promotion has not started yet' };
     }
 
-    if (now > promo.validTo) {
+    if (now > new Date(promo.validTo)) {
       return { valid: false, reason: 'Promotion has expired' };
     }
 

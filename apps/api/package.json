@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "start": "echo '[START] Syncing database schema...' && npx prisma db push --skip-generate --accept-data-loss && echo '[START] Schema synced. Running seed...' && (node dist/prisma/seed.js || echo '[START] Seed completed or skipped') && echo '[START] Starting server...' && node dist/index.js",
+    "start": "echo '[START] Running migrations...' && npx prisma migrate deploy && echo '[START] Migrations applied. Running seed...' && (node dist/prisma/seed.js || echo '[START] Seed completed or skipped') && echo '[START] Starting server...' && node dist/index.js",
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

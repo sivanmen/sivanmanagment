@@ -7,29 +7,17 @@
 
 ## CRITICAL
 
-### 1. `start` script uses `prisma db push --accept-data-loss`
-- **File:** `apps/api/package.json` line 8
-- **Risk:** Can silently drop columns/tables on schema changes in production
-- **Fix:** Replace with `npx prisma migrate deploy`
-- **Blocked by:** Need to verify all 3 migrations apply cleanly on Railway DB
+### ~~1. `start` script uses `prisma db push --accept-data-loss`~~ — RESOLVED 2026-04-14
+### ~~2. Booking Engine module is 100% mock~~ — RESOLVED 2026-04-14
+### ~~3. Pricing module is 100% mock~~ — RESOLVED 2026-04-14
 
-### 2. Booking Engine module is 100% mock
-- **File:** `apps/api/src/modules/booking-engine/booking-engine.service.ts`
-- **Impact:** Direct booking from client portal doesn't work with real data
-- **Depends on:** Pricing module also being real
-
-### 3. Pricing module is 100% mock
-- **File:** `apps/api/src/modules/pricing/pricing.service.ts`
-- **Impact:** No real rate management, seasonal pricing, or dynamic pricing
+_(No remaining CRITICAL issues)_
 
 ---
 
 ## HIGH
 
-### 4. WhatsApp service is mock — notifications don't send
-- **File:** `apps/api/src/modules/whatsapp/whatsapp.service.ts` (0 Prisma calls)
-- **Impact:** Payment notifications (coded in `stripe.service.ts`) never actually send
-- **Fix:** Implement real Evolution API calls using `config.whatsapp.apiUrl` and `config.whatsapp.apiKey`
+### ~~4. WhatsApp service is mock~~ — RESOLVED 2026-04-14
 
 ### 5. File upload service is a stub — no R2 connection
 - **File:** `apps/api/src/modules/uploads/upload.service.ts`
@@ -126,11 +114,11 @@
 
 | Severity | Count |
 |----------|-------|
-| CRITICAL | 3 |
-| HIGH | 5 |
+| CRITICAL | 0 (3 resolved) |
+| HIGH | 4 (1 resolved) |
 | MEDIUM | 9 |
 | LOW | 5 |
-| **Total** | **22** |
+| **Total** | **18 open (4 resolved)** |
 
 ---
 

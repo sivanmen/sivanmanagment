@@ -1,305 +1,95 @@
+import axios from 'axios';
+import { prisma } from '../../prisma/client';
+import { config } from '../../config';
 import { ApiError } from '../../utils/api-error';
+import { Prisma } from '@prisma/client';
 
-type MessageStatus = 'QUEUED' | 'SENT' | 'DELIVERED' | 'READ' | 'FAILED';
-type MessageDirection = 'OUTBOUND' | 'INBOUND';
-type TemplateType = 'CHECK_IN' | 'CHECKOUT' | 'WELCOME' | 'REVIEW_REQUEST' | 'PAYMENT_REMINDER' | 'BOOKING_CONFIRMATION' | 'CUSTOM';
+// ---------------------------------------------------------------------------
+// Types matching what the controller / frontend expects
+// ---------------------------------------------------------------------------
 
-interface Contact {
-  id: string;
-  name: string;
-  phone: string;
-  email?: string;
-  guestId?: string;
-  bookingId?: string;
-  propertyId?: string;
-  propertyName?: string;
-  tags: string[];
-  isActive: boolean;
-  lastMessageAt?: string;
-  createdAt: string;
-  updatedAt: string;
+type TemplateType =
+  | 'CHECK_IN'
+  | 'CHECKOUT'
+  | 'WELCOME'
+  | 'REVIEW_REQUEST'
+  | 'PAYMENT_REMINDER'
+  | 'BOOKING_CONFIRMATION'
+  | 'CUSTOM';
+
+// ---------------------------------------------------------------------------
+// Helper: get the default active MessagingInstance for sending
+// ---------------------------------------------------------------------------
+
+async function getDefaultInstance() {
+  const instance = await prisma.messagingInstance.findFirst({
+    where: { isDefault: true, isActive: true },
+    orderBy: { createdAt: 'desc' },
+  });
+  return instance;
 }
 
-interface Message {
-  id: string;
-  contactId: string;
-  contactName: string;
-  contactPhone: string;
-  direction: MessageDirection;
-  templateType?: TemplateType;
-  content: string;
-  mediaUrl?: string;
-  status: MessageStatus;
-  statusUpdatedAt: string;
-  bookingId?: string;
-  propertyId?: string;
-  sentBy?: string;
-  errorMessage?: string;
-  createdAt: string;
-  updatedAt: string;
+// ---------------------------------------------------------------------------
+// Helper: call Evolution API to send a text message
+// Returns true on success, false on failure (never throws)
+// ---------------------------------------------------------------------------
+
+async function sendViaEvolutionApi(
+  phone: string,
+  text: string,
+): Promise<{ success: boolean; externalMessageId?: string; error?: string }> {
+  try {
+    const instance = await getDefaultInstance();
+
+    // Determine API URL and key: prefer per-instance values, fall back to global config
+    const apiUrl = instance?.apiUrl || config.whatsapp.apiUrl;
+    const apiKey = instance?.apiKey || config.whatsapp.apiKey;
+    const instanceName = instance?.instanceName || 'default';
+
+    if (!apiUrl || !apiKey) {
+      console.error('[WhatsApp] Missing Evolution API URL or API key');
+      return { success: false, error: 'Missing Evolution API configuration' };
+    }
+
+    const url = `${apiUrl}/message/sendText/${instanceName}`;
+
+    const response = await axios.post(
+      url,
+      { number: phone, text },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: apiKey,
+        },
+        timeout: 15_000,
+      },
+    );
+
+    // Increment messagesSent counter on the instance
+    if (instance) {
+      await prisma.messagingInstance.update({
+        where: { id: instance.id },
+        data: { messagesSent: { increment: 1 } },
+      }).catch(() => { /* non-critical */ });
+    }
+
+    const externalId = response.data?.key?.id || response.data?.messageId || undefined;
+    return { success: true, externalMessageId: externalId };
+  } catch (err: any) {
+    const errorMsg = err?.response?.data?.message || err?.message || 'Unknown Evolution API error';
+    console.error('[WhatsApp] Evolution API send failed:', errorMsg);
+    return { success: false, error: errorMsg };
+  }
 }
 
-interface MessageTemplate {
-  id: string;
-  type: TemplateType;
-  name: string;
-  language: string;
-  content: string;
-  variables: string[];
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-const contacts: Contact[] = [
-  {
-    id: 'wc-001', name: 'Hans Mueller', phone: '+491761234567', email: 'hans.m@email.de',
-    guestId: 'g-001', bookingId: 'book-040', propertyId: 'prop-001', propertyName: 'Villa Elounda Seafront',
-    tags: ['guest', 'vip'], isActive: true, lastMessageAt: '2026-04-09T14:00:00Z',
-    createdAt: '2026-03-25T10:00:00Z', updatedAt: '2026-04-09T14:00:00Z',
-  },
-  {
-    id: 'wc-002', name: 'Sophie Laurent', phone: '+33612345678', email: 'sophie.l@email.fr',
-    guestId: 'g-002', bookingId: 'book-042', propertyId: 'prop-002', propertyName: 'Chania Old Town Apt',
-    tags: ['guest'], isActive: true, lastMessageAt: '2026-04-07T10:00:00Z',
-    createdAt: '2026-03-28T12:00:00Z', updatedAt: '2026-04-07T10:00:00Z',
-  },
-  {
-    id: 'wc-003', name: 'James Wilson', phone: '+447911123456', email: 'j.wilson@email.com',
-    guestId: 'g-003', bookingId: 'book-044', propertyId: 'prop-003', propertyName: 'Rethymno Beach House',
-    tags: ['guest'], isActive: true, lastMessageAt: '2026-04-10T08:00:00Z',
-    createdAt: '2026-04-01T09:00:00Z', updatedAt: '2026-04-10T08:00:00Z',
-  },
-  {
-    id: 'wc-004', name: 'Yannis Plumbing', phone: '+302810234567',
-    tags: ['vendor', 'maintenance'], isActive: true, lastMessageAt: '2026-04-05T11:00:00Z',
-    createdAt: '2026-01-10T08:00:00Z', updatedAt: '2026-04-05T11:00:00Z',
-  },
-  {
-    id: 'wc-005', name: 'Maria Ivanova', phone: '+79161234567', email: 'maria.i@email.ru',
-    guestId: 'g-004', propertyId: 'prop-001', propertyName: 'Villa Elounda Seafront',
-    tags: ['guest', 'returning'], isActive: true, lastMessageAt: '2026-03-20T16:00:00Z',
-    createdAt: '2026-03-10T10:00:00Z', updatedAt: '2026-03-20T16:00:00Z',
-  },
-];
-
-const messages: Message[] = [
-  // Thread 1: Hans Mueller - Check-in & Welcome
-  {
-    id: 'wm-001', contactId: 'wc-001', contactName: 'Hans Mueller', contactPhone: '+491761234567',
-    direction: 'OUTBOUND', templateType: 'BOOKING_CONFIRMATION',
-    content: 'Hello Hans! Your booking at Villa Elounda Seafront is confirmed. Check-in: April 1, 2026. Confirmation code: SVM-00040. We look forward to welcoming you!',
-    status: 'READ', statusUpdatedAt: '2026-03-25T11:00:00Z',
-    bookingId: 'book-040', propertyId: 'prop-001', sentBy: 'u-001',
-    createdAt: '2026-03-25T10:30:00Z', updatedAt: '2026-03-25T11:00:00Z',
-  },
-  {
-    id: 'wm-002', contactId: 'wc-001', contactName: 'Hans Mueller', contactPhone: '+491761234567',
-    direction: 'INBOUND',
-    content: 'Thank you! Can you please send me the directions to the villa?',
-    status: 'READ', statusUpdatedAt: '2026-03-25T12:00:00Z',
-    bookingId: 'book-040', propertyId: 'prop-001',
-    createdAt: '2026-03-25T11:30:00Z', updatedAt: '2026-03-25T12:00:00Z',
-  },
-  {
-    id: 'wm-003', contactId: 'wc-001', contactName: 'Hans Mueller', contactPhone: '+491761234567',
-    direction: 'OUTBOUND',
-    content: 'Of course! Here are the directions to Villa Elounda Seafront: Take the national road from Heraklion airport towards Agios Nikolaos. After 60km, take the Elounda exit. The villa is on the coastal road, 500m past the Elounda Beach Hotel. GPS: 35.2612, 25.7312. We will also send you a Google Maps pin closer to your arrival.',
-    status: 'READ', statusUpdatedAt: '2026-03-25T13:00:00Z',
-    bookingId: 'book-040', propertyId: 'prop-001', sentBy: 'u-002',
-    createdAt: '2026-03-25T12:15:00Z', updatedAt: '2026-03-25T13:00:00Z',
-  },
-  {
-    id: 'wm-004', contactId: 'wc-001', contactName: 'Hans Mueller', contactPhone: '+491761234567',
-    direction: 'OUTBOUND', templateType: 'CHECK_IN',
-    content: 'Hi Hans! Welcome to Crete! Your villa is ready for you. Check-in is at 15:00. The lockbox code is 4821. WiFi: EloundaVilla / Password: crete2026. Enjoy your stay!',
-    status: 'READ', statusUpdatedAt: '2026-04-01T14:30:00Z',
-    bookingId: 'book-040', propertyId: 'prop-001', sentBy: 'u-001',
-    createdAt: '2026-04-01T09:00:00Z', updatedAt: '2026-04-01T14:30:00Z',
-  },
-  {
-    id: 'wm-005', contactId: 'wc-001', contactName: 'Hans Mueller', contactPhone: '+491761234567',
-    direction: 'INBOUND',
-    content: 'We arrived safely! The villa is beautiful, thank you!',
-    status: 'READ', statusUpdatedAt: '2026-04-01T16:00:00Z',
-    bookingId: 'book-040', propertyId: 'prop-001',
-    createdAt: '2026-04-01T15:30:00Z', updatedAt: '2026-04-01T16:00:00Z',
-  },
-  {
-    id: 'wm-006', contactId: 'wc-001', contactName: 'Hans Mueller', contactPhone: '+491761234567',
-    direction: 'OUTBOUND', templateType: 'CHECKOUT',
-    content: 'Hi Hans! We hope you had a wonderful stay at Villa Elounda. Checkout is at 11:00 tomorrow. Please leave the keys in the lockbox. Safe travels home!',
-    status: 'READ', statusUpdatedAt: '2026-04-09T10:00:00Z',
-    bookingId: 'book-040', propertyId: 'prop-001', sentBy: 'u-001',
-    createdAt: '2026-04-08T18:00:00Z', updatedAt: '2026-04-09T10:00:00Z',
-  },
-  {
-    id: 'wm-007', contactId: 'wc-001', contactName: 'Hans Mueller', contactPhone: '+491761234567',
-    direction: 'OUTBOUND', templateType: 'REVIEW_REQUEST',
-    content: 'Hi Hans! Thank you for staying at Villa Elounda Seafront. We hope you had an amazing time in Crete! Would you mind leaving us a review? It helps other guests discover our properties. Here is the link: https://sivanmanagement.com/review/book-040',
-    status: 'DELIVERED', statusUpdatedAt: '2026-04-09T14:00:00Z',
-    bookingId: 'book-040', propertyId: 'prop-001', sentBy: 'u-001',
-    createdAt: '2026-04-09T14:00:00Z', updatedAt: '2026-04-09T14:00:00Z',
-  },
-  // Thread 2: Sophie Laurent - Chania apt
-  {
-    id: 'wm-008', contactId: 'wc-002', contactName: 'Sophie Laurent', contactPhone: '+33612345678',
-    direction: 'OUTBOUND', templateType: 'BOOKING_CONFIRMATION',
-    content: 'Bonjour Sophie! Your booking at Chania Old Town Apt is confirmed. Check-in: April 5, 2026. Confirmation code: SVM-00042. See you in Chania!',
-    status: 'READ', statusUpdatedAt: '2026-03-28T13:00:00Z',
-    bookingId: 'book-042', propertyId: 'prop-002', sentBy: 'u-001',
-    createdAt: '2026-03-28T12:00:00Z', updatedAt: '2026-03-28T13:00:00Z',
-  },
-  {
-    id: 'wm-009', contactId: 'wc-002', contactName: 'Sophie Laurent', contactPhone: '+33612345678',
-    direction: 'OUTBOUND', templateType: 'CHECK_IN',
-    content: 'Bonjour Sophie! Your apartment in Chania Old Town is ready. Check-in at 14:00. Access code: 7293. WiFi: ChaniaOldTown / Password: welcome2026. The Venetian harbor is just 2 minutes walk!',
-    status: 'READ', statusUpdatedAt: '2026-04-05T13:00:00Z',
-    bookingId: 'book-042', propertyId: 'prop-002', sentBy: 'u-001',
-    createdAt: '2026-04-05T08:00:00Z', updatedAt: '2026-04-05T13:00:00Z',
-  },
-  {
-    id: 'wm-010', contactId: 'wc-002', contactName: 'Sophie Laurent', contactPhone: '+33612345678',
-    direction: 'INBOUND',
-    content: 'Merci! Quick question - is there a washing machine in the apartment?',
-    status: 'READ', statusUpdatedAt: '2026-04-06T10:00:00Z',
-    bookingId: 'book-042', propertyId: 'prop-002',
-    createdAt: '2026-04-06T09:30:00Z', updatedAt: '2026-04-06T10:00:00Z',
-  },
-  {
-    id: 'wm-011', contactId: 'wc-002', contactName: 'Sophie Laurent', contactPhone: '+33612345678',
-    direction: 'OUTBOUND',
-    content: 'Yes Sophie! There is a washing machine in the bathroom closet. Detergent pods are on the shelf above. Let us know if you need anything else!',
-    status: 'READ', statusUpdatedAt: '2026-04-06T11:00:00Z',
-    bookingId: 'book-042', propertyId: 'prop-002', sentBy: 'u-002',
-    createdAt: '2026-04-06T10:15:00Z', updatedAt: '2026-04-06T11:00:00Z',
-  },
-  // Thread 3: James Wilson - Rethymno
-  {
-    id: 'wm-012', contactId: 'wc-003', contactName: 'James Wilson', contactPhone: '+447911123456',
-    direction: 'OUTBOUND', templateType: 'CHECK_IN',
-    content: 'Hi James! Your Beach House in Rethymno is ready for you. Check-in is at 15:00. The key is in the lockbox by the front door, code: 5518. WiFi: BeachHouseReth / Password: summer2026. Enjoy the beach!',
-    status: 'READ', statusUpdatedAt: '2026-04-08T14:00:00Z',
-    bookingId: 'book-044', propertyId: 'prop-003', sentBy: 'u-001',
-    createdAt: '2026-04-08T09:00:00Z', updatedAt: '2026-04-08T14:00:00Z',
-  },
-  {
-    id: 'wm-013', contactId: 'wc-003', contactName: 'James Wilson', contactPhone: '+447911123456',
-    direction: 'INBOUND',
-    content: 'Hi, the pool filter seems to not be working properly. The water looks a bit cloudy.',
-    status: 'READ', statusUpdatedAt: '2026-04-09T09:00:00Z',
-    bookingId: 'book-044', propertyId: 'prop-003',
-    createdAt: '2026-04-09T08:30:00Z', updatedAt: '2026-04-09T09:00:00Z',
-  },
-  {
-    id: 'wm-014', contactId: 'wc-003', contactName: 'James Wilson', contactPhone: '+447911123456',
-    direction: 'OUTBOUND',
-    content: 'Hi James, sorry about that! We are sending our maintenance team over today. They should be there by 14:00. Thank you for letting us know!',
-    status: 'READ', statusUpdatedAt: '2026-04-09T10:00:00Z',
-    bookingId: 'book-044', propertyId: 'prop-003', sentBy: 'u-002',
-    createdAt: '2026-04-09T09:15:00Z', updatedAt: '2026-04-09T10:00:00Z',
-  },
-  {
-    id: 'wm-015', contactId: 'wc-003', contactName: 'James Wilson', contactPhone: '+447911123456',
-    direction: 'INBOUND',
-    content: 'Thanks for the quick response. The maintenance guy just fixed it, pool looks great now!',
-    status: 'READ', statusUpdatedAt: '2026-04-09T16:00:00Z',
-    bookingId: 'book-044', propertyId: 'prop-003',
-    createdAt: '2026-04-09T15:30:00Z', updatedAt: '2026-04-09T16:00:00Z',
-  },
-  // Thread 4: Vendor
-  {
-    id: 'wm-016', contactId: 'wc-004', contactName: 'Yannis Plumbing', contactPhone: '+302810234567',
-    direction: 'OUTBOUND',
-    content: 'Hi Yannis, we need an urgent plumbing check at Chania Old Town Apt (Kanevaro 15). There is a minor bathroom leak. Can you come this week?',
-    status: 'READ', statusUpdatedAt: '2026-04-05T11:30:00Z',
-    propertyId: 'prop-002', sentBy: 'u-001',
-    createdAt: '2026-04-05T11:00:00Z', updatedAt: '2026-04-05T11:30:00Z',
-  },
-  {
-    id: 'wm-017', contactId: 'wc-004', contactName: 'Yannis Plumbing', contactPhone: '+302810234567',
-    direction: 'INBOUND',
-    content: 'Hi! I can come Wednesday morning around 10:00. Will that work?',
-    status: 'READ', statusUpdatedAt: '2026-04-05T12:00:00Z',
-    propertyId: 'prop-002',
-    createdAt: '2026-04-05T11:45:00Z', updatedAt: '2026-04-05T12:00:00Z',
-  },
-  // Thread 5: Maria Ivanova - returning guest
-  {
-    id: 'wm-018', contactId: 'wc-005', contactName: 'Maria Ivanova', contactPhone: '+79161234567',
-    direction: 'OUTBOUND', templateType: 'REVIEW_REQUEST',
-    content: 'Hi Maria! Thank you for your recent stay at Villa Elounda Seafront. We loved having you! Would you mind sharing your experience with a review? https://sivanmanagement.com/review/g-004',
-    status: 'READ', statusUpdatedAt: '2026-03-20T17:00:00Z',
-    propertyId: 'prop-001', sentBy: 'u-001',
-    createdAt: '2026-03-20T16:00:00Z', updatedAt: '2026-03-20T17:00:00Z',
-  },
-  {
-    id: 'wm-019', contactId: 'wc-005', contactName: 'Maria Ivanova', contactPhone: '+79161234567',
-    direction: 'INBOUND',
-    content: 'Of course! I already left a 5-star review on Google. The villa was amazing, we will definitely come back next summer!',
-    status: 'READ', statusUpdatedAt: '2026-03-20T18:00:00Z',
-    propertyId: 'prop-001',
-    createdAt: '2026-03-20T17:30:00Z', updatedAt: '2026-03-20T18:00:00Z',
-  },
-  {
-    id: 'wm-020', contactId: 'wc-005', contactName: 'Maria Ivanova', contactPhone: '+79161234567',
-    direction: 'OUTBOUND', templateType: 'WELCOME',
-    content: 'Thank you so much Maria! We saw your Google review - it means the world to us! We would love to offer you a 10% returning guest discount for your next booking. Just mention code RETURN10 when booking!',
-    status: 'DELIVERED', statusUpdatedAt: '2026-03-20T18:30:00Z',
-    propertyId: 'prop-001', sentBy: 'u-001',
-    createdAt: '2026-03-20T18:15:00Z', updatedAt: '2026-03-20T18:30:00Z',
-  },
-];
-
-const templates: MessageTemplate[] = [
-  {
-    id: 'wt-001', type: 'BOOKING_CONFIRMATION', name: 'Booking Confirmation',
-    language: 'en',
-    content: 'Hello {{guestName}}! Your booking at {{propertyName}} is confirmed. Check-in: {{checkInDate}}. Confirmation code: {{confirmationCode}}. We look forward to welcoming you!',
-    variables: ['guestName', 'propertyName', 'checkInDate', 'confirmationCode'],
-    isActive: true, createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'wt-002', type: 'CHECK_IN', name: 'Check-in Instructions',
-    language: 'en',
-    content: 'Hi {{guestName}}! Your {{propertyName}} is ready for you. Check-in is at {{checkInTime}}. Access code: {{accessCode}}. WiFi: {{wifiName}} / Password: {{wifiPassword}}. Enjoy your stay!',
-    variables: ['guestName', 'propertyName', 'checkInTime', 'accessCode', 'wifiName', 'wifiPassword'],
-    isActive: true, createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'wt-003', type: 'CHECKOUT', name: 'Checkout Reminder',
-    language: 'en',
-    content: 'Hi {{guestName}}! We hope you had a wonderful stay at {{propertyName}}. Checkout is at {{checkOutTime}} tomorrow. Please leave the keys in the lockbox. Safe travels home!',
-    variables: ['guestName', 'propertyName', 'checkOutTime'],
-    isActive: true, createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'wt-004', type: 'REVIEW_REQUEST', name: 'Review Request',
-    language: 'en',
-    content: 'Hi {{guestName}}! Thank you for staying at {{propertyName}}. We hope you had an amazing time! Would you mind leaving us a review? {{reviewLink}}',
-    variables: ['guestName', 'propertyName', 'reviewLink'],
-    isActive: true, createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'wt-005', type: 'WELCOME', name: 'Welcome / Follow-up',
-    language: 'en',
-    content: 'Hello {{guestName}}! Welcome to {{propertyName}}. If you need anything during your stay, do not hesitate to message us. We are happy to help with restaurant recommendations, activities, or any questions!',
-    variables: ['guestName', 'propertyName'],
-    isActive: true, createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'wt-006', type: 'PAYMENT_REMINDER', name: 'Payment Reminder',
-    language: 'en',
-    content: 'Hi {{guestName}}, this is a friendly reminder that your balance of {{amount}} for {{propertyName}} ({{checkInDate}} - {{checkOutDate}}) is due. Please complete your payment at: {{paymentLink}}',
-    variables: ['guestName', 'amount', 'propertyName', 'checkInDate', 'checkOutDate', 'paymentLink'],
-    isActive: true, createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
-  },
-];
-
-let msgCounter = 21;
+// ---------------------------------------------------------------------------
+// Service
+// ---------------------------------------------------------------------------
 
 export class WhatsAppService {
-  // ── Contacts ──
+  // ========================================================================
+  // CONTACTS  (backed by GuestProfile)
+  // ========================================================================
 
   async getContacts(filters: {
     tag?: string;
@@ -311,72 +101,288 @@ export class WhatsAppService {
   }) {
     const { tag, search, propertyId, isActive, page = 1, limit = 20 } = filters;
 
-    let filtered = [...contacts];
-    if (tag) filtered = filtered.filter((c) => c.tags.includes(tag));
-    if (propertyId) filtered = filtered.filter((c) => c.propertyId === propertyId);
-    if (isActive !== undefined) filtered = filtered.filter((c) => c.isActive === isActive);
-    if (search) {
-      const q = search.toLowerCase();
-      filtered = filtered.filter(
-        (c) =>
-          c.name.toLowerCase().includes(q) ||
-          c.phone.includes(q) ||
-          (c.email && c.email.toLowerCase().includes(q)),
-      );
+    const where: Prisma.GuestProfileWhereInput = {
+      deletedAt: null,
+    };
+
+    // Filter by phone existing (only contacts with phone are WhatsApp-relevant)
+    where.phone = { not: null };
+
+    // Tag filter: tags is a Json field storing string[]
+    if (tag) {
+      where.tags = { array_contains: [tag] };
     }
 
-    filtered.sort((a, b) => ((b.lastMessageAt || '') > (a.lastMessageAt || '') ? 1 : -1));
-    const total = filtered.length;
-    const start = (page - 1) * limit;
-    const items = filtered.slice(start, start + limit);
+    // Search across name, phone, email
+    if (search) {
+      where.OR = [
+        { firstName: { contains: search, mode: 'insensitive' } },
+        { lastName: { contains: search, mode: 'insensitive' } },
+        { phone: { contains: search } },
+        { email: { contains: search, mode: 'insensitive' } },
+      ];
+    }
 
-    return { contacts: items, total, page, limit };
+    // Property filter: guest must have at least one booking for that property
+    if (propertyId) {
+      where.bookings = { some: { propertyId } };
+    }
+
+    // isActive: treat deletedAt presence as inactive
+    if (isActive === false) {
+      where.deletedAt = { not: null };
+      delete (where as any).deletedAt; // remove the null check we set above
+      where.deletedAt = { not: null };
+    }
+
+    const [total, guests] = await Promise.all([
+      prisma.guestProfile.count({ where }),
+      prisma.guestProfile.findMany({
+        where,
+        orderBy: { updatedAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+        include: {
+          bookings: {
+            take: 1,
+            orderBy: { createdAt: 'desc' },
+            select: { id: true, propertyId: true, property: { select: { name: true } } },
+          },
+          messageThreads: {
+            where: { channel: 'WHATSAPP' },
+            take: 1,
+            orderBy: { lastMessageAt: 'desc' },
+            select: { lastMessageAt: true },
+          },
+        },
+      }),
+    ]);
+
+    // Map GuestProfile to the Contact shape the frontend expects
+    const contacts = guests.map((g) => {
+      const latestBooking = g.bookings[0] || null;
+      const latestThread = g.messageThreads[0] || null;
+      return {
+        id: g.id,
+        name: `${g.firstName} ${g.lastName}`.trim(),
+        phone: g.phone!,
+        email: g.email || undefined,
+        guestId: g.id,
+        bookingId: latestBooking?.id || undefined,
+        propertyId: latestBooking?.propertyId || undefined,
+        propertyName: latestBooking?.property?.name || undefined,
+        tags: (g.tags as string[]) || [],
+        isActive: g.deletedAt === null,
+        lastMessageAt: latestThread?.lastMessageAt?.toISOString() || undefined,
+        createdAt: g.createdAt.toISOString(),
+        updatedAt: g.updatedAt.toISOString(),
+      };
+    });
+
+    return { contacts, total, page, limit };
   }
 
   async getContactById(id: string) {
-    const contact = contacts.find((c) => c.id === id);
-    if (!contact) throw ApiError.notFound('Contact');
-    return contact;
+    const g = await prisma.guestProfile.findUnique({
+      where: { id },
+      include: {
+        bookings: {
+          take: 1,
+          orderBy: { createdAt: 'desc' },
+          select: { id: true, propertyId: true, property: { select: { name: true } } },
+        },
+        messageThreads: {
+          where: { channel: 'WHATSAPP' },
+          take: 1,
+          orderBy: { lastMessageAt: 'desc' },
+          select: { lastMessageAt: true },
+        },
+      },
+    });
+    if (!g) throw ApiError.notFound('Contact');
+
+    const latestBooking = g.bookings[0] || null;
+    const latestThread = g.messageThreads[0] || null;
+
+    return {
+      id: g.id,
+      name: `${g.firstName} ${g.lastName}`.trim(),
+      phone: g.phone || '',
+      email: g.email || undefined,
+      guestId: g.id,
+      bookingId: latestBooking?.id || undefined,
+      propertyId: latestBooking?.propertyId || undefined,
+      propertyName: latestBooking?.property?.name || undefined,
+      tags: (g.tags as string[]) || [],
+      isActive: g.deletedAt === null,
+      lastMessageAt: latestThread?.lastMessageAt?.toISOString() || undefined,
+      createdAt: g.createdAt.toISOString(),
+      updatedAt: g.updatedAt.toISOString(),
+    };
   }
 
-  async createContact(data: Omit<Contact, 'id' | 'isActive' | 'createdAt' | 'updatedAt'>) {
-    const existing = contacts.find((c) => c.phone === data.phone);
+  async createContact(data: {
+    name: string;
+    phone: string;
+    email?: string;
+    guestId?: string;
+    bookingId?: string;
+    propertyId?: string;
+    propertyName?: string;
+    tags?: string[];
+  }) {
+    // Check for duplicate phone
+    const existing = await prisma.guestProfile.findFirst({ where: { phone: data.phone, deletedAt: null } });
     if (existing) throw ApiError.conflict('Contact with this phone number already exists');
 
-    const contact: Contact = {
-      ...data,
-      id: `wc-${String(contacts.length + 1).padStart(3, '0')}`,
+    // Split name into first/last
+    const parts = data.name.trim().split(/\s+/);
+    const firstName = parts[0] || data.name;
+    const lastName = parts.slice(1).join(' ') || '';
+
+    const guest = await prisma.guestProfile.create({
+      data: {
+        firstName,
+        lastName,
+        phone: data.phone,
+        email: data.email,
+        tags: data.tags || [],
+      },
+    });
+
+    return {
+      id: guest.id,
+      name: `${guest.firstName} ${guest.lastName}`.trim(),
+      phone: guest.phone!,
+      email: guest.email || undefined,
+      guestId: guest.id,
+      bookingId: data.bookingId || undefined,
+      propertyId: data.propertyId || undefined,
+      propertyName: data.propertyName || undefined,
+      tags: (guest.tags as string[]) || [],
       isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: guest.createdAt.toISOString(),
+      updatedAt: guest.updatedAt.toISOString(),
     };
-    contacts.push(contact);
-    return contact;
   }
 
-  async updateContact(id: string, data: Partial<Contact>) {
-    const idx = contacts.findIndex((c) => c.id === id);
-    if (idx === -1) throw ApiError.notFound('Contact');
+  async updateContact(id: string, data: Partial<{
+    name: string;
+    email: string;
+    tags: string[];
+    isActive: boolean;
+    propertyId: string;
+    propertyName: string;
+  }>) {
+    const existing = await prisma.guestProfile.findUnique({ where: { id } });
+    if (!existing) throw ApiError.notFound('Contact');
 
-    contacts[idx] = { ...contacts[idx], ...data, updatedAt: new Date().toISOString() };
-    return contacts[idx];
+    const updateData: Prisma.GuestProfileUpdateInput = {};
+
+    if (data.name) {
+      const parts = data.name.trim().split(/\s+/);
+      updateData.firstName = parts[0];
+      updateData.lastName = parts.slice(1).join(' ') || '';
+    }
+    if (data.email !== undefined) updateData.email = data.email;
+    if (data.tags !== undefined) updateData.tags = data.tags;
+    if (data.isActive === false) updateData.deletedAt = new Date();
+    if (data.isActive === true) updateData.deletedAt = null;
+
+    const updated = await prisma.guestProfile.update({
+      where: { id },
+      data: updateData,
+    });
+
+    return {
+      id: updated.id,
+      name: `${updated.firstName} ${updated.lastName}`.trim(),
+      phone: updated.phone || '',
+      email: updated.email || undefined,
+      guestId: updated.id,
+      tags: (updated.tags as string[]) || [],
+      isActive: updated.deletedAt === null,
+      createdAt: updated.createdAt.toISOString(),
+      updatedAt: updated.updatedAt.toISOString(),
+    };
   }
 
-  // ── Messages ──
+  // ========================================================================
+  // MESSAGES  (backed by MessageThread + GuestMessage)
+  // ========================================================================
 
   async getMessageThread(contactId: string, filters: { page?: number; limit?: number }) {
-    const contact = contacts.find((c) => c.id === contactId);
-    if (!contact) throw ApiError.notFound('Contact');
+    // contactId is a GuestProfile id
+    const guest = await prisma.guestProfile.findUnique({ where: { id: contactId } });
+    if (!guest) throw ApiError.notFound('Contact');
 
     const { page = 1, limit = 50 } = filters;
-    let thread = messages.filter((m) => m.contactId === contactId);
-    thread.sort((a, b) => (a.createdAt > b.createdAt ? 1 : -1));
 
-    const total = thread.length;
-    const start = (page - 1) * limit;
-    const items = thread.slice(start, start + limit);
+    // Find or create the WhatsApp thread for this guest
+    let thread = await prisma.messageThread.findFirst({
+      where: { guestId: contactId, channel: 'WHATSAPP' },
+      orderBy: { lastMessageAt: 'desc' },
+    });
 
-    return { contact, messages: items, total, page, limit };
+    // If no thread exists, return empty
+    const contact = {
+      id: guest.id,
+      name: `${guest.firstName} ${guest.lastName}`.trim(),
+      phone: guest.phone || '',
+      email: guest.email || undefined,
+      guestId: guest.id,
+    };
+
+    if (!thread) {
+      return { contact, messages: [], total: 0, page, limit };
+    }
+
+    // Fetch all threads for this guest on WhatsApp and gather messages
+    const threads = await prisma.messageThread.findMany({
+      where: { guestId: contactId, channel: 'WHATSAPP' },
+      select: { id: true },
+    });
+    const threadIds = threads.map((t) => t.id);
+
+    const [total, dbMessages] = await Promise.all([
+      prisma.guestMessage.count({ where: { threadId: { in: threadIds } } }),
+      prisma.guestMessage.findMany({
+        where: { threadId: { in: threadIds } },
+        orderBy: { createdAt: 'asc' },
+        skip: (page - 1) * limit,
+        take: limit,
+        include: {
+          thread: {
+            select: {
+              bookingId: true,
+              propertyId: true,
+              property: { select: { name: true } },
+            },
+          },
+          sender: { select: { id: true, firstName: true, lastName: true } },
+        },
+      }),
+    ]);
+
+    const messages = dbMessages.map((m) => ({
+      id: m.id,
+      contactId,
+      contactName: `${guest.firstName} ${guest.lastName}`.trim(),
+      contactPhone: guest.phone || '',
+      direction: m.senderType === 'GUEST' ? 'INBOUND' as const : 'OUTBOUND' as const,
+      templateType: m.contentType === 'TEMPLATE' ? ((m.metadata as any)?.templateType || undefined) : undefined,
+      content: m.content,
+      mediaUrl: m.attachments ? ((m.attachments as any)?.url || undefined) : undefined,
+      status: this.deriveStatus(m),
+      statusUpdatedAt: (m.readAt || m.deliveredAt || m.sentAt).toISOString(),
+      bookingId: m.thread.bookingId || undefined,
+      propertyId: m.thread.propertyId || undefined,
+      sentBy: m.senderId || undefined,
+      createdAt: m.createdAt.toISOString(),
+      updatedAt: m.createdAt.toISOString(),
+    }));
+
+    return { contact, messages, total, page, limit };
   }
 
   async getMessageHistory(filters: {
@@ -391,184 +397,613 @@ export class WhatsAppService {
   }) {
     const { bookingId, propertyId, direction, status, templateType, search, page = 1, limit = 20 } = filters;
 
-    let filtered = [...messages];
-    if (bookingId) filtered = filtered.filter((m) => m.bookingId === bookingId);
-    if (propertyId) filtered = filtered.filter((m) => m.propertyId === propertyId);
-    if (direction) filtered = filtered.filter((m) => m.direction === direction);
-    if (status) filtered = filtered.filter((m) => m.status === status);
-    if (templateType) filtered = filtered.filter((m) => m.templateType === templateType);
-    if (search) {
-      const q = search.toLowerCase();
-      filtered = filtered.filter(
-        (m) =>
-          m.content.toLowerCase().includes(q) ||
-          m.contactName.toLowerCase().includes(q) ||
-          m.contactPhone.includes(q),
-      );
+    const where: Prisma.GuestMessageWhereInput = {
+      thread: { channel: 'WHATSAPP' },
+    };
+
+    if (bookingId) where.thread = { ...where.thread as any, bookingId };
+    if (propertyId) where.thread = { ...where.thread as any, propertyId };
+
+    if (direction === 'OUTBOUND') {
+      where.senderType = { in: ['STAFF', 'SYSTEM', 'AI'] };
+    } else if (direction === 'INBOUND') {
+      where.senderType = 'GUEST';
     }
 
-    filtered.sort((a, b) => (b.createdAt > a.createdAt ? 1 : -1));
-    const total = filtered.length;
-    const start = (page - 1) * limit;
-    const items = filtered.slice(start, start + limit);
+    // Status filter: map our status concepts to DB fields
+    if (status === 'READ') where.readAt = { not: null };
+    if (status === 'DELIVERED') {
+      where.deliveredAt = { not: null };
+      where.readAt = null;
+    }
+    if (status === 'SENT') {
+      where.deliveredAt = null;
+      where.readAt = null;
+      where.senderType = { in: ['STAFF', 'SYSTEM', 'AI'] };
+    }
+    if (status === 'FAILED') {
+      where.metadata = { path: ['status'], equals: 'FAILED' };
+    }
 
-    return { messages: items, total, page, limit };
+    if (templateType) {
+      where.contentType = 'TEMPLATE';
+      where.metadata = { path: ['templateType'], equals: templateType };
+    }
+
+    if (search) {
+      where.content = { contains: search, mode: 'insensitive' };
+    }
+
+    const [total, dbMessages] = await Promise.all([
+      prisma.guestMessage.count({ where }),
+      prisma.guestMessage.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+        include: {
+          thread: {
+            select: {
+              guestId: true,
+              bookingId: true,
+              propertyId: true,
+              guest: { select: { firstName: true, lastName: true, phone: true } },
+            },
+          },
+          sender: { select: { id: true, firstName: true, lastName: true } },
+        },
+      }),
+    ]);
+
+    const messages = dbMessages.map((m) => {
+      const guest = m.thread.guest;
+      const contactName = guest ? `${guest.firstName} ${guest.lastName}`.trim() : 'Unknown';
+      const contactPhone = guest?.phone || '';
+
+      return {
+        id: m.id,
+        contactId: m.thread.guestId || '',
+        contactName,
+        contactPhone,
+        direction: m.senderType === 'GUEST' ? 'INBOUND' as const : 'OUTBOUND' as const,
+        templateType: m.contentType === 'TEMPLATE' ? ((m.metadata as any)?.templateType || undefined) : undefined,
+        content: m.content,
+        mediaUrl: m.attachments ? ((m.attachments as any)?.url || undefined) : undefined,
+        status: this.deriveStatus(m),
+        statusUpdatedAt: (m.readAt || m.deliveredAt || m.sentAt).toISOString(),
+        bookingId: m.thread.bookingId || undefined,
+        propertyId: m.thread.propertyId || undefined,
+        sentBy: m.senderId || undefined,
+        createdAt: m.createdAt.toISOString(),
+        updatedAt: m.createdAt.toISOString(),
+      };
+    });
+
+    return { messages, total, page, limit };
   }
 
-  async sendMessage(data: {
-    contactId: string;
-    content: string;
-    templateType?: TemplateType;
-    bookingId?: string;
-    propertyId?: string;
-    mediaUrl?: string;
-  }, sentBy: string) {
-    const contact = contacts.find((c) => c.id === data.contactId);
-    if (!contact) throw ApiError.notFound('Contact');
+  async sendMessage(
+    data: {
+      contactId: string;
+      content: string;
+      templateType?: TemplateType;
+      bookingId?: string;
+      propertyId?: string;
+      mediaUrl?: string;
+    },
+    sentBy: string,
+  ) {
+    // Resolve the guest
+    const guest = await prisma.guestProfile.findUnique({ where: { id: data.contactId } });
+    if (!guest) throw ApiError.notFound('Contact');
+    if (!guest.phone) throw ApiError.badRequest('Contact has no phone number');
 
-    const message: Message = {
-      id: `wm-${String(msgCounter).padStart(3, '0')}`,
+    // Find or create a WhatsApp thread for this guest
+    let thread = await prisma.messageThread.findFirst({
+      where: {
+        guestId: data.contactId,
+        channel: 'WHATSAPP',
+        ...(data.bookingId ? { bookingId: data.bookingId } : {}),
+        status: { in: ['OPEN', 'AWAITING_REPLY'] },
+      },
+      orderBy: { lastMessageAt: 'desc' },
+    });
+
+    if (!thread) {
+      thread = await prisma.messageThread.create({
+        data: {
+          guestId: data.contactId,
+          channel: 'WHATSAPP',
+          bookingId: data.bookingId || null,
+          propertyId: data.propertyId || null,
+          status: 'OPEN',
+          lastMessageAt: new Date(),
+        },
+      });
+    }
+
+    // Determine content type
+    const contentType = data.templateType ? 'TEMPLATE' : 'TEXT';
+
+    // Build metadata
+    const metadata: Record<string, any> = {};
+    if (data.templateType) metadata.templateType = data.templateType;
+
+    // Actually send via Evolution API
+    const apiResult = await sendViaEvolutionApi(guest.phone, data.content);
+
+    if (!apiResult.success) {
+      metadata.status = 'FAILED';
+      metadata.errorMessage = apiResult.error;
+    }
+
+    // Save the message in DB regardless of API success/failure
+    const message = await prisma.guestMessage.create({
+      data: {
+        threadId: thread.id,
+        senderType: 'STAFF',
+        senderId: sentBy,
+        content: data.content,
+        contentType: contentType as any,
+        attachments: data.mediaUrl ? { url: data.mediaUrl } : undefined,
+        externalMessageId: apiResult.externalMessageId || null,
+        metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
+        sentAt: new Date(),
+        deliveredAt: apiResult.success ? new Date() : null,
+      },
+    });
+
+    // Update thread's lastMessageAt and status
+    await prisma.messageThread.update({
+      where: { id: thread.id },
+      data: {
+        lastMessageAt: new Date(),
+        status: 'AWAITING_REPLY',
+        propertyId: data.propertyId || thread.propertyId,
+        bookingId: data.bookingId || thread.bookingId,
+      },
+    });
+
+    // Return in the shape the controller/frontend expects
+    return {
+      id: message.id,
       contactId: data.contactId,
-      contactName: contact.name,
-      contactPhone: contact.phone,
-      direction: 'OUTBOUND',
+      contactName: `${guest.firstName} ${guest.lastName}`.trim(),
+      contactPhone: guest.phone,
+      direction: 'OUTBOUND' as const,
       templateType: data.templateType,
       content: data.content,
       mediaUrl: data.mediaUrl,
-      status: 'SENT',
+      status: apiResult.success ? 'SENT' : 'FAILED',
       statusUpdatedAt: new Date().toISOString(),
       bookingId: data.bookingId,
       propertyId: data.propertyId,
       sentBy,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      errorMessage: apiResult.error,
+      createdAt: message.createdAt.toISOString(),
+      updatedAt: message.createdAt.toISOString(),
     };
-
-    msgCounter++;
-    messages.push(message);
-
-    // Update contact's lastMessageAt
-    const cIdx = contacts.findIndex((c) => c.id === data.contactId);
-    if (cIdx !== -1) {
-      contacts[cIdx].lastMessageAt = message.createdAt;
-      contacts[cIdx].updatedAt = message.createdAt;
-    }
-
-    return message;
   }
 
-  async sendTemplateMessage(data: {
-    contactId: string;
-    templateId: string;
-    variables: Record<string, string>;
-    bookingId?: string;
-    propertyId?: string;
-  }, sentBy: string) {
-    const template = templates.find((t) => t.id === data.templateId);
+  async sendTemplateMessage(
+    data: {
+      contactId: string;
+      templateId: string;
+      variables: Record<string, string>;
+      bookingId?: string;
+      propertyId?: string;
+    },
+    sentBy: string,
+  ) {
+    // Fetch the template from DB
+    const template = await prisma.communicationTemplate.findUnique({
+      where: { id: data.templateId },
+      include: { variables: true },
+    });
     if (!template) throw ApiError.notFound('Template');
     if (!template.isActive) throw ApiError.badRequest('Template is not active');
 
+    // The body field is Json (multilingual). Extract the text content.
+    // It may be a plain string or an object like { en: "...", el: "..." }
+    let bodyText: string;
+    if (typeof template.body === 'string') {
+      bodyText = template.body;
+    } else if (typeof template.body === 'object' && template.body !== null) {
+      const bodyObj = template.body as Record<string, string>;
+      // Prefer English, fall back to first available
+      bodyText = bodyObj.en || bodyObj.default || Object.values(bodyObj)[0] || '';
+    } else {
+      bodyText = '';
+    }
+
     // Replace variables in template content
-    let content = template.content;
+    let content = bodyText;
     for (const [key, value] of Object.entries(data.variables)) {
       content = content.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value);
     }
 
-    return this.sendMessage({
-      contactId: data.contactId,
-      content,
-      templateType: template.type,
-      bookingId: data.bookingId,
-      propertyId: data.propertyId,
-    }, sentBy);
+    // Determine the templateType from the triggerEvent or name
+    const templateType = (template.triggerEvent || template.name || 'CUSTOM') as TemplateType;
+
+    return this.sendMessage(
+      {
+        contactId: data.contactId,
+        content,
+        templateType,
+        bookingId: data.bookingId,
+        propertyId: data.propertyId,
+      },
+      sentBy,
+    );
   }
 
-  async updateMessageStatus(id: string, status: MessageStatus) {
-    const idx = messages.findIndex((m) => m.id === id);
-    if (idx === -1) throw ApiError.notFound('Message');
+  async updateMessageStatus(id: string, status: 'QUEUED' | 'SENT' | 'DELIVERED' | 'READ' | 'FAILED') {
+    const message = await prisma.guestMessage.findUnique({ where: { id } });
+    if (!message) throw ApiError.notFound('Message');
 
-    messages[idx].status = status;
-    messages[idx].statusUpdatedAt = new Date().toISOString();
-    messages[idx].updatedAt = new Date().toISOString();
+    const updateData: Prisma.GuestMessageUpdateInput = {};
+    const now = new Date();
 
-    return messages[idx];
+    if (status === 'DELIVERED') {
+      updateData.deliveredAt = now;
+    } else if (status === 'READ') {
+      updateData.readAt = now;
+      updateData.isRead = true;
+      if (!message.deliveredAt) updateData.deliveredAt = now;
+    } else if (status === 'FAILED') {
+      updateData.metadata = { ...(message.metadata as any || {}), status: 'FAILED' };
+    }
+
+    const updated = await prisma.guestMessage.update({
+      where: { id },
+      data: updateData,
+      include: {
+        thread: {
+          select: {
+            guestId: true,
+            bookingId: true,
+            propertyId: true,
+            guest: { select: { firstName: true, lastName: true, phone: true } },
+          },
+        },
+      },
+    });
+
+    const guest = updated.thread.guest;
+    return {
+      id: updated.id,
+      contactId: updated.thread.guestId || '',
+      contactName: guest ? `${guest.firstName} ${guest.lastName}`.trim() : 'Unknown',
+      contactPhone: guest?.phone || '',
+      direction: updated.senderType === 'GUEST' ? 'INBOUND' as const : 'OUTBOUND' as const,
+      content: updated.content,
+      status,
+      statusUpdatedAt: now.toISOString(),
+      bookingId: updated.thread.bookingId || undefined,
+      propertyId: updated.thread.propertyId || undefined,
+      sentBy: updated.senderId || undefined,
+      createdAt: updated.createdAt.toISOString(),
+      updatedAt: now.toISOString(),
+    };
   }
 
-  // ── Templates ──
+  // ========================================================================
+  // TEMPLATES  (backed by CommunicationTemplate)
+  // ========================================================================
 
   async getTemplates(filters: { type?: string; isActive?: boolean }) {
-    let filtered = [...templates];
-    if (filters.type) filtered = filtered.filter((t) => t.type === filters.type);
-    if (filters.isActive !== undefined) filtered = filtered.filter((t) => t.isActive === filters.isActive);
-    return filtered;
+    const where: Prisma.CommunicationTemplateWhereInput = {
+      channel: 'WHATSAPP',
+    };
+
+    if (filters.type) {
+      where.triggerEvent = filters.type;
+    }
+    if (filters.isActive !== undefined) {
+      where.isActive = filters.isActive;
+    }
+
+    const templates = await prisma.communicationTemplate.findMany({
+      where,
+      include: { variables: true },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    return templates.map((t) => {
+      // Extract body text
+      let content: string;
+      if (typeof t.body === 'string') {
+        content = t.body;
+      } else if (typeof t.body === 'object' && t.body !== null) {
+        const bodyObj = t.body as Record<string, string>;
+        content = bodyObj.en || bodyObj.default || Object.values(bodyObj)[0] || '';
+      } else {
+        content = '';
+      }
+
+      return {
+        id: t.id,
+        type: t.triggerEvent || 'CUSTOM',
+        name: t.name,
+        language: 'en',
+        content,
+        variables: t.variables.map((v) => v.variableKey),
+        isActive: t.isActive,
+        createdAt: t.createdAt.toISOString(),
+        updatedAt: t.updatedAt.toISOString(),
+      };
+    });
   }
 
   async getTemplateById(id: string) {
-    const template = templates.find((t) => t.id === id);
-    if (!template) throw ApiError.notFound('Template');
-    return template;
-  }
+    const t = await prisma.communicationTemplate.findUnique({
+      where: { id },
+      include: { variables: true },
+    });
+    if (!t) throw ApiError.notFound('Template');
 
-  async createTemplate(data: Omit<MessageTemplate, 'id' | 'createdAt' | 'updatedAt'>) {
-    const template: MessageTemplate = {
-      ...data,
-      id: `wt-${String(templates.length + 1).padStart(3, '0')}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+    let content: string;
+    if (typeof t.body === 'string') {
+      content = t.body;
+    } else if (typeof t.body === 'object' && t.body !== null) {
+      const bodyObj = t.body as Record<string, string>;
+      content = bodyObj.en || bodyObj.default || Object.values(bodyObj)[0] || '';
+    } else {
+      content = '';
+    }
+
+    return {
+      id: t.id,
+      type: t.triggerEvent || 'CUSTOM',
+      name: t.name,
+      language: 'en',
+      content,
+      variables: t.variables.map((v) => v.variableKey),
+      isActive: t.isActive,
+      createdAt: t.createdAt.toISOString(),
+      updatedAt: t.updatedAt.toISOString(),
     };
-    templates.push(template);
-    return template;
   }
 
-  async updateTemplate(id: string, data: Partial<MessageTemplate>) {
-    const idx = templates.findIndex((t) => t.id === id);
-    if (idx === -1) throw ApiError.notFound('Template');
+  async createTemplate(data: {
+    type: string;
+    name: string;
+    language: string;
+    content: string;
+    variables: string[];
+    isActive: boolean;
+  }) {
+    const template = await prisma.communicationTemplate.create({
+      data: {
+        name: data.name,
+        channel: 'WHATSAPP',
+        triggerEvent: data.type,
+        body: { [data.language || 'en']: data.content },
+        isActive: data.isActive,
+        variables: {
+          create: data.variables.map((key) => ({
+            variableKey: key,
+            description: key,
+          })),
+        },
+      },
+      include: { variables: true },
+    });
 
-    templates[idx] = { ...templates[idx], ...data, updatedAt: new Date().toISOString() };
-    return templates[idx];
+    return {
+      id: template.id,
+      type: data.type,
+      name: template.name,
+      language: data.language || 'en',
+      content: data.content,
+      variables: template.variables.map((v) => v.variableKey),
+      isActive: template.isActive,
+      createdAt: template.createdAt.toISOString(),
+      updatedAt: template.updatedAt.toISOString(),
+    };
   }
 
-  // ── Stats ──
+  async updateTemplate(id: string, data: Partial<{
+    name: string;
+    content: string;
+    variables: string[];
+    isActive: boolean;
+  }>) {
+    const existing = await prisma.communicationTemplate.findUnique({
+      where: { id },
+      include: { variables: true },
+    });
+    if (!existing) throw ApiError.notFound('Template');
+
+    const updateData: Prisma.CommunicationTemplateUpdateInput = {};
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.isActive !== undefined) updateData.isActive = data.isActive;
+    if (data.content !== undefined) {
+      // Merge into existing body
+      const oldBody = (typeof existing.body === 'object' && existing.body !== null)
+        ? existing.body as Record<string, string>
+        : {};
+      updateData.body = { ...oldBody, en: data.content };
+    }
+
+    // Handle variables update: delete old, create new
+    if (data.variables !== undefined) {
+      updateData.variables = {
+        deleteMany: {},
+        create: data.variables.map((key) => ({
+          variableKey: key,
+          description: key,
+        })),
+      };
+    }
+
+    const updated = await prisma.communicationTemplate.update({
+      where: { id },
+      data: updateData,
+      include: { variables: true },
+    });
+
+    let content: string;
+    if (typeof updated.body === 'string') {
+      content = updated.body;
+    } else if (typeof updated.body === 'object' && updated.body !== null) {
+      const bodyObj = updated.body as Record<string, string>;
+      content = bodyObj.en || bodyObj.default || Object.values(bodyObj)[0] || '';
+    } else {
+      content = '';
+    }
+
+    return {
+      id: updated.id,
+      type: updated.triggerEvent || 'CUSTOM',
+      name: updated.name,
+      language: 'en',
+      content,
+      variables: updated.variables.map((v) => v.variableKey),
+      isActive: updated.isActive,
+      createdAt: updated.createdAt.toISOString(),
+      updatedAt: updated.updatedAt.toISOString(),
+    };
+  }
+
+  // ========================================================================
+  // STATS (aggregated from GuestMessage)
+  // ========================================================================
 
   async getStats() {
-    const totalMessages = messages.length;
-    const outbound = messages.filter((m) => m.direction === 'OUTBOUND').length;
-    const inbound = messages.filter((m) => m.direction === 'INBOUND').length;
+    // Count messages by direction and status using DB aggregations
+    const [
+      totalMessages,
+      outboundCount,
+      inboundCount,
+      deliveredCount,
+      readCount,
+      failedCount,
+      activeContacts,
+      totalContacts,
+      templateMessages,
+    ] = await Promise.all([
+      // Total messages on WhatsApp threads
+      prisma.guestMessage.count({
+        where: { thread: { channel: 'WHATSAPP' } },
+      }),
+      // Outbound (STAFF, SYSTEM, AI)
+      prisma.guestMessage.count({
+        where: {
+          thread: { channel: 'WHATSAPP' },
+          senderType: { in: ['STAFF', 'SYSTEM', 'AI'] },
+        },
+      }),
+      // Inbound (GUEST)
+      prisma.guestMessage.count({
+        where: {
+          thread: { channel: 'WHATSAPP' },
+          senderType: 'GUEST',
+        },
+      }),
+      // Delivered (has deliveredAt but not readAt)
+      prisma.guestMessage.count({
+        where: {
+          thread: { channel: 'WHATSAPP' },
+          deliveredAt: { not: null },
+          readAt: null,
+          senderType: { in: ['STAFF', 'SYSTEM', 'AI'] },
+        },
+      }),
+      // Read
+      prisma.guestMessage.count({
+        where: {
+          thread: { channel: 'WHATSAPP' },
+          readAt: { not: null },
+          senderType: { in: ['STAFF', 'SYSTEM', 'AI'] },
+        },
+      }),
+      // Failed
+      prisma.guestMessage.count({
+        where: {
+          thread: { channel: 'WHATSAPP' },
+          metadata: { path: ['status'], equals: 'FAILED' },
+        },
+      }),
+      // Active contacts: guests with a phone and at least one WhatsApp thread
+      prisma.guestProfile.count({
+        where: {
+          deletedAt: null,
+          phone: { not: null },
+          messageThreads: { some: { channel: 'WHATSAPP' } },
+        },
+      }),
+      // Total contacts with phone
+      prisma.guestProfile.count({
+        where: {
+          deletedAt: null,
+          phone: { not: null },
+        },
+      }),
+      // Template messages grouped by type
+      prisma.guestMessage.findMany({
+        where: {
+          thread: { channel: 'WHATSAPP' },
+          contentType: 'TEMPLATE',
+        },
+        select: { metadata: true },
+      }),
+    ]);
+
+    // Derive "sent" = outbound - delivered - read - failed
+    const sentCount = Math.max(0, outboundCount - deliveredCount - readCount - failedCount);
 
     const byStatus = {
-      queued: messages.filter((m) => m.status === 'QUEUED').length,
-      sent: messages.filter((m) => m.status === 'SENT').length,
-      delivered: messages.filter((m) => m.status === 'DELIVERED').length,
-      read: messages.filter((m) => m.status === 'READ').length,
-      failed: messages.filter((m) => m.status === 'FAILED').length,
+      queued: 0,
+      sent: sentCount,
+      delivered: deliveredCount,
+      read: readCount,
+      failed: failedCount,
     };
 
+    // Build templateType distribution
     const byTemplate: Record<string, number> = {};
-    for (const m of messages) {
-      if (m.templateType) {
-        byTemplate[m.templateType] = (byTemplate[m.templateType] || 0) + 1;
+    for (const m of templateMessages) {
+      const tType = (m.metadata as any)?.templateType;
+      if (tType) {
+        byTemplate[tType] = (byTemplate[tType] || 0) + 1;
       }
     }
 
-    const activeContacts = contacts.filter((c) => c.isActive).length;
-    const deliveryRate = outbound > 0
-      ? Math.round(((byStatus.delivered + byStatus.read) / outbound) * 100)
+    const deliveryRate = outboundCount > 0
+      ? Math.round(((deliveredCount + readCount) / outboundCount) * 100)
       : 0;
-    const readRate = outbound > 0
-      ? Math.round((byStatus.read / outbound) * 100)
+    const readRate = outboundCount > 0
+      ? Math.round((readCount / outboundCount) * 100)
       : 0;
 
     return {
       totalMessages,
-      outbound,
-      inbound,
+      outbound: outboundCount,
+      inbound: inboundCount,
       byStatus,
       byTemplate,
       activeContacts,
-      totalContacts: contacts.length,
+      totalContacts,
       deliveryRate,
       readRate,
     };
+  }
+
+  // ========================================================================
+  // Private helpers
+  // ========================================================================
+
+  private deriveStatus(msg: {
+    readAt: Date | null;
+    deliveredAt: Date | null;
+    sentAt: Date;
+    metadata: any;
+  }): string {
+    if ((msg.metadata as any)?.status === 'FAILED') return 'FAILED';
+    if (msg.readAt) return 'READ';
+    if (msg.deliveredAt) return 'DELIVERED';
+    return 'SENT';
   }
 }
 

@@ -1,5 +1,6 @@
+import { Prisma } from '@prisma/client';
+import { prisma } from '../../prisma/client';
 import { ApiError } from '../../utils/api-error';
-import { randomUUID } from 'crypto';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -82,98 +83,12 @@ export interface SimulationResult {
 export type CreatePricingRuleInput = Omit<PricingRule, 'id' | 'createdAt'>;
 export type UpdatePricingRuleInput = Partial<Omit<PricingRule, 'id' | 'createdAt'>>;
 
-// ── Seed data ───────────────────────────────────────────────────────────────
+// ── Constants ─────────────────────────────────────────────────────────────
 
-const seedRules: PricingRule[] = [
-  {
-    id: randomUUID(),
-    name: 'Summer Peak',
-    type: 'SEASONAL',
-    priority: 100,
-    isActive: true,
-    conditions: { dateRange: { start: '07-01', end: '08-31' } },
-    adjustment: { type: 'PERCENTAGE', value: 30, applyTo: 'NIGHTLY_RATE' },
-    createdAt: new Date('2026-01-15'),
-  },
-  {
-    id: randomUUID(),
-    name: 'Winter Low',
-    type: 'SEASONAL',
-    priority: 90,
-    isActive: true,
-    conditions: { dateRange: { start: '11-01', end: '02-28' } },
-    adjustment: { type: 'PERCENTAGE', value: -20, applyTo: 'NIGHTLY_RATE' },
-    createdAt: new Date('2026-01-15'),
-  },
-  {
-    id: randomUUID(),
-    name: 'Weekend Premium',
-    type: 'DAY_OF_WEEK',
-    priority: 80,
-    isActive: true,
-    conditions: { daysOfWeek: [5, 6] }, // Friday, Saturday
-    adjustment: { type: 'PERCENTAGE', value: 15, applyTo: 'NIGHTLY_RATE' },
-    createdAt: new Date('2026-01-20'),
-  },
-  {
-    id: randomUUID(),
-    name: 'Weekly Discount',
-    type: 'LENGTH_OF_STAY',
-    priority: 70,
-    isActive: true,
-    conditions: { minNights: 7 },
-    adjustment: { type: 'PERCENTAGE', value: -10, applyTo: 'TOTAL' },
-    createdAt: new Date('2026-02-01'),
-  },
-  {
-    id: randomUUID(),
-    name: 'Monthly Discount',
-    type: 'LENGTH_OF_STAY',
-    priority: 75,
-    isActive: true,
-    conditions: { minNights: 28 },
-    adjustment: { type: 'PERCENTAGE', value: -25, applyTo: 'TOTAL' },
-    createdAt: new Date('2026-02-01'),
-  },
-  {
-    id: randomUUID(),
-    name: 'Last Minute',
-    type: 'LAST_MINUTE',
-    priority: 60,
-    isActive: true,
-    conditions: { maxDaysBeforeCheckin: 3 },
-    adjustment: { type: 'PERCENTAGE', value: -15, applyTo: 'NIGHTLY_RATE' },
-    createdAt: new Date('2026-02-10'),
-  },
-  {
-    id: randomUUID(),
-    name: 'Early Bird',
-    type: 'EARLY_BIRD',
-    priority: 50,
-    isActive: true,
-    conditions: { minDaysBeforeCheckin: 60 },
-    adjustment: { type: 'PERCENTAGE', value: -5, applyTo: 'NIGHTLY_RATE' },
-    createdAt: new Date('2026-02-10'),
-  },
-  {
-    id: randomUUID(),
-    name: 'High Occupancy',
-    type: 'OCCUPANCY',
-    priority: 40,
-    isActive: true,
-    conditions: { minOccupancyPercent: 80 },
-    adjustment: { type: 'PERCENTAGE', value: 10, applyTo: 'NIGHTLY_RATE' },
-    createdAt: new Date('2026-03-01'),
-  },
-];
-
-// ── Helpers ────────────────────────────────────────────────────────────────
-
-const BASE_NIGHTLY_RATE = 150; // EUR default
-const CLEANING_FEE = 80;
 const SERVICE_FEE_PERCENT = 0.05;
 const TAX_PERCENT = 0.13;
-const DEFAULT_OCCUPANCY = 65; // simulated occupancy %
+
+// ── Helpers ────────────────────────────────────────────────────────────────
 
 function parseMonthDay(md: string): { month: number; day: number } {
   const [m, d] = md.split('-').map(Number);
@@ -210,71 +125,428 @@ function daysBetween(d1: Date, d2: Date): number {
   return Math.round(ms / (1000 * 60 * 60 * 24));
 }
 
+// ── SystemSetting key for pricing rules ────────────────────────────────────
+// We store complex pricing rules (with conditions, adjustments, type)
+// in SystemSetting as JSON, keyed by "pricing_rules.{ruleId}".
+// SeasonalRate + RatePlan from DB are also loaded and merged.
+
+const PRICING_RULES_KEY = 'pricing_rules.all';
+
+/**
+ * Load custom pricing rules stored in SystemSetting.
+ * These cover advanced types: DAY_OF_WEEK, LENGTH_OF_STAY, LAST_MINUTE,
+ * EARLY_BIRD, OCCUPANCY, CUSTOM, and SEASONAL rules with month-day ranges.
+ */
+async function loadCustomRules(): Promise<PricingRule[]> {
+  const row = await prisma.systemSetting.findUnique({
+    where: { key: PRICING_RULES_KEY },
+  });
+  if (!row) return [];
+  try {
+    return JSON.parse(row.value) as PricingRule[];
+  } catch {
+    return [];
+  }
+}
+
+async function saveCustomRules(rules: PricingRule[]): Promise<void> {
+  const value = JSON.stringify(rules);
+  await prisma.systemSetting.upsert({
+    where: { key: PRICING_RULES_KEY },
+    create: {
+      key: PRICING_RULES_KEY,
+      value,
+      category: 'pricing',
+      label: 'Custom pricing rules',
+    },
+    update: { value },
+  });
+}
+
+/**
+ * Convert DB SeasonalRate records into PricingRule shape so they
+ * can be used uniformly in the calculation engine.
+ */
+function seasonalRatesToPricingRules(
+  rates: {
+    id: string;
+    propertyId: string;
+    name: string;
+    startDate: Date;
+    endDate: Date;
+    nightlyRate: Prisma.Decimal;
+    minStay: number | null;
+    priority: number;
+    createdAt: Date;
+  }[],
+): PricingRule[] {
+  return rates.map((sr) => ({
+    id: sr.id,
+    propertyId: sr.propertyId,
+    name: sr.name,
+    type: 'SEASONAL' as PricingRuleType,
+    priority: sr.priority,
+    isActive: true,
+    conditions: {
+      dateRange: {
+        start: `${String(sr.startDate.getMonth() + 1).padStart(2, '0')}-${String(sr.startDate.getDate()).padStart(2, '0')}`,
+        end: `${String(sr.endDate.getMonth() + 1).padStart(2, '0')}-${String(sr.endDate.getDate()).padStart(2, '0')}`,
+      },
+    },
+    adjustment: {
+      type: 'OVERRIDE' as const,
+      value: Number(sr.nightlyRate),
+      applyTo: 'NIGHTLY_RATE' as const,
+    },
+    validFrom: sr.startDate.toISOString().split('T')[0],
+    validTo: sr.endDate.toISOString().split('T')[0],
+    createdAt: sr.createdAt,
+  }));
+}
+
+/**
+ * Convert DB RatePlan records into PricingRule shape.
+ */
+function ratePlansToPricingRules(
+  plans: {
+    id: string;
+    propertyId: string;
+    name: string;
+    type: string;
+    baseRate: Prisma.Decimal;
+    minStay: number;
+    maxStay: number | null;
+    isActive: boolean;
+    validFrom: Date | null;
+    validTo: Date | null;
+    createdAt: Date;
+  }[],
+): PricingRule[] {
+  return plans
+    .filter((p) => p.isActive)
+    .map((rp) => {
+      let ruleType: PricingRuleType = 'CUSTOM';
+      const conditions: PricingCondition = {};
+
+      switch (rp.type) {
+        case 'WEEKEND':
+          ruleType = 'DAY_OF_WEEK';
+          conditions.daysOfWeek = [5, 6]; // Friday, Saturday
+          break;
+        case 'WEEKLY':
+          ruleType = 'LENGTH_OF_STAY';
+          conditions.minNights = 7;
+          break;
+        case 'MONTHLY':
+          ruleType = 'LENGTH_OF_STAY';
+          conditions.minNights = 28;
+          break;
+        case 'LAST_MINUTE':
+          ruleType = 'LAST_MINUTE';
+          conditions.maxDaysBeforeCheckin = 3;
+          break;
+        case 'EARLY_BIRD':
+          ruleType = 'EARLY_BIRD';
+          conditions.minDaysBeforeCheckin = 30;
+          break;
+        default:
+          ruleType = 'CUSTOM';
+      }
+
+      if (rp.minStay > 1) conditions.minNights = rp.minStay;
+      if (rp.maxStay) conditions.maxNights = rp.maxStay;
+
+      return {
+        id: rp.id,
+        propertyId: rp.propertyId,
+        name: rp.name,
+        type: ruleType,
+        priority: 50,
+        isActive: rp.isActive,
+        conditions,
+        adjustment: {
+          type: 'OVERRIDE' as const,
+          value: Number(rp.baseRate),
+          applyTo: 'NIGHTLY_RATE' as const,
+        },
+        validFrom: rp.validFrom?.toISOString().split('T')[0],
+        validTo: rp.validTo?.toISOString().split('T')[0],
+        createdAt: rp.createdAt,
+      };
+    });
+}
+
+/**
+ * Load all pricing rules: custom rules from SystemSetting + SeasonalRate + RatePlan from DB.
+ */
+async function loadAllRules(propertyId?: string): Promise<PricingRule[]> {
+  const customRules = await loadCustomRules();
+
+  // Fetch SeasonalRate records from DB
+  const srWhere: Prisma.SeasonalRateWhereInput = {};
+  if (propertyId) srWhere.propertyId = propertyId;
+
+  const seasonalRates = await prisma.seasonalRate.findMany({ where: srWhere });
+  const srRules = seasonalRatesToPricingRules(seasonalRates);
+
+  // Fetch RatePlan records from DB
+  const rpWhere: Prisma.RatePlanWhereInput = { isActive: true };
+  if (propertyId) rpWhere.propertyId = propertyId;
+
+  const ratePlans = await prisma.ratePlan.findMany({ where: rpWhere });
+  const rpRules = ratePlansToPricingRules(ratePlans);
+
+  // Merge: custom rules, then DB-sourced rules
+  // De-duplicate by id
+  const allRules = [...customRules, ...srRules, ...rpRules];
+  const seen = new Set<string>();
+  const deduped: PricingRule[] = [];
+  for (const rule of allRules) {
+    if (!seen.has(rule.id)) {
+      seen.add(rule.id);
+      deduped.push(rule);
+    }
+  }
+
+  // Filter by propertyId if needed
+  let result = deduped;
+  if (propertyId) {
+    result = result.filter((r) => !r.propertyId || r.propertyId === propertyId);
+  }
+
+  return result.sort((a, b) => b.priority - a.priority);
+}
+
+/**
+ * Get the base nightly rate and cleaning fee for a property.
+ */
+async function getPropertyRates(propertyId: string): Promise<{
+  baseRate: number;
+  cleaningFee: number;
+}> {
+  const property = await prisma.property.findUnique({
+    where: { id: propertyId },
+    select: { baseNightlyRate: true, cleaningFee: true },
+  });
+  if (property) {
+    return {
+      baseRate: Number(property.baseNightlyRate),
+      cleaningFee: Number(property.cleaningFee),
+    };
+  }
+  // Fallback defaults
+  return { baseRate: 150, cleaningFee: 80 };
+}
+
+/**
+ * Estimate current occupancy % for a property (last 30 days).
+ */
+async function getOccupancyPercent(propertyId: string): Promise<number> {
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now);
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const bookings = await prisma.booking.findMany({
+    where: {
+      propertyId,
+      status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+      checkIn: { lte: now },
+      checkOut: { gte: thirtyDaysAgo },
+    },
+    select: { checkIn: true, checkOut: true },
+  });
+
+  let occupiedDays = 0;
+  for (const b of bookings) {
+    const start = b.checkIn > thirtyDaysAgo ? b.checkIn : thirtyDaysAgo;
+    const end = b.checkOut < now ? b.checkOut : now;
+    const days = daysBetween(start, end);
+    if (days > 0) occupiedDays += days;
+  }
+
+  return Math.round((occupiedDays / 30) * 100);
+}
+
 // ── Service ─────────────────────────────────────────────────────────────────
 
 export class PricingService {
-  private rules: PricingRule[] = [...seedRules];
-
   // ── CRUD ────────────────────────────────────────────────────────────────
 
   async getAllRules(propertyId?: string): Promise<PricingRule[]> {
-    let result = [...this.rules];
-    if (propertyId) {
-      result = result.filter(
-        (r) => !r.propertyId || r.propertyId === propertyId,
-      );
-    }
-    return result.sort((a, b) => b.priority - a.priority);
+    return loadAllRules(propertyId);
   }
 
   async getRuleById(id: string): Promise<PricingRule> {
-    const rule = this.rules.find((r) => r.id === id);
-    if (!rule) {
-      throw ApiError.notFound('PricingRule');
+    // Check custom rules first
+    const customRules = await loadCustomRules();
+    const custom = customRules.find((r) => r.id === id);
+    if (custom) return custom;
+
+    // Check SeasonalRate
+    const sr = await prisma.seasonalRate.findUnique({ where: { id } });
+    if (sr) {
+      return seasonalRatesToPricingRules([sr])[0];
     }
-    return rule;
+
+    // Check RatePlan
+    const rp = await prisma.ratePlan.findUnique({ where: { id } });
+    if (rp) {
+      return ratePlansToPricingRules([rp])[0];
+    }
+
+    throw ApiError.notFound('PricingRule');
   }
 
   async createRule(data: CreatePricingRuleInput): Promise<PricingRule> {
+    // For SEASONAL type with full date range (YYYY-MM-DD), create a SeasonalRate in DB
+    if (
+      data.type === 'SEASONAL' &&
+      data.adjustment.applyTo === 'NIGHTLY_RATE' &&
+      data.adjustment.type === 'OVERRIDE' &&
+      data.validFrom &&
+      data.validTo &&
+      data.propertyId
+    ) {
+      const sr = await prisma.seasonalRate.create({
+        data: {
+          propertyId: data.propertyId,
+          name: data.name,
+          startDate: new Date(data.validFrom),
+          endDate: new Date(data.validTo),
+          nightlyRate: data.adjustment.value,
+          minStay: data.conditions.minNights || null,
+          priority: data.priority,
+        },
+      });
+      return seasonalRatesToPricingRules([sr])[0];
+    }
+
+    // For everything else, store as a custom rule in SystemSetting
+    const customRules = await loadCustomRules();
     const rule: PricingRule = {
-      id: randomUUID(),
+      id: crypto.randomUUID(),
       ...data,
       createdAt: new Date(),
     };
-    this.rules.push(rule);
+    customRules.push(rule);
+    await saveCustomRules(customRules);
     return rule;
   }
 
   async updateRule(id: string, data: UpdatePricingRuleInput): Promise<PricingRule> {
-    const idx = this.rules.findIndex((r) => r.id === id);
-    if (idx === -1) {
-      throw ApiError.notFound('PricingRule');
+    // Try custom rules first
+    const customRules = await loadCustomRules();
+    const customIdx = customRules.findIndex((r) => r.id === id);
+
+    if (customIdx !== -1) {
+      customRules[customIdx] = { ...customRules[customIdx], ...data };
+      await saveCustomRules(customRules);
+      return customRules[customIdx];
     }
 
-    this.rules[idx] = {
-      ...this.rules[idx],
-      ...data,
-    };
-    return this.rules[idx];
+    // Try SeasonalRate
+    const sr = await prisma.seasonalRate.findUnique({ where: { id } });
+    if (sr) {
+      const updateData: Prisma.SeasonalRateUpdateInput = {};
+      if (data.name !== undefined) updateData.name = data.name;
+      if (data.priority !== undefined) updateData.priority = data.priority;
+      if (data.conditions?.minNights !== undefined) updateData.minStay = data.conditions.minNights;
+      if (data.validFrom) updateData.startDate = new Date(data.validFrom);
+      if (data.validTo) updateData.endDate = new Date(data.validTo);
+      if (data.adjustment?.value !== undefined) updateData.nightlyRate = data.adjustment.value;
+
+      const updated = await prisma.seasonalRate.update({
+        where: { id },
+        data: updateData,
+      });
+      return seasonalRatesToPricingRules([updated])[0];
+    }
+
+    // Try RatePlan
+    const rp = await prisma.ratePlan.findUnique({ where: { id } });
+    if (rp) {
+      const updateData: Prisma.RatePlanUpdateInput = {};
+      if (data.name !== undefined) updateData.name = data.name;
+      if (data.isActive !== undefined) updateData.isActive = data.isActive;
+      if (data.adjustment?.value !== undefined) updateData.baseRate = data.adjustment.value;
+      if (data.validFrom) updateData.validFrom = new Date(data.validFrom);
+      if (data.validTo) updateData.validTo = new Date(data.validTo);
+      if (data.conditions?.minNights !== undefined) updateData.minStay = data.conditions.minNights;
+      if (data.conditions?.maxNights !== undefined) updateData.maxStay = data.conditions.maxNights;
+
+      const updated = await prisma.ratePlan.update({
+        where: { id },
+        data: updateData,
+      });
+      return ratePlansToPricingRules([updated])[0];
+    }
+
+    throw ApiError.notFound('PricingRule');
   }
 
   async deleteRule(id: string): Promise<{ message: string }> {
-    const idx = this.rules.findIndex((r) => r.id === id);
-    if (idx === -1) {
-      throw ApiError.notFound('PricingRule');
+    // Try custom rules first
+    const customRules = await loadCustomRules();
+    const customIdx = customRules.findIndex((r) => r.id === id);
+
+    if (customIdx !== -1) {
+      customRules.splice(customIdx, 1);
+      await saveCustomRules(customRules);
+      return { message: 'Pricing rule deleted successfully' };
     }
-    this.rules.splice(idx, 1);
-    return { message: 'Pricing rule deleted successfully' };
+
+    // Try SeasonalRate
+    const sr = await prisma.seasonalRate.findUnique({ where: { id } });
+    if (sr) {
+      await prisma.seasonalRate.delete({ where: { id } });
+      return { message: 'Pricing rule deleted successfully' };
+    }
+
+    // Try RatePlan
+    const rp = await prisma.ratePlan.findUnique({ where: { id } });
+    if (rp) {
+      await prisma.ratePlan.delete({ where: { id } });
+      return { message: 'Pricing rule deleted successfully' };
+    }
+
+    throw ApiError.notFound('PricingRule');
   }
 
   async toggleRule(id: string): Promise<PricingRule> {
-    const idx = this.rules.findIndex((r) => r.id === id);
-    if (idx === -1) {
-      throw ApiError.notFound('PricingRule');
+    // Try custom rules first
+    const customRules = await loadCustomRules();
+    const customIdx = customRules.findIndex((r) => r.id === id);
+
+    if (customIdx !== -1) {
+      customRules[customIdx].isActive = !customRules[customIdx].isActive;
+      await saveCustomRules(customRules);
+      return customRules[customIdx];
     }
 
-    this.rules[idx].isActive = !this.rules[idx].isActive;
-    return this.rules[idx];
+    // Try RatePlan (has isActive field)
+    const rp = await prisma.ratePlan.findUnique({ where: { id } });
+    if (rp) {
+      const updated = await prisma.ratePlan.update({
+        where: { id },
+        data: { isActive: !rp.isActive },
+      });
+      return ratePlansToPricingRules([updated])[0];
+    }
+
+    // SeasonalRate doesn't have isActive, so we handle it via custom rules:
+    // If found, we copy it into custom rules where isActive can be toggled
+    const sr = await prisma.seasonalRate.findUnique({ where: { id } });
+    if (sr) {
+      // Convert to custom rule with isActive = false and remove from DB
+      const asRule = seasonalRatesToPricingRules([sr])[0];
+      asRule.isActive = false;
+      customRules.push(asRule);
+      await saveCustomRules(customRules);
+      await prisma.seasonalRate.delete({ where: { id } });
+      return asRule;
+    }
+
+    throw ApiError.notFound('PricingRule');
   }
 
   // ── Price Calculation ─────────────────────────────────────────────────
@@ -293,13 +565,13 @@ export class PricingService {
       throw ApiError.badRequest('Check-out must be after check-in');
     }
 
+    const { baseRate, cleaningFee: propertyCleaningFee } = await getPropertyRates(propertyId);
     const daysBeforeCheckin = daysBetween(new Date(), checkInDate);
+    const occupancyPercent = await getOccupancyPercent(propertyId);
 
     // Get applicable rules sorted by priority (highest first)
-    const applicableRules = this.rules
-      .filter((r) => r.isActive)
-      .filter((r) => !r.propertyId || r.propertyId === propertyId)
-      .sort((a, b) => b.priority - a.priority);
+    const allRules = await loadAllRules(propertyId);
+    const applicableRules = allRules.filter((r) => r.isActive);
 
     // Calculate nightly rates for each day
     let totalNightlyAmount = 0;
@@ -309,11 +581,12 @@ export class PricingService {
     for (let i = 0; i < nights; i++) {
       const currentDate = new Date(checkInDate);
       currentDate.setDate(currentDate.getDate() + i);
-      let nightRate = BASE_NIGHTLY_RATE;
+      let nightRate = baseRate;
 
       for (const rule of applicableRules) {
         if (rule.adjustment.applyTo !== 'NIGHTLY_RATE') continue;
-        if (!this.ruleApplies(rule, currentDate, nights, daysBeforeCheckin, guests)) continue;
+        if (!this.ruleApplies(rule, currentDate, nights, daysBeforeCheckin, guests, occupancyPercent))
+          continue;
 
         let adj = 0;
         if (rule.adjustment.type === 'PERCENTAGE') {
@@ -328,7 +601,8 @@ export class PricingService {
         }
 
         if (adj !== 0) {
-          nightlyAdjustmentTotals[rule.name] = (nightlyAdjustmentTotals[rule.name] || 0) + adj;
+          nightlyAdjustmentTotals[rule.name] =
+            (nightlyAdjustmentTotals[rule.name] || 0) + adj;
         }
       }
 
@@ -351,10 +625,13 @@ export class PricingService {
     let subtotal = totalNightlyAmount;
 
     // Cleaning fee adjustments
-    let cleaningFee = CLEANING_FEE;
+    let cleaningFee = propertyCleaningFee;
     for (const rule of applicableRules) {
       if (rule.adjustment.applyTo !== 'CLEANING_FEE') continue;
-      if (!this.ruleApplies(rule, checkInDate, nights, daysBeforeCheckin, guests)) continue;
+      if (
+        !this.ruleApplies(rule, checkInDate, nights, daysBeforeCheckin, guests, occupancyPercent)
+      )
+        continue;
 
       let adj = 0;
       if (rule.adjustment.type === 'PERCENTAGE') {
@@ -381,7 +658,10 @@ export class PricingService {
     // Total adjustments (e.g. length-of-stay discounts)
     for (const rule of applicableRules) {
       if (rule.adjustment.applyTo !== 'TOTAL') continue;
-      if (!this.ruleApplies(rule, checkInDate, nights, daysBeforeCheckin, guests)) continue;
+      if (
+        !this.ruleApplies(rule, checkInDate, nights, daysBeforeCheckin, guests, occupancyPercent)
+      )
+        continue;
 
       let adj = 0;
       if (rule.adjustment.type === 'PERCENTAGE') {
@@ -407,7 +687,7 @@ export class PricingService {
     const total = Math.round((subtotal + cleaningFee + serviceFee + taxes) * 100) / 100;
 
     return {
-      baseRate: BASE_NIGHTLY_RATE,
+      baseRate,
       nights,
       subtotal: Math.round(subtotal * 100) / 100,
       adjustments,
@@ -429,20 +709,22 @@ export class PricingService {
     const today = new Date();
     const dailyPrices: DailyPrice[] = [];
 
-    const applicableRules = this.rules
+    const { baseRate } = await getPropertyRates(propertyId);
+    const occupancyPercent = await getOccupancyPercent(propertyId);
+
+    const allRules = await loadAllRules(propertyId);
+    const applicableRules = allRules
       .filter((r) => r.isActive)
-      .filter((r) => !r.propertyId || r.propertyId === propertyId)
-      .filter((r) => r.adjustment.applyTo === 'NIGHTLY_RATE')
-      .sort((a, b) => b.priority - a.priority);
+      .filter((r) => r.adjustment.applyTo === 'NIGHTLY_RATE');
 
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month - 1, day);
       const daysBeforeCheckin = daysBetween(today, date);
-      let price = BASE_NIGHTLY_RATE;
+      let price = baseRate;
       const appliedRules: string[] = [];
 
       for (const rule of applicableRules) {
-        if (!this.ruleApplies(rule, date, 1, daysBeforeCheckin, 2)) continue;
+        if (!this.ruleApplies(rule, date, 1, daysBeforeCheckin, 2, occupancyPercent)) continue;
 
         if (rule.adjustment.type === 'PERCENTAGE') {
           price += price * (rule.adjustment.value / 100);
@@ -472,6 +754,7 @@ export class PricingService {
     scenarios: SimulationScenario[],
   ): Promise<SimulationResult[]> {
     const results: SimulationResult[] = [];
+    const { baseRate, cleaningFee } = await getPropertyRates(propertyId);
 
     for (const scenario of scenarios) {
       const withRules = await this.calculatePrice(
@@ -485,19 +768,19 @@ export class PricingService {
       const checkInDate = new Date(scenario.checkIn);
       const checkOutDate = new Date(scenario.checkOut);
       const nights = daysBetween(checkInDate, checkOutDate);
-      const subtotal = BASE_NIGHTLY_RATE * nights;
+      const subtotal = baseRate * nights;
       const serviceFee = Math.round(subtotal * SERVICE_FEE_PERCENT * 100) / 100;
-      const taxes = Math.round((subtotal + CLEANING_FEE) * TAX_PERCENT * 100) / 100;
+      const taxes = Math.round((subtotal + cleaningFee) * TAX_PERCENT * 100) / 100;
 
       const withoutRules: PriceBreakdown = {
-        baseRate: BASE_NIGHTLY_RATE,
+        baseRate,
         nights,
         subtotal,
         adjustments: [],
-        cleaningFee: CLEANING_FEE,
+        cleaningFee,
         serviceFee,
         taxes,
-        total: Math.round((subtotal + CLEANING_FEE + serviceFee + taxes) * 100) / 100,
+        total: Math.round((subtotal + cleaningFee + serviceFee + taxes) * 100) / 100,
       };
 
       results.push({ scenario, withRules, withoutRules });
@@ -514,6 +797,7 @@ export class PricingService {
     nights: number,
     daysBeforeCheckin: number,
     _guests: number,
+    occupancyPercent: number = 65,
   ): boolean {
     const c = rule.conditions;
 
@@ -547,11 +831,11 @@ export class PricingService {
       return false;
     }
 
-    // Occupancy (simulated)
-    if (c.minOccupancyPercent !== undefined && DEFAULT_OCCUPANCY < c.minOccupancyPercent) {
+    // Occupancy (real data from DB)
+    if (c.minOccupancyPercent !== undefined && occupancyPercent < c.minOccupancyPercent) {
       return false;
     }
-    if (c.maxOccupancyPercent !== undefined && DEFAULT_OCCUPANCY > c.maxOccupancyPercent) {
+    if (c.maxOccupancyPercent !== undefined && occupancyPercent > c.maxOccupancyPercent) {
       return false;
     }
 

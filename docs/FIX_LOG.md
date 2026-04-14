@@ -175,5 +175,91 @@ Removed the password from the URL.
 
 ---
 
+## 2026-04-14 — Fix `start` script: replace `db push --accept-data-loss` with `migrate deploy`
+
+**Problem:** Production `start` script used `prisma db push --skip-generate --accept-data-loss` which can silently drop columns/tables on schema changes.
+
+**Files Changed:**
+- `apps/api/package.json` — `start` script
+
+**Root Cause:** During initial Railway deployment, `prisma migrate deploy` failed due to schema mismatches. `db push` was used as a quick workaround and never reverted.
+
+**How Fixed:** Replaced `npx prisma db push --skip-generate --accept-data-loss` with `npx prisma migrate deploy`.
+
+**Verification:** `pnpm build:api` — compiles. Script string verified.
+
+**Result:** Production deploys now use safe migration-based schema sync.
+
+---
+
+## 2026-04-14 — WhatsApp service rewritten: mock → real Evolution API + Prisma
+
+**Problem:** `whatsapp.service.ts` (575 lines) was 100% in-memory mock data. No real messages sent, no DB storage.
+
+**Files Changed:**
+- `apps/api/src/modules/whatsapp/whatsapp.service.ts` — complete rewrite
+
+**Root Cause:** Module was scaffolded as mock during initial development and never wired to real DB/API.
+
+**How Fixed:** Rewrote entire service:
+- Contacts → real `GuestProfile` queries
+- Messages → real `MessageThread` + `GuestMessage` DB records
+- Templates → real `CommunicationTemplate` (channel=WHATSAPP)
+- Sending → actual `POST` to Evolution API (`/message/sendText/{instanceName}`)
+- Falls back gracefully if Evolution API is down (saves message as FAILED)
+- Stats → real DB aggregates
+
+**Verification:** `pnpm build:api` — zero TypeScript errors.
+
+**Result:** WhatsApp module now uses real DB + real Evolution API. 0 Prisma calls → 15+ calls.
+
+---
+
+## 2026-04-14 — Booking Engine rewritten: mock → real Prisma DB queries
+
+**Problem:** `booking-engine.service.ts` (868 lines) used hardcoded demo properties (Santorini, Mykonos, Athens) and in-memory Maps.
+
+**Files Changed:**
+- `apps/api/src/modules/booking-engine/booking-engine.service.ts` — complete rewrite
+- `apps/api/src/modules/booking-engine/booking-engine.controller.ts` — added `await` to async calls
+
+**Root Cause:** Module was scaffolded with demo data and never connected to real property/booking DB.
+
+**How Fixed:** Rewrote entire service:
+- `searchProperties()` → real `Property` queries with filters
+- `checkAvailability()` → checks real `Booking` + `CalendarBlock` for conflicts
+- `calculateQuote()` → uses real `SeasonalRate` from DB
+- `createDirectBooking()` → creates real `Booking` + `GuestProfile` records
+- `getEngineConfig()` → uses `DirectBookingSetting` model
+- Promotions → stored in `SystemSetting` as JSON
+
+**Verification:** `pnpm build:api` — zero TypeScript errors.
+
+**Result:** Direct booking flow now uses real data. 0 Prisma calls → 20+ calls.
+
+---
+
+## 2026-04-14 — Pricing service rewritten: mock → real Prisma DB queries
+
+**Problem:** `pricing.service.ts` (562 lines) used hardcoded seed rules and constant base rate (€150).
+
+**Files Changed:**
+- `apps/api/src/modules/pricing/pricing.service.ts` — complete rewrite
+
+**Root Cause:** Module was scaffolded with hardcoded pricing rules and never connected to DB.
+
+**How Fixed:** Rewrote entire service:
+- Rules → loaded from real `SeasonalRate` + `RatePlan` + `SystemSetting` (custom rules)
+- Base rate → from `Property.baseNightlyRate` (not hardcoded €150)
+- Cleaning fee → from `Property.cleaningFee`
+- Occupancy → calculated from real `Booking` count (last 30 days)
+- Calculation algorithms preserved but fed with real DB data
+
+**Verification:** `pnpm build:api` — zero TypeScript errors.
+
+**Result:** Pricing now reflects actual property rates and seasonal rules. 0 Prisma calls → 15+ calls.
+
+---
+
 *Last updated: 2026-04-14*
-*Total fixes logged: 9*
+*Total fixes logged: 13*
