@@ -860,6 +860,20 @@ app.get('/api/v1/docs', (_req, res) => {
   res.json(apiDocumentation);
 });
 
+// JSON 404 catch-all for any /api/v1/* path that wasn't matched above.
+// Without this, Express's default handler returns an HTML "Cannot GET ..." page,
+// which breaks frontends that expect JSON (e.g. /api/v1/settings → was returning HTML).
+app.use('/api/v1/*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    error: {
+      code: 'NOT_FOUND',
+      message: `API endpoint not found: ${req.method} ${req.originalUrl}`,
+    },
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // Error handler (must be last)
 app.use(errorHandler);
 

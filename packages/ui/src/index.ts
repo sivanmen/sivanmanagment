@@ -21,3 +21,4 @@ export {
 } from './components/composed/NotificationBell';
 export { StatusBadge, type StatusBadgeProps } from './components/composed/StatusBadge';
 export { DataExportButton, type ExportColumn } from './components/composed/DataExportButton';
+export { PreviewBanner, type PreviewBannerProps } from './components/composed/PreviewBanner';

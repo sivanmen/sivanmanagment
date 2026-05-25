@@ -11,7 +11,15 @@
 ### ~~2. Booking Engine module is 100% mock~~ — RESOLVED 2026-04-14
 ### ~~3. Pricing module is 100% mock~~ — RESOLVED 2026-04-14
 
-_(No remaining CRITICAL issues)_
+_(No remaining CRITICAL issues. P0 security batch resolved 2026-05-25 — see FIX_LOG.)_
+
+---
+
+## P0 SECURITY (resolved 2026-05-25)
+### ~~Public `/payments/company-info` leaking tax ID + IBAN~~ — RESOLVED
+### ~~Hardcoded dev-default JWT_SECRET / ENCRYPTION_KEY fallbacks in code~~ — RESOLVED (fail-fast in prod)
+### ~~Stripe webhook handler did not refuse on missing signing secret~~ — RESOLVED (503 + log)
+### ~~Mock pages indistinguishable from real ones~~ — RESOLVED (PreviewBanner on 16 routes)
 
 ---
 
@@ -42,11 +50,8 @@ _(No remaining CRITICAL issues)_
 
 ## MEDIUM
 
-### 9. Company info endpoint is public — exposes tax/IBAN
-- **Endpoint:** `GET /api/v1/payments/company-info`
-- **File:** `apps/api/src/modules/payments/payments.routes.ts`
-- **Risk:** Tax number and IBAN visible to anyone
-- **Fix:** Move behind auth middleware or at least rate-limit
+### ~~9. Company info endpoint is public — exposes tax/IBAN~~ — RESOLVED 2026-05-25
+*Promoted to P0 during audit. Endpoint now requires authMiddleware. See FIX_LOG.*
 
 ### 10. Accounting module is mock
 - **File:** `apps/api/src/modules/accounting/accounting.service.ts`
@@ -67,10 +72,8 @@ _(No remaining CRITICAL issues)_
 - **Impact:** No automated checks before deploy
 - **Fix:** Add `.github/workflows/ci.yml` with build + typecheck
 
-### 16. `/api/v1/settings` returns 404
-- **Expected:** JSON error response
-- **Actual:** HTML error page
-- **Note:** System settings are at `/api/v1/system-settings` — this is just a missing catch-all
+### ~~16. `/api/v1/settings` returns 404 with HTML~~ — RESOLVED 2026-05-25
+*Added JSON 404 catch-all on `/api/v1/*` in `app.ts`. See FIX_LOG.*
 
 ### 17. 8 Client pages not connected to API
 - **Pages:** Affiliate, Messages, My Calendar, Pending Approvals, Portfolio Overview, Settings

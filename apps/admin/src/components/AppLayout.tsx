@@ -12,12 +12,14 @@ import {
   Moon,
   Sun,
 } from 'lucide-react';
+import { PreviewBanner } from './PreviewBanner';
 import Sidebar from './Sidebar';
 import CommandPalette from './CommandPalette';
 import NotificationBell from './NotificationBell';
 import LanguageSelector from './LanguageSelector';
 import { useAuthStore } from '../store/auth.store';
 import { useUIStore } from '../store/ui.store';
+import { findMockPage } from '../lib/mock-pages';
 
 // Breadcrumb mapping
 const pathLabels: Record<string, string> = {
@@ -55,6 +57,26 @@ const pathLabels: Record<string, string> = {
   'booking-extras': 'Booking Extras',
   users: 'User Management',
 };
+
+/**
+ * Renders a PreviewBanner above the page content for any route whose
+ * backend is still mock or whose integration is unconfigured. Reads from
+ * `apps/admin/src/lib/mock-pages.ts`.
+ */
+function PageBannerSlot() {
+  const { pathname } = useLocation();
+  const entry = findMockPage(pathname);
+  if (!entry) return null;
+  return (
+    <div className="px-4 lg:px-6 pt-4">
+      <PreviewBanner
+        variant={entry.variant}
+        label={entry.label}
+        description={entry.description}
+      />
+    </div>
+  );
+}
 
 function Breadcrumbs() {
   const location = useLocation();
@@ -222,6 +244,7 @@ export default function AppLayout() {
 
         {/* Main content */}
         <main className="flex-1 overflow-auto">
+          <PageBannerSlot />
           <Outlet />
         </main>
       </div>

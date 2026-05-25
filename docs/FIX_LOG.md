@@ -261,5 +261,43 @@ Removed the password from the URL.
 
 ---
 
-*Last updated: 2026-04-14*
-*Total fixes logged: 13*
+## 2026-05-25 — P0 security hardening batch (audit-driven)
+
+**Problem:** Post-spec audit (LLM council) surfaced multiple P0 risks that block launch:
+1. `GET /api/v1/payments/company-info` was PUBLIC, leaking company tax ID and bank IBAN to any unauthenticated caller (GDPR breach + phishing fuel).
+2. Hardcoded fallback secrets in `config/index.ts`: `JWT_SECRET='dev-jwt-secret-change-me'`, `JWT_REFRESH_SECRET='dev-refresh-secret-change-me'`, `ENCRYPTION_KEY='dev-encryption-key-32-bytes-long!'`. If env vars went missing in production, prod would silently fall back to attacker-known values, allowing JWT forgery and decryption of any encrypted blob.
+3. `STRIPE_WEBHOOK_SECRET` defaulted to empty string; Stripe webhook handler would still attempt verification but failure modes were not explicit — anyone could probe the endpoint.
+4. `/api/v1/settings` and any other unknown `/api/v1/*` path returned HTML "Cannot GET ..." (Express default), breaking frontends that expect JSON.
+5. 14 admin pages + 6 owner-portal pages showed mock data without any indication to the user — owners would believe statements/finances/etc. were real.
+
+**Files Changed:**
+- `apps/api/src/modules/payments/payments.routes.ts` — moved `GET /company-info` BEHIND `authMiddleware`; `/stripe/config` (publishable key only) remains the sole public payment route.
+- `apps/api/src/config/index.ts` — rewrote with `requireSecret()` helper that throws on boot in production if JWT_SECRET / JWT_REFRESH_SECRET / ENCRYPTION_KEY are missing or still set to dev sentinels. Added `optionalSecret()` helper that warns (not throws) for integration keys (SendGrid, Evolution, R2, Anthropic, OpenAI, Google AI, Stripe, PayPal). Added `config.isProd` boolean. Added `config.observability.sentryDsn` field for future Sentry wiring. Added `config.whatsapp.defaultInstance`, `config.ai.defaultProvider`, `config.storage.endpoint`.
+- `apps/api/src/modules/payments/stripe-webhook.controller.ts` — explicit 503 refusal when `STRIPE_WEBHOOK_SECRET` is unset, preventing any webhook processing without signature verification.
+- `apps/api/src/app.ts` — added JSON 404 catch-all on `/api/v1/*` so the API always returns the standard `{success:false, error:{code:'NOT_FOUND', ...}}` envelope (matches PROJECT_RULES section 14).
+- `apps/admin/src/components/PreviewBanner.tsx` (new) — Sivan-Obsidian-styled banner component with 3 variants (`preview`, `coming-soon`, `degraded`).
+- `apps/admin/src/lib/mock-pages.ts` (new) — central registry of admin routes still backed by mock data. Easy to remove an entry when a backend is wired.
+- `apps/admin/src/components/AppLayout.tsx` — renders `<PreviewBanner>` at top of any route matched in the mock-pages registry. Sivan can release a page just by deleting its entry.
+- `apps/client/src/components/PreviewBanner.tsx`, `apps/client/src/lib/mock-pages.ts`, `apps/client/src/components/AppLayout.tsx` — same pattern for owner portal (6 mock pages: affiliate, messages, calendar, approvals, portfolio, settings).
+- `packages/ui/src/components/composed/PreviewBanner.tsx` + `packages/ui/src/index.ts` — added a shared version of PreviewBanner to the design system for future use (apps currently use their own inlined copy since `@sivan/ui` is not wired as a workspace dependency in the apps yet — to be done in a follow-up).
+
+**Root Cause:** Project moved fast through scaffolding; security defaults survived into production. Mock pages were never visually distinguished from real ones.
+
+**How Verified:** `pnpm build` — all 3 packages compile with zero TS errors. (`api`: tsc Done. `admin`: vite ✓ built. `client`: vite ✓ built.)
+
+**Required Operator Action Post-Deploy:**
+- Rotate Railway production secrets to verify the fail-fast path works:
+  ```bash
+  railway variables --set "JWT_SECRET=$(openssl rand -hex 32)" --service api
+  railway variables --set "JWT_REFRESH_SECRET=$(openssl rand -hex 32)" --service api
+  railway variables --set "ENCRYPTION_KEY=$(openssl rand -hex 32)" --service api
+  ```
+  Note: existing JWTs will become invalid (users must re-login). This is intentional.
+- Confirm `STRIPE_WEBHOOK_SECRET` is set; if not, the webhook endpoint will now return 503 instead of silently bypassing verification.
+
+**Result:** Public IBAN/tax-ID leak closed. Production fail-fast in place for the 4 most dangerous default secrets. Stripe webhook refuses to operate without signing secret. Mock pages now wear a visible badge so owners and admins are never misled. Foundation laid for P1 integration work (SendGrid, Evolution WhatsApp, R2, Anthropic).
+
+---
+
+*Last updated: 2026-05-25*
+*Total fixes logged: 14*

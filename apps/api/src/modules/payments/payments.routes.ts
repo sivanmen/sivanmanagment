@@ -11,14 +11,15 @@ const router = Router();
 // included here. See app.ts for: POST /api/v1/payments/stripe/webhook
 
 // --- Public routes (no auth required) ---
-// Get Stripe publishable key for frontend initialization
+// Get Stripe publishable key for frontend initialization (safe to expose)
 router.get('/stripe/config', (req, res, next) => stripeConfigController.getPublicConfig(req, res, next));
-
-// Get company billing info (for receipts/invoices)
-router.get('/company-info', (req, res, next) => stripeConfigController.getCompanyInfo(req, res, next));
 
 // All payment routes below require authentication
 router.use(authMiddleware);
+
+// Company billing info (for receipts/invoices) — AUTH REQUIRED (contains tax ID + IBAN)
+// SECURITY: was previously public, leaking tax number + bank IBAN. Now requires authenticated user.
+router.get('/company-info', (req, res, next) => stripeConfigController.getCompanyInfo(req, res, next));
 
 // --- Stripe Configuration (admin) ---
 router.get('/stripe/status', requireAdmin, (req, res, next) => stripeConfigController.getConnectionStatus(req, res, next));

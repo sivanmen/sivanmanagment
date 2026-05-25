@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { stripeService } from './stripe.service';
+import { config } from '../../config';
 
 /**
  * Stripe Webhook Controller
@@ -11,6 +12,20 @@ import { stripeService } from './stripe.service';
  * configured in app.ts BEFORE express.json().
  */
 export async function stripeWebhookHandler(req: Request, res: Response, _next: NextFunction) {
+  // SECURITY: Refuse to process any webhook if signing secret is not configured.
+  // Without verification, any attacker could POST a fake payment_intent.succeeded
+  // and mark bookings as paid.
+  if (!config.stripe.webhookSecret) {
+    console.error('[StripeWebhook] REFUSING webhook — STRIPE_WEBHOOK_SECRET is not configured');
+    return res.status(503).json({
+      success: false,
+      error: {
+        code: 'WEBHOOK_NOT_CONFIGURED',
+        message: 'Webhook signing secret is not configured on the server',
+      },
+    });
+  }
+
   const signature = req.headers['stripe-signature'] as string;
 
   if (!signature) {

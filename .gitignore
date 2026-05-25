@@ -10,3 +10,9 @@ coverage/
 *.tsbuildinfo
 .prisma/
 .claude/
+.claude-flow/
+
+# Local AI agent state (Ruflo / RuVector)
+agentdb.rvf
+agentdb.rvf.lock
+ruvector.db
