@@ -432,3 +432,66 @@ Until these are set, each service stays in "skipped/degraded" mode and the UI sh
 
 *Last updated: 2026-05-25*
 *Total fixes logged: 18*
+
+---
+
+## 2026-05-25 — Batch C: Audit module real + Sentry + Status + Encryption + AADE stub + Tests
+
+**Problem:** Final P2 + spec-improvements bundle, all coupled:
+1. `audit.service.ts` was mock (273L, 0 prisma) while `audit.middleware.ts` had been populating the real AuditLog table — admin Audit page showed canned data while the real log accumulated invisibly.
+2. No error monitoring — silent failures in jobs/webhooks/cron only visible by tailing Railway logs.
+3. No internal `/status` page — couldn't tell at a glance which integrations were live.
+4. No field-level encryption helper for IBANs/passports/etc.
+5. No AADE myDATA scaffolding for the Greek e-invoice legal requirement.
+6. Zero automated tests in 109K LOC.
+
+**Files Changed:**
+
+*New libs (apps/api/src/lib/):*
+- `observability.ts` — Sentry wrapper. `initObservability()` boots before app load; `captureError(err, ctx)` façade; `isSentryActive()` for the status page. No-op when SENTRY_DSN missing.
+- `encryption.ts` — AES-256-GCM helpers. `encrypt()` / `decrypt()` / `isEncrypted()` / `maskIban()`. Output prefixed `enc:v1:` for version + detection. SHA-256 key derivation from `config.encryption.key`. Designed for explicit call-site usage (no silent magic).
+- `aade-mydata.service.ts` — STUB for Greek AADE myDATA e-invoice submission. Interface frozen (`submitInvoice` / `cancelInvoice` / `pull`) so downstream code can call it now and get `{ok:false, skipped:true}` until credentials are provisioned. Records every attempt to AccountingEntry for the auditor.
+
+*Rewrites:*
+- `audit/audit.service.ts` (273L mock → ~190L real): full Prisma-backed query API over the `AuditLog` model populated by `audit.middleware.ts`. `getAuditLog` with all filters, pagination, search; `getAuditEntry`, `getEntityHistory`, `getUserActivity`, `getStats`. Projects schema's `entityType` field to legacy `entity` shape so frontend doesn't need to change.
+
+*New endpoints:*
+- `GET /api/v1/status` — public status endpoint. Returns green/red per integration: database, redis, stripe, sendgrid, evolution_whatsapp, cloudflare_r2, anthropic_ai, aade_mydata, sentry. Used to power an internal status page; does NOT expose any secrets.
+
+*Sentry wiring:*
+- `apps/api/src/index.ts` — `initObservability()` called BEFORE `app` import so boot errors are captured. `unhandledRejection` and `uncaughtException` handlers now also `captureError()`.
+
+*Tests:*
+- `apps/api/vitest.config.ts` (new), `apps/api/src/__tests__/smoke.test.ts` (new). 8 passing tests covering encryption round-trip + null handling + double-encrypt guard + IBAN masking + config module load. First tests in the repo (was 0).
+
+*Packages:*
+- `apps/api/package.json`: +`@sentry/node`, +`vitest` (dev), +`supertest` (dev), +`@types/supertest` (dev).
+
+**How Verified:** `pnpm --filter api test` — 8 passing. `pnpm build` — all 3 packages compile clean.
+
+**Result:** Audit module real (273L mock → 0; 0 prisma → 6+ prisma calls). Sentry ready (turns on when SENTRY_DSN set). `/status` endpoint live. Encryption + AADE stubs in place for downstream code to call. Smoke tests bootstrap the test infrastructure.
+
+---
+
+## 2026-05-25 — Modules retained as mock (intentional, with PreviewBanner)
+
+The following modules remain mock-backed and continue to display the
+PreviewBanner. They require schema additions or significant new business
+logic and were deemed lower-priority than the launch path:
+
+| Module | Why kept as mock |
+|--------|------------------|
+| `teams` | No `Team` Prisma model exists. Requires schema migration + RBAC redesign. Single-operator can use the `users` module directly. |
+| `accounting` | The schema has `AccountingEntry` (single ledger entry) but no `Account` / `JournalEntry` models. Full double-entry bookkeeping is a separate project. Real income/expense already flow through `finance` module. |
+| `automations` | `MarketingJourney` schema exists; the rules engine to evaluate triggers is a multi-day build. |
+| `direct-booking` | Duplicate of `booking-engine` which is real (29 prisma calls). Routes can be merged in a follow-up. |
+| `scoring`, `iot`, `bulk`, `integrations`, `translations`, `webhooks` | All require analytics pipelines / device protocols / large schema additions. PreviewBanner makes the situation visible to the user. |
+
+These appear in the admin nav with the visible "Preview / Coming soon"
+banner so Sivan and any staff member can see at a glance which screens
+are real and which are not.
+
+---
+
+*Last updated: 2026-05-25*
+*Total fixes logged: 20*

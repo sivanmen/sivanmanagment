@@ -76,13 +76,14 @@
 | booking-engine | booking-engine.service.ts | 20+ | Direct booking, availability, quotes from DB |
 | pricing | pricing.service.ts | 15+ | SeasonalRate + RatePlan from DB, real calculations |
 
-### MOCK (10 modules — return hardcoded/in-memory data, 0 Prisma calls)
+### MOCK (9 modules — return hardcoded/in-memory data, 0 Prisma calls)
 
 | Module | Lines | Priority to Fix |
 |--------|-------|----------------|
 | ~~ai~~ | ~~251~~ | ~~HIGH~~ ✅ REAL (2026-05-25) — Anthropic SDK wired, AiConversation persisted |
 | ~~users~~ | ~~616~~ | ~~HIGH — user management is fake~~ ✅ REAL (2026-05-25, 21 prisma calls) |
 | ~~owner-portal~~ | ~~508~~ | ~~LOW~~ ✅ REAL (2026-05-25, Owner.metadata + Booking + reports.service) |
+| ~~audit~~ | ~~273~~ | ~~MED~~ ✅ REAL (2026-05-25, queries AuditLog populated by middleware) |
 | **automations** | 432 | MEDIUM — no real automation engine |
 | **teams** | 322 | MEDIUM — team management fake |
 | **uploads** | 184 | MEDIUM — R2 not connected |
@@ -137,6 +138,8 @@ Affiliate, Messages, My Calendar, Pending Approvals, Portfolio Overview, Setting
 | **Booking.com API** | NOT CONNECTED | Same as Airbnb |
 | **PayPal** | NOT CONFIGURED | Keys empty in env |
 | **n8n** | NOT CONNECTED | Webhook URL configured but no flows |
+| **AADE myDATA** (new 2026-05-25) | STUB | Interface in place; awaiting credentials + WSDL onboarding |
+| **Sentry** (new 2026-05-25) | READY | Wired in apps/api/src/index.ts; set SENTRY_DSN to enable |
 
 ---
 
@@ -146,6 +149,7 @@ Affiliate, Messages, My Calendar, Pending Approvals, Portfolio Overview, Setting
 |-----|----------|--------|
 | iCal Feed Sync | Every 15 minutes | RUNNING |
 | Expense Expiry Check | Every hour | RUNNING |
+| **Stripe Reconcile** (new 2026-05-25) | Daily 02:00 UTC | RUNNING (no-op when STRIPE_SECRET_KEY missing) |
 
 ---
 

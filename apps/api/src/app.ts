@@ -113,6 +113,67 @@ app.get('/api/v1/health', (_req, res) => {
   });
 });
 
+// Status endpoint — public, returns one-line green/red per integration.
+// Use to power an internal status page; doesn't expose any secrets.
+app.get('/api/v1/status', async (_req, res) => {
+  const { uploadService } = require('./modules/uploads/upload.service');
+  const { emailService } = require('./lib/email.service');
+  const { aiClient } = require('./lib/ai.service');
+  const { aadeMyDataService } = require('./lib/aade-mydata.service');
+  const { getRedisClient } = require('./lib/redis');
+  const { isSentryActive } = require('./lib/observability');
+
+  // DB
+  let db = { ok: false, error: 'not_checked' as string | undefined };
+  try {
+    const { prisma } = require('./prisma/client');
+    await prisma.$queryRaw`SELECT 1`;
+    db = { ok: true, error: undefined };
+  } catch (err: any) {
+    db = { ok: false, error: err.message };
+  }
+
+  // Redis
+  let redis = { ok: false, error: 'not_checked' as string | undefined };
+  try {
+    const r = getRedisClient();
+    if (r) {
+      await r.ping();
+      redis = { ok: true, error: undefined };
+    } else {
+      redis = { ok: false, error: 'not_initialised' };
+    }
+  } catch (err: any) {
+    redis = { ok: false, error: err.message };
+  }
+
+  const r2 = await uploadService.ping();
+  const email = emailService.ping();
+  const ai = { ok: aiClient.isConfigured(), configured: aiClient.isConfigured() };
+  const aade = { ok: aadeMyDataService.isConfigured(), configured: aadeMyDataService.isConfigured() };
+
+  const checks = {
+    database: { ok: db.ok, ...(db.error ? { error: db.error } : {}) },
+    redis: { ok: redis.ok, ...(redis.error ? { error: redis.error } : {}) },
+    stripe: { ok: !!config.stripe.secretKey, configured: !!config.stripe.secretKey, webhookSigned: !!config.stripe.webhookSecret },
+    stripeWebhookSecret: { ok: !!config.stripe.webhookSecret },
+    sendgrid: { ok: email.ok, configured: email.configured },
+    evolution_whatsapp: { ok: !!config.whatsapp.apiKey, configured: !!config.whatsapp.apiKey },
+    cloudflare_r2: { ok: r2.ok, latencyMs: r2.latencyMs, ...(r2.error ? { error: r2.error } : {}) },
+    anthropic_ai: { ok: ai.ok, configured: ai.configured },
+    aade_mydata: { ok: aade.ok, configured: aade.configured },
+    sentry: { ok: isSentryActive(), configured: !!config.observability.sentryDsn },
+  };
+
+  const overall = checks.database.ok && checks.redis.ok && checks.stripe.ok;
+  res.status(overall ? 200 : 503).json({
+    overall: overall ? 'ok' : 'degraded',
+    timestamp: new Date().toISOString(),
+    env: config.env,
+    checks,
+  });
+});
+
 // Deep health check — verifies DB + Redis connectivity
 app.get('/api/v1/health/deep', async (_req, res) => {
   const checks: Record<string, { status: string; latencyMs?: number; error?: string }> = {};

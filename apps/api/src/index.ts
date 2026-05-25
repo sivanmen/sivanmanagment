@@ -1,4 +1,9 @@
 import { config } from './config';
+import { initObservability, captureError } from './lib/observability';
+
+// Initialize Sentry FIRST so any boot error is captured.
+initObservability();
+
 import app from './app';
 import { prisma } from './prisma/client';
 import { initRedis, disconnectRedis } from './lib/redis';
@@ -48,13 +53,15 @@ async function shutdown(signal: string) {
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));
 
-// Catch unhandled rejections
+// Catch unhandled rejections — log AND report to Sentry
 process.on('unhandledRejection', (reason, promise) => {
   console.error('[FATAL] Unhandled Rejection at:', promise, 'reason:', reason);
+  captureError(reason, { kind: 'unhandledRejection' });
 });
 
 process.on('uncaughtException', (error) => {
   console.error('[FATAL] Uncaught Exception:', error);
+  captureError(error, { kind: 'uncaughtException' });
   process.exit(1);
 });
 

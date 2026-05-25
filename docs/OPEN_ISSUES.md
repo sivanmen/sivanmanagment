@@ -36,9 +36,8 @@ _(No remaining CRITICAL issues. P0 security batch resolved 2026-05-25 — see FI
 ### ~~7. Users module is mock~~ — RESOLVED 2026-05-25
 *Rewrote users.service.ts with real Prisma CRUD. 0 → 21 Prisma calls. See FIX_LOG.*
 
-### 8. No automated tests
-- **Impact:** No safety net for regressions
-- **Minimum:** E2E tests for auth, bookings, payments flows
+### ~~8. No automated tests~~ — PARTIALLY RESOLVED 2026-05-25
+*Vitest + supertest installed; 8 smoke tests passing (encryption + config load). Integration tests against test Postgres remain as follow-up work.*
 
 ---
 
@@ -50,8 +49,8 @@ _(No remaining CRITICAL issues. P0 security batch resolved 2026-05-25 — see FI
 ### 10. Accounting module is mock
 - **File:** `apps/api/src/modules/accounting/accounting.service.ts`
 
-### 11. Audit module is mock — no real audit trail
-- **File:** `apps/api/src/modules/audit/audit.service.ts`
+### ~~11. Audit module is mock~~ — RESOLVED 2026-05-25
+*Rewrote audit.service.ts to query the real AuditLog table populated by audit.middleware.ts.*
 
 ### 12. Teams module is mock
 - **File:** `apps/api/src/modules/teams/teams.service.ts`
