@@ -1,0 +1,56 @@
+name: Deploy to Railway
+
+# Triggers a Railway redeploy of all three services after a successful
+# push to main. Replaces the inactive "GitHub source" auto-deploy that
+# Railway used to do — gives us a single, observable pipeline.
+#
+# Required GitHub secret:
+#   RAILWAY_TOKEN — generate at https://railway.com/account/tokens
+#                   (project token also works; pick "Account" for multi-service)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # Allow manual trigger from Actions tab
+
+concurrency:
+  group: railway-deploy
+  cancel-in-progress: false
+
+jobs:
+  redeploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.repository == 'sivanmen/sivanmanagment' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: |
+          curl -fsSL https://railway.com/install.sh | sh
+          echo "$HOME/.railway/bin" >> $GITHUB_PATH
+
+      - name: Verify token
+        run: railway whoami
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+      - name: Redeploy api
+        run: railway redeploy --service api --yes
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+      - name: Redeploy admin
+        run: railway redeploy --service admin --yes
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+      - name: Redeploy client
+        run: railway redeploy --service client --yes
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+      - name: Smoke check
+        run: |
+          # Give the api ~2 min to restart, then check /health
+          sleep 120
+          curl -sf https://api.sivanmanagment.com/api/v1/health | jq .

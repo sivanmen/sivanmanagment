@@ -495,3 +495,34 @@ are real and which are not.
 
 *Last updated: 2026-05-25*
 *Total fixes logged: 20*
+
+---
+
+## 2026-05-25 — Batch D: typecheck fix + auto-deploy workflow + runbook
+
+**Problem:** Three loose ends:
+1. `pnpm typecheck` failed in `packages/shared` due to tsconfig not including JSON locale files. The CI workflow ran build but not typecheck — would silently miss type errors going forward.
+2. Railway auto-deploy from GitHub source was apparently inactive — four commits sat on main for hours with the production container untouched.
+3. No single document an operator could hand to a teammate to run a full launch sequence.
+
+**Files Changed:**
+- `packages/shared/tsconfig.json` — added `resolveJsonModule: true`, `include` now covers `.ts` AND `.json`. Pre-existing bug, not introduced by recent work, but fixed because it blocks `pnpm typecheck`.
+- `.github/workflows/deploy-railway.yml` (new) — runs on push to main, redeploys api/admin/client via Railway CLI, smoke-checks `/health`. Requires `RAILWAY_TOKEN` repo secret.
+- `docs/OPERATOR_RUNBOOK.md` (new) — step-by-step deploy / secret-rotation / integration-enable / verification / rollback / ongoing-tasks runbook.
+
+**How Verified:**
+- `pnpm typecheck` — all 5 packages clean (was 1 failing).
+- `pnpm test` — 8/8 passing.
+- `pnpm build` — all 3 apps build clean.
+
+**Result:** CI typecheck stops being a paper tiger. Future pushes auto-deploy. The runbook means anyone can complete the launch sequence without spelunking through fix logs.
+
+**Operator action remaining (cannot be done from this session):**
+- Add `RAILWAY_TOKEN` to GitHub Secrets (or trigger one manual Railway redeploy).
+- Rotate JWT/encryption secrets per runbook section 3.
+- Add integration API keys per runbook section 4.
+
+---
+
+*Last updated: 2026-05-25*
+*Total fixes logged: 21*
