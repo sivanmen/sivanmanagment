@@ -13,6 +13,7 @@ import { prisma } from '../../prisma/client';
 import { ApiError } from '../../utils/api-error';
 import { WhatsAppService } from '../notifications/channels/whatsapp.service';
 import { systemSettingsService } from '../system-settings/system-settings.service';
+import { emailService } from '../../lib/email.service';
 
 class StripeService {
   private stripe: Stripe;
@@ -330,6 +331,39 @@ class StripeService {
           propertyName: booking.property.name,
           bookingId: booking.id,
         });
+
+        // Send guest confirmation + payment receipt by email (SendGrid).
+        // Never throws — emailService logs failures and returns a result.
+        const guestEmailAddr = booking.guest?.email || booking.guestEmail;
+        if (guestEmailAddr) {
+          // Confirmation email
+          void emailService.sendBookingConfirmation({
+            to: guestEmailAddr,
+            guestName: booking.guestName,
+            propertyName: booking.property.name,
+            checkIn: booking.checkIn,
+            checkOut: booking.checkOut,
+            nights: booking.nights,
+            totalAmount: Number(booking.totalAmount),
+            currency: booking.currency,
+            bookingId: booking.id,
+            // The guest profile doesn't track locale yet — default English with
+            // automatic HE fallback if propertyName/guestName contain Hebrew.
+            locale: /[֐-׿]/.test(booking.guestName) ? 'he' : 'en',
+          });
+
+          // Receipt email
+          void emailService.sendPaymentReceipt({
+            to: guestEmailAddr,
+            guestName: booking.guestName,
+            propertyName: booking.property.name,
+            amount: amountInCurrency,
+            currency: paymentIntent.currency.toUpperCase(),
+            bookingId: booking.id,
+            paymentIntentId: paymentIntent.id,
+            locale: /[֐-׿]/.test(booking.guestName) ? 'he' : 'en',
+          });
+        }
       }
     } else {
       // Payment without booking — still notify admin

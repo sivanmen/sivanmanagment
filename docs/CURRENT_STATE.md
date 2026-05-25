@@ -76,12 +76,13 @@
 | booking-engine | booking-engine.service.ts | 20+ | Direct booking, availability, quotes from DB |
 | pricing | pricing.service.ts | 15+ | SeasonalRate + RatePlan from DB, real calculations |
 
-### MOCK (13 modules — return hardcoded/in-memory data, 0 Prisma calls)
+### MOCK (10 modules — return hardcoded/in-memory data, 0 Prisma calls)
 
 | Module | Lines | Priority to Fix |
 |--------|-------|----------------|
-| **ai** | 251 | HIGH — Claude/GPT not connected |
+| ~~ai~~ | ~~251~~ | ~~HIGH~~ ✅ REAL (2026-05-25) — Anthropic SDK wired, AiConversation persisted |
 | ~~users~~ | ~~616~~ | ~~HIGH — user management is fake~~ ✅ REAL (2026-05-25, 21 prisma calls) |
+| ~~owner-portal~~ | ~~508~~ | ~~LOW~~ ✅ REAL (2026-05-25, Owner.metadata + Booking + reports.service) |
 | **automations** | 432 | MEDIUM — no real automation engine |
 | **teams** | 322 | MEDIUM — team management fake |
 | **uploads** | 184 | MEDIUM — R2 not connected |

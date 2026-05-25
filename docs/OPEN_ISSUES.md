@@ -27,15 +27,11 @@ _(No remaining CRITICAL issues. P0 security batch resolved 2026-05-25 — see FI
 
 ### ~~4. WhatsApp service is mock~~ — RESOLVED 2026-04-14
 
-### 5. File upload service is a stub — no R2 connection
-- **File:** `apps/api/src/modules/uploads/upload.service.ts`
-- **Impact:** Property images, documents, receipts can't be uploaded
-- **Fix:** Implement S3-compatible upload using `@aws-sdk/client-s3` (already installed) + R2 credentials
+### ~~5. File upload service stub~~ — RESOLVED 2026-05-25
+*Hardened upload service with isConfigured guard + ping + graceful degradation. Requires R2_* env vars in Railway to enable.*
 
-### 6. AI service is mock — no real AI responses
-- **File:** `apps/api/src/modules/ai/ai.service.ts`
-- **Impact:** AI chatbot returns canned responses, no Claude/GPT/Gemini calls
-- **Fix:** Use `config.ai.anthropicKey` (already in config) + Anthropic SDK
+### ~~6. AI service is mock~~ — RESOLVED 2026-05-25
+*Wired Anthropic SDK via lib/ai.service.ts. ai.service.ts rewritten to use AiConversation Prisma model. Requires ANTHROPIC_API_KEY in Railway to enable.*
 
 ### ~~7. Users module is mock~~ — RESOLVED 2026-05-25
 *Rewrote users.service.ts with real Prisma CRUD. 0 → 21 Prisma calls. See FIX_LOG.*
@@ -63,8 +59,8 @@ _(No remaining CRITICAL issues. P0 security batch resolved 2026-05-25 — see FI
 ### 13. Automations module is mock
 - **File:** `apps/api/src/modules/automations/automations.service.ts`
 
-### 14. SendGrid not configured — no email sending
-- **Env:** `SENDGRID_API_KEY` is empty in both `.env` and Railway
+### ~~14. SendGrid not configured — no email sending~~ — CODE READY 2026-05-25
+*lib/email.service.ts wraps @sendgrid/mail. Stripe webhook now sends confirmation+receipt to guest on payment success. Requires SENDGRID_API_KEY in Railway to actually send.*
 
 ### 15. No CI/CD pipeline
 - **Impact:** No automated checks before deploy

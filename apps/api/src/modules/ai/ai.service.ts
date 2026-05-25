@@ -1,202 +1,202 @@
-import { ApiError } from '../../utils/api-error';
+/**
+ * AI module — real Prisma-backed sessions + real Anthropic Claude calls.
+ *
+ * Rewritten 2026-05-25 from a 251-line in-memory mock that returned hardcoded
+ * keyword-based "responses". Now uses:
+ *   - `AiConversation` (Prisma) for session storage + history
+ *   - `lib/ai.service.ts` (Anthropic SDK) for the actual completion calls
+ *   - Graceful fallback: when ANTHROPIC_API_KEY is missing the assistant
+ *     replies with a clear "AI is not configured yet" message instead of
+ *     pretending to answer.
+ *
+ * Recommendations remain stubbed for now — they require an analytics
+ * pipeline (revenue/occupancy trend → recommendation engine) which is a
+ * separate roadmap item.
+ */
 
-interface ChatMessage {
+import { Prisma } from '@prisma/client';
+import { prisma } from '../../prisma/client';
+import { ApiError } from '../../utils/api-error';
+import { aiClient } from '../../lib/ai.service';
+
+type SessionContext = 'GENERAL' | 'BOOKING' | 'MAINTENANCE' | 'FINANCE' | 'GUEST';
+
+interface StoredMessage {
   id: string;
-  sessionId: string;
   role: 'user' | 'assistant';
   content: string;
-  metadata?: Record<string, any>;
   timestamp: string;
+  metadata?: Record<string, unknown>;
 }
 
-interface ChatSession {
-  id: string;
-  userId: string;
-  title: string;
-  context: 'GENERAL' | 'BOOKING' | 'MAINTENANCE' | 'FINANCE' | 'GUEST';
-  messageCount: number;
-  createdAt: string;
-  updatedAt: string;
-}
+const CONTEXT_SYSTEM_PROMPTS: Record<SessionContext, string> = {
+  GENERAL:
+    'You are an AI assistant inside Sivan Management, a Property Management System for short-term rentals in Crete, Greece. Be concise, practical, and oriented towards small-operator workflows. Reply in the same language as the user.',
+  FINANCE:
+    'You are a finance advisor inside a Property Management System for short-term rentals in Crete, Greece. Help with pricing, revenue analysis, expense categorization, and owner statements. Be concise and practical. Reply in the same language as the user.',
+  BOOKING:
+    'You are a booking operations assistant inside a Property Management System for short-term rentals in Crete, Greece. Help with reservation management, calendar conflicts, channel sync, and guest communication. Reply in the same language as the user.',
+  MAINTENANCE:
+    'You are a maintenance operations assistant inside a Property Management System for short-term rentals in Crete, Greece. Help with work orders, preventive schedules, vendor management, and cost tracking. Reply in the same language as the user.',
+  GUEST:
+    'You are a guest experience assistant inside a Property Management System for short-term rentals in Crete, Greece. Help with messaging templates, review responses, check-in/out flow, and personalization. Reply in the same language as the user.',
+};
 
-interface Recommendation {
-  id: string;
-  propertyId: string;
-  propertyName: string;
-  type: 'PRICING' | 'MAINTENANCE' | 'MARKETING' | 'REVENUE' | 'GUEST_EXPERIENCE';
-  title: string;
-  description: string;
-  impact: 'HIGH' | 'MEDIUM' | 'LOW';
-  status: 'PENDING' | 'ACCEPTED' | 'DISMISSED';
-  confidence: number;
-  data?: Record<string, any>;
-  createdAt: string;
-}
-
-const sessions: ChatSession[] = [
-  {
-    id: 'chat-001',
-    userId: 'u-001',
-    title: 'Pricing strategy for summer 2026',
-    context: 'FINANCE',
-    messageCount: 4,
-    createdAt: '2026-04-10T10:00:00Z',
-    updatedAt: '2026-04-10T10:30:00Z',
-  },
-  {
-    id: 'chat-002',
-    userId: 'u-001',
-    title: 'Maintenance schedule optimization',
-    context: 'MAINTENANCE',
-    messageCount: 6,
-    createdAt: '2026-04-09T14:00:00Z',
-    updatedAt: '2026-04-09T14:45:00Z',
-  },
-];
-
-const messages: ChatMessage[] = [
-  { id: 'msg-001', sessionId: 'chat-001', role: 'user', content: 'What pricing should I set for Villa Elounda for July-August?', timestamp: '2026-04-10T10:00:00Z' },
-  { id: 'msg-002', sessionId: 'chat-001', role: 'assistant', content: 'Based on your historical data, Villa Elounda Seafront achieved an average nightly rate of EUR 280 during July-August 2025 with 92% occupancy. Given current market trends in Elounda and a 5% year-over-year increase in demand, I recommend setting the rate at EUR 295-310/night for weekdays and EUR 340-360/night for weekends. Consider a 7-night minimum stay for peak weeks.', metadata: { model: 'gpt-4', tokensUsed: 320 }, timestamp: '2026-04-10T10:00:15Z' },
-  { id: 'msg-003', sessionId: 'chat-001', role: 'user', content: 'What about early booking discounts?', timestamp: '2026-04-10T10:05:00Z' },
-  { id: 'msg-004', sessionId: 'chat-001', role: 'assistant', content: 'I recommend a tiered early booking discount: 15% for bookings made 90+ days in advance, 10% for 60-89 days, and 5% for 30-59 days. Last year, 40% of your July bookings came in before May, so early discounts would help lock in revenue sooner.', metadata: { model: 'gpt-4', tokensUsed: 280 }, timestamp: '2026-04-10T10:05:12Z' },
-];
-
-const recommendations: Recommendation[] = [
-  {
-    id: 'rec-001',
-    propertyId: 'prop-001',
-    propertyName: 'Villa Elounda Seafront',
-    type: 'PRICING',
-    title: 'Increase weekend rates for June',
-    description: 'Demand for Elounda properties in June is trending 12% higher than last year. Consider increasing weekend rates by EUR 25-35/night to capture additional revenue.',
-    impact: 'HIGH',
-    status: 'PENDING',
-    confidence: 0.87,
-    data: { currentRate: 260, suggestedRate: 290, projectedRevenue: 4350 },
-    createdAt: '2026-04-11T06:00:00Z',
-  },
-  {
-    id: 'rec-002',
-    propertyId: 'prop-002',
-    propertyName: 'Chania Old Town Apt',
-    type: 'MAINTENANCE',
-    title: 'Schedule AC servicing before peak season',
-    description: 'The AC system was last serviced 11 months ago. Based on usage patterns and seasonal needs, schedule preventive maintenance before June to avoid mid-season breakdowns.',
-    impact: 'MEDIUM',
-    status: 'PENDING',
-    confidence: 0.92,
-    data: { lastService: '2025-05-15', estimatedCost: 150 },
-    createdAt: '2026-04-11T06:00:00Z',
-  },
-  {
-    id: 'rec-003',
-    propertyId: 'prop-003',
-    propertyName: 'Rethymno Beach House',
-    type: 'MARKETING',
-    title: 'Optimize listing photos',
-    description: 'Properties with professional photos in the Rethymno area receive 35% more views. Consider updating the listing photos for the pool area and sunset view.',
-    impact: 'MEDIUM',
-    status: 'ACCEPTED',
-    confidence: 0.78,
-    data: { currentViews: 450, projectedViews: 608 },
-    createdAt: '2026-04-10T06:00:00Z',
-  },
-  {
-    id: 'rec-004',
-    propertyId: 'prop-001',
-    propertyName: 'Villa Elounda Seafront',
-    type: 'GUEST_EXPERIENCE',
-    title: 'Add welcome basket for repeat guests',
-    description: 'You have 3 repeat guests booked for summer. Adding a personalized welcome basket (EUR 25-40 per guest) significantly increases review scores and loyalty program engagement.',
-    impact: 'LOW',
-    status: 'PENDING',
-    confidence: 0.71,
-    data: { repeatGuests: 3, estimatedCost: 105 },
-    createdAt: '2026-04-11T06:00:00Z',
-  },
-];
+const FALLBACK_MESSAGE =
+  'AI assistant is not yet configured on this server. Set ANTHROPIC_API_KEY in Railway variables to enable real responses.';
 
 export class AIService {
-  async getSessions(userId: string, filters: { context?: string; page?: number; limit?: number }) {
+  // ─── Sessions ────────────────────────────────────────────────────────
+
+  async getSessions(
+    userId: string,
+    filters: { context?: string; page?: number; limit?: number },
+  ) {
     const { context, page = 1, limit = 20 } = filters;
 
-    let filtered = sessions.filter((s) => s.userId === userId);
-    if (context) filtered = filtered.filter((s) => s.context === context);
+    const where: Prisma.AiConversationWhereInput = { userId };
+    if (context) where.contextType = context;
 
-    filtered.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-    const total = filtered.length;
-    const start = (page - 1) * limit;
-    const items = filtered.slice(start, start + limit);
+    const [rows, total] = await Promise.all([
+      prisma.aiConversation.findMany({
+        where,
+        orderBy: { updatedAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.aiConversation.count({ where }),
+    ]);
 
-    return { sessions: items, total, page, limit };
+    return {
+      sessions: rows.map((r) => this.projectSession(r)),
+      total,
+      page,
+      limit,
+    };
   }
 
   async getSessionMessages(sessionId: string, userId: string) {
-    const session = sessions.find((s) => s.id === sessionId && s.userId === userId);
+    const session = await prisma.aiConversation.findFirst({
+      where: { id: sessionId, userId },
+    });
     if (!session) throw ApiError.notFound('Chat session');
 
-    const msgs = messages.filter((m) => m.sessionId === sessionId);
-    msgs.sort((a, b) => a.timestamp.localeCompare(b.timestamp));
-
-    return { session, messages: msgs };
+    const messages = this.readMessages(session.messages);
+    return { session: this.projectSession(session), messages };
   }
 
-  async chat(userId: string, data: { sessionId?: string; message: string; context?: string }) {
-    let session: ChatSession;
+  /**
+   * Send a message. Creates a new session if `sessionId` is omitted.
+   * Replies via Anthropic when configured, otherwise returns the FALLBACK_MESSAGE
+   * so the UX always degrades visibly.
+   */
+  async chat(
+    userId: string,
+    data: { sessionId?: string; message: string; context?: string },
+  ) {
+    const contextType = (data.context as SessionContext) || 'GENERAL';
+    const now = new Date();
 
+    // Load or create session
+    let session;
     if (data.sessionId) {
-      const existing = sessions.find((s) => s.id === data.sessionId && s.userId === userId);
-      if (!existing) throw ApiError.notFound('Chat session');
-      session = existing;
+      session = await prisma.aiConversation.findFirst({
+        where: { id: data.sessionId, userId },
+      });
+      if (!session) throw ApiError.notFound('Chat session');
     } else {
-      session = {
-        id: `chat-${String(sessions.length + 1).padStart(3, '0')}`,
-        userId,
-        title: data.message.substring(0, 60),
-        context: (data.context as ChatSession['context']) || 'GENERAL',
-        messageCount: 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      sessions.push(session);
+      session = await prisma.aiConversation.create({
+        data: {
+          userId,
+          contextType,
+          provider: 'ANTHROPIC',
+          model: 'claude-sonnet-4-20250514',
+          messages: [] as Prisma.InputJsonValue,
+        },
+      });
     }
 
-    const userMsg: ChatMessage = {
-      id: `msg-${String(messages.length + 1).padStart(3, '0')}`,
-      sessionId: session.id,
+    const history = this.readMessages(session.messages);
+    const userMsg: StoredMessage = {
+      id: `msg-${Date.now()}-u`,
       role: 'user',
       content: data.message,
-      timestamp: new Date().toISOString(),
+      timestamp: now.toISOString(),
     };
-    messages.push(userMsg);
 
-    // Simulated AI response
-    const aiResponse = this.generateResponse(data.message, session.context);
-    const assistantMsg: ChatMessage = {
-      id: `msg-${String(messages.length + 1).padStart(3, '0')}`,
-      sessionId: session.id,
+    // Build chat history for the model (user + assistant turns only)
+    const modelMessages = [...history, userMsg].map((m) => ({
+      role: m.role,
+      content: m.content,
+    }));
+
+    const completion = await aiClient.complete({
+      messages: modelMessages,
+      system: CONTEXT_SYSTEM_PROMPTS[contextType] ?? CONTEXT_SYSTEM_PROMPTS.GENERAL,
+      maxTokens: 1024,
+    });
+
+    let assistantText: string;
+    let assistantMetadata: Record<string, unknown> = {};
+
+    if (completion.ok && completion.text) {
+      assistantText = completion.text;
+      assistantMetadata = {
+        provider: completion.provider,
+        model: completion.model,
+        tokensUsed: completion.usage,
+      };
+    } else if (completion.skipped) {
+      assistantText = FALLBACK_MESSAGE;
+      assistantMetadata = { provider: completion.provider, skipped: true };
+    } else {
+      assistantText = `AI service error: ${completion.error ?? 'unknown'}. Please try again later.`;
+      assistantMetadata = { provider: completion.provider, error: completion.error };
+    }
+
+    const assistantMsg: StoredMessage = {
+      id: `msg-${Date.now()}-a`,
       role: 'assistant',
-      content: aiResponse,
-      metadata: { model: 'gpt-4', tokensUsed: Math.floor(Math.random() * 400) + 100 },
+      content: assistantText,
       timestamp: new Date().toISOString(),
+      metadata: assistantMetadata,
     };
-    messages.push(assistantMsg);
 
-    session.messageCount += 2;
-    session.updatedAt = new Date().toISOString();
+    const newHistory = [...history, userMsg, assistantMsg];
+    const totalTokens =
+      Number(session.tokensUsed ?? 0) +
+      (completion.usage ? completion.usage.input + completion.usage.output : 0);
 
-    return { session, userMessage: userMsg, assistantMessage: assistantMsg };
+    const updated = await prisma.aiConversation.update({
+      where: { id: session.id },
+      data: {
+        messages: newHistory as unknown as Prisma.InputJsonValue,
+        tokensUsed: totalTokens,
+      },
+    });
+
+    return {
+      session: this.projectSession(updated),
+      userMessage: userMsg,
+      assistantMessage: assistantMsg,
+    };
   }
 
   async deleteSession(sessionId: string, userId: string) {
-    const idx = sessions.findIndex((s) => s.id === sessionId && s.userId === userId);
-    if (idx === -1) throw ApiError.notFound('Chat session');
-
-    sessions.splice(idx, 1);
+    const existing = await prisma.aiConversation.findFirst({
+      where: { id: sessionId, userId },
+    });
+    if (!existing) throw ApiError.notFound('Chat session');
+    await prisma.aiConversation.delete({ where: { id: sessionId } });
     return { message: 'Session deleted successfully' };
   }
 
-  async getRecommendations(filters: {
+  // ─── Recommendations (stubbed — analytics pipeline pending) ──────────
+  // Returns an empty list with a clear shape so the UI doesn't break. A
+  // future pass will wire this to a real recommendation engine that reads
+  // PropertyScore + analytics aggregates and asks the AI to summarise.
+
+  async getRecommendations(_filters: {
     propertyId?: string;
     type?: string;
     status?: string;
@@ -204,47 +204,71 @@ export class AIService {
     page?: number;
     limit?: number;
   }) {
-    const { propertyId, type, status, impact, page = 1, limit = 20 } = filters;
-
-    let filtered = [...recommendations];
-    if (propertyId) filtered = filtered.filter((r) => r.propertyId === propertyId);
-    if (type) filtered = filtered.filter((r) => r.type === type);
-    if (status) filtered = filtered.filter((r) => r.status === status);
-    if (impact) filtered = filtered.filter((r) => r.impact === impact);
-
-    filtered.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-    const total = filtered.length;
-    const start = (page - 1) * limit;
-    const items = filtered.slice(start, start + limit);
-
-    return { recommendations: items, total, page, limit };
+    return {
+      recommendations: [],
+      total: 0,
+      page: _filters.page ?? 1,
+      limit: _filters.limit ?? 20,
+      _note:
+        'AI recommendations require a wired analytics → recommender pipeline. Returning empty list for now.',
+    };
   }
 
-  async updateRecommendation(id: string, data: { status: string }) {
-    const rec = recommendations.find((r) => r.id === id);
-    if (!rec) throw ApiError.notFound('Recommendation');
-
-    rec.status = data.status as Recommendation['status'];
-    return rec;
+  async updateRecommendation(id: string, _data: { status: string }) {
+    throw ApiError.notFound(`Recommendation ${id} (recommendations engine not yet implemented)`);
   }
 
-  private generateResponse(message: string, context: string): string {
-    const lower = message.toLowerCase();
+  // ─── Helpers ─────────────────────────────────────────────────────────
 
-    if (lower.includes('price') || lower.includes('rate') || lower.includes('pricing')) {
-      return 'Based on market analysis for Crete properties, current demand trends suggest maintaining competitive pricing. I recommend reviewing your seasonal pricing rules and comparing with similar properties in the area. Would you like me to run a detailed competitive analysis?';
+  private readMessages(jsonValue: Prisma.JsonValue | null): StoredMessage[] {
+    if (!Array.isArray(jsonValue)) return [];
+    const out: StoredMessage[] = [];
+    for (const m of jsonValue) {
+      if (
+        typeof m === 'object' &&
+        m !== null &&
+        !Array.isArray(m) &&
+        'role' in m &&
+        'content' in m &&
+        typeof (m as any).content === 'string'
+      ) {
+        const obj = m as Record<string, unknown>;
+        out.push({
+          id: typeof obj.id === 'string' ? obj.id : `msg-${out.length}`,
+          role: obj.role === 'assistant' ? 'assistant' : 'user',
+          content: obj.content as string,
+          timestamp:
+            typeof obj.timestamp === 'string' ? obj.timestamp : new Date().toISOString(),
+          metadata:
+            typeof obj.metadata === 'object' && obj.metadata !== null
+              ? (obj.metadata as Record<string, unknown>)
+              : undefined,
+        });
+      }
     }
-    if (lower.includes('maintenance') || lower.includes('repair')) {
-      return 'I can help optimize your maintenance schedule. Based on historical data, preventive maintenance reduces emergency repair costs by 40%. I suggest scheduling AC servicing, plumbing checks, and exterior maintenance before the peak season starts in June.';
-    }
-    if (lower.includes('booking') || lower.includes('reservation') || lower.includes('occupancy')) {
-      return 'Your current occupancy rate across all properties is 78% for the upcoming month. I notice some gaps in mid-week bookings. Consider offering a mid-week discount of 10-15% or creating a special package to fill these gaps.';
-    }
-    if (lower.includes('guest') || lower.includes('review')) {
-      return 'Guest satisfaction across your properties averages 4.6/5. The most common positive mentions are location and cleanliness. Areas for improvement include check-in communication speed and kitchen equipment. I recommend updating your welcome guides with more local restaurant recommendations.';
-    }
+    return out;
+  }
 
-    return `I understand your question about ${context.toLowerCase()} management. Based on your property portfolio in Crete, I can provide data-driven insights and recommendations. Could you provide more specific details about what you would like to analyze?`;
+  private projectSession(session: any) {
+    const messages = this.readMessages(session.messages);
+    return {
+      id: session.id,
+      userId: session.userId,
+      title: this.deriveTitle(messages),
+      context: (session.contextType as SessionContext) || 'GENERAL',
+      messageCount: messages.length,
+      provider: session.provider,
+      model: session.model,
+      tokensUsed: session.tokensUsed,
+      createdAt: session.createdAt.toISOString(),
+      updatedAt: session.updatedAt.toISOString(),
+    };
+  }
+
+  private deriveTitle(messages: StoredMessage[]): string {
+    const firstUser = messages.find((m) => m.role === 'user');
+    if (!firstUser) return 'New conversation';
+    return firstUser.content.slice(0, 80);
   }
 }
 

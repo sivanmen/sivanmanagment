@@ -13,6 +13,7 @@ router.get('/bookings', (req, res, next) => reportsController.getBookings(req, r
 router.get('/maintenance', (req, res, next) => reportsController.getMaintenance(req, res, next));
 router.get('/guests', (req, res, next) => reportsController.getGuestAnalytics(req, res, next));
 router.get('/owner-statement/:ownerId', (req, res, next) => reportsController.getOwnerStatement(req, res, next));
+router.get('/owner-statement/:ownerId/pdf', (req, res, next) => reportsController.getOwnerStatementPdf(req, res, next));
 router.get('/portfolio', (req, res, next) => reportsController.getPortfolio(req, res, next));
 
 export default router;

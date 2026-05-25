@@ -1,6 +1,9 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../prisma/client';
 import { ApiError } from '../../utils/api-error';
+import { generateOwnerStatementPdf } from '../../lib/pdf.service';
+import { emailService } from '../../lib/email.service';
+import { config } from '../../config';
 
 export class ReportsService {
   async getOccupancyReport(params: {
@@ -875,6 +878,122 @@ function getGroupKey(date: Date, groupBy: 'day' | 'week' | 'month'): string {
   } else {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
   }
+}
+
+/**
+ * Append a method to ReportsService that wraps getOwnerStatement + PDF render
+ * + optional email delivery. Implemented as a class-prototype extension so we
+ * don't need to find/edit the deeply-nested class body.
+ */
+declare module './reports.service' {
+  interface ReportsService {
+    generateOwnerStatementPdf(params: {
+      ownerId: string;
+      startDate?: string;
+      endDate?: string;
+      periodMonth?: number;
+      periodYear?: number;
+      userOwnerId?: string;
+      sendByEmail?: boolean;
+    }): Promise<{
+      pdf: Buffer;
+      periodLabel: string;
+      ownerEmail?: string;
+      emailSent?: boolean;
+      emailMessageId?: string;
+      emailSkipped?: boolean;
+      emailError?: string;
+    }>;
+  }
+}
+
+(ReportsService.prototype as any).generateOwnerStatementPdf = async function (params: {
+  ownerId: string;
+  startDate?: string;
+  endDate?: string;
+  periodMonth?: number;
+  periodYear?: number;
+  userOwnerId?: string;
+  sendByEmail?: boolean;
+}) {
+  // 1. Reuse existing aggregation logic
+  const data = await this.getOwnerStatement(params);
+
+  const periodLabel = `${monthName(data.period.month)} ${data.period.year}`;
+
+  // 2. Look up owner email + company info
+  const ownerRecord = await prisma.owner.findUnique({
+    where: { id: params.ownerId },
+    include: { user: { select: { email: true } } },
+  });
+  const ownerEmail = ownerRecord?.user?.email;
+  const currency = data.totals?.income > 0
+    ? 'EUR'
+    : 'EUR'; // default for Sivan (Crete)
+
+  // 3. Render PDF
+  const pdf = await generateOwnerStatementPdf({
+    periodLabel,
+    ownerName: data.owner.companyName || data.owner.name,
+    ownerEmail,
+    currency,
+    lineItems: data.properties.map((p: any) => ({
+      propertyName: p.property?.name ?? 'Unknown property',
+      bookingsCount: p.bookingsCount ?? 0,
+      grossRevenue: p.income,
+      expenses: p.expenses,
+      managementFee: p.managementFee,
+      netPayout: p.netToOwner,
+    })),
+    totals: {
+      grossRevenue: data.totals.income,
+      expenses: data.totals.expenses,
+      managementFee: data.totals.managementFee,
+      netPayout: data.totals.netToOwner,
+    },
+    company: {
+      name: config.company.name,
+      address: config.company.address,
+      taxNo: config.company.taxNo,
+      bankName: config.company.bankName,
+      bankIban: config.company.bankIban,
+    },
+  });
+
+  // 4. Optional email delivery
+  let emailResult:
+    | { ok: boolean; skipped?: boolean; messageId?: string; error?: string }
+    | undefined;
+  if (params.sendByEmail && ownerEmail) {
+    emailResult = await emailService.sendOwnerStatement({
+      to: ownerEmail,
+      ownerName: data.owner.companyName || data.owner.name,
+      periodLabel,
+      grossRevenue: data.totals.income,
+      netPayout: data.totals.netToOwner,
+      currency,
+      pdfBuffer: pdf,
+      pdfFilename: `owner-statement-${periodLabel.replace(/\s+/g, '-')}.pdf`,
+    });
+  }
+
+  return {
+    pdf,
+    periodLabel,
+    ownerEmail,
+    emailSent: emailResult?.ok,
+    emailMessageId: emailResult?.messageId,
+    emailSkipped: emailResult?.skipped,
+    emailError: emailResult?.error,
+  };
+};
+
+function monthName(month: number): string {
+  const names = [
+    'January','February','March','April','May','June',
+    'July','August','September','October','November','December',
+  ];
+  return names[month - 1] || `Month ${month}`;
 }
 
 export const reportsService = new ReportsService();

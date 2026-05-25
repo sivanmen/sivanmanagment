@@ -63,12 +63,7 @@ export class OwnerPortalController {
         throw ApiError.forbidden('You can only view your own portal config');
       }
 
-      const config = ownerPortalService.getPortalConfig(ownerId);
-      if (!config) {
-        const defaultCfg = ownerPortalService.getDefaultConfig();
-        defaultCfg.ownerId = ownerId;
-        return sendSuccess(res, defaultCfg);
-      }
+      const config = await ownerPortalService.getPortalConfig(ownerId);
       sendSuccess(res, config);
     } catch (error) {
       next(error);
@@ -79,7 +74,7 @@ export class OwnerPortalController {
     try {
       const ownerId = req.params.ownerId as string;
       const data = updateConfigSchema.parse(req.body);
-      const config = ownerPortalService.updatePortalConfig(ownerId, data as any);
+      const config = await ownerPortalService.updatePortalConfig(ownerId, data as any);
       sendSuccess(res, config);
     } catch (error) {
       next(error);
@@ -95,7 +90,7 @@ export class OwnerPortalController {
       } else {
         ownerId = req.query.ownerId as string | undefined;
       }
-      const reservations = ownerPortalService.getOwnerReservations(ownerId);
+      const reservations = await ownerPortalService.getOwnerReservations(ownerId);
       sendSuccess(res, reservations);
     } catch (error) {
       next(error);
@@ -109,7 +104,7 @@ export class OwnerPortalController {
       if (!ownerId) {
         throw ApiError.badRequest('Owner ID is required');
       }
-      const reservation = ownerPortalService.createOwnerReservation(ownerId, data);
+      const reservation = await ownerPortalService.createOwnerReservation(ownerId, data);
       sendSuccess(res, reservation, 201);
     } catch (error) {
       next(error);
@@ -119,7 +114,7 @@ export class OwnerPortalController {
   async approveReservation(req: Request, res: Response, next: NextFunction) {
     try {
       const id = req.params.id as string;
-      const reservation = ownerPortalService.approveReservation(id, req.user!.userId);
+      const reservation = await ownerPortalService.approveReservation(id, req.user!.userId);
       if (!reservation) {
         throw ApiError.notFound('Reservation');
       }
@@ -132,7 +127,7 @@ export class OwnerPortalController {
   async rejectReservation(req: Request, res: Response, next: NextFunction) {
     try {
       const id = req.params.id as string;
-      const reservation = ownerPortalService.rejectReservation(id, req.user!.userId);
+      const reservation = await ownerPortalService.rejectReservation(id, req.user!.userId);
       if (!reservation) {
         throw ApiError.notFound('Reservation');
       }
@@ -145,7 +140,7 @@ export class OwnerPortalController {
   async cancelReservation(req: Request, res: Response, next: NextFunction) {
     try {
       const id = req.params.id as string;
-      const reservation = ownerPortalService.cancelReservation(id);
+      const reservation = await ownerPortalService.cancelReservation(id);
       if (!reservation) {
         throw ApiError.notFound('Reservation');
       }
@@ -159,7 +154,7 @@ export class OwnerPortalController {
   async generateStatement(req: Request, res: Response, next: NextFunction) {
     try {
       const data = generateStatementSchema.parse(req.body);
-      const statement = ownerPortalService.generateStatement(data.ownerId, data.month, data.year);
+      const statement = await ownerPortalService.generateStatement(data.ownerId, data.month, data.year);
       sendSuccess(res, statement, 201);
     } catch (error) {
       next(error);
@@ -174,7 +169,7 @@ export class OwnerPortalController {
       } else {
         ownerId = req.query.ownerId as string | undefined;
       }
-      const statements = ownerPortalService.getStatements(ownerId);
+      const statements = await ownerPortalService.getStatements(ownerId);
       sendSuccess(res, statements);
     } catch (error) {
       next(error);
@@ -184,7 +179,7 @@ export class OwnerPortalController {
   async getStatementById(req: Request, res: Response, next: NextFunction) {
     try {
       const id = req.params.id as string;
-      const statement = ownerPortalService.getStatementById(id);
+      const statement = await ownerPortalService.getStatementById(id);
       if (!statement) {
         throw ApiError.notFound('Statement');
       }
@@ -206,7 +201,7 @@ export class OwnerPortalController {
   async approveStatement(req: Request, res: Response, next: NextFunction) {
     try {
       const id = req.params.id as string;
-      const statement = ownerPortalService.approveStatement(id);
+      const statement = await ownerPortalService.approveStatement(id);
       if (!statement) {
         throw ApiError.notFound('Statement');
       }
@@ -219,7 +214,7 @@ export class OwnerPortalController {
   async sendStatement(req: Request, res: Response, next: NextFunction) {
     try {
       const id = req.params.id as string;
-      const statement = ownerPortalService.sendStatement(id);
+      const statement = await ownerPortalService.sendStatement(id);
       if (!statement) {
         throw ApiError.notFound('Statement');
       }
@@ -234,7 +229,7 @@ export class OwnerPortalController {
     try {
       const ownerId = req.params.ownerId as string;
       const format = (req.query.format as string) === 'csv' ? 'csv' : 'json';
-      const data = ownerPortalService.exportOwnerData(ownerId, format);
+      const data = await ownerPortalService.exportOwnerData(ownerId, format);
 
       if (format === 'csv') {
         res.setHeader('Content-Type', 'text/csv');

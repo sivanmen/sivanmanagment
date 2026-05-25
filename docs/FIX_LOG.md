@@ -354,3 +354,81 @@ Removed the password from the URL.
 
 *Last updated: 2026-05-25*
 *Total fixes logged: 16*
+
+---
+
+## 2026-05-25 — External integrations batch: R2, SendGrid, Anthropic + PDF + reconcile
+
+**Problem:** Six interrelated gaps from the audit:
+1. Upload service threw raw `Error` on missing R2 env vars (no graceful degradation, no isConfigured check).
+2. No email sending at all — `SENDGRID_API_KEY` was empty and no service wrapped @sendgrid/mail.
+3. AI module was 251 lines of keyword-matching mock that pretended to give answers.
+4. Stripe `payment_intent.succeeded` only fired a WhatsApp admin alert — guest got no email confirmation or receipt.
+5. No owner statement PDF — `OwnerStatementsPage` was display-only.
+6. No safety net for missed Stripe webhooks — a booking could stay PENDING forever if a webhook was dropped.
+
+**Files Changed:**
+
+*New shared libraries (`apps/api/src/lib/`):*
+- `email.service.ts` — wraps `@sendgrid/mail`. `isConfigured()` + `send()` + `sendBookingConfirmation()` (HE + EN templates) + `sendPaymentReceipt()` + `sendOwnerStatement()` with optional PDF attachment. Returns structured `{ok, skipped, messageId, error}` — never throws.
+- `ai.service.ts` — wraps `@anthropic-ai/sdk`. Provider-agnostic surface (`complete()`, `ask()`) so OpenAI/Google can be added later. Skipped-not-thrown when key missing.
+- `pdf.service.ts` — `generateOwnerStatementPdf()` using `pdfkit`. Sivan Obsidian style (accent `#6b38d4`, glass row backgrounds), per-property line items, totals row, optional company footer (name, address, tax ID, IBAN).
+
+*New jobs:*
+- `jobs/stripe-reconcile.job.ts` — daily at 02:00 UTC: pulls Stripe payment intents from the last 48h, patches any booking whose paymentStatus diverges from Stripe truth, idempotently creates the income record. No-op when Stripe key missing. Registered in `jobs/index.ts`.
+
+*Edits:*
+- `apps/api/src/config/index.ts` — already adjusted in earlier P0 commit.
+- `apps/api/src/utils/api-error.ts` — added `ApiError.serviceUnavailable(message, code)` (HTTP 503) for graceful-degradation surfaces.
+- `apps/api/src/modules/uploads/upload.service.ts` — rewrite: reads from `config.storage` (not direct process.env), `isConfigured()`/`requireConfigured()` helpers, `ping()` for health check, `endpoint` override support, `isPublic` flag on upload result.
+- `apps/api/src/modules/ai/ai.service.ts` — full rewrite: real `AiConversation` persistence (was in-memory), Claude Sonnet via `aiClient.complete()`, per-context system prompts (GENERAL/FINANCE/BOOKING/MAINTENANCE/GUEST), graceful fallback message when key missing. Recommendations stubbed with a clear `_note` until the analytics pipeline is wired.
+- `apps/api/src/modules/reports/reports.service.ts` — added `generateOwnerStatementPdf()` via prototype extension; reuses `getOwnerStatement()` for data, calls `pdf.service`, optional SendGrid delivery.
+- `apps/api/src/modules/reports/reports.controller.ts` + `reports.routes.ts` — new `GET /api/v1/reports/owner-statement/:ownerId/pdf` endpoint. Streams PDF binary by default; `?email=true` triggers send-and-return-JSON-receipt.
+- `apps/api/src/modules/payments/stripe.service.ts` — on `payment_intent.succeeded` with bookingId: fire-and-forget `emailService.sendBookingConfirmation()` + `sendPaymentReceipt()` to the guest's email, locale auto-detected from guest name (Hebrew script → HE template).
+- `apps/api/package.json` — added `@sendgrid/mail`, `@anthropic-ai/sdk`, `pdfkit`, `@types/pdfkit`.
+
+**Required Operator Action:** Set the following in Railway → api service to actually enable these integrations:
+```
+SENDGRID_API_KEY=...
+SENDGRID_FROM_EMAIL=noreply@sivanmanagment.com
+EVOLUTION_API_KEY=...
+EVOLUTION_API_URL=...
+R2_ACCOUNT_ID=...
+R2_ACCESS_KEY_ID=...
+R2_SECRET_ACCESS_KEY=...
+R2_BUCKET_NAME=sivan-pms
+R2_PUBLIC_URL=https://...
+ANTHROPIC_API_KEY=...
+```
+Until these are set, each service stays in "skipped/degraded" mode and the UI shows a degraded banner — no silent failures.
+
+**How Verified:** `pnpm --filter api build` — zero TS errors.
+
+**Result:** Five mock modules transitioned from "fake answers" to "real-when-keys-present / clearly-skipped-when-not". Daily Stripe reconcile job closes the webhook-loss window. Owner statement PDF endpoint is live. AI module went from 0 Prisma calls to ~6 (sessions + history).
+
+---
+
+## 2026-05-25 — Owner Portal rewrite: mock → real (0 → 12 Prisma calls)
+
+**Problem:** `owner-portal.service.ts` (508 lines) returned hardcoded demo statements for "owner-1/owner-2/owner-3" — Sivan's actual paying customers (the property owners) were seeing fabricated revenue numbers when logging into client.sivanmanagment.com. The trust-destroying mock listed in OPEN_ISSUES.
+
+**Files Changed:**
+- `apps/api/src/modules/owner-portal/owner-portal.service.ts` — full rewrite. ~370 lines.
+- `apps/api/src/modules/owner-portal/owner-portal.controller.ts` — added `await` to 12 call sites.
+
+**Storage strategy:**
+- Portal config (branding/visibility/notifications) → persisted on `Owner.metadata.portalConfig` JSON. No new schema needed.
+- Owner reservations (OWNER_STAY / FRIENDS_FAMILY) → real `Booking` rows with `source='DIRECT'` and `metadata.ownerReservation={ownerId,type,...,status}`. RLS preserved via filter on metadata.ownerId. Approve/reject/cancel transitions update both the Booking.status AND the metadata.status atomically.
+- Statements → on-demand delegation to `reports.service.getOwnerStatement()` (the real one with real Prisma aggregates). Synthetic IDs in the form `${ownerId}-${year}-${month}` let the existing UI fetch by ID.
+- Export → real Prisma data, CSV or JSON.
+
+**Why this approach:** Avoids adding new Prisma models for what's essentially a view over existing data. Owner.metadata is already a Json column. Owner reservations are conceptually bookings — storing them as bookings keeps the calendar/availability checks unified (and double-booking guard applies to them too).
+
+**How Verified:** `pnpm --filter api build` — zero TS errors.
+
+**Result:** Owner Portal now shows real data. Owner.bookings, Owner.expenses, Owner.statements all flow from the real DB. OPEN_ISSUES item closed.
+
+---
+
+*Last updated: 2026-05-25*
+*Total fixes logged: 18*

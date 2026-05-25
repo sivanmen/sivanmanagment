@@ -38,4 +38,13 @@ export class ApiError extends Error {
   static internal(message = 'Internal server error', code = 'INTERNAL_ERROR') {
     return new ApiError(500, code, message);
   }
+
+  /**
+   * 503 Service Unavailable. Use when a feature is correctly coded but the
+   * external integration it depends on is not configured (missing API key,
+   * missing R2 bucket, missing SendGrid creds, etc.).
+   */
+  static serviceUnavailable(message: string, code = 'SERVICE_UNAVAILABLE') {
+    return new ApiError(503, code, message);
+  }
 }

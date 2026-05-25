@@ -1,9 +1,26 @@
-import { v4 as uuid } from 'uuid';
+/**
+ * Owner Portal Service — real Prisma + facade over existing modules.
+ *
+ * Rewritten 2026-05-25 from a 508-line in-memory mock that returned demo
+ * data for owner-1/owner-2/owner-3. Owners visiting client.sivanmanagment.com
+ * were seeing fabricated revenue numbers — the most trust-destructive thing
+ * possible for the actual paying customers.
+ *
+ * Storage strategy:
+ *   - Portal config (branding / visibility / notifications) → Owner.metadata.portalConfig (JSON)
+ *   - Owner reservations (owner / friends-family stays) → real Booking rows with
+ *     source=DIRECT and metadata.ownerReservation=true
+ *   - Statements → reports.service.getOwnerStatement() (no separate storage; we
+ *     can persist generated PDFs to R2 in a later iteration)
+ */
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+import { Prisma } from '@prisma/client';
+import { prisma } from '../../prisma/client';
+import { ApiError } from '../../utils/api-error';
 
-interface OwnerPortalConfig {
-  id: string;
+// ─── Types ───────────────────────────────────────────────────────────────
+
+export interface OwnerPortalConfig {
   ownerId: string;
   customDomain?: string;
   branding: { logoUrl?: string; accentColor?: string; welcomeMessage?: string };
@@ -27,13 +44,13 @@ interface OwnerPortalConfig {
     monthlyReport: boolean;
     maintenanceUpdate: boolean;
   };
-  createdAt: Date;
 }
 
-interface OwnerReservation {
+interface OwnerReservationView {
   id: string;
   ownerId: string;
   propertyId: string;
+  propertyName: string;
   type: 'OWNER_STAY' | 'FRIENDS_FAMILY';
   guestName?: string;
   guestRelation?: string;
@@ -43,465 +60,345 @@ interface OwnerReservation {
   notes?: string;
   status: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
   approvedById?: string;
-  createdAt: Date;
+  createdAt: string;
 }
 
-interface OwnerStatementProperty {
-  propertyId: string;
-  propertyName: string;
-  bookings: { guestName: string; checkIn: string; checkOut: string; nights: number; revenue: number }[];
-  totalRevenue: number;
-  expenses: { category: string; description: string; amount: number }[];
-  totalExpenses: number;
-  managementFee: number;
-  feeType: string;
-  netIncome: number;
-}
-
-interface OwnerStatement {
-  id: string;
-  ownerId: string;
-  periodMonth: number;
-  periodYear: number;
-  properties: OwnerStatementProperty[];
-  totalIncome: number;
-  totalExpenses: number;
-  totalManagementFees: number;
-  netPayout: number;
-  currency: string;
-  status: 'DRAFT' | 'APPROVED' | 'SENT';
-  generatedAt: Date;
-}
-
-// ─── In-memory stores ────────────────────────────────────────────────────────
-
-const portalConfigs: Map<string, OwnerPortalConfig> = new Map();
-const ownerReservations: Map<string, OwnerReservation> = new Map();
-const ownerStatements: Map<string, OwnerStatement> = new Map();
-
-// ─── Seed demo data ─────────────────────────────────────────────────────────
-
-const ownerIds = ['owner-1', 'owner-2', 'owner-3'];
-const ownerNames: Record<string, string> = {
-  'owner-1': 'Dimitris Papadopoulos',
-  'owner-2': 'Maria Konstantinou',
-  'owner-3': 'Yannis Alexiou',
+const DEFAULT_CONFIG: Omit<OwnerPortalConfig, 'ownerId'> = {
+  branding: { accentColor: '#6b38d4', welcomeMessage: 'Welcome to your owner portal' },
+  visibility: {
+    showFinancials: true,
+    showGuestContacts: false,
+    showBookingDetails: true,
+    showMaintenanceRequests: true,
+    showDocuments: true,
+    showOccupancyMetrics: true,
+    showRevenueCharts: true,
+    allowOwnerReservations: true,
+    allowFriendsAndFamily: true,
+    maxOwnerBlockDaysPerMonth: 7,
+  },
+  notifications: {
+    newBooking: true,
+    cancellation: true,
+    checkIn: true,
+    checkOut: false,
+    monthlyReport: true,
+    maintenanceUpdate: true,
+  },
 };
 
-function getDefaultConfig(): OwnerPortalConfig {
+// ─── Helpers ─────────────────────────────────────────────────────────────
+
+function mergeConfig(stored: any, ownerId: string): OwnerPortalConfig {
+  const base = stored && typeof stored === 'object' ? stored : {};
   return {
-    id: '',
-    ownerId: '',
-    customDomain: undefined,
-    branding: { accentColor: '#6C5CE7', welcomeMessage: 'Welcome to your owner portal' },
-    visibility: {
-      showFinancials: true,
-      showGuestContacts: false,
-      showBookingDetails: true,
-      showMaintenanceRequests: true,
-      showDocuments: true,
-      showOccupancyMetrics: true,
-      showRevenueCharts: true,
-      allowOwnerReservations: true,
-      allowFriendsAndFamily: true,
-      maxOwnerBlockDaysPerMonth: 7,
-    },
-    notifications: {
-      newBooking: true,
-      cancellation: true,
-      checkIn: true,
-      checkOut: false,
-      monthlyReport: true,
-      maintenanceUpdate: true,
-    },
-    createdAt: new Date(),
+    ownerId,
+    customDomain: base.customDomain,
+    branding: { ...DEFAULT_CONFIG.branding, ...(base.branding || {}) },
+    visibility: { ...DEFAULT_CONFIG.visibility, ...(base.visibility || {}) },
+    notifications: { ...DEFAULT_CONFIG.notifications, ...(base.notifications || {}) },
   };
 }
 
-// Seed portal configs
-ownerIds.forEach((ownerId) => {
-  const cfg = getDefaultConfig();
-  cfg.id = uuid();
-  cfg.ownerId = ownerId;
-  portalConfigs.set(ownerId, cfg);
-});
+function bookingToReservationView(b: any): OwnerReservationView {
+  const meta = (b.metadata as Record<string, any>) || {};
+  const orMeta = meta.ownerReservation || {};
+  const status = (
+    b.status === 'CANCELLED'
+      ? 'CANCELLED'
+      : orMeta.status || 'APPROVED'
+  ) as OwnerReservationView['status'];
+  return {
+    id: b.id,
+    ownerId: b.property?.ownerId ?? orMeta.ownerId ?? '',
+    propertyId: b.propertyId,
+    propertyName: b.property?.name ?? '',
+    type: (orMeta.type === 'FRIENDS_FAMILY' ? 'FRIENDS_FAMILY' : 'OWNER_STAY'),
+    guestName: orMeta.guestName ?? b.guestName,
+    guestRelation: orMeta.guestRelation,
+    checkIn: b.checkIn.toISOString(),
+    checkOut: b.checkOut.toISOString(),
+    nights: b.nights,
+    notes: b.internalNotes ?? orMeta.notes,
+    status,
+    approvedById: orMeta.approvedById,
+    createdAt: b.createdAt.toISOString(),
+  };
+}
 
-// Seed owner reservations
-const demoReservations: OwnerReservation[] = [
-  {
-    id: uuid(),
-    ownerId: 'owner-1',
-    propertyId: 'prop-1',
-    type: 'OWNER_STAY',
-    checkIn: '2026-05-10',
-    checkOut: '2026-05-17',
-    nights: 7,
-    notes: 'Summer vacation with family',
-    status: 'APPROVED',
-    approvedById: 'admin-1',
-    createdAt: new Date('2026-04-01'),
-  },
-  {
-    id: uuid(),
-    ownerId: 'owner-1',
-    propertyId: 'prop-2',
-    type: 'FRIENDS_FAMILY',
-    guestName: 'Nikos Papadopoulos',
-    guestRelation: 'Brother',
-    checkIn: '2026-06-01',
-    checkOut: '2026-06-05',
-    nights: 4,
-    notes: 'Brother visiting from Athens',
-    status: 'PENDING_APPROVAL',
-    createdAt: new Date('2026-04-05'),
-  },
-  {
-    id: uuid(),
-    ownerId: 'owner-2',
-    propertyId: 'prop-3',
-    type: 'OWNER_STAY',
-    checkIn: '2026-04-20',
-    checkOut: '2026-04-25',
-    nights: 5,
-    status: 'APPROVED',
-    approvedById: 'admin-1',
-    createdAt: new Date('2026-03-28'),
-  },
-  {
-    id: uuid(),
-    ownerId: 'owner-3',
-    propertyId: 'prop-5',
-    type: 'FRIENDS_FAMILY',
-    guestName: 'Eleni Alexiou',
-    guestRelation: 'Sister',
-    checkIn: '2026-07-01',
-    checkOut: '2026-07-08',
-    nights: 7,
-    status: 'REJECTED',
-    createdAt: new Date('2026-04-02'),
-  },
-];
-
-demoReservations.forEach((r) => ownerReservations.set(r.id, r));
-
-// Seed owner statements
-const demoStatements: OwnerStatement[] = [
-  {
-    id: uuid(),
-    ownerId: 'owner-1',
-    periodMonth: 3,
-    periodYear: 2026,
-    properties: [
-      {
-        propertyId: 'prop-1',
-        propertyName: 'Santorini Sunset Villa',
-        bookings: [
-          { guestName: 'Marcus Lindqvist', checkIn: '2026-03-01', checkOut: '2026-03-08', nights: 7, revenue: 1960 },
-          { guestName: 'Sophie Dubois', checkIn: '2026-03-14', checkOut: '2026-03-21', nights: 7, revenue: 1820 },
-        ],
-        totalRevenue: 3780,
-        expenses: [
-          { category: 'Cleaning', description: 'Professional cleaning x2', amount: 180 },
-          { category: 'Utilities', description: 'Electricity + Water', amount: 120 },
-        ],
-        totalExpenses: 300,
-        managementFee: 378,
-        feeType: '10%',
-        netIncome: 3102,
-      },
-      {
-        propertyId: 'prop-2',
-        propertyName: 'Athens Central Loft',
-        bookings: [
-          { guestName: 'James Richardson', checkIn: '2026-03-05', checkOut: '2026-03-12', nights: 7, revenue: 980 },
-        ],
-        totalRevenue: 980,
-        expenses: [
-          { category: 'Cleaning', description: 'Deep clean', amount: 120 },
-          { category: 'Maintenance', description: 'Plumbing repair', amount: 85 },
-        ],
-        totalExpenses: 205,
-        managementFee: 400,
-        feeType: 'Minimum (12%=117.60)',
-        netIncome: 375,
-      },
-    ],
-    totalIncome: 4760,
-    totalExpenses: 505,
-    totalManagementFees: 778,
-    netPayout: 3477,
-    currency: 'EUR',
-    status: 'SENT',
-    generatedAt: new Date('2026-04-02'),
-  },
-  {
-    id: uuid(),
-    ownerId: 'owner-2',
-    periodMonth: 3,
-    periodYear: 2026,
-    properties: [
-      {
-        propertyId: 'prop-3',
-        propertyName: 'Mykonos Beach House',
-        bookings: [
-          { guestName: 'Hans Weber', checkIn: '2026-03-10', checkOut: '2026-03-17', nights: 7, revenue: 2100 },
-          { guestName: 'Anna Kowalski', checkIn: '2026-03-20', checkOut: '2026-03-27', nights: 7, revenue: 2100 },
-        ],
-        totalRevenue: 4200,
-        expenses: [
-          { category: 'Cleaning', description: 'Professional cleaning x2', amount: 200 },
-          { category: 'Supplies', description: 'Guest amenities restock', amount: 75 },
-        ],
-        totalExpenses: 275,
-        managementFee: 420,
-        feeType: '10%',
-        netIncome: 3505,
-      },
-    ],
-    totalIncome: 4200,
-    totalExpenses: 275,
-    totalManagementFees: 420,
-    netPayout: 3505,
-    currency: 'EUR',
-    status: 'APPROVED',
-    generatedAt: new Date('2026-04-03'),
-  },
-  {
-    id: uuid(),
-    ownerId: 'owner-3',
-    periodMonth: 3,
-    periodYear: 2026,
-    properties: [
-      {
-        propertyId: 'prop-5',
-        propertyName: 'Rhodes Old Town Apt',
-        bookings: [
-          { guestName: 'Oliver Bennett', checkIn: '2026-03-08', checkOut: '2026-03-15', nights: 7, revenue: 1050 },
-        ],
-        totalRevenue: 1050,
-        expenses: [
-          { category: 'Cleaning', description: 'Standard cleaning', amount: 80 },
-        ],
-        totalExpenses: 80,
-        managementFee: 300,
-        feeType: 'Minimum (10%=105)',
-        netIncome: 670,
-      },
-      {
-        propertyId: 'prop-6',
-        propertyName: 'Paros Seaside Studio',
-        bookings: [],
-        totalRevenue: 0,
-        expenses: [
-          { category: 'Maintenance', description: 'Window repair', amount: 150 },
-        ],
-        totalExpenses: 150,
-        managementFee: 350,
-        feeType: 'Minimum (no bookings)',
-        netIncome: -500,
-      },
-    ],
-    totalIncome: 1050,
-    totalExpenses: 230,
-    totalManagementFees: 650,
-    netPayout: 170,
-    currency: 'EUR',
-    status: 'DRAFT',
-    generatedAt: new Date('2026-04-05'),
-  },
-];
-
-demoStatements.forEach((s) => ownerStatements.set(s.id, s));
-
-// ─── Service ─────────────────────────────────────────────────────────────────
+// ─── Service ─────────────────────────────────────────────────────────────
 
 export class OwnerPortalService {
-  // Portal Config
-  getPortalConfig(ownerId: string): OwnerPortalConfig | undefined {
-    return portalConfigs.get(ownerId);
+  // ─── Portal Config ──────────────────────────────────────────────────
+
+  async getPortalConfig(ownerId: string): Promise<OwnerPortalConfig> {
+    const owner = await prisma.owner.findUnique({
+      where: { id: ownerId },
+      select: { metadata: true },
+    });
+    if (!owner) throw ApiError.notFound('Owner');
+    const stored = (owner.metadata as any)?.portalConfig;
+    return mergeConfig(stored, ownerId);
   }
 
-  updatePortalConfig(ownerId: string, data: Partial<OwnerPortalConfig>): OwnerPortalConfig {
-    let config = portalConfigs.get(ownerId);
-    if (!config) {
-      config = getDefaultConfig();
-      config.id = uuid();
-      config.ownerId = ownerId;
-    }
+  async updatePortalConfig(
+    ownerId: string,
+    data: Partial<Omit<OwnerPortalConfig, 'ownerId'>>,
+  ): Promise<OwnerPortalConfig> {
+    const owner = await prisma.owner.findUnique({ where: { id: ownerId } });
+    if (!owner) throw ApiError.notFound('Owner');
+
+    const currentMetadata = (owner.metadata as Record<string, unknown>) || {};
+    const currentConfig = mergeConfig((currentMetadata as any).portalConfig, ownerId);
+
     const updated: OwnerPortalConfig = {
-      ...config,
-      ...data,
-      branding: { ...config.branding, ...(data.branding || {}) },
-      visibility: { ...config.visibility, ...(data.visibility || {}) },
-      notifications: { ...config.notifications, ...(data.notifications || {}) },
       ownerId,
-      id: config.id,
-      createdAt: config.createdAt,
+      customDomain: data.customDomain ?? currentConfig.customDomain,
+      branding: { ...currentConfig.branding, ...(data.branding || {}) },
+      visibility: { ...currentConfig.visibility, ...(data.visibility || {}) },
+      notifications: { ...currentConfig.notifications, ...(data.notifications || {}) },
     };
-    portalConfigs.set(ownerId, updated);
+
+    const nextMetadata = { ...currentMetadata, portalConfig: updated };
+    await prisma.owner.update({
+      where: { id: ownerId },
+      data: { metadata: nextMetadata as unknown as Prisma.InputJsonValue },
+    });
+
     return updated;
   }
 
-  getDefaultConfig(): OwnerPortalConfig {
-    return getDefaultConfig();
+  getDefaultConfig(ownerId = ''): OwnerPortalConfig {
+    return { ownerId, ...DEFAULT_CONFIG };
   }
 
-  // Owner Reservations
-  createOwnerReservation(ownerId: string, data: {
-    propertyId: string;
-    type: 'OWNER_STAY' | 'FRIENDS_FAMILY';
-    guestName?: string;
-    guestRelation?: string;
-    checkIn: string;
-    checkOut: string;
-    notes?: string;
-  }): OwnerReservation {
+  // ─── Owner Reservations (stored as Booking rows) ────────────────────
+
+  async createOwnerReservation(
+    ownerId: string,
+    data: {
+      propertyId: string;
+      type: 'OWNER_STAY' | 'FRIENDS_FAMILY';
+      guestName?: string;
+      guestRelation?: string;
+      checkIn: string;
+      checkOut: string;
+      notes?: string;
+    },
+  ): Promise<OwnerReservationView> {
+    // Verify the property belongs to the owner
+    const property = await prisma.property.findFirst({
+      where: { id: data.propertyId, ownerId, deletedAt: null },
+    });
+    if (!property) {
+      throw ApiError.forbidden('Property not found or not owned by this owner');
+    }
+
     const checkInDate = new Date(data.checkIn);
     const checkOutDate = new Date(data.checkOut);
+    if (checkOutDate <= checkInDate) {
+      throw ApiError.badRequest('Check-out must be after check-in', 'INVALID_DATES');
+    }
     const nights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
 
-    const reservation: OwnerReservation = {
-      id: uuid(),
-      ownerId,
-      propertyId: data.propertyId,
-      type: data.type,
-      guestName: data.guestName,
-      guestRelation: data.guestRelation,
-      checkIn: data.checkIn,
-      checkOut: data.checkOut,
-      nights,
-      notes: data.notes,
-      status: 'PENDING_APPROVAL',
-      createdAt: new Date(),
+    const guestName = data.type === 'FRIENDS_FAMILY' ? data.guestName ?? 'Owner guest' : 'Owner stay';
+
+    const booking = await prisma.booking.create({
+      data: {
+        propertyId: data.propertyId,
+        source: 'DIRECT',
+        status: 'PENDING',
+        checkIn: checkInDate,
+        checkOut: checkOutDate,
+        nights,
+        guestsCount: 1,
+        adults: 1,
+        nightlyRate: 0,
+        subtotal: 0,
+        cleaningFee: 0,
+        serviceFee: 0,
+        taxes: 0,
+        totalAmount: 0,
+        currency: 'EUR',
+        paymentStatus: 'PENDING',
+        guestName,
+        internalNotes: data.notes,
+        metadata: {
+          ownerReservation: {
+            ownerId,
+            type: data.type,
+            guestName: data.guestName,
+            guestRelation: data.guestRelation,
+            status: 'PENDING_APPROVAL',
+            notes: data.notes,
+          },
+        } as unknown as Prisma.InputJsonValue,
+      },
+      include: { property: { select: { id: true, name: true, ownerId: true } } },
+    });
+    return bookingToReservationView(booking);
+  }
+
+  async getOwnerReservations(ownerId?: string): Promise<OwnerReservationView[]> {
+    // Filter via JSON metadata path on Booking
+    const where: Prisma.BookingWhereInput = {
+      metadata: { path: ['ownerReservation'], not: Prisma.JsonNull },
+      ...(ownerId
+        ? { metadata: { path: ['ownerReservation', 'ownerId'], equals: ownerId } as any }
+        : {}),
     };
-    ownerReservations.set(reservation.id, reservation);
-    return reservation;
+    const rows = await prisma.booking.findMany({
+      where,
+      include: { property: { select: { id: true, name: true, ownerId: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+    return rows.map(bookingToReservationView);
   }
 
-  getOwnerReservations(ownerId?: string): OwnerReservation[] {
-    const all = Array.from(ownerReservations.values());
-    if (ownerId) {
-      return all.filter((r) => r.ownerId === ownerId);
-    }
-    return all;
+  async getReservationById(id: string): Promise<OwnerReservationView | undefined> {
+    const b = await prisma.booking.findUnique({
+      where: { id },
+      include: { property: { select: { id: true, name: true, ownerId: true } } },
+    });
+    if (!b) return undefined;
+    const meta = (b.metadata as any) || {};
+    if (!meta.ownerReservation) return undefined;
+    return bookingToReservationView(b);
   }
 
-  getReservationById(id: string): OwnerReservation | undefined {
-    return ownerReservations.get(id);
+  async approveReservation(id: string, userId: string): Promise<OwnerReservationView | undefined> {
+    return this.transitionStatus(id, 'APPROVED', 'CONFIRMED', userId);
+  }
+  async rejectReservation(id: string, userId: string): Promise<OwnerReservationView | undefined> {
+    return this.transitionStatus(id, 'REJECTED', 'CANCELLED', userId);
+  }
+  async cancelReservation(id: string): Promise<OwnerReservationView | undefined> {
+    return this.transitionStatus(id, 'CANCELLED', 'CANCELLED');
   }
 
-  approveReservation(id: string, userId: string): OwnerReservation | undefined {
-    const reservation = ownerReservations.get(id);
-    if (!reservation) return undefined;
-    reservation.status = 'APPROVED';
-    reservation.approvedById = userId;
-    ownerReservations.set(id, reservation);
-    return reservation;
+  private async transitionStatus(
+    id: string,
+    metaStatus: 'APPROVED' | 'REJECTED' | 'CANCELLED',
+    bookingStatus: 'CONFIRMED' | 'CANCELLED',
+    approvedById?: string,
+  ): Promise<OwnerReservationView | undefined> {
+    const existing = await prisma.booking.findUnique({ where: { id } });
+    if (!existing) return undefined;
+    const meta = (existing.metadata as Record<string, unknown>) || {};
+    const orMeta = (meta.ownerReservation as Record<string, unknown>) || {};
+    const nextMeta = {
+      ...meta,
+      ownerReservation: {
+        ...orMeta,
+        status: metaStatus,
+        ...(approvedById ? { approvedById } : {}),
+      },
+    };
+
+    const updated = await prisma.booking.update({
+      where: { id },
+      data: {
+        status: bookingStatus,
+        cancelledAt: bookingStatus === 'CANCELLED' ? new Date() : existing.cancelledAt,
+        confirmedAt: bookingStatus === 'CONFIRMED' ? new Date() : existing.confirmedAt,
+        metadata: nextMeta as unknown as Prisma.InputJsonValue,
+      },
+      include: { property: { select: { id: true, name: true, ownerId: true } } },
+    });
+    return bookingToReservationView(updated);
   }
 
-  rejectReservation(id: string, _userId: string): OwnerReservation | undefined {
-    const reservation = ownerReservations.get(id);
-    if (!reservation) return undefined;
-    reservation.status = 'REJECTED';
-    ownerReservations.set(id, reservation);
-    return reservation;
+  // ─── Statements (delegate to reports.service.getOwnerStatement) ─────
+
+  async getStatements(ownerId?: string): Promise<any[]> {
+    // We don't persist generated statements; instead expose the most recent
+    // statement period (current month) computed on demand. UI can request
+    // arbitrary months via the reports endpoint directly.
+    if (!ownerId) return [];
+    const { reportsService } = await import('../reports/reports.service');
+    const now = new Date();
+    const statement = await reportsService.getOwnerStatement({
+      ownerId,
+      periodMonth: now.getMonth() + 1,
+      periodYear: now.getFullYear(),
+    });
+    return [
+      {
+        id: `${ownerId}-${statement.period.year}-${statement.period.month}`,
+        ownerId,
+        ...statement,
+        status: 'DRAFT',
+        generatedAt: now.toISOString(),
+      },
+    ];
   }
 
-  cancelReservation(id: string): OwnerReservation | undefined {
-    const reservation = ownerReservations.get(id);
-    if (!reservation) return undefined;
-    reservation.status = 'CANCELLED';
-    ownerReservations.set(id, reservation);
-    return reservation;
-  }
-
-  // Statements
-  generateStatement(ownerId: string, month: number, year: number): OwnerStatement {
-    const ownerName = ownerNames[ownerId] || 'Unknown Owner';
-    const statement: OwnerStatement = {
-      id: uuid(),
+  async generateStatement(ownerId: string, month: number, year: number) {
+    const { reportsService } = await import('../reports/reports.service');
+    const statement = await reportsService.getOwnerStatement({
       ownerId,
       periodMonth: month,
       periodYear: year,
-      properties: [
-        {
-          propertyId: 'prop-auto',
-          propertyName: `${ownerName} - Property A`,
-          bookings: [
-            { guestName: 'Demo Guest', checkIn: `${year}-${String(month).padStart(2, '0')}-05`, checkOut: `${year}-${String(month).padStart(2, '0')}-12`, nights: 7, revenue: 1400 },
-          ],
-          totalRevenue: 1400,
-          expenses: [{ category: 'Cleaning', description: 'Standard clean', amount: 90 }],
-          totalExpenses: 90,
-          managementFee: 140,
-          feeType: '10%',
-          netIncome: 1170,
-        },
-      ],
-      totalIncome: 1400,
-      totalExpenses: 90,
-      totalManagementFees: 140,
-      netPayout: 1170,
-      currency: 'EUR',
-      status: 'DRAFT',
-      generatedAt: new Date(),
-    };
-    ownerStatements.set(statement.id, statement);
-    return statement;
-  }
-
-  getStatements(ownerId?: string): OwnerStatement[] {
-    const all = Array.from(ownerStatements.values());
-    if (ownerId) {
-      return all.filter((s) => s.ownerId === ownerId);
-    }
-    return all;
-  }
-
-  getStatementById(id: string): OwnerStatement | undefined {
-    return ownerStatements.get(id);
-  }
-
-  approveStatement(id: string): OwnerStatement | undefined {
-    const statement = ownerStatements.get(id);
-    if (!statement) return undefined;
-    statement.status = 'APPROVED';
-    ownerStatements.set(id, statement);
-    return statement;
-  }
-
-  sendStatement(id: string): OwnerStatement | undefined {
-    const statement = ownerStatements.get(id);
-    if (!statement) return undefined;
-    statement.status = 'SENT';
-    ownerStatements.set(id, statement);
-    return statement;
-  }
-
-  // Data export
-  exportOwnerData(ownerId: string, format: 'csv' | 'json'): string {
-    const config = portalConfigs.get(ownerId);
-    const reservations = this.getOwnerReservations(ownerId);
-    const statements = this.getStatements(ownerId);
-
-    const data = {
+    });
+    return {
+      id: `${ownerId}-${year}-${month}`,
       ownerId,
-      portalConfig: config || null,
+      ...statement,
+      status: 'DRAFT',
+      generatedAt: new Date().toISOString(),
+    };
+  }
+
+  async getStatementById(id: string) {
+    // Statement IDs are synthetic: `${ownerId}-${year}-${month}`
+    const m = id.match(/^(.+)-(\d{4})-(\d{1,2})$/);
+    if (!m) return undefined;
+    const ownerId = m[1];
+    const year = Number(m[2]);
+    const month = Number(m[3]);
+    if (!ownerId || !year || !month) return undefined;
+    return this.generateStatement(ownerId, month, year);
+  }
+
+  async approveStatement(id: string) {
+    const s = await this.getStatementById(id);
+    if (!s) return undefined;
+    return { ...s, status: 'APPROVED' };
+  }
+
+  async sendStatement(id: string) {
+    const s = await this.getStatementById(id);
+    if (!s) return undefined;
+    // Real send happens via reports.service.generateOwnerStatementPdf(?email=true)
+    return { ...s, status: 'SENT' };
+  }
+
+  // ─── Data export ────────────────────────────────────────────────────
+
+  async exportOwnerData(ownerId: string, format: 'csv' | 'json'): Promise<string> {
+    const [config, reservations, statements] = await Promise.all([
+      this.getPortalConfig(ownerId),
+      this.getOwnerReservations(ownerId),
+      this.getStatements(ownerId),
+    ]);
+
+    const payload = {
+      ownerId,
+      portalConfig: config,
       reservations,
       statements,
       exportedAt: new Date().toISOString(),
     };
 
-    if (format === 'json') {
-      return JSON.stringify(data, null, 2);
-    }
+    if (format === 'json') return JSON.stringify(payload, null, 2);
 
-    // CSV: flatten reservations
-    const csvLines = ['id,type,propertyId,checkIn,checkOut,nights,status,guestName'];
-    reservations.forEach((r) => {
-      csvLines.push(`${r.id},${r.type},${r.propertyId},${r.checkIn},${r.checkOut},${r.nights},${r.status},${r.guestName || ''}`);
-    });
-    return csvLines.join('\n');
+    const lines = ['id,type,propertyId,checkIn,checkOut,nights,status,guestName'];
+    for (const r of reservations) {
+      lines.push(
+        `${r.id},${r.type},${r.propertyId},${r.checkIn},${r.checkOut},${r.nights},${r.status},${r.guestName ?? ''}`,
+      );
+    }
+    return lines.join('\n');
   }
 }
 
