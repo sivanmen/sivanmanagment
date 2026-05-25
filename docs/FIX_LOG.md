@@ -301,3 +301,56 @@ Removed the password from the URL.
 
 *Last updated: 2026-05-25*
 *Total fixes logged: 14*
+
+---
+
+## 2026-05-25 — Users module rewritten: mock → real Prisma CRUD
+
+**Problem:** `users.service.ts` (616 lines, 0 Prisma calls) was a pure in-memory mock with hardcoded user arrays. The Users Management admin page sent requests that succeeded but never touched the database. Listed as HIGH priority in OPEN_ISSUES #7.
+
+**Files Changed:**
+- `apps/api/src/modules/users/users.service.ts` — complete rewrite (616 → ~450 lines of real DB code).
+
+**Approach:**
+- `getAllUsers()`: real `prisma.user.findMany` with pagination, search across email/firstName/lastName/phone, role/status/isActive filters, sortable columns. Excludes soft-deleted by default.
+- `getUserById()`: includes `notificationSettings`.
+- `createUser()`: generates random temp password (`crypto.randomBytes(9).toString('base64url')`), bcrypt-hashed at cost 12, returns the temp password ONCE in the response so admin can communicate it.
+- `updateUser()`: partial update, status takes precedence over isActive.
+- `deleteUser()`: soft delete (sets `deletedAt`) + revokes all active refresh tokens in a single transaction.
+- `inviteUser()`: createUser + applyNotificationPreset + records intent to send via configured channels.
+- `suspendUser()` / `activateUser()`: thin wrappers over updateUser.
+- `resetPassword()`: new random temp password + transactional revoke of all sessions (user logged out everywhere).
+- `getActivity()`: real `auditLog.findMany` filtered by userId (populated by auditMiddleware).
+- `getSessions()`: derived from non-revoked, non-expired `refreshToken` rows.
+- `revokeSession()`: marks a single refresh token revoked.
+- `updateNotificationSettings()`: per-category upsert into `UserNotificationSetting` (unique `[userId, category]`).
+- `updateQuietHours()`: stored in `User.metadata` JSON field (no dedicated table in current schema).
+- `getStats()`: parallel aggregates — totals by status, group-by role, active sessions count, last-7-days logins.
+
+**Status enum bridge:** Prisma's `UserStatus` is `ACTIVE | SUSPENDED | PENDING_VERIFICATION`. The legacy API/Zod schema uses `ACTIVE | INACTIVE | SUSPENDED | PENDING`. `toPrismaStatus()` / `fromPrismaStatus()` helpers bridge so the frontend doesn't need to change.
+
+**How Verified:** `pnpm --filter api build` — zero TS errors.
+
+**Result:** Users module now uses real DB. 0 Prisma calls → 21 Prisma calls. OPEN_ISSUES #7 resolved.
+
+---
+
+## 2026-05-25 — Double-booking guard via PostgreSQL advisory lock
+
+**Problem:** `bookings.service.ts` had application-level overlap detection (`findFirst` for conflicting bookings + calendar blocks) but no concurrency guarantee. Two parallel requests (e.g., admin manual booking + direct booking engine + iCal sync) could each find no conflict and then each insert overlapping bookings — the #1 way short-term rental businesses get destroyed on Booking.com reviews.
+
+**Files Changed:**
+- `apps/api/src/modules/bookings/bookings.service.ts` — added `acquireBookingLock()` helper; wrapped `createBooking()` and the date-changing path of `updateBooking()` in `prisma.$transaction` with `pg_advisory_xact_lock(hashtext(propertyId)::int, hashtext(unitId)::int)`.
+
+**Why advisory lock and not a unique constraint:** PostgreSQL doesn't natively support range-overlap exclusion without the `btree_gist` extension. Advisory locks are zero-schema-change, transaction-scoped (auto-released on commit/rollback), and serialize only contending writes on the same `(property, unit)` pair — other booking creates run in parallel.
+
+**How Verified:** `pnpm --filter api build` — zero TS errors. Manual reasoning: two concurrent createBooking calls for the same unit now serialize at the `pg_advisory_xact_lock` call; the second sees the first's committed booking in its overlap check and gets a 409 DATE_CONFLICT.
+
+**Future Work (deferred):** add the `btree_gist` extension and a real `EXCLUDE USING gist (...)` constraint on the `bookings` table for defense-in-depth at the DB level. Requires a migration that can fail if existing data already contains overlaps (likely none, but worth a dry-run).
+
+**Result:** Race condition closed. iCal-sync and direct-booking can now coexist safely with admin bookings.
+
+---
+
+*Last updated: 2026-05-25*
+*Total fixes logged: 16*

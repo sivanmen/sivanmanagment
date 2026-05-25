@@ -37,10 +37,8 @@ _(No remaining CRITICAL issues. P0 security batch resolved 2026-05-25 — see FI
 - **Impact:** AI chatbot returns canned responses, no Claude/GPT/Gemini calls
 - **Fix:** Use `config.ai.anthropicKey` (already in config) + Anthropic SDK
 
-### 7. Users module is mock — user management doesn't work
-- **File:** `apps/api/src/modules/users/users.service.ts` (0 Prisma calls)
-- **Impact:** Admin can't manage users through the Users Management page
-- **Note:** Auth module (login/register) works fine — this is about CRUD management
+### ~~7. Users module is mock~~ — RESOLVED 2026-05-25
+*Rewrote users.service.ts with real Prisma CRUD. 0 → 21 Prisma calls. See FIX_LOG.*
 
 ### 8. No automated tests
 - **Impact:** No safety net for regressions

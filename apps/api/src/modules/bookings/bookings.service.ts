@@ -2,6 +2,27 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../../prisma/client';
 import { ApiError } from '../../utils/api-error';
 
+/**
+ * Acquire a transaction-scoped Postgres advisory lock keyed on (propertyId, unitId).
+ * Prevents the TOCTOU race where two concurrent createBooking calls both find no
+ * overlap and then both succeed in inserting overlapping bookings.
+ *
+ * The lock is automatically released when the surrounding transaction commits
+ * or rolls back. Two keys are used (Postgres allows two int4 keys per lock).
+ */
+async function acquireBookingLock(
+  tx: Prisma.TransactionClient,
+  propertyId: string,
+  unitId: string | null | undefined,
+): Promise<void> {
+  // hashtext(text) returns int4, which is exactly what pg_advisory_xact_lock(int, int) wants.
+  await tx.$executeRawUnsafe(
+    `SELECT pg_advisory_xact_lock(hashtext($1)::int, hashtext($2)::int)`,
+    propertyId,
+    unitId ?? '',
+  );
+}
+
 interface BookingFilters {
   search?: string;
   status?: string;
@@ -218,137 +239,144 @@ export class BookingsService {
     const taxes = data.taxes || 0;
     const totalAmount = subtotal + cleaningFee + serviceFee + taxes;
 
-    // Check for date conflicts (overlapping bookings)
-    const conflictWhere: Prisma.BookingWhereInput = {
-      propertyId: data.propertyId,
-      status: { notIn: ['CANCELLED', 'NO_SHOW'] },
-      checkIn: { lt: checkOutDate },
-      checkOut: { gt: checkInDate },
-    };
+    // RACE-SAFE OVERLAP CHECK
+    // Wrap the lookup + insert inside a transaction that holds an advisory
+    // lock keyed on (propertyId, unitId). This serializes concurrent booking
+    // attempts on the same unit and guarantees no double-booking even under
+    // simultaneous requests (e.g. iCal sync + admin manual booking + direct
+    // booking engine all racing on the same villa).
+    return prisma.$transaction(async (tx) => {
+      await acquireBookingLock(tx, data.propertyId, data.unitId);
 
-    if (data.unitId) {
-      conflictWhere.unitId = data.unitId;
-    } else {
-      // If no unit specified, check property-level conflicts
-      conflictWhere.unitId = null;
-    }
+      const conflictWhere: Prisma.BookingWhereInput = {
+        propertyId: data.propertyId,
+        status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+        checkIn: { lt: checkOutDate },
+        checkOut: { gt: checkInDate },
+      };
 
-    const conflictingBooking = await prisma.booking.findFirst({
-      where: conflictWhere,
-    });
+      if (data.unitId) {
+        conflictWhere.unitId = data.unitId;
+      } else {
+        conflictWhere.unitId = null;
+      }
 
-    if (conflictingBooking) {
-      throw ApiError.conflict(
-        'Date conflict: another booking exists for these dates',
-        'DATE_CONFLICT',
-      );
-    }
-
-    // Check calendar block conflicts
-    const blockConflictWhere: Prisma.CalendarBlockWhereInput = {
-      propertyId: data.propertyId,
-      startDate: { lt: checkOutDate },
-      endDate: { gt: checkInDate },
-    };
-
-    if (data.unitId) {
-      blockConflictWhere.unitId = data.unitId;
-    } else {
-      blockConflictWhere.unitId = null;
-    }
-
-    const conflictingBlock = await prisma.calendarBlock.findFirst({
-      where: blockConflictWhere,
-    });
-
-    if (conflictingBlock) {
-      throw ApiError.conflict(
-        'Date conflict: a calendar block exists for these dates',
-        'BLOCK_CONFLICT',
-      );
-    }
-
-    // Auto-create GuestProfile if guestEmail provided and no existing profile
-    let guestId = data.guestId;
-    if (!guestId && data.guestEmail) {
-      const existingGuest = await prisma.guestProfile.findFirst({
-        where: { email: data.guestEmail, deletedAt: null },
+      const conflictingBooking = await tx.booking.findFirst({
+        where: conflictWhere,
       });
 
-      if (existingGuest) {
-        guestId = existingGuest.id;
-      } else {
-        // Parse name for guest profile
-        const nameParts = data.guestName.trim().split(/\s+/);
-        const firstName = nameParts[0] || data.guestName;
-        const lastName = nameParts.slice(1).join(' ') || '';
-
-        const newGuest = await prisma.guestProfile.create({
-          data: {
-            firstName,
-            lastName,
-            email: data.guestEmail,
-            phone: data.guestPhone,
-          },
-        });
-        guestId = newGuest.id;
+      if (conflictingBooking) {
+        throw ApiError.conflict(
+          'Date conflict: another booking exists for these dates',
+          'DATE_CONFLICT',
+        );
       }
-    }
 
-    const booking = await prisma.booking.create({
-      data: {
+      const blockConflictWhere: Prisma.CalendarBlockWhereInput = {
         propertyId: data.propertyId,
-        unitId: data.unitId,
-        guestId,
-        source: (data.source as any) || 'MANUAL',
-        externalId: data.externalId,
-        status: (data.status as any) || 'PENDING',
-        checkIn: checkInDate,
-        checkOut: checkOutDate,
-        nights,
-        guestsCount: data.guestsCount,
-        adults: data.adults ?? 1,
-        children: data.children ?? 0,
-        infants: data.infants ?? 0,
-        pets: data.pets ?? 0,
-        nightlyRate: data.nightlyRate,
-        subtotal,
-        cleaningFee,
-        serviceFee,
-        taxes,
-        totalAmount,
-        currency: data.currency || 'EUR',
-        paymentStatus: (data.paymentStatus as any) || 'PENDING',
-        guestName: data.guestName,
-        guestEmail: data.guestEmail,
-        guestPhone: data.guestPhone,
-        specialRequests: data.specialRequests,
-        internalNotes: data.internalNotes,
-        icalUid: data.icalUid,
-        confirmedAt: data.status === 'CONFIRMED' ? new Date() : undefined,
-        metadata: data.metadata,
-      },
-      include: {
-        property: {
-          select: {
-            id: true,
-            name: true,
-            city: true,
-            internalCode: true,
-          },
-        },
-        unit: {
-          select: {
-            id: true,
-            unitNumber: true,
-            unitType: true,
-          },
-        },
-        guest: true,
-      },
-    });
+        startDate: { lt: checkOutDate },
+        endDate: { gt: checkInDate },
+      };
 
-    return booking;
+      if (data.unitId) {
+        blockConflictWhere.unitId = data.unitId;
+      } else {
+        blockConflictWhere.unitId = null;
+      }
+
+      const conflictingBlock = await tx.calendarBlock.findFirst({
+        where: blockConflictWhere,
+      });
+
+      if (conflictingBlock) {
+        throw ApiError.conflict(
+          'Date conflict: a calendar block exists for these dates',
+          'BLOCK_CONFLICT',
+        );
+      }
+
+      // Auto-create GuestProfile if guestEmail provided and no existing profile
+      let guestId = data.guestId;
+      if (!guestId && data.guestEmail) {
+        const existingGuest = await tx.guestProfile.findFirst({
+          where: { email: data.guestEmail, deletedAt: null },
+        });
+
+        if (existingGuest) {
+          guestId = existingGuest.id;
+        } else {
+          // Parse name for guest profile
+          const nameParts = data.guestName.trim().split(/\s+/);
+          const firstName = nameParts[0] || data.guestName;
+          const lastName = nameParts.slice(1).join(' ') || '';
+
+          const newGuest = await tx.guestProfile.create({
+            data: {
+              firstName,
+              lastName,
+              email: data.guestEmail,
+              phone: data.guestPhone,
+            },
+          });
+          guestId = newGuest.id;
+        }
+      }
+
+      const booking = await tx.booking.create({
+        data: {
+          propertyId: data.propertyId,
+          unitId: data.unitId,
+          guestId,
+          source: (data.source as any) || 'MANUAL',
+          externalId: data.externalId,
+          status: (data.status as any) || 'PENDING',
+          checkIn: checkInDate,
+          checkOut: checkOutDate,
+          nights,
+          guestsCount: data.guestsCount,
+          adults: data.adults ?? 1,
+          children: data.children ?? 0,
+          infants: data.infants ?? 0,
+          pets: data.pets ?? 0,
+          nightlyRate: data.nightlyRate,
+          subtotal,
+          cleaningFee,
+          serviceFee,
+          taxes,
+          totalAmount,
+          currency: data.currency || 'EUR',
+          paymentStatus: (data.paymentStatus as any) || 'PENDING',
+          guestName: data.guestName,
+          guestEmail: data.guestEmail,
+          guestPhone: data.guestPhone,
+          specialRequests: data.specialRequests,
+          internalNotes: data.internalNotes,
+          icalUid: data.icalUid,
+          confirmedAt: data.status === 'CONFIRMED' ? new Date() : undefined,
+          metadata: data.metadata,
+        },
+        include: {
+          property: {
+            select: {
+              id: true,
+              name: true,
+              city: true,
+              internalCode: true,
+            },
+          },
+          unit: {
+            select: {
+              id: true,
+              unitNumber: true,
+              unitType: true,
+            },
+          },
+          guest: true,
+        },
+      });
+
+      return booking;
+    });
   }
 
   async updateBooking(
@@ -401,7 +429,8 @@ export class BookingsService {
     }
 
     // If dates changed, recalculate nights and check conflicts
-    if (data.checkIn || data.checkOut) {
+    const datesChanging = !!(data.checkIn || data.checkOut);
+    if (datesChanging) {
       if (checkOutDate <= checkInDate) {
         throw ApiError.badRequest('Check-out date must be after check-in date', 'INVALID_DATES');
       }
@@ -410,34 +439,6 @@ export class BookingsService {
         (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24),
       );
       updateData.nights = nights;
-
-      // Check for date conflicts (exclude current booking)
-      const unitId = data.unitId !== undefined ? data.unitId : existing.unitId;
-
-      const conflictWhere: Prisma.BookingWhereInput = {
-        id: { not: id },
-        propertyId: existing.propertyId,
-        status: { notIn: ['CANCELLED', 'NO_SHOW'] },
-        checkIn: { lt: checkOutDate },
-        checkOut: { gt: checkInDate },
-      };
-
-      if (unitId) {
-        conflictWhere.unitId = unitId;
-      } else {
-        conflictWhere.unitId = null;
-      }
-
-      const conflictingBooking = await prisma.booking.findFirst({
-        where: conflictWhere,
-      });
-
-      if (conflictingBooking) {
-        throw ApiError.conflict(
-          'Date conflict: another booking exists for these dates',
-          'DATE_CONFLICT',
-        );
-      }
 
       // Recalculate totals if nightlyRate is also changing or use existing
       const nightlyRate = data.nightlyRate ?? existing.nightlyRate.toNumber();
@@ -476,7 +477,38 @@ export class BookingsService {
     if (data.checkIn) updateData.checkIn = checkInDate;
     if (data.checkOut) updateData.checkOut = checkOutDate;
 
-    const booking = await prisma.booking.update({
+    // RACE-SAFE update: when dates are changing, hold an advisory lock on
+    // (propertyId, unitId) for the conflict-check + update so a concurrent
+    // create/update can't slip an overlapping booking in between.
+    const unitIdForLock = data.unitId !== undefined ? data.unitId : existing.unitId;
+
+    const booking = await prisma.$transaction(async (tx) => {
+      if (datesChanging) {
+        await acquireBookingLock(tx, existing.propertyId, unitIdForLock);
+
+        const conflictWhere: Prisma.BookingWhereInput = {
+          id: { not: id },
+          propertyId: existing.propertyId,
+          status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+          checkIn: { lt: checkOutDate },
+          checkOut: { gt: checkInDate },
+        };
+        if (unitIdForLock) {
+          conflictWhere.unitId = unitIdForLock;
+        } else {
+          conflictWhere.unitId = null;
+        }
+
+        const conflictingBooking = await tx.booking.findFirst({ where: conflictWhere });
+        if (conflictingBooking) {
+          throw ApiError.conflict(
+            'Date conflict: another booking exists for these dates',
+            'DATE_CONFLICT',
+          );
+        }
+      }
+
+      return tx.booking.update({
       where: { id },
       data: updateData,
       include: {
@@ -497,6 +529,7 @@ export class BookingsService {
         },
         guest: true,
       },
+    });
     });
 
     return booking;

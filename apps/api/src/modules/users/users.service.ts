@@ -1,26 +1,74 @@
+/**
+ * Users Service — real Prisma-backed CRUD for the User model.
+ *
+ * Rewritten 2026-05-25 from a 616-line in-memory mock that returned hardcoded
+ * data and could not actually manage users. See docs/FIX_LOG.md for context.
+ *
+ * Schema mapping notes:
+ *   - Prisma `UserStatus` enum:  ACTIVE | SUSPENDED | PENDING_VERIFICATION
+ *   - API/Zod `status` field:    ACTIVE | INACTIVE | SUSPENDED | PENDING
+ *     (legacy frontend values — bridged here on input/output)
+ *   - Soft delete uses `deletedAt`. Lists exclude soft-deleted by default.
+ *   - Quiet hours are stored on `User.metadata` because the schema does not
+ *     have a dedicated table for it. Shape: { quietHours: {...} }.
+ *
+ * Activity logs are sourced from the AuditLog model (populated by the
+ * auditMiddleware). Sessions are sourced from RefreshToken records.
+ *
+ * Notification settings live in the dedicated UserNotificationSetting table
+ * with a unique (userId, category) constraint, so we upsert per-row.
+ */
+
+import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+import { Prisma, UserRole, UserStatus } from '@prisma/client';
+import { prisma } from '../../prisma/client';
 import { ApiError } from '../../utils/api-error';
 
-interface User {
-  id: string;
+// ─── Types exposed to controllers ────────────────────────────────────────
+
+type ApiStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'PENDING';
+
+interface ListFilters {
+  search?: string;
+  role?: UserRole;
+  status?: ApiStatus;
+  isActive?: boolean;
+  page?: number;
+  limit?: number;
+  sortBy?: 'createdAt' | 'email' | 'firstName' | 'lastName' | 'role' | 'lastLoginAt';
+  sortOrder?: 'asc' | 'desc';
+}
+
+interface CreateUserInput {
   email: string;
   firstName: string;
   lastName: string;
-  role: string;
-  phone?: string | null;
-  avatarUrl?: string | null;
-  language: string;
-  status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'PENDING';
-  isActive: boolean;
-  twoFactorEnabled: boolean;
-  timezone: string;
-  lastLoginAt?: string;
-  createdAt: string;
-  updatedAt: string;
+  role: UserRole;
+  phone?: string;
+  language?: string;
 }
 
-interface NotificationSetting {
-  id: string;
-  userId: string;
+interface UpdateUserInput {
+  firstName?: string;
+  lastName?: string;
+  role?: UserRole;
+  phone?: string | null;
+  language?: string;
+  isActive?: boolean;
+  status?: ApiStatus;
+  timezone?: string;
+  twoFactorEnabled?: boolean;
+}
+
+interface InviteUserInput extends CreateUserInput {
+  sendEmail?: boolean;
+  sendWhatsApp?: boolean;
+  welcomeMessage?: string;
+  notificationPreset?: 'emailOnly' | 'emailAndWhatsApp' | 'allChannels' | 'minimal' | 'muteAll';
+}
+
+interface NotificationSettingInput {
   category: string;
   email: boolean;
   whatsapp: boolean;
@@ -28,8 +76,7 @@ interface NotificationSetting {
   push: boolean;
 }
 
-interface QuietHours {
-  userId: string;
+interface QuietHoursInput {
   enabled: boolean;
   startTime: string;
   endTime: string;
@@ -37,578 +84,492 @@ interface QuietHours {
   exceptUrgent: boolean;
 }
 
-interface ActivityLogEntry {
-  id: string;
-  userId: string;
-  action: string;
-  entityType: string;
-  entityId?: string;
-  ipAddress?: string;
-  userAgent?: string;
-  createdAt: string;
+// ─── Helpers ─────────────────────────────────────────────────────────────
+
+/**
+ * Map the API-facing status value to the Prisma enum value.
+ * 'INACTIVE' is treated as 'SUSPENDED' (no separate INACTIVE in schema).
+ * 'PENDING' maps to 'PENDING_VERIFICATION'.
+ */
+function toPrismaStatus(s: ApiStatus): UserStatus {
+  switch (s) {
+    case 'ACTIVE':
+      return UserStatus.ACTIVE;
+    case 'SUSPENDED':
+    case 'INACTIVE':
+      return UserStatus.SUSPENDED;
+    case 'PENDING':
+      return UserStatus.PENDING_VERIFICATION;
+  }
 }
 
-interface SessionInfo {
-  id: string;
-  deviceInfo: string;
-  ipAddress: string;
-  createdAt: string;
-  lastActive: string;
-  isCurrent: boolean;
+/**
+ * Map the Prisma enum value back to a legacy API string the existing
+ * frontend understands.
+ */
+function fromPrismaStatus(s: UserStatus): ApiStatus {
+  switch (s) {
+    case UserStatus.ACTIVE:
+      return 'ACTIVE';
+    case UserStatus.SUSPENDED:
+      return 'SUSPENDED';
+    case UserStatus.PENDING_VERIFICATION:
+      return 'PENDING';
+  }
 }
 
-const NOTIFICATION_CATEGORIES = ['booking', 'payment', 'maintenance', 'system', 'reports', 'marketing'];
+/** Project a Prisma User row into the legacy API response shape. */
+function toApiUser(u: any) {
+  const metadata = (u.metadata as Record<string, unknown>) || {};
+  return {
+    id: u.id,
+    email: u.email,
+    firstName: u.firstName,
+    lastName: u.lastName,
+    role: u.role,
+    phone: u.phone,
+    avatarUrl: u.avatarUrl,
+    language: u.preferredLocale,
+    status: fromPrismaStatus(u.status),
+    isActive: u.status === UserStatus.ACTIVE,
+    twoFactorEnabled: u.twoFactorEnabled,
+    timezone: u.timezone,
+    lastLoginAt: u.lastLoginAt?.toISOString() ?? null,
+    createdAt: u.createdAt.toISOString(),
+    updatedAt: u.updatedAt.toISOString(),
+    metadata,
+  };
+}
 
-const users: User[] = [
-  {
-    id: 'u-001',
-    email: 'sivan@sivanmanagement.com',
-    firstName: 'Sivan',
-    lastName: 'Menahem',
-    role: 'SUPER_ADMIN',
-    phone: '+30-694-000-0001',
-    language: 'he',
-    status: 'ACTIVE',
-    isActive: true,
-    twoFactorEnabled: true,
-    timezone: 'Europe/Athens',
-    lastLoginAt: '2026-04-11T08:00:00Z',
-    createdAt: '2025-01-01T00:00:00Z',
-    updatedAt: '2026-04-11T08:00:00Z',
-  },
-  {
-    id: 'u-002',
-    email: 'maria@sivanmanagement.com',
-    firstName: 'Maria',
-    lastName: 'Papadaki',
-    role: 'PROPERTY_MANAGER',
-    phone: '+30-694-000-0002',
-    language: 'en',
-    status: 'ACTIVE',
-    isActive: true,
-    twoFactorEnabled: false,
-    timezone: 'Europe/Athens',
-    lastLoginAt: '2026-04-10T14:30:00Z',
-    createdAt: '2025-02-15T00:00:00Z',
-    updatedAt: '2026-04-10T14:30:00Z',
-  },
-  {
-    id: 'u-003',
-    email: 'nikos@sivanmanagement.com',
-    firstName: 'Nikos',
-    lastName: 'Stavrakis',
-    role: 'MAINTENANCE',
-    phone: '+30-694-000-0003',
-    language: 'en',
-    status: 'ACTIVE',
-    isActive: true,
-    twoFactorEnabled: false,
-    timezone: 'Europe/Athens',
-    lastLoginAt: '2026-04-09T10:00:00Z',
-    createdAt: '2025-03-01T00:00:00Z',
-    updatedAt: '2026-04-09T10:00:00Z',
-  },
-  {
-    id: 'u-004',
-    email: 'owner.george@gmail.com',
-    firstName: 'George',
-    lastName: 'Alexiou',
-    role: 'OWNER',
-    phone: '+30-694-000-0004',
-    language: 'en',
-    status: 'ACTIVE',
-    isActive: true,
-    twoFactorEnabled: false,
-    timezone: 'Europe/Athens',
-    lastLoginAt: '2026-04-08T18:00:00Z',
-    createdAt: '2025-04-10T00:00:00Z',
-    updatedAt: '2026-04-08T18:00:00Z',
-  },
-  {
-    id: 'u-005',
-    email: 'elena@sivanmanagement.com',
-    firstName: 'Elena',
-    lastName: 'Katsarou',
-    role: 'PROPERTY_MANAGER',
-    phone: '+30-694-000-0005',
-    language: 'en',
-    status: 'INACTIVE',
-    isActive: false,
-    twoFactorEnabled: false,
-    timezone: 'Europe/Athens',
-    createdAt: '2025-05-20T00:00:00Z',
-    updatedAt: '2026-01-15T00:00:00Z',
-  },
-  {
-    id: 'u-006',
-    email: 'dimitris@gmail.com',
-    firstName: 'Dimitris',
-    lastName: 'Kosta',
-    role: 'OWNER',
-    phone: '+30-694-000-0006',
-    language: 'en',
-    status: 'PENDING',
-    isActive: false,
-    twoFactorEnabled: false,
-    timezone: 'Europe/Athens',
-    createdAt: '2026-04-05T00:00:00Z',
-    updatedAt: '2026-04-05T00:00:00Z',
-  },
-  {
-    id: 'u-007',
-    email: 'anna@sivanmanagement.com',
-    firstName: 'Anna',
-    lastName: 'Petridou',
-    role: 'PROPERTY_MANAGER',
-    phone: '+30-694-000-0007',
-    language: 'en',
-    status: 'SUSPENDED',
-    isActive: false,
-    twoFactorEnabled: false,
-    timezone: 'Europe/Athens',
-    lastLoginAt: '2026-03-20T09:00:00Z',
-    createdAt: '2025-06-15T00:00:00Z',
-    updatedAt: '2026-03-25T00:00:00Z',
-  },
-];
+/** Generate a short random temporary password (returned to caller, never stored in plain). */
+function generateTempPassword(): string {
+  // 12 chars, base64 url-safe, no padding. Enough entropy for a one-time invite.
+  return crypto.randomBytes(9).toString('base64url');
+}
 
-const notificationSettings: NotificationSetting[] = [
-  // Sivan - all enabled
-  { id: 'ns-001', userId: 'u-001', category: 'booking', email: true, whatsapp: true, sms: false, push: true },
-  { id: 'ns-002', userId: 'u-001', category: 'payment', email: true, whatsapp: false, sms: false, push: true },
-  { id: 'ns-003', userId: 'u-001', category: 'maintenance', email: true, whatsapp: true, sms: true, push: true },
-  { id: 'ns-004', userId: 'u-001', category: 'system', email: true, whatsapp: true, sms: true, push: true },
-  { id: 'ns-005', userId: 'u-001', category: 'reports', email: true, whatsapp: false, sms: false, push: false },
-  { id: 'ns-006', userId: 'u-001', category: 'marketing', email: false, whatsapp: false, sms: false, push: false },
-  // Maria - email + whatsapp
-  { id: 'ns-007', userId: 'u-002', category: 'booking', email: true, whatsapp: true, sms: false, push: false },
-  { id: 'ns-008', userId: 'u-002', category: 'payment', email: true, whatsapp: false, sms: false, push: false },
-  { id: 'ns-009', userId: 'u-002', category: 'maintenance', email: true, whatsapp: true, sms: false, push: false },
-  { id: 'ns-010', userId: 'u-002', category: 'system', email: true, whatsapp: false, sms: false, push: false },
-  { id: 'ns-011', userId: 'u-002', category: 'reports', email: true, whatsapp: false, sms: false, push: false },
-  { id: 'ns-012', userId: 'u-002', category: 'marketing', email: false, whatsapp: false, sms: false, push: false },
-];
+// ─── Service ─────────────────────────────────────────────────────────────
 
-const quietHoursMap: Record<string, QuietHours> = {
-  'u-001': {
-    userId: 'u-001',
-    enabled: true,
-    startTime: '22:00',
-    endTime: '07:00',
-    days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-    exceptUrgent: true,
-  },
-};
+class UsersService {
+  /**
+   * List users with filters, search and pagination.
+   * Soft-deleted users are excluded.
+   */
+  async getAllUsers(filters: ListFilters) {
+    const page = Math.max(1, filters.page ?? 1);
+    const limit = Math.min(100, Math.max(1, filters.limit ?? 20));
+    const skip = (page - 1) * limit;
 
-const activityLogs: ActivityLogEntry[] = [
-  { id: 'al-001', userId: 'u-001', action: 'LOGIN', entityType: 'session', ipAddress: '192.168.1.1', userAgent: 'Chrome/122 (Windows)', createdAt: '2026-04-11T08:00:00Z' },
-  { id: 'al-002', userId: 'u-001', action: 'UPDATE', entityType: 'property', entityId: 'p-001', ipAddress: '192.168.1.1', userAgent: 'Chrome/122 (Windows)', createdAt: '2026-04-11T07:45:00Z' },
-  { id: 'al-003', userId: 'u-001', action: 'CREATE', entityType: 'booking', entityId: 'b-015', ipAddress: '192.168.1.1', userAgent: 'Chrome/122 (Windows)', createdAt: '2026-04-10T16:30:00Z' },
-  { id: 'al-004', userId: 'u-001', action: 'VIEW', entityType: 'report', entityId: 'r-003', ipAddress: '10.0.0.5', userAgent: 'Safari/17 (Mac)', createdAt: '2026-04-10T14:00:00Z' },
-  { id: 'al-005', userId: 'u-001', action: 'UPDATE', entityType: 'user', entityId: 'u-003', ipAddress: '192.168.1.1', userAgent: 'Chrome/122 (Windows)', createdAt: '2026-04-10T11:20:00Z' },
-  { id: 'al-006', userId: 'u-002', action: 'LOGIN', entityType: 'session', ipAddress: '10.0.0.22', userAgent: 'Firefox/120 (Linux)', createdAt: '2026-04-10T14:30:00Z' },
-  { id: 'al-007', userId: 'u-002', action: 'CREATE', entityType: 'maintenance', entityId: 'm-008', ipAddress: '10.0.0.22', userAgent: 'Firefox/120 (Linux)', createdAt: '2026-04-10T15:10:00Z' },
-  { id: 'al-008', userId: 'u-003', action: 'LOGIN', entityType: 'session', ipAddress: '10.0.0.50', userAgent: 'Chrome/122 (Android)', createdAt: '2026-04-09T10:00:00Z' },
-  { id: 'al-009', userId: 'u-004', action: 'LOGIN', entityType: 'session', ipAddress: '85.73.122.45', userAgent: 'Safari/17 (iPhone)', createdAt: '2026-04-08T18:00:00Z' },
-  { id: 'al-010', userId: 'u-001', action: 'DELETE', entityType: 'document', entityId: 'd-005', ipAddress: '192.168.1.1', userAgent: 'Chrome/122 (Windows)', createdAt: '2026-04-09T09:15:00Z' },
-];
+    const where: Prisma.UserWhereInput = {
+      deletedAt: null,
+    };
 
-const sessionsMap: Record<string, SessionInfo[]> = {
-  'u-001': [
-    { id: 's-001', deviceInfo: 'Chrome 122 on Windows 11', ipAddress: '192.168.1.1', createdAt: '2026-04-11T08:00:00Z', lastActive: '2026-04-11T10:30:00Z', isCurrent: true },
-    { id: 's-002', deviceInfo: 'Safari 17 on macOS Sonoma', ipAddress: '10.0.0.5', createdAt: '2026-04-10T14:00:00Z', lastActive: '2026-04-10T16:45:00Z', isCurrent: false },
-    { id: 's-003', deviceInfo: 'Chrome Mobile on Android 15', ipAddress: '85.73.44.12', createdAt: '2026-04-08T09:00:00Z', lastActive: '2026-04-08T11:30:00Z', isCurrent: false },
-  ],
-  'u-002': [
-    { id: 's-004', deviceInfo: 'Firefox 120 on Ubuntu', ipAddress: '10.0.0.22', createdAt: '2026-04-10T14:30:00Z', lastActive: '2026-04-10T17:00:00Z', isCurrent: true },
-  ],
-};
+    if (filters.role) where.role = filters.role;
 
-export class UsersService {
-  async getAllUsers(filters: {
-    search?: string;
-    role?: string;
-    status?: string;
-    isActive?: boolean;
-    page?: number;
-    limit?: number;
-    sortBy?: string;
-    sortOrder?: 'asc' | 'desc';
-  }) {
-    const { search, role, status, isActive, page = 1, limit = 20, sortBy = 'createdAt', sortOrder = 'desc' } = filters;
-
-    let filtered = [...users];
-
-    if (search) {
-      const q = search.toLowerCase();
-      filtered = filtered.filter(
-        (u) =>
-          u.email.toLowerCase().includes(q) ||
-          u.firstName.toLowerCase().includes(q) ||
-          u.lastName.toLowerCase().includes(q) ||
-          (u.phone && u.phone.includes(q)),
-      );
+    if (filters.status) {
+      where.status = toPrismaStatus(filters.status);
+    } else if (filters.isActive !== undefined) {
+      where.status = filters.isActive ? UserStatus.ACTIVE : UserStatus.SUSPENDED;
     }
 
-    if (role) {
-      filtered = filtered.filter((u) => u.role === role);
+    if (filters.search) {
+      const term = filters.search.trim();
+      where.OR = [
+        { email: { contains: term, mode: 'insensitive' } },
+        { firstName: { contains: term, mode: 'insensitive' } },
+        { lastName: { contains: term, mode: 'insensitive' } },
+        { phone: { contains: term, mode: 'insensitive' } },
+      ];
     }
 
-    if (status) {
-      filtered = filtered.filter((u) => u.status === status);
-    }
+    const orderBy: Prisma.UserOrderByWithRelationInput = {};
+    const sortBy = filters.sortBy ?? 'createdAt';
+    const sortOrder = filters.sortOrder ?? 'desc';
+    orderBy[sortBy] = sortOrder;
 
-    if (isActive !== undefined) {
-      filtered = filtered.filter((u) => u.isActive === isActive);
-    }
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({ where, orderBy, skip, take: limit }),
+      prisma.user.count({ where }),
+    ]);
 
-    filtered.sort((a, b) => {
-      const aVal = (a as any)[sortBy] || '';
-      const bVal = (b as any)[sortBy] || '';
-      const cmp = aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
-      return sortOrder === 'desc' ? -cmp : cmp;
-    });
-
-    const total = filtered.length;
-    const start = (page - 1) * limit;
-    const items = filtered.slice(start, start + limit);
-
-    return { users: items, total, page, limit };
+    return {
+      users: users.map(toApiUser),
+      total,
+      page,
+      limit,
+    };
   }
 
   async getUserById(id: string) {
-    const user = users.find((u) => u.id === id);
-    if (!user) {
-      throw ApiError.notFound('User');
-    }
-
-    const userNotifSettings = notificationSettings.filter((ns) => ns.userId === id);
-    const userQuietHours = quietHoursMap[id] || {
-      userId: id,
-      enabled: false,
-      startTime: '22:00',
-      endTime: '07:00',
-      days: [],
-      exceptUrgent: true,
-    };
-
-    // Fill missing categories with defaults
-    const allSettings = NOTIFICATION_CATEGORIES.map((cat) => {
-      const existing = userNotifSettings.find((s) => s.category === cat);
-      if (existing) return existing;
-      return {
-        id: `ns-auto-${id}-${cat}`,
-        userId: id,
-        category: cat,
-        email: cat === 'system',
-        whatsapp: false,
-        sms: false,
-        push: false,
-      };
+    const user = await prisma.user.findFirst({
+      where: { id, deletedAt: null },
+      include: {
+        notificationSettings: true,
+      },
     });
-
+    if (!user) throw ApiError.notFound(`User ${id} not found`);
+    const apiUser = toApiUser(user);
     return {
-      ...user,
-      notificationSettings: allSettings,
-      quietHours: userQuietHours,
+      ...apiUser,
+      notificationSettings: user.notificationSettings.map((ns) => ({
+        id: ns.id,
+        userId: ns.userId,
+        category: ns.category,
+        email: ns.email,
+        whatsapp: ns.whatsapp,
+        sms: ns.sms,
+        push: ns.push,
+      })),
     };
   }
 
-  async createUser(data: {
-    email: string;
-    firstName: string;
-    lastName: string;
-    role: string;
-    phone?: string;
-    language?: string;
-  }) {
-    const exists = users.find((u) => u.email === data.email);
-    if (exists) {
-      throw ApiError.conflict('User with this email already exists', 'EMAIL_EXISTS');
+  /**
+   * Create a user with a temporary random password. The temp password is
+   * returned in the response so an admin can communicate it to the user.
+   * In a follow-up, this should trigger an invite email/WhatsApp via the
+   * (still pending) SendGrid/Evolution integrations.
+   */
+  async createUser(input: CreateUserInput) {
+    // Reject if email already exists (including soft-deleted to be safe).
+    const existing = await prisma.user.findUnique({ where: { email: input.email } });
+    if (existing) {
+      throw ApiError.conflict(`A user with email ${input.email} already exists`, 'EMAIL_EXISTS');
     }
 
-    const now = new Date().toISOString();
-    const user: User = {
-      id: `u-${String(users.length + 1).padStart(3, '0')}`,
-      email: data.email,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      role: data.role,
-      phone: data.phone,
-      language: data.language || 'en',
-      status: 'ACTIVE',
-      isActive: true,
-      twoFactorEnabled: false,
-      timezone: 'Europe/Athens',
-      createdAt: now,
-      updatedAt: now,
-    };
+    const tempPassword = generateTempPassword();
+    const passwordHash = await bcrypt.hash(tempPassword, 12);
 
-    users.push(user);
-
-    // Create default notification settings
-    NOTIFICATION_CATEGORIES.forEach((cat) => {
-      notificationSettings.push({
-        id: `ns-${Date.now()}-${cat}`,
-        userId: user.id,
-        category: cat,
-        email: true,
-        whatsapp: false,
-        sms: false,
-        push: false,
-      });
-    });
-
-    return user;
-  }
-
-  async inviteUser(data: {
-    email: string;
-    firstName: string;
-    lastName: string;
-    role: string;
-    phone?: string;
-    language?: string;
-    sendEmail?: boolean;
-    sendWhatsApp?: boolean;
-    welcomeMessage?: string;
-    notificationPreset?: string;
-  }) {
-    const exists = users.find((u) => u.email === data.email);
-    if (exists) {
-      throw ApiError.conflict('User with this email already exists', 'EMAIL_EXISTS');
-    }
-
-    const now = new Date().toISOString();
-    const user: User = {
-      id: `u-${String(users.length + 1).padStart(3, '0')}`,
-      email: data.email,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      role: data.role,
-      phone: data.phone,
-      language: data.language || 'en',
-      status: 'PENDING',
-      isActive: false,
-      twoFactorEnabled: false,
-      timezone: 'Europe/Athens',
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    users.push(user);
-
-    // Apply notification preset
-    const preset = data.notificationPreset || 'emailOnly';
-    NOTIFICATION_CATEGORIES.forEach((cat) => {
-      let email = true;
-      let whatsapp = false;
-      let sms = false;
-
-      if (preset === 'allChannels') {
-        whatsapp = true;
-        sms = true;
-      } else if (preset === 'emailAndWhatsApp') {
-        whatsapp = true;
-      } else if (preset === 'minimal') {
-        email = cat === 'system';
-      } else if (preset === 'muteAll') {
-        email = false;
-      }
-
-      notificationSettings.push({
-        id: `ns-${Date.now()}-${cat}`,
-        userId: user.id,
-        category: cat,
-        email,
-        whatsapp,
-        sms,
-        push: false,
-      });
+    const user = await prisma.user.create({
+      data: {
+        email: input.email,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        role: input.role,
+        phone: input.phone || null,
+        preferredLocale: input.language || 'en',
+        passwordHash,
+        status: UserStatus.PENDING_VERIFICATION,
+      },
     });
 
     return {
-      user,
-      invitationSent: true,
-      channels: {
-        email: data.sendEmail !== false,
-        whatsapp: data.sendWhatsApp === true && !!data.phone,
+      ...toApiUser(user),
+      tempPassword, // one-shot return — never stored in plain
+    };
+  }
+
+  async updateUser(id: string, input: UpdateUserInput) {
+    const existing = await prisma.user.findFirst({ where: { id, deletedAt: null } });
+    if (!existing) throw ApiError.notFound(`User ${id} not found`);
+
+    const data: Prisma.UserUpdateInput = {};
+
+    if (input.firstName !== undefined) data.firstName = input.firstName;
+    if (input.lastName !== undefined) data.lastName = input.lastName;
+    if (input.role !== undefined) data.role = input.role;
+    if (input.phone !== undefined) data.phone = input.phone;
+    if (input.language !== undefined) data.preferredLocale = input.language;
+    if (input.timezone !== undefined) data.timezone = input.timezone;
+    if (input.twoFactorEnabled !== undefined) data.twoFactorEnabled = input.twoFactorEnabled;
+
+    // Status takes precedence over isActive when both are provided.
+    if (input.status !== undefined) {
+      data.status = toPrismaStatus(input.status);
+    } else if (input.isActive !== undefined) {
+      data.status = input.isActive ? UserStatus.ACTIVE : UserStatus.SUSPENDED;
+    }
+
+    const updated = await prisma.user.update({ where: { id }, data });
+    return toApiUser(updated);
+  }
+
+  /** Soft delete — sets deletedAt. Refresh tokens are revoked too. */
+  async deleteUser(id: string) {
+    const existing = await prisma.user.findFirst({ where: { id, deletedAt: null } });
+    if (!existing) throw ApiError.notFound(`User ${id} not found`);
+
+    const now = new Date();
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id },
+        data: {
+          deletedAt: now,
+          status: UserStatus.SUSPENDED,
+        },
+      }),
+      prisma.refreshToken.updateMany({
+        where: { userId: id, revokedAt: null },
+        data: { revokedAt: now },
+      }),
+    ]);
+
+    return { id, deletedAt: now.toISOString() };
+  }
+
+  /**
+   * Invite a user. Same as createUser but also applies a notification preset
+   * and records the intent to send a welcome message. Actual sending depends
+   * on SendGrid + Evolution being wired in production.
+   */
+  async inviteUser(input: InviteUserInput) {
+    const created = await this.createUser({
+      email: input.email,
+      firstName: input.firstName,
+      lastName: input.lastName,
+      role: input.role,
+      phone: input.phone,
+      language: input.language,
+    });
+
+    if (input.notificationPreset) {
+      await this.applyNotificationPreset(created.id, input.notificationPreset);
+    }
+
+    const channels: string[] = [];
+    if (input.sendEmail) channels.push('email');
+    if (input.sendWhatsApp) channels.push('whatsapp');
+
+    return {
+      ...created,
+      invite: {
+        channels,
+        welcomeMessage: input.welcomeMessage ?? null,
+        // Indicates that the API recorded the request but external sending
+        // depends on configured integrations.
+        scheduled: channels.length > 0,
       },
     };
-  }
-
-  async updateUser(
-    id: string,
-    data: Partial<{
-      firstName: string;
-      lastName: string;
-      role: string;
-      phone: string | null;
-      language: string;
-      isActive: boolean;
-      status: string;
-      timezone: string;
-      twoFactorEnabled: boolean;
-    }>,
-  ) {
-    const idx = users.findIndex((u) => u.id === id);
-    if (idx === -1) {
-      throw ApiError.notFound('User');
-    }
-
-    users[idx] = { ...users[idx], ...data, updatedAt: new Date().toISOString() } as any;
-    return users[idx];
-  }
-
-  async deleteUser(id: string) {
-    const idx = users.findIndex((u) => u.id === id);
-    if (idx === -1) {
-      throw ApiError.notFound('User');
-    }
-
-    users[idx].isActive = false;
-    users[idx].status = 'INACTIVE';
-    users[idx].updatedAt = new Date().toISOString();
-    return { message: 'User deactivated successfully' };
   }
 
   async suspendUser(id: string) {
-    const idx = users.findIndex((u) => u.id === id);
-    if (idx === -1) {
-      throw ApiError.notFound('User');
-    }
-
-    users[idx].status = 'SUSPENDED';
-    users[idx].isActive = false;
-    users[idx].updatedAt = new Date().toISOString();
-    return users[idx];
+    return this.updateUser(id, { status: 'SUSPENDED' });
   }
 
   async activateUser(id: string) {
-    const idx = users.findIndex((u) => u.id === id);
-    if (idx === -1) {
-      throw ApiError.notFound('User');
-    }
-
-    users[idx].status = 'ACTIVE';
-    users[idx].isActive = true;
-    users[idx].updatedAt = new Date().toISOString();
-    return users[idx];
+    return this.updateUser(id, { status: 'ACTIVE' });
   }
 
+  /**
+   * Reset password to a new random temporary password. Existing refresh
+   * tokens are revoked so the user is logged out everywhere.
+   */
   async resetPassword(id: string) {
-    const idx = users.findIndex((u) => u.id === id);
-    if (idx === -1) {
-      throw ApiError.notFound('User');
-    }
+    const existing = await prisma.user.findFirst({ where: { id, deletedAt: null } });
+    if (!existing) throw ApiError.notFound(`User ${id} not found`);
 
-    users[idx].updatedAt = new Date().toISOString();
-    return { message: 'Password reset email sent successfully', userId: id };
+    const tempPassword = generateTempPassword();
+    const passwordHash = await bcrypt.hash(tempPassword, 12);
+    const now = new Date();
+
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id },
+        data: { passwordHash },
+      }),
+      prisma.refreshToken.updateMany({
+        where: { userId: id, revokedAt: null },
+        data: { revokedAt: now },
+      }),
+    ]);
+
+    return {
+      id,
+      tempPassword,
+      message: 'Password reset and all active sessions revoked. Communicate the temp password securely.',
+    };
   }
 
-  async getActivity(id: string, filters: { page?: number; limit?: number }) {
-    const user = users.find((u) => u.id === id);
-    if (!user) {
-      throw ApiError.notFound('User');
-    }
+  /**
+   * Activity log — pulled from the AuditLog model populated by auditMiddleware.
+   */
+  async getActivity(userId: string, filters: { page?: number; limit?: number }) {
+    const page = Math.max(1, filters.page ?? 1);
+    const limit = Math.min(100, Math.max(1, filters.limit ?? 20));
+    const skip = (page - 1) * limit;
 
-    const { page = 1, limit = 20 } = filters;
-    const userLogs = activityLogs.filter((l) => l.userId === id);
-    const total = userLogs.length;
-    const start = (page - 1) * limit;
-    const items = userLogs.slice(start, start + limit);
+    const [rows, total] = await Promise.all([
+      prisma.auditLog.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.auditLog.count({ where: { userId } }),
+    ]);
 
-    return { activity: items, total, page, limit };
+    return {
+      activity: rows.map((r) => ({
+        id: r.id,
+        userId: r.userId,
+        action: r.action,
+        entityType: r.entityType,
+        entityId: r.entityId,
+        ipAddress: r.ipAddress,
+        userAgent: r.userAgent,
+        createdAt: r.createdAt.toISOString(),
+      })),
+      total,
+      page,
+      limit,
+    };
   }
 
-  async getSessions(id: string) {
-    const user = users.find((u) => u.id === id);
-    if (!user) {
-      throw ApiError.notFound('User');
-    }
+  /**
+   * Active sessions — derived from non-revoked, non-expired RefreshToken rows.
+   */
+  async getSessions(userId: string) {
+    const now = new Date();
+    const tokens = await prisma.refreshToken.findMany({
+      where: {
+        userId,
+        revokedAt: null,
+        expiresAt: { gt: now },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
 
-    return sessionsMap[id] || [];
+    return tokens.map((t) => ({
+      id: t.id,
+      deviceInfo: t.deviceInfo || 'Unknown device',
+      ipAddress: t.ipAddress || 'Unknown',
+      createdAt: t.createdAt.toISOString(),
+      lastActive: t.createdAt.toISOString(), // schema does not track last-active; use createdAt
+      isCurrent: false, // would require comparing to current request's refresh token
+      expiresAt: t.expiresAt.toISOString(),
+    }));
   }
 
   async revokeSession(userId: string, sessionId: string) {
-    const sessions = sessionsMap[userId];
-    if (!sessions) {
-      throw ApiError.notFound('Session');
-    }
-
-    const idx = sessions.findIndex((s) => s.id === sessionId);
-    if (idx === -1) {
-      throw ApiError.notFound('Session');
-    }
-
-    sessions.splice(idx, 1);
-    return { message: 'Session revoked successfully' };
+    const token = await prisma.refreshToken.findFirst({ where: { id: sessionId, userId } });
+    if (!token) throw ApiError.notFound(`Session ${sessionId} not found for user ${userId}`);
+    await prisma.refreshToken.update({
+      where: { id: sessionId },
+      data: { revokedAt: new Date() },
+    });
+    return { id: sessionId, revoked: true };
   }
 
-  async updateNotificationSettings(
-    userId: string,
-    settings: { category: string; email: boolean; whatsapp: boolean; sms: boolean; push: boolean }[],
-  ) {
-    const user = users.find((u) => u.id === userId);
-    if (!user) {
-      throw ApiError.notFound('User');
-    }
+  /**
+   * Replace the user's notification settings. Uses upsert per category so
+   * unrelated categories aren't deleted.
+   */
+  async updateNotificationSettings(userId: string, settings: NotificationSettingInput[]) {
+    const user = await prisma.user.findFirst({ where: { id: userId, deletedAt: null } });
+    if (!user) throw ApiError.notFound(`User ${userId} not found`);
 
-    for (const setting of settings) {
-      const idx = notificationSettings.findIndex(
-        (ns) => ns.userId === userId && ns.category === setting.category,
-      );
-      if (idx !== -1) {
-        notificationSettings[idx] = { ...notificationSettings[idx], ...setting };
-      } else {
-        notificationSettings.push({
-          id: `ns-${Date.now()}-${setting.category}`,
-          userId,
-          ...setting,
-        });
-      }
-    }
+    await prisma.$transaction(
+      settings.map((s) =>
+        prisma.userNotificationSetting.upsert({
+          where: { userId_category: { userId, category: s.category } },
+          update: { email: s.email, whatsapp: s.whatsapp, sms: s.sms, push: s.push },
+          create: {
+            userId,
+            category: s.category,
+            email: s.email,
+            whatsapp: s.whatsapp,
+            sms: s.sms,
+            push: s.push,
+          },
+        }),
+      ),
+    );
 
-    return notificationSettings.filter((ns) => ns.userId === userId);
+    const updated = await prisma.userNotificationSetting.findMany({ where: { userId } });
+    return updated.map((ns) => ({
+      id: ns.id,
+      userId: ns.userId,
+      category: ns.category,
+      email: ns.email,
+      whatsapp: ns.whatsapp,
+      sms: ns.sms,
+      push: ns.push,
+    }));
   }
 
-  async updateQuietHours(userId: string, data: Omit<QuietHours, 'userId'>) {
-    const user = users.find((u) => u.id === userId);
-    if (!user) {
-      throw ApiError.notFound('User');
-    }
-
-    quietHoursMap[userId] = { userId, ...data };
-    return quietHoursMap[userId];
+  /** Apply a notification preset to a freshly invited user. */
+  private async applyNotificationPreset(userId: string, preset: NonNullable<InviteUserInput['notificationPreset']>) {
+    const CATEGORIES = ['booking', 'payment', 'maintenance', 'system', 'reports', 'marketing'] as const;
+    const matrix: Record<typeof preset, { email: boolean; whatsapp: boolean; sms: boolean; push: boolean }> = {
+      emailOnly: { email: true, whatsapp: false, sms: false, push: false },
+      emailAndWhatsApp: { email: true, whatsapp: true, sms: false, push: false },
+      allChannels: { email: true, whatsapp: true, sms: true, push: true },
+      minimal: { email: true, whatsapp: false, sms: false, push: false },
+      muteAll: { email: false, whatsapp: false, sms: false, push: false },
+    };
+    const channels = matrix[preset];
+    await this.updateNotificationSettings(
+      userId,
+      CATEGORIES.map((c) => ({ category: c, ...channels })),
+    );
   }
 
+  /**
+   * Quiet hours are stored on User.metadata (no dedicated table in the
+   * schema yet). Shape: metadata = { ...rest, quietHours: {...} }.
+   */
+  async updateQuietHours(userId: string, data: QuietHoursInput) {
+    const user = await prisma.user.findFirst({ where: { id: userId, deletedAt: null } });
+    if (!user) throw ApiError.notFound(`User ${userId} not found`);
+
+    const currentMetadata = (user.metadata as Record<string, unknown>) || {};
+    const nextMetadata = { ...currentMetadata, quietHours: data };
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { metadata: nextMetadata as unknown as Prisma.InputJsonValue },
+    });
+
+    return { userId, quietHours: data };
+  }
+
+  /**
+   * Aggregate stats for the admin dashboard.
+   */
   async getStats() {
-    const total = users.length;
-    const active = users.filter((u) => u.status === 'ACTIVE').length;
-    const inactive = users.filter((u) => u.status === 'INACTIVE').length;
-    const suspended = users.filter((u) => u.status === 'SUSPENDED').length;
-    const pending = users.filter((u) => u.status === 'PENDING').length;
-    const owners = users.filter((u) => u.role === 'OWNER').length;
-    const staff = users.filter((u) => ['PROPERTY_MANAGER', 'MAINTENANCE'].includes(u.role)).length;
-    const admins = users.filter((u) => u.role === 'SUPER_ADMIN').length;
+    const [
+      totalActive,
+      totalSuspended,
+      totalPending,
+      totalDeleted,
+      byRoleRaw,
+      activeSessions,
+      lastWeekLogins,
+    ] = await Promise.all([
+      prisma.user.count({ where: { deletedAt: null, status: UserStatus.ACTIVE } }),
+      prisma.user.count({ where: { deletedAt: null, status: UserStatus.SUSPENDED } }),
+      prisma.user.count({ where: { deletedAt: null, status: UserStatus.PENDING_VERIFICATION } }),
+      prisma.user.count({ where: { deletedAt: { not: null } } }),
+      prisma.user.groupBy({
+        by: ['role'],
+        where: { deletedAt: null },
+        _count: { _all: true },
+      }),
+      prisma.refreshToken.count({
+        where: { revokedAt: null, expiresAt: { gt: new Date() } },
+      }),
+      prisma.user.count({
+        where: {
+          deletedAt: null,
+          lastLoginAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+        },
+      }),
+    ]);
+
+    const byRole = byRoleRaw.reduce<Record<string, number>>((acc, row) => {
+      acc[row.role] = row._count._all;
+      return acc;
+    }, {});
 
     return {
-      total,
-      active,
-      inactive,
-      suspended,
-      pending,
-      owners,
-      staff,
-      admins,
-      byRole: {
-        SUPER_ADMIN: admins,
-        PROPERTY_MANAGER: users.filter((u) => u.role === 'PROPERTY_MANAGER').length,
-        MAINTENANCE: users.filter((u) => u.role === 'MAINTENANCE').length,
-        OWNER: owners,
-        VIP_STAR: users.filter((u) => u.role === 'VIP_STAR').length,
-        AFFILIATE: users.filter((u) => u.role === 'AFFILIATE').length,
+      totals: {
+        active: totalActive,
+        suspended: totalSuspended,
+        pending: totalPending,
+        deleted: totalDeleted,
+        all: totalActive + totalSuspended + totalPending,
       },
+      byRole,
+      activeSessions,
+      lastWeekLogins,
     };
   }
 }
