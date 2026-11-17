@@ -1,0 +1,48 @@
+# Website Launch Checklist
+
+Status legend: ✅ done · ⬜ open · 🟡 needs the owner
+
+## Facts to verify (owner)
+- 🟡 **Founder wording:** preferred title and grammatical gender for Sivan Menahem in Hebrew, Greek, French, German, Russian (`about.json` → `team.founderRole`, `team.founderBio`; currently neutral).
+- 🟡 **Owner portal promise:** "Every owner gets access to our online owner portal" (home → control). Confirm this is offered to all owners.
+- 🟡 **Assessment is "without obligation":** confirm. (We avoided saying "free".)
+- 🟡 **Languages spoken:** FAQ says "English and Hebrew, with Greek and other languages through our team and partners."
+- 🟡 **Office hours:** "Monday to Friday, 09:00–17:00 (Greece time)" on the contact page.
+- 🟡 **Response time:** "usually within one business day."
+- 🟡 **Coverage:** Chania areas listed (Akrotiri, Platanias, Kissamos, Apokoronas…); Rethymno/Heraklion "via local partners."
+- 🟡 **Services scope:** each of the 7 service pages matches what is actually delivered (esp. hotel operations, commercial technical coordination, sales support with licensed agents).
+- 🟡 **"Over 10 years" experience** — not used anywhere. Add only once verified and attributed (company vs. founder).
+- 🟡 **Domain/email:** site `sivanmanagment.com`, email `support@sivanmanagment.com` (as supplied). Decide whether to also secure `sivanmanagement.com` and redirect it.
+
+## Legal
+- ⬜ Privacy, Cookie and Terms pages reviewed by a Greek lawyer (currently marked "must be reviewed").
+- ✅ Company information page: legal name, address, VAT/AFM EL802555027, G.E.MI. 178525658000, Δ.Ο.Υ. Χανίων, phone, email.
+- ✅ No IBAN/SWIFT published.
+- ⬜ Short-term-rental article checked by the accountant (rules change; no figures are quoted).
+
+## Media
+- ⬜ Replace AI images with real photos from `~/Documents/SivanInvest/תמונות כריתים` (see CONTENT_SOURCES.md).
+- ⬜ Founder portrait from `תמונות פורטרט סיון` → `/our-team/`.
+- ⬜ Optional hero video from `וידאו כריתים`.
+- ⬜ Owner-approved case studies for `/portfolio/`.
+
+## Translations
+- ✅ All 8 languages complete and structurally verified (`pnpm --filter web check:i18n`).
+- ⬜ Native-speaker review per language (priority: HE, EL, DE, FR, RU, NL, ZH).
+- ⬜ Spanish (recommended in the brief) — add `es` when ready.
+
+## Technical
+- ✅ 225 pages build; `astro check` 0 errors.
+- ✅ hreflang + x-default, canonical, sitemap, robots, JSON-LD.
+- ✅ RTL verified (Hebrew), mobile verified (iPhone 13 viewport).
+- ✅ Lead endpoint: validation, honeypot, timing trap, rate limit, origin check.
+- ⬜ Railway `web` service + env vars (DEPLOYMENT.md).
+- ⬜ Airtable leads base (or n8n webhook) connected; end-to-end test submission.
+- ⬜ Lighthouse run on production (target ≥ 90 performance/accessibility/SEO).
+- ⬜ Google Search Console + Bing; Google Business Profile with the same NAP.
+- ⬜ Keyword volumes per language (Ahrefs/Similarweb connectors need authorisation).
+- ⬜ Analytics (only after consent; the banner already emits `sm:consent`).
+
+## Security housekeeping
+- ⬜ **Change the WordPress admin password** — it was shared in a chat. Revoke the WordPress application password created for Claude when no longer needed.
+- ⬜ Pre-existing: `apps/admin/src/pages/SystemSettingsPage.tsx` hard-codes the company IBAN/BIC as defaults in a public repo (see OPEN_ISSUES).

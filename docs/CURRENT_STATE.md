@@ -14,10 +14,21 @@
 | Client | https://client.sivanmanagment.com | RUNNING | 2026-04-13 |
 | PostgreSQL | Railway managed (internal) | RUNNING | — |
 | Redis | Railway managed (internal) | RUNNING | — |
+| Web (public site, `apps/web`) | https://sivanmanagment.com | BUILT, NOT DEPLOYED — WordPress template still live | — |
 
 **Railway Project**: Property Management System
 **GitHub**: github.com/sivanmen/sivanmanagment (main branch)
 **Total commits**: 30
+
+---
+
+## Public Website (`apps/web`) — added 2026-11-16
+
+- Astro 5 static site + `/api/lead/` server route; 8 languages × 28 pages = 225 pages; `astro check` 0 errors; i18n checker passes.
+- Content Studio at `/admin/` (Sveltia CMS, GitHub backend) for articles.
+- Lead form delivers to Airtable and/or `LEAD_WEBHOOK_URL` — **neither configured yet** (endpoint returns 503 until set).
+- Images: 8 AI-generated illustrations (Figma) + 1 CC0 photo; to be replaced with the owner's own Crete photos.
+- Full docs: `docs/website/` (README, DECISIONS, DEPLOYMENT, LAUNCH_CHECKLIST…).
 
 ---
 

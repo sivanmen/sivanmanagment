@@ -15,7 +15,8 @@ sivan-management/
 ├── apps/
 │   ├── api/             # Node.js 20 + Express + Prisma + TypeScript
 │   ├── admin/           # React 18 + Vite (admin.sivanmanagment.com)
-│   └── client/          # React 18 + Vite (client.sivanmanagment.com)
+│   ├── client/          # React 18 + Vite (client.sivanmanagment.com)
+│   └── web/             # Astro 5 public website (sivanmanagment.com) — see docs/website/
 ├── docker/
 │   └── docker-compose.dev.yml
 ├── docs/                # Project documentation (this file lives here)
@@ -24,7 +25,8 @@ sivan-management/
 ```
 
 - **Monorepo manager**: pnpm workspaces. Do NOT switch to npm/yarn/turborepo.
-- **Three deployable services**: api, admin, client. Do NOT merge them.
+- **Three PMS services**: api, admin, client. Do NOT merge them.
+- **Website**: `apps/web` is a separate, fourth deployable (Astro). Approved by Sivan on 2026-11-16 ("your call" on WordPress vs clean code). Astro is allowed **only** in `apps/web`; the PMS stack below is unchanged.
 - **Two shared packages**: @sivan/shared, @sivan/ui. All types/schemas/components shared here.
 
 ---
