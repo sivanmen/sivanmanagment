@@ -1,0 +1,105 @@
+{
+  "reviewNotice": "Dit document dient ter informatie en moet vóór publicatie worden beoordeeld door een gekwalificeerde juridisch adviseur.",
+  "lastUpdated": "Laatst bijgewerkt",
+  "privacy": {
+    "seoTitle": "Privacybeleid | Sivan Management",
+    "title": "Privacybeleid",
+    "sections": [
+      {
+        "h": "Wie wij zijn",
+        "p": "Deze website wordt beheerd door Sivan Menahem Management, Plateia Eleftherias 2, 73132 Chania, Griekenland (de “verwerkingsverantwoordelijke”). Contact: support@sivanmanagment.com."
+      },
+      {
+        "h": "Welke gegevens wij verzamelen",
+        "p": "Wanneer u een formulier verstuurt, verzamelen wij de gegevens die u verstrekt: naam, e-mailadres, telefoonnummer, informatie over het vastgoed en uw bericht. Daarnaast registreren wij technische gegevens die nodig zijn om het formulier tegen misbruik te beschermen, zoals het tijdstip van verzending en de pagina waar u vandaan kwam. Als u analytics accepteert, verzamelen wij anonieme, geaggregeerde gebruiksstatistieken."
+      },
+      {
+        "h": "Waarom wij ze gebruiken",
+        "p": "Wij gebruiken uw gegevens om op uw aanvraag te reageren, een voorstel op te stellen en, als u klant wordt, onze overeenkomst uit te voeren. De rechtsgronden zijn uw toestemming en de stappen die op uw verzoek worden gezet voorafgaand aan het sluiten van een overeenkomst (art. 6, lid 1, onder a en b AVG)."
+      },
+      {
+        "h": "Met wie wij ze delen",
+        "p": "Uw gegevens worden opgeslagen in onze klantbeheertools (zoals Airtable) en ons vastgoedbeheersysteem, die worden beheerd door verwerkers die gebonden zijn aan verwerkersovereenkomsten. Wij verkopen uw gegevens niet."
+      },
+      {
+        "h": "Internationale doorgifte",
+        "p": "Sommige verwerkers kunnen gegevens buiten de Europese Economische Ruimte opslaan. Wanneer dat gebeurt, is de doorgifte gedekt door passende waarborgen, zoals de modelcontractbepalingen van de EU."
+      },
+      {
+        "h": "Hoe lang wij ze bewaren",
+        "p": "Aanvragen die niet tot een overeenkomst leiden, worden binnen 24 maanden verwijderd. Klantgegevens worden bewaard zolang dat nodig is op grond van onze overeenkomst en de Griekse fiscale en boekhoudwetgeving."
+      },
+      {
+        "h": "Uw rechten",
+        "p": "U kunt verzoeken om inzage, rectificatie, verwijdering, beperking of overdraagbaarheid van uw gegevens, bezwaar maken tegen de verwerking en uw toestemming op elk moment intrekken, door te mailen naar support@sivanmanagment.com. U kunt ook een klacht indienen bij de Griekse toezichthouder voor gegevensbescherming (www.dpa.gr)."
+      }
+    ]
+  },
+  "cookies": {
+    "seoTitle": "Cookiebeleid | Sivan Management",
+    "title": "Cookiebeleid",
+    "sections": [
+      {
+        "h": "Essentiële opslag",
+        "p": "Wij slaan uw cookiekeuze en taalvoorkeur op in uw browser. Deze zijn noodzakelijk voor de werking van de site en volgen u niet."
+      },
+      {
+        "h": "Analytics (optioneel)",
+        "p": "Alleen als u dat accepteert, laden wij mogelijk privacyvriendelijke analytics om te begrijpen hoe de site wordt gebruikt. Er worden geen advertentiecookies gebruikt."
+      },
+      {
+        "h": "Uw keuze wijzigen",
+        "p": "U kunt uw keuze op elk moment wijzigen door de gegevens van deze site in uw browser te wissen; de banner verschijnt dan opnieuw."
+      }
+    ]
+  },
+  "terms": {
+    "seoTitle": "Gebruiksvoorwaarden | Sivan Management",
+    "title": "Gebruiksvoorwaarden",
+    "sections": [
+      {
+        "h": "Over deze website",
+        "p": "Deze website presenteert de diensten van Sivan Menahem Management. De informatie is algemeen van aard en vormt geen aanbod, noch juridisch, fiscaal of beleggingsadvies."
+      },
+      {
+        "h": "Geen garanties",
+        "p": "Eventuele inschattingen van verhuurresultaten zijn indicatief. Wij garanderen geen inkomsten, bezetting of vastgoedwaarden. Diensten worden uitsluitend verleend op basis van een ondertekende schriftelijke overeenkomst."
+      },
+      {
+        "h": "Beeldmateriaal",
+        "p": "Sommige afbeeldingen op deze website zijn illustratief, waaronder door AI gegenereerde afbeeldingen, en tonen geen vastgoed dat wij beheren, tenzij anders vermeld."
+      },
+      {
+        "h": "Intellectueel eigendom",
+        "p": "Teksten, vormgeving en logo’s op deze website zijn eigendom van Sivan Menahem Management of haar licentiegevers. Handelsmerken van derden zijn eigendom van hun respectieve eigenaren."
+      },
+      {
+        "h": "Toepasselijk recht",
+        "p": "Op deze voorwaarden is Grieks recht van toepassing. De rechtbanken van Chania zijn bevoegd, onverminderd dwingende regels ter bescherming van consumenten."
+      }
+    ]
+  },
+  "imprint": {
+    "seoTitle": "Bedrijfsgegevens | Sivan Management",
+    "title": "Bedrijfsgegevens",
+    "intro": "Informatie verstrekt overeenkomstig de Griekse en Europese regels inzake elektronische handel.",
+    "labels": {
+      "name": "Bedrijfsnaam",
+      "brand": "Handelsnaam",
+      "address": "Statutair adres",
+      "vat": "Btw-nummer (AFM)",
+      "gemi": "G.E.MI.-nummer",
+      "taxOffice": "Belastingkantoor",
+      "phone": "Telefoon",
+      "email": "E-mail"
+    }
+  },
+  "credits": {
+    "seoTitle": "Beeldverantwoording | Sivan Management",
+    "title": "Beeldverantwoording",
+    "intro": "Sommige foto’s op deze website worden gebruikt onder een open licentie en staan hieronder vermeld. Alle andere afbeeldingen zijn illustratieve, met AI gegenereerde beelden voor Sivan Management en tonen geen beheerde panden of echte medewerkers.",
+    "photoLabel": "Foto’s onder open licentie",
+    "aiLabel": "Door AI gegenereerd illustratief beeldmateriaal",
+    "aiBody": "De afbeeldingen van de kust, villa’s, interieurs, hospitality, inspecties en commerciële gebouwen zijn voor deze website gegenereerd. Het zijn uitsluitend illustraties."
+  }
+}

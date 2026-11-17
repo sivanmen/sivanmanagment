@@ -1,0 +1,182 @@
+---
+import { Image } from 'astro:assets';
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import Hero from '~/components/home/Hero.astro';
+import ProcessTimeline from '~/components/home/ProcessTimeline.astro';
+import Dashboard from '~/components/home/Dashboard.astro';
+import Statement from '~/components/home/Statement.astro';
+import Platforms from '~/components/home/Platforms.astro';
+import SectionHead from '~/components/SectionHead.astro';
+import ServiceCard from '~/components/ServiceCard.astro';
+import CreteMap from '~/components/CreteMap.astro';
+import Faq from '~/components/Faq.astro';
+import CtaBand from '~/components/CtaBand.astro';
+import ArticleCard from '~/components/ArticleCard.astro';
+import Icon from '~/components/Icon.astro';
+import { getDict } from '~/i18n';
+import { localePaths, localizePath, type Locale } from '~/i18n/config';
+import { IMAGES, SERVICE_IMAGE, LOCATION_IMAGE } from '~/lib/images';
+import { COMPANY, LOCATION_SLUGS, type ServiceSlug } from '~/lib/company';
+import { insightsFor, allInsights } from '~/lib/insights';
+
+export const getStaticPaths = localePaths;
+const { locale } = Astro.props as { locale: Locale };
+const t = getDict(locale);
+const h = t.home;
+const L = (p: string) => localizePath(p, locale);
+
+let posts = (await insightsFor(locale)).slice(0, 3);
+if (!posts.length) posts = (await allInsights()).filter((e) => e.id.startsWith('en/')).slice(0, 3);
+
+const pillarIcons = ['shield', 'eye', 'compass', 'heart'];
+const manageIcons = ['villa', 'home', 'building', 'hotel'];
+const featureIcons = ['calendar', 'chart', 'wrench', 'file'];
+const faqLd = {
+  '@context': 'https://schema.org', '@type': 'FAQPage',
+  mainEntity: h.faq.items.map((i) => ({ '@type': 'Question', name: i.q, acceptedAnswer: { '@type': 'Answer', text: i.a } })),
+};
+---
+<BaseLayout locale={locale} path="/" title={h.seoTitle} description={h.seoDescription} overlay jsonLd={[faqLd]}>
+  <Hero locale={locale} />
+
+  <!-- Intro / pillars -->
+  <section id="intro" class="section">
+    <div class="container split">
+      <div class="stack" style="--stack:1.25rem">
+        <p class="eyebrow" data-reveal="fade">{h.intro.eyebrow}</p>
+        <h2 class="h-2" data-split>{h.intro.title}</h2>
+      </div>
+      <div class="stack intro-copy" style="--stack:1.25rem">
+        <p class="lead" data-reveal>{h.intro.body1}</p>
+        <p class="muted" data-reveal style="--d:100ms">{h.intro.body2}</p>
+        <p class="closing" data-reveal style="--d:200ms">{h.intro.closing}</p>
+      </div>
+    </div>
+    <div class="container grid grid-4 pillars">
+      {h.intro.pillars.map((p, i) => (
+        <div class="card pillar" data-reveal style={`--d:${i * 90}ms`}>
+          <span class="icon-badge"><Icon name={pillarIcons[i]} /></span>
+          <h3 class="h-3">{p.title}</h3>
+          <p class="muted">{p.body}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- What we manage -->
+  <section class="section section--lilac manage">
+    <div class="container">
+      <SectionHead eyebrow={h.manage.eyebrow} title={h.manage.title} sub={h.manage.sub} />
+      <div class="grid grid-4">
+        {h.manage.items.map((it, i) => (
+          <ServiceCard href={L(`/services/${it.key}/`)} title={it.title} body={it.body} image={IMAGES[SERVICE_IMAGE[it.key as ServiceSlug]]} index={i} cta={t.common.common.learnMore} icon={manageIcons[i]} />
+        ))}
+      </div>
+      <div class="center-cta" data-reveal><a href={L('/services/')} class="btn">{t.common.common.exploreServices}<Icon name="arrow" size={18} class="arrow" /></a></div>
+    </div>
+  </section>
+
+  <Statement locale={locale} />
+
+  <ProcessTimeline locale={locale} />
+
+  <!-- Management & control -->
+  <section class="section section--dark grain control">
+    <div class="aurora" aria-hidden="true"></div>
+    <div class="container split split--even relative">
+      <div class="stack" style="--stack:1.25rem">
+        <p class="eyebrow" data-reveal="fade">{h.control.eyebrow}</p>
+        <h2 class="h-1" data-split>{h.control.title}</h2>
+        <p class="lead" data-reveal>{h.control.body}</p>
+        <ul class="features">
+          {h.control.features.map((f, i) => (
+            <li data-reveal style={`--d:${i * 80}ms`}>
+              <span class="icon-badge"><Icon name={featureIcons[i]} /></span>
+              <div><strong>{f.title}</strong><p class="muted">{f.body}</p></div>
+            </li>
+          ))}
+        </ul>
+        <div data-reveal><a href={COMPANY.ownerPortalUrl} class="btn btn--light" rel="noopener"><Icon name="key" size={18} />{h.control.cta}</a></div>
+      </div>
+      <div class="dash-wrap" data-reveal="scale" style="--d:200ms">
+        <div data-parallax="0.06"><Dashboard locale={locale} /></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Local expertise -->
+  <section class="section section--ink local grain">
+    <div class="container relative">
+      <div class="split split--even local-head">
+        <SectionHead eyebrow={h.local.eyebrow} title={h.local.title} />
+        <div class="stack" style="--stack:1.5rem">
+          <p class="lead" data-reveal>{h.local.body}</p>
+          <div data-reveal><a href={L('/locations/')} class="link-arrow">{h.local.cta}<Icon name="arrow" size={18} class="arrow" /></a></div>
+        </div>
+      </div>
+      <div data-reveal="scale"><CreteMap locale={locale} /></div>
+      <div class="grid grid-3 loc-cards">
+        {LOCATION_SLUGS.map((s, i) => {
+          const im = IMAGES[LOCATION_IMAGE[s]];
+          return (
+            <a href={L(`/locations/${s}/`)} class="loc" data-reveal style={`--d:${i * 90}ms`}>
+              <Image src={im.src} alt={im.alt} widths={[480, 800]} sizes="(min-width: 1024px) 33vw, 100vw" />
+              <span class="loc-label"><strong>{t.locations.items[s].name}</strong><Icon name="arrow-up-right" size={20} /></span>
+            </a>
+          );
+        })}
+      </div>
+    </div>
+  </section>
+
+  <Platforms locale={locale} />
+
+  <!-- Insights -->
+  {posts.length > 0 && (
+    <section class="section section--white">
+      <div class="container">
+        <div class="row-head">
+          <SectionHead eyebrow={h.insights.eyebrow} title={h.insights.title} />
+          <a href={L('/insights/')} class="link-arrow" data-reveal>{h.insights.cta}<Icon name="arrow" size={18} class="arrow" /></a>
+        </div>
+        <div class="grid grid-3">{posts.map((p, i) => <ArticleCard entry={p} locale={locale} index={i} />)}</div>
+      </div>
+    </section>
+  )}
+
+  <!-- FAQ -->
+  <section class="section">
+    <div class="container split">
+      <div class="stack" style="--stack:1.25rem">
+        <p class="eyebrow" data-reveal="fade">{h.faq.eyebrow}</p>
+        <h2 class="h-2" data-split>{h.faq.title}</h2>
+        <div data-reveal><a href={L('/faq/')} class="link-arrow">{h.faq.cta}<Icon name="arrow" size={18} class="arrow" /></a></div>
+      </div>
+      <Faq items={h.faq.items} />
+    </div>
+  </section>
+
+  <CtaBand locale={locale} />
+</BaseLayout>
+
+<style>
+  .intro-copy { padding-top: 0.5rem; }
+  .closing { font-family: var(--font-display); font-weight: 560; font-size: var(--fs-lg); color: var(--violet); letter-spacing: -0.01em; }
+  .pillars { margin-top: clamp(3rem, 2rem + 3vw, 5rem); }
+  .pillar { display: grid; gap: 0.85rem; align-content: start; }
+  .center-cta { display: flex; justify-content: center; margin-top: 3rem; }
+  .features { display: grid; gap: 1rem; margin-block: 0.75rem 1rem; }
+  .features li { display: flex; gap: 1rem; align-items: flex-start; }
+  .features strong { font-family: var(--font-display); font-weight: 560; display: block; margin-bottom: 0.15rem; }
+  .dash-wrap { perspective: 1200px; }
+  .local-head { align-items: end; margin-bottom: 1rem; }
+  .loc-cards { margin-top: 2.5rem; }
+  .loc { position: relative; aspect-ratio: 4 / 3; border-radius: var(--radius-lg); overflow: hidden; display: block; }
+  .loc :global(img) { width: 100%; height: 100%; object-fit: cover; transition: transform 1.2s var(--ease-out); }
+  .loc:hover :global(img) { transform: scale(1.06); }
+  .loc::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 45%, rgba(18, 15, 36, 0.85)); }
+  .loc-label { position: absolute; z-index: 1; inset-inline: 1.25rem; bottom: 1.1rem; display: flex; justify-content: space-between; align-items: center; color: #fff; font-family: var(--font-display); font-size: 1.4rem; letter-spacing: -0.02em; }
+  .row-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 1rem; }
+  .row-head :global(.section-head) { margin-bottom: 2.5rem; }
+  .row-head > .link-arrow { margin-bottom: 2.75rem; }
+</style>

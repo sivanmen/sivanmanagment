@@ -1,0 +1,159 @@
+---
+import { Image } from 'astro:assets';
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import PageHero from '~/components/PageHero.astro';
+import Faq from '~/components/Faq.astro';
+import CtaBand from '~/components/CtaBand.astro';
+import ServiceCard from '~/components/ServiceCard.astro';
+import Icon from '~/components/Icon.astro';
+import { getDict } from '~/i18n';
+import { LOCALES, langParam, localizePath, type Locale } from '~/i18n/config';
+import { IMAGES, SERVICE_IMAGE } from '~/lib/images';
+import { COMPANY, SERVICE_SLUGS, LOCATION_SLUGS, type ServiceSlug } from '~/lib/company';
+
+export function getStaticPaths() {
+  return LOCALES.flatMap((locale) => SERVICE_SLUGS.map((slug) => ({ params: { lang: langParam(locale), slug }, props: { locale, slug } })));
+}
+const { locale, slug } = Astro.props as { locale: Locale; slug: ServiceSlug };
+const t = getDict(locale);
+const s = t.services.items[slug];
+const lab = t.services.overview.labels;
+const L = (p: string) => localizePath(p, locale);
+const image = IMAGES[SERVICE_IMAGE[slug]];
+const related = SERVICE_SLUGS.filter((x) => x !== slug).slice(0, 3);
+const benefitIcons = ['heart', 'sparkle', 'chart', 'eye'];
+const site = Astro.site!;
+const serviceLd = {
+  '@context': 'https://schema.org', '@type': 'Service',
+  name: s.name, description: s.seoDescription, serviceType: s.name,
+  provider: { '@id': new URL('/#organization', site).href },
+  areaServed: COMPANY.areaServed.map((name) => ({ '@type': 'Place', name })),
+  url: new URL(L(`/services/${slug}/`), site).href,
+};
+const faqLd = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: s.faq.map((i) => ({ '@type': 'Question', name: i.q, acceptedAnswer: { '@type': 'Answer', text: i.a } })) };
+---
+<BaseLayout locale={locale} path={`/services/${slug}/`} title={s.seoTitle} description={s.seoDescription} overlay jsonLd={[serviceLd, faqLd]}>
+  <PageHero locale={locale} eyebrow={s.name} title={s.headline} lead={s.sub} image={image}
+    crumbs={[{ label: t.common.nav.services, href: L('/services/') }, { label: s.name }]}>
+    <div class="btn-row hero-ctas" data-reveal style="--d:300ms">
+      <a href={`${L('/contact/')}?service=${slug}`} class="btn btn--violet">{t.common.common.requestAssessment}<Icon name="arrow" size={18} class="arrow" /></a>
+      <a href={`https://wa.me/${COMPANY.whatsapp}`} class="btn btn--glass" rel="noopener"><Icon name="whatsapp" size={18} />{t.common.common.talkToTeam}</a>
+    </div>
+  </PageHero>
+
+  <!-- Intro + audience -->
+  <section class="section">
+    <div class="container split">
+      <div class="stack intro" style="--stack:1.25rem">
+        {s.intro.map((p, i) => <p class={i === 0 ? 'lead strong-lead' : 'muted'} data-reveal style={`--d:${i * 100}ms`}>{p}</p>)}
+      </div>
+      <div class="card audience" data-reveal="scale">
+        <p class="eyebrow">{lab.audience}</p>
+        <ul class="ticks">
+          {s.audience.map((a) => <li><Icon name="check" size={18} />{a}</li>)}
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Scope -->
+  <section class="section section--white">
+    <div class="container split">
+      <div class="scope-head">
+        <p class="eyebrow" data-reveal="fade">{lab.scope}</p>
+        <h2 class="h-2" data-split>{lab.includes}</h2>
+        <div class="media scope-img" data-reveal="scale">
+          <Image src={image.src} alt={image.alt} widths={[480, 800]} sizes="(min-width: 960px) 40vw, 100vw" />
+        </div>
+      </div>
+      <ol class="scope">
+        {s.scope.map((item, i) => (
+          <li data-reveal style={`--d:${(i % 4) * 50}ms`}><span class="n">{String(i + 1).padStart(2, '0')}</span><span>{item}</span></li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <!-- Benefits -->
+  <section class="section section--dark grain">
+    <div class="aurora" aria-hidden="true"></div>
+    <div class="container relative">
+      <div class="section-head-lite"><p class="eyebrow" data-reveal="fade">{lab.benefits}</p></div>
+      <div class="grid grid-4">
+        {s.benefits.map((b, i) => (
+          <div class="dark-card benefit" data-reveal style={`--d:${i * 90}ms`}>
+            <span class="icon-badge"><Icon name={benefitIcons[i % 4]} /></span>
+            <h3 class="h-3">{b.title}</h3>
+            <p class="muted">{b.body}</p>
+          </div>
+        ))}
+      </div>
+      <div class="workflow">
+        <p class="eyebrow" data-reveal="fade">{lab.workflow}</p>
+        <ol class="flow">
+          {s.workflow.map((w, i) => (
+            <li data-reveal style={`--d:${i * 90}ms`}><span class="dot">{i + 1}</span><span>{w}</span></li>
+          ))}
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section">
+    <div class="container split">
+      <div class="stack" style="--stack:1.25rem">
+        <p class="eyebrow" data-reveal="fade">{t.common.common.faqTitle}</p>
+        <h2 class="h-2" data-split>{s.name}</h2>
+        <p class="muted" data-reveal>{t.services.overview.pricingNote}</p>
+        <div data-reveal><p class="eyebrow where">{t.common.common.relatedLocations}</p>
+          <div class="chips">{LOCATION_SLUGS.map((l) => <a class="chip" href={L(`/locations/${l}/`)}><Icon name="pin" size={14} />{t.locations.items[l].name}</a>)}</div>
+        </div>
+      </div>
+      <Faq items={s.faq} />
+    </div>
+  </section>
+
+  <!-- Related -->
+  <section class="section section--lilac">
+    <div class="container">
+      <h2 class="h-2 related-title" data-split>{t.common.common.relatedServices}</h2>
+      <div class="grid grid-3">
+        {related.map((r, i) => (
+          <ServiceCard href={L(`/services/${r}/`)} title={t.services.items[r].name} body={t.services.items[r].short} image={IMAGES[SERVICE_IMAGE[r]]} index={i} cta={t.common.common.learnMore} />
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <CtaBand locale={locale} />
+</BaseLayout>
+
+<style>
+  .hero-ctas { margin-top: 0.75rem; }
+  .strong-lead { color: var(--text); font-size: var(--fs-xl); line-height: 1.4; font-family: var(--font-display); font-weight: 450; letter-spacing: -0.015em; }
+  .audience { display: grid; gap: 1.25rem; }
+  .ticks { display: grid; gap: 0.85rem; }
+  .ticks li { display: flex; gap: 0.75rem; align-items: flex-start; }
+  .ticks :global(svg) { flex: none; color: var(--violet); margin-top: 0.2rem; }
+  .scope-head { display: grid; gap: 1rem; align-content: start; }
+  @media (min-width: 960px) { .scope-head { position: sticky; top: 110px; } }
+  .scope-img { aspect-ratio: 4 / 3; margin-top: 1rem; }
+  .scope { list-style: none; margin: 0; padding: 0; display: grid; }
+  .scope li { display: flex; gap: 1.25rem; align-items: baseline; padding: 1.15rem 0; border-bottom: 1px solid var(--line); font-size: 1.075rem; }
+  .scope .n { font-family: var(--font-label); font-weight: 700; font-size: 0.8rem; color: var(--violet); min-width: 2ch; }
+  .section-head-lite { margin-bottom: 2rem; }
+  .benefit { display: grid; gap: 0.85rem; align-content: start; }
+  .workflow { margin-top: clamp(3.5rem, 2rem + 4vw, 6rem); display: grid; gap: 2rem; }
+  .flow { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; counter-reset: f; }
+  @media (min-width: 900px) { .flow { grid-template-columns: repeat(5, 1fr); } .flow li { flex-direction: column; } }
+  .flow li { display: flex; gap: 1rem; align-items: flex-start; position: relative; }
+  .dot { width: 2.75rem; height: 2.75rem; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--violet); color: #fff; font-family: var(--font-display); font-weight: 600; box-shadow: var(--glow); }
+  @media (min-width: 900px) {
+    .flow li:not(:last-child)::after { content: ''; position: absolute; top: 1.375rem; inset-inline-start: 3.25rem; inset-inline-end: -0.5rem; height: 1px; background: linear-gradient(90deg, var(--lavender), transparent); }
+    :global([dir='rtl']) .flow li:not(:last-child)::after { background: linear-gradient(270deg, var(--lavender), transparent); }
+  }
+  .where { margin-top: 1rem; margin-bottom: 0.75rem; }
+  .chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .related-title { margin-bottom: 2.5rem; }
+</style>

@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "siteName": "Sivan Management",
+    "tagline": "您的物业，我们的责任。",
+    "defaultTitle": "Sivan Management｜希腊克里特岛物业、资产与酒店民宿管理",
+    "defaultDescription": "为哈尼亚、雷西姆农和伊拉克利翁的住宅、度假租赁、商业及酒店物业提供一站式管理。无论业主身在希腊还是海外，都有一位可靠的本地合作伙伴全程负责。"
+  },
+  "nav": {
+    "home": "首页",
+    "about": "关于我们",
+    "services": "服务",
+    "allServices": "全部服务",
+    "locations": "服务区域",
+    "portfolio": "物业组合",
+    "team": "我们的团队",
+    "insights": "洞察",
+    "faq": "常见问题",
+    "contact": "联系我们",
+    "ownerLogin": "业主门户",
+    "cta": "申请物业评估",
+    "menu": "菜单",
+    "close": "关闭",
+    "language": "语言",
+    "skip": "跳至正文",
+    "breadcrumbHome": "首页"
+  },
+  "common": {
+    "requestAssessment": "申请物业评估",
+    "exploreServices": "了解我们的服务",
+    "talkToTeam": "联系我们的团队",
+    "getProposal": "获取定制管理方案",
+    "learnMore": "了解更多",
+    "readMore": "阅读全文",
+    "viewAll": "查看全部",
+    "discover": "探索",
+    "faqTitle": "常见问题",
+    "relatedServices": "相关服务",
+    "relatedLocations": "服务覆盖区域",
+    "illustrative": "示意界面",
+    "imageNotice": "本页图片仅作示意，并非我们所管理的物业。",
+    "photoCredit": "图片来源",
+    "whatsapp": "WhatsApp",
+    "call": "致电",
+    "email": "电子邮件",
+    "office": "办公室",
+    "minutesRead": "分钟阅读",
+    "updated": "更新于",
+    "backToTop": "返回顶部"
+  },
+  "footer": {
+    "headline": "聊聊您的物业吧。",
+    "body": "告诉我们您拥有什么物业、位于何处以及您希望实现的目标。我们会亲自回复，通常在一个工作日内。",
+    "explore": "浏览",
+    "services": "服务",
+    "company": "公司",
+    "legal": "法律信息",
+    "contact": "联系方式",
+    "privacy": "隐私政策",
+    "cookies": "Cookie 政策",
+    "terms": "使用条款",
+    "imprint": "公司信息",
+    "credits": "图片版权",
+    "rights": "版权所有。",
+    "legalEntity": "法律实体",
+    "vat": "增值税号 / AFM",
+    "gemi": "G.E.MI. 注册号",
+    "taxOffice": "税务局",
+    "taxOfficeName": "哈尼亚税务局（D.O.Y. Chania）",
+    "builtWith": "来自克里特岛哈尼亚、以业主为先的物业管理。"
+  },
+  "cookie": {
+    "text": "本网站仅使用运行所必需的 Cookie。经您同意后，我们还可能使用注重隐私的分析工具来改进网站。",
+    "accept": "接受分析",
+    "decline": "仅限必要",
+    "more": "Cookie 政策"
+  },
+  "notFound": {
+    "title": "页面未找到",
+    "body": "您访问的页面已移动或不再存在。",
+    "cta": "返回首页"
+  }
+}

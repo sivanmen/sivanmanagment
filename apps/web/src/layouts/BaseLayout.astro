@@ -1,0 +1,56 @@
+---
+import '@fontsource-variable/inter-tight';
+import '@fontsource/kanit/300.css';
+import '@fontsource/kanit/400.css';
+import '@fontsource/kanit/500.css';
+import '@fontsource/syne/700.css';
+import '@fontsource-variable/heebo';
+import '~/styles/global.css';
+import Seo from '~/components/Seo.astro';
+import Header from '~/components/Header.astro';
+import Footer from '~/components/Footer.astro';
+import CookieBanner from '~/components/CookieBanner.astro';
+import { LOCALE_META, LOCALES, type Locale } from '~/i18n/config';
+import { getDict } from '~/i18n';
+
+interface Props {
+  locale: Locale;
+  path: string;
+  title: string;
+  description: string;
+  image?: string;
+  type?: 'website' | 'article';
+  /** Transparent header over a dark hero */
+  overlay?: boolean;
+  alternates?: readonly Locale[];
+  noindex?: boolean;
+  jsonLd?: Record<string, unknown>[];
+}
+const { locale, path, overlay = false, alternates = LOCALES, ...seo } = Astro.props;
+const meta = LOCALE_META[locale];
+const t = getDict(locale);
+---
+<!doctype html>
+<html lang={meta.hreflang} dir={meta.dir} class="no-js">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#120f24" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <script is:inline>document.documentElement.classList.replace('no-js', 'js');</script>
+    <Seo locale={locale} path={path} alternates={alternates} {...seo} />
+  </head>
+  <body>
+    <a href="#main" class="skip-link">{t.common.nav.skip}</a>
+    <Header locale={locale} path={path} overlay={overlay} alternates={alternates} />
+    <main id="main">
+      <slot />
+    </main>
+    <Footer locale={locale} />
+    <CookieBanner locale={locale} />
+    <script>
+      import '~/lib/motion';
+    </script>
+  </body>
+</html>

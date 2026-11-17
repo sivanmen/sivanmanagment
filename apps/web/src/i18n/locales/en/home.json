@@ -1,0 +1,120 @@
+{
+  "seoTitle": "Property Management in Crete — Chania, Rethymno & Heraklion | Sivan Management",
+  "seoDescription": "Complete property, asset and hospitality management in Crete. Short- and long-term rentals, commercial assets, hotels and maintenance — one accountable local partner with full owner reporting.",
+  "hero": {
+    "eyebrow": "Property · Asset · Hospitality Management — Crete, Greece",
+    "titleA": "Your Property.",
+    "titleB": "Our Responsibility.",
+    "sub": "Complete Property, Asset & Hospitality Management in Greece.",
+    "body": "From rental operations and guest services to maintenance and owner reporting, we help local and international owners run their real estate with confidence.",
+    "cta1": "Request a Property Assessment",
+    "cta2": "Explore Our Services",
+    "chipLocal": "Local office in Chania",
+    "chipPortal": "Online owner portal",
+    "chipAssets": "Residential · Rental · Commercial · Hotels",
+    "scroll": "Scroll"
+  },
+  "intro": {
+    "eyebrow": "Why owners choose us",
+    "title": "Owning property in Greece should be an opportunity, not an operational burden.",
+    "body1": "Sivan Management provides comprehensive management, rental operations and property care for residential, commercial and hospitality assets across Crete, with a particular focus on Chania, Rethymno and Heraklion.",
+    "body2": "From preparing your property for the market and finding the right tenants or guests to running daily operations, maintenance and reporting, we bring every essential service together under one coordinated approach.",
+    "closing": "One property. One trusted partner. Complete peace of mind.",
+    "pillars": [
+      { "title": "Responsibility", "body": "We treat every property as an asset to protect, not just a calendar to fill." },
+      { "title": "Transparency", "body": "Clear agreements, itemised expenses and regular reports you can actually read." },
+      { "title": "Local expertise", "body": "Practical knowledge of the Cretan market, suppliers and regulations." },
+      { "title": "Owner-first", "body": "Your objectives set the strategy. We execute it and keep you informed." }
+    ]
+  },
+  "manage": {
+    "eyebrow": "What we manage",
+    "title": "Four asset types. One management standard.",
+    "sub": "Whether you own a private villa, an apartment, a commercial space or a hospitality business, we tailor the service to the asset and to your investment strategy.",
+    "items": [
+      { "key": "short-term-rental-management", "title": "Vacation Rentals & Villas", "body": "Presentation, international distribution, pricing, reservations, guest care and housekeeping — the complete rental experience." },
+      { "key": "long-term-rental-management", "title": "Residential Rentals", "body": "Structured leasing, tenant coordination, rent monitoring and property oversight for stable, well-managed tenancies." },
+      { "key": "commercial-property-management", "title": "Commercial Real Estate", "body": "Tenant relations, maintenance planning, supplier control and budget oversight for offices, retail and mixed-use assets." },
+      { "key": "hotel-hospitality-management", "title": "Hotels & Hospitality", "body": "Operational support for boutique hotels, serviced apartments and holiday-accommodation portfolios." }
+    ]
+  },
+  "statement": {
+    "line1": "Successful property management is not about filling a calendar or collecting rent.",
+    "line2": "It is about preserving the asset, controlling costs, keeping standards high and making informed decisions — year after year."
+  },
+  "process": {
+    "eyebrow": "Complete A–Z management",
+    "title": "From first visit to monthly report.",
+    "sub": "A clear, repeatable process connects strategy with day-to-day execution.",
+    "steps": [
+      { "title": "Discovery", "body": "We learn about your property, your goals and how involved you want to be." },
+      { "title": "Assessment & strategy", "body": "On-site review of condition, compliance and potential. We recommend the right use: short-term, long-term, commercial or hospitality." },
+      { "title": "Proposal & agreement", "body": "A written scope: responsibilities, fees, expense approvals, permissions and reporting." },
+      { "title": "Preparation", "body": "Repairs, furnishing advice, professional photography, inventory and safety checks." },
+      { "title": "Marketing", "body": "Listings, distribution channels, pricing and tenant or guest screening." },
+      { "title": "Operations & maintenance", "body": "Guests, tenants, housekeeping, suppliers, preventive care and quick response to issues." },
+      { "title": "Owner reporting", "body": "Statements of income and expenses, issues raised and actions taken, plus recommendations." }
+    ]
+  },
+  "control": {
+    "eyebrow": "Management & control",
+    "title": "Full visibility, wherever you live.",
+    "body": "Every owner gets access to our online owner portal, connected to the property-management system we run the business on. Bookings, statements, maintenance requests and documents sit in one place, so you never have to chase an update.",
+    "features": [
+      { "title": "Bookings & occupancy", "body": "Reservations from every channel in one calendar." },
+      { "title": "Income & expense statements", "body": "Itemised, with receipts and approvals for larger costs." },
+      { "title": "Maintenance tracking", "body": "Work orders from request to completion, with photos." },
+      { "title": "Documents in one place", "body": "Agreements, certificates, invoices and reports." }
+    ],
+    "cta": "Open the Owner Portal",
+    "dashboard": {
+      "title": "Owner overview",
+      "period": "This month",
+      "revenue": "Gross revenue",
+      "expenses": "Expenses",
+      "net": "Net to owner",
+      "occupancy": "Occupancy",
+      "tasks": "Open maintenance tasks",
+      "next": "Next check-in",
+      "report": "Monthly report ready",
+      "taskA": "Pool pump service",
+      "taskB": "Replace terrace light",
+      "statusDone": "Done",
+      "statusOpen": "Scheduled"
+    }
+  },
+  "local": {
+    "eyebrow": "Local expertise",
+    "title": "Rooted in Crete. Connected to international owners.",
+    "body": "Our office is in the centre of Chania. We know the neighbourhoods, the seasons, the suppliers and the paperwork, and we serve owners who live in Greece and abroad with a single local point of contact.",
+    "cta": "See where we work"
+  },
+  "platforms": {
+    "title": "We list and manage your property across the channels guests use",
+    "note": "Channel selection depends on the property type and your strategy. Trademarks belong to their respective owners."
+  },
+  "insights": {
+    "eyebrow": "Insights & guides",
+    "title": "Knowledge for property owners in Greece.",
+    "cta": "All articles"
+  },
+  "faq": {
+    "eyebrow": "Questions owners ask",
+    "title": "Good questions deserve clear answers.",
+    "items": [
+      { "q": "What exactly does your management include?", "a": "It depends on the asset and the agreement. A full-service mandate typically covers marketing, pricing, guest or tenant communication, check-in and check-out, housekeeping, maintenance coordination, supplier management, expense control and regular owner reporting. We put the scope in writing before we start." },
+      { "q": "How are management fees structured?", "a": "We work with a percentage of rental income, a fixed monthly fee, fees for individual services, or a combination. The right model depends on the property type, its size and how much we manage. You receive a written proposal after the assessment, and there are no hidden charges." },
+      { "q": "How will I receive reports?", "a": "Through our online owner portal and by email. You can see bookings, income, expenses and maintenance at any time, and you receive a periodic statement with the details." },
+      { "q": "How do you handle repairs and emergencies?", "a": "Small, urgent issues are handled immediately within an agreed spending limit. Larger works are quoted and sent to you for approval first. Every intervention is logged with photos and invoices." },
+      { "q": "Can you manage my property if I live abroad?", "a": "Yes. Many of our owners live outside Greece. We act as your local representative, communicate in several languages and keep you informed online." },
+      { "q": "How do we get started?", "a": "Request a property assessment. We will arrange a call, visit the property, and send you a tailored management proposal." }
+    ],
+    "cta": "All FAQs"
+  },
+  "cta": {
+    "eyebrow": "Get started",
+    "title": "Let's talk about your property.",
+    "body": "Tell us about your property, where it is and what you would like to achieve. We will review your requirements and propose a management approach tailored to your asset.",
+    "button": "Get a Tailored Management Proposal"
+  }
+}

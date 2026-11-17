@@ -1,0 +1,85 @@
+---
+import { Image } from 'astro:assets';
+import Icon from '../Icon.astro';
+import { IMAGES } from '~/lib/images';
+import { getDict } from '~/i18n';
+import { localizePath, type Locale } from '~/i18n/config';
+
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const h = getDict(locale).home.hero;
+const L = (p: string) => localizePath(p, locale);
+const hero = IMAGES['hero-coast'];
+---
+<section class="hero section--dark grain" aria-labelledby="hero-title">
+  <div class="hero-media" aria-hidden="true">
+    <div class="hero-img" data-parallax="-0.12">
+      <Image src={hero.src} alt="" widths={[768, 1280, 1920]} sizes="100vw" loading="eager" fetchpriority="high" />
+    </div>
+    <div class="hero-shade"></div>
+    <div class="orb orb-a"></div>
+    <div class="orb orb-b"></div>
+  </div>
+
+  <div class="container hero-inner">
+    <p class="eyebrow hero-eyebrow" data-reveal="fade">{h.eyebrow}</p>
+    <h1 id="hero-title" class="h-hero hero-title">
+      <span class="line" data-split>{h.titleA}</span>
+      <span class="line text-gradient" data-split style="--d:280ms">{h.titleB}</span>
+    </h1>
+    <div class="hero-bottom">
+      <div class="hero-copy" data-reveal style="--d:500ms">
+        <p class="hero-sub">{h.sub}</p>
+        <p class="hero-body">{h.body}</p>
+        <div class="btn-row">
+          <a href={L('/contact/')} class="btn btn--violet">{h.cta1}<Icon name="arrow" size={18} class="arrow" /></a>
+          <a href={L('/services/')} class="btn btn--glass">{h.cta2}</a>
+        </div>
+      </div>
+      <ul class="hero-chips" data-reveal style="--d:700ms">
+        <li class="glass chip-glass"><Icon name="pin" size={18} />{h.chipLocal}</li>
+        <li class="glass chip-glass"><Icon name="chart" size={18} />{h.chipPortal}</li>
+        <li class="glass chip-glass"><Icon name="layers" size={18} />{h.chipAssets}</li>
+      </ul>
+    </div>
+  </div>
+  <a href="#intro" class="scroll-cue" aria-label={h.scroll}><span></span></a>
+</section>
+
+<style>
+  .hero { position: relative; min-height: 100svh; display: flex; align-items: flex-end; overflow: hidden; isolation: isolate; padding-block: 7rem 2.75rem; }
+  .hero-media { position: absolute; inset: 0; z-index: -1; }
+  .hero-img { position: absolute; inset: -8% 0; will-change: transform; }
+  .hero-img :global(img) { width: 100%; height: 100%; object-fit: cover; animation: kenburns 24s var(--ease-in-out) infinite alternate; }
+  @keyframes kenburns { from { transform: scale(1.04); } to { transform: scale(1.14) translate3d(-1.5%, -1%, 0); } }
+  .hero-shade {
+    position: absolute; inset: 0;
+    background:
+      linear-gradient(180deg, rgba(18, 15, 36, 0.55) 0%, rgba(18, 15, 36, 0.1) 30%, rgba(18, 15, 36, 0.35) 60%, rgba(18, 15, 36, 0.92) 100%),
+      radial-gradient(120% 80% at 0% 100%, rgba(67, 48, 184, 0.55), transparent 60%);
+  }
+  .orb { position: absolute; border-radius: 50%; filter: blur(60px); mix-blend-mode: screen; opacity: 0.5; animation: float 16s var(--ease-in-out) infinite alternate; }
+  .orb-a { width: 42vmax; height: 42vmax; background: radial-gradient(circle, rgba(103, 84, 233, 0.7), transparent 60%); bottom: -18vmax; inset-inline-start: -10vmax; }
+  .orb-b { width: 28vmax; height: 28vmax; background: radial-gradient(circle, rgba(176, 167, 239, 0.45), transparent 60%); top: 10%; inset-inline-end: -8vmax; animation-delay: -6s; }
+  @keyframes float { to { transform: translate3d(6vmax, -4vmax, 0) scale(1.1); } }
+  .hero-inner { position: relative; display: grid; gap: clamp(1.25rem, 0.8rem + 1.4vw, 2rem); }
+  .hero-eyebrow { color: rgba(255, 255, 255, 0.85); }
+  .hero-title { display: grid; color: #fff; max-width: 14ch; }
+  :global(:lang(zh-CN)) .hero-title, :global(:lang(he)) .hero-title { max-width: 18ch; }
+  .hero-title .line { display: block; }
+  .hero-bottom { display: grid; gap: 2rem; align-items: end; }
+  @media (min-width: 1024px) { .hero-bottom { grid-template-columns: 1.1fr 0.9fr; } }
+  .hero-copy { display: grid; gap: 0.9rem; max-width: 600px; }
+  .hero-sub { font-family: var(--font-display); font-size: var(--fs-lg); font-weight: 500; color: #fff; letter-spacing: -0.01em; }
+  .hero-body { color: rgba(244, 242, 255, 0.78); font-size: 1.0625rem; }
+  .hero-copy .btn-row { margin-top: 0.5rem; }
+  .hero-chips { display: none; flex-wrap: wrap; gap: 0.6rem; justify-content: flex-start; }
+  @media (min-width: 768px) { .hero-chips { display: flex; } }
+  @media (min-width: 1024px) { .hero-chips { flex-direction: column; align-items: flex-end; } }
+  .chip-glass { display: inline-flex; align-items: center; gap: 0.6rem; padding: 0.7rem 1.05rem; border-radius: 999px; font-size: 0.9375rem; }
+  .chip-glass :global(svg) { color: var(--lavender); }
+  .scroll-cue { position: absolute; bottom: 1.25rem; inset-inline-start: 50%; translate: -50% 0; width: 26px; height: 42px; border: 1.5px solid rgba(255, 255, 255, 0.5); border-radius: 20px; display: none; }
+  .scroll-cue span { position: absolute; top: 8px; left: 50%; width: 3px; height: 8px; margin-left: -1.5px; border-radius: 2px; background: #fff; animation: cue 1.8s var(--ease-in-out) infinite; }
+  @keyframes cue { 0% { opacity: 0; transform: translateY(0); } 40% { opacity: 1; } 100% { opacity: 0; transform: translateY(14px); } }
+  @media (min-width: 1024px) and (min-height: 760px) { .scroll-cue { display: block; } }
+</style>

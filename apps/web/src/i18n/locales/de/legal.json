@@ -1,0 +1,105 @@
+{
+  "reviewNotice": "Dieses Dokument dient der Information und muss vor der Veröffentlichung von einem qualifizierten Rechtsberater geprüft werden.",
+  "lastUpdated": "Zuletzt aktualisiert",
+  "privacy": {
+    "seoTitle": "Datenschutzerklärung | Sivan Management",
+    "title": "Datenschutzerklärung",
+    "sections": [
+      {
+        "h": "Wer wir sind",
+        "p": "Diese Website wird betrieben von Sivan Menahem Management, Plateia Eleftherias 2, 73132 Chania, Griechenland (der „Verantwortliche“). Kontakt: support@sivanmanagment.com."
+      },
+      {
+        "h": "Welche Daten wir erheben",
+        "p": "Wenn Sie ein Formular absenden, erheben wir die von Ihnen gemachten Angaben: Name, E-Mail, Telefonnummer, Angaben zur Immobilie und Ihre Nachricht. Außerdem speichern wir technische Daten, die zum Schutz des Formulars vor Missbrauch nötig sind, etwa den Zeitpunkt der Übermittlung und die Seite, von der Sie gekommen sind. Wenn Sie Analysen zulassen, erheben wir anonyme, aggregierte Nutzungsstatistiken."
+      },
+      {
+        "h": "Wofür wir sie nutzen",
+        "p": "Wir nutzen Ihre Daten, um Ihre Anfrage zu beantworten, ein Angebot zu erstellen und, falls Sie Kunde werden, unsere Vereinbarung zu erfüllen. Rechtsgrundlagen sind Ihre Einwilligung und die auf Ihre Anfrage erfolgenden vorvertraglichen Maßnahmen (Art. 6 Abs. 1 lit. a und b DSGVO)."
+      },
+      {
+        "h": "An wen wir sie weitergeben",
+        "p": "Ihre Daten werden in unseren Kundenverwaltungs-Tools (etwa Airtable) und in unserem Property-Management-System gespeichert, betrieben von Auftragsverarbeitern, die an Auftragsverarbeitungsverträge gebunden sind. Wir verkaufen Ihre Daten nicht."
+      },
+      {
+        "h": "Übermittlungen in Drittländer",
+        "p": "Einige Auftragsverarbeiter speichern Daten möglicherweise außerhalb des Europäischen Wirtschaftsraums. In diesem Fall sind die Übermittlungen durch geeignete Garantien wie die EU-Standardvertragsklauseln abgesichert."
+      },
+      {
+        "h": "Wie lange wir sie speichern",
+        "p": "Anfragen, die nicht zu einer Vereinbarung führen, werden innerhalb von 24 Monaten gelöscht. Kundendaten werden so lange aufbewahrt, wie es unsere Vereinbarung und das griechische Steuer- und Handelsrecht erfordern."
+      },
+      {
+        "h": "Ihre Rechte",
+        "p": "Sie können jederzeit Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung oder Datenübertragbarkeit verlangen, der Verarbeitung widersprechen und Ihre Einwilligung widerrufen – per E-Mail an support@sivanmanagment.com. Zudem können Sie sich bei der griechischen Datenschutzbehörde (www.dpa.gr) beschweren."
+      }
+    ]
+  },
+  "cookies": {
+    "seoTitle": "Cookie-Richtlinie | Sivan Management",
+    "title": "Cookie-Richtlinie",
+    "sections": [
+      {
+        "h": "Notwendige Speicherung",
+        "p": "Wir speichern Ihre Cookie-Auswahl und Ihre Spracheinstellung in Ihrem Browser. Diese sind für den Betrieb der Website erforderlich und verfolgen Sie nicht."
+      },
+      {
+        "h": "Analysen (optional)",
+        "p": "Nur wenn Sie zustimmen, laden wir gegebenenfalls datenschutzfreundliche Analysen, um zu verstehen, wie die Website genutzt wird. Werbe-Cookies werden nicht verwendet."
+      },
+      {
+        "h": "Ihre Auswahl ändern",
+        "p": "Sie können Ihre Auswahl jederzeit ändern, indem Sie die Daten dieser Website in Ihrem Browser löschen; das Banner erscheint dann erneut."
+      }
+    ]
+  },
+  "terms": {
+    "seoTitle": "Nutzungsbedingungen | Sivan Management",
+    "title": "Nutzungsbedingungen",
+    "sections": [
+      {
+        "h": "Über diese Website",
+        "p": "Diese Website stellt die Leistungen von Sivan Menahem Management vor. Die Informationen sind allgemeiner Natur und stellen weder ein Angebot noch eine Rechts-, Steuer- oder Anlageberatung dar."
+      },
+      {
+        "h": "Keine Garantien",
+        "p": "Etwaige Schätzungen zur Vermietungsleistung sind unverbindlich. Wir garantieren weder Einnahmen noch Auslastung oder Immobilienwerte. Leistungen werden ausschließlich auf Grundlage einer unterzeichneten schriftlichen Vereinbarung erbracht."
+      },
+      {
+        "h": "Bildmaterial",
+        "p": "Einige Bilder auf dieser Website dienen der Illustration, darunter KI-generierte Bilder, und zeigen keine von uns verwalteten Immobilien, sofern nicht anders angegeben."
+      },
+      {
+        "h": "Geistiges Eigentum",
+        "p": "Texte, Gestaltung und Logos auf dieser Website gehören Sivan Menahem Management oder deren Lizenzgebern. Marken Dritter gehören ihren jeweiligen Inhabern."
+      },
+      {
+        "h": "Anwendbares Recht",
+        "p": "Diese Bedingungen unterliegen griechischem Recht. Zuständig sind die Gerichte von Chania, unbeschadet zwingender Verbraucherschutzvorschriften."
+      }
+    ]
+  },
+  "imprint": {
+    "seoTitle": "Impressum | Sivan Management",
+    "title": "Impressum",
+    "intro": "Angaben gemäß den griechischen und EU-Vorschriften über den elektronischen Geschäftsverkehr.",
+    "labels": {
+      "name": "Firmenname",
+      "brand": "Handelsname",
+      "address": "Eingetragene Anschrift",
+      "vat": "USt-IdNr. (AFM)",
+      "gemi": "G.E.MI.-Nummer",
+      "taxOffice": "Finanzamt",
+      "phone": "Telefon",
+      "email": "E-Mail"
+    }
+  },
+  "credits": {
+    "seoTitle": "Bildnachweise | Sivan Management",
+    "title": "Bildnachweise",
+    "intro": "Einige Fotos auf dieser Website werden unter offenen Lizenzen verwendet und sind unten aufgeführt. Alle anderen Bilder sind illustrative, KI-generierte Darstellungen für Sivan Management und zeigen weder verwaltete Immobilien noch echte Mitarbeitende.",
+    "photoLabel": "Fotos unter offener Lizenz",
+    "aiLabel": "KI-generierte Illustrationen",
+    "aiBody": "Die Bilder von Küste, Villa, Innenräumen, Hospitality, Inspektion und Geschäftsgebäude wurden für diese Website generiert. Sie dienen ausschließlich der Illustration."
+  }
+}

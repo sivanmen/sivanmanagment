@@ -1,0 +1,120 @@
+{
+  "seoTitle": "Vastgoedbeheer Kreta: Chania, Rethymnon, Heraklion | Sivan Management",
+  "seoDescription": "Integraal vastgoedbeheer op Kreta: vakantie- en langetermijnverhuur, commercieel vastgoed, hotels en onderhoud. Eén lokale partner, volledige rapportage.",
+  "hero": {
+    "eyebrow": "Vastgoed · Asset · Hospitality Management — Kreta, Griekenland",
+    "titleA": "Uw vastgoed.",
+    "titleB": "Onze verantwoordelijkheid.",
+    "sub": "Integraal vastgoed-, asset- en hospitalitybeheer in Griekenland.",
+    "body": "Van verhuur en gastenservice tot onderhoud en eigenarenrapportage: wij helpen lokale en internationale eigenaren hun vastgoed met vertrouwen te exploiteren.",
+    "cta1": "Vraag een vastgoedbeoordeling aan",
+    "cta2": "Bekijk onze diensten",
+    "chipLocal": "Lokaal kantoor in Chania",
+    "chipPortal": "Online eigenarenportaal",
+    "chipAssets": "Wonen · Verhuur · Commercieel · Hotels",
+    "scroll": "Scroll"
+  },
+  "intro": {
+    "eyebrow": "Waarom eigenaren voor ons kiezen",
+    "title": "Vastgoed in Griekenland bezitten hoort een kans te zijn, geen operationele last.",
+    "body1": "Sivan Management verzorgt integraal beheer, verhuur en vastgoedzorg voor residentieel, commercieel en hospitalityvastgoed op heel Kreta, met bijzondere aandacht voor Chania, Rethymnon en Heraklion.",
+    "body2": "Van het marktklaar maken van uw woning en het vinden van de juiste huurders of gasten tot de dagelijkse exploitatie, het onderhoud en de rapportage: wij brengen alle essentiële diensten samen in één gecoördineerde aanpak.",
+    "closing": "Eén woning. Eén betrouwbare partner. Volledige gemoedsrust.",
+    "pillars": [
+      { "title": "Verantwoordelijkheid", "body": "Wij behandelen elke woning als een bezit dat bescherming verdient, niet als een agenda die gevuld moet worden." },
+      { "title": "Transparantie", "body": "Heldere afspraken, gespecificeerde kosten en regelmatige rapportages die u echt kunt lezen." },
+      { "title": "Lokale expertise", "body": "Praktische kennis van de Kretenzische markt, leveranciers en regelgeving." },
+      { "title": "Eigenaar voorop", "body": "Uw doelen bepalen de strategie. Wij voeren die uit en houden u op de hoogte." }
+    ]
+  },
+  "manage": {
+    "eyebrow": "Wat wij beheren",
+    "title": "Vier soorten vastgoed. Eén beheerstandaard.",
+    "sub": "Of u nu een privévilla, een appartement, een bedrijfsruimte of een hospitalitybedrijf bezit: wij stemmen de dienstverlening af op het object en op uw investeringsstrategie.",
+    "items": [
+      { "key": "short-term-rental-management", "title": "Vakantiewoningen & villa’s", "body": "Presentatie, internationale distributie, prijsstelling, reserveringen, gastenzorg en housekeeping — de complete verhuurervaring." },
+      { "key": "long-term-rental-management", "title": "Woningverhuur", "body": "Gestructureerde verhuur, huurderscoördinatie, huurbewaking en toezicht op de woning voor stabiele, goed beheerde huurrelaties." },
+      { "key": "commercial-property-management", "title": "Commercieel vastgoed", "body": "Huurdersrelaties, onderhoudsplanning, leveranciersbeheer en budgetbewaking voor kantoren, winkels en gemengde objecten." },
+      { "key": "hotel-hospitality-management", "title": "Hotels & hospitality", "body": "Operationele ondersteuning voor boetiekhotels, serviced apartments en portefeuilles met vakantieaccommodaties." }
+    ]
+  },
+  "statement": {
+    "line1": "Succesvol vastgoedbeheer draait niet om het vullen van een agenda of het innen van huur.",
+    "line2": "Het draait om het behoud van het bezit, het beheersen van kosten, het hooghouden van de standaard en het nemen van weloverwogen beslissingen — jaar na jaar."
+  },
+  "process": {
+    "eyebrow": "Volledig beheer van A tot Z",
+    "title": "Van eerste bezoek tot maandrapportage.",
+    "sub": "Een helder, herhaalbaar proces verbindt strategie met de dagelijkse uitvoering.",
+    "steps": [
+      { "title": "Kennismaking", "body": "Wij leren uw woning kennen, uw doelen en hoe betrokken u zelf wilt zijn." },
+      { "title": "Beoordeling & strategie", "body": "Beoordeling ter plaatse van staat, regelgeving en potentieel. Wij adviseren het juiste gebruik: korte verhuur, lange verhuur, commercieel of hospitality." },
+      { "title": "Voorstel & overeenkomst", "body": "Een schriftelijke afbakening: verantwoordelijkheden, vergoedingen, goedkeuring van uitgaven, machtigingen en rapportage." },
+      { "title": "Voorbereiding", "body": "Reparaties, inrichtingsadvies, professionele fotografie, inventaris en veiligheidscontroles." },
+      { "title": "Marketing", "body": "Advertenties, distributiekanalen, prijsstelling en screening van huurders of gasten." },
+      { "title": "Exploitatie & onderhoud", "body": "Gasten, huurders, housekeeping, leveranciers, preventief onderhoud en snelle reactie bij problemen." },
+      { "title": "Eigenarenrapportage", "body": "Overzichten van inkomsten en uitgaven, gemelde problemen en genomen maatregelen, plus aanbevelingen." }
+    ]
+  },
+  "control": {
+    "eyebrow": "Beheer & controle",
+    "title": "Volledig inzicht, waar u ook woont.",
+    "body": "Elke eigenaar krijgt toegang tot ons online eigenarenportaal, gekoppeld aan het vastgoedbeheersysteem waarop wij ons bedrijf runnen. Boekingen, overzichten, onderhoudsverzoeken en documenten staan op één plek, zodat u nooit achter een update aan hoeft.",
+    "features": [
+      { "title": "Boekingen & bezetting", "body": "Reserveringen van alle kanalen in één agenda." },
+      { "title": "Overzichten van inkomsten & uitgaven", "body": "Gespecificeerd, met bonnen en goedkeuringen voor grotere kosten." },
+      { "title": "Onderhoud volgen", "body": "Werkorders van aanvraag tot afronding, met foto’s." },
+      { "title": "Documenten op één plek", "body": "Overeenkomsten, certificaten, facturen en rapportages." }
+    ],
+    "cta": "Open het eigenarenportaal",
+    "dashboard": {
+      "title": "Overzicht eigenaar",
+      "period": "Deze maand",
+      "revenue": "Bruto-omzet",
+      "expenses": "Uitgaven",
+      "net": "Netto voor eigenaar",
+      "occupancy": "Bezetting",
+      "tasks": "Openstaande onderhoudstaken",
+      "next": "Volgende check-in",
+      "report": "Maandrapport gereed",
+      "taskA": "Onderhoud zwembadpomp",
+      "taskB": "Terrasverlichting vervangen",
+      "statusDone": "Afgerond",
+      "statusOpen": "Ingepland"
+    }
+  },
+  "local": {
+    "eyebrow": "Lokale expertise",
+    "title": "Geworteld op Kreta. Verbonden met internationale eigenaren.",
+    "body": "Ons kantoor ligt in het centrum van Chania. Wij kennen de wijken, de seizoenen, de leveranciers en het papierwerk, en wij bedienen eigenaren in Griekenland en daarbuiten met één lokaal aanspreekpunt.",
+    "cta": "Bekijk waar wij werken"
+  },
+  "platforms": {
+    "title": "Wij adverteren en beheren uw woning op de kanalen die gasten gebruiken",
+    "note": "De keuze van kanalen hangt af van het type woning en uw strategie. Handelsmerken zijn eigendom van hun respectieve eigenaren."
+  },
+  "insights": {
+    "eyebrow": "Kennis & gidsen",
+    "title": "Kennis voor vastgoedeigenaren in Griekenland.",
+    "cta": "Alle artikelen"
+  },
+  "faq": {
+    "eyebrow": "Vragen van eigenaren",
+    "title": "Goede vragen verdienen heldere antwoorden.",
+    "items": [
+      { "q": "Wat houdt uw beheer precies in?", "a": "Dat hangt af van het object en de overeenkomst. Een volledig beheermandaat omvat doorgaans marketing, prijsstelling, communicatie met gasten of huurders, check-in en check-out, housekeeping, coördinatie van onderhoud, leveranciersbeheer, kostenbeheersing en regelmatige rapportage aan de eigenaar. Wij leggen de afbakening schriftelijk vast voordat wij beginnen." },
+      { "q": "Hoe zijn de beheervergoedingen opgebouwd?", "a": "Wij werken met een percentage van de huurinkomsten, een vaste maandelijkse vergoeding, vergoedingen per afzonderlijke dienst of een combinatie daarvan. Het juiste model hangt af van het type woning, de omvang en hoeveel wij beheren. Na de beoordeling ontvangt u een schriftelijk voorstel, en er zijn geen verborgen kosten." },
+      { "q": "Hoe ontvang ik rapportages?", "a": "Via ons online eigenarenportaal en per e-mail. U kunt op elk moment boekingen, inkomsten, uitgaven en onderhoud inzien, en u ontvangt periodiek een gedetailleerd overzicht." },
+      { "q": "Hoe gaat u om met reparaties en noodgevallen?", "a": "Kleine, dringende problemen worden direct opgelost binnen een afgesproken bestedingslimiet. Voor grotere werkzaamheden vragen wij een offerte aan, die wij u eerst ter goedkeuring voorleggen. Elke interventie wordt vastgelegd met foto’s en facturen." },
+      { "q": "Kunt u mijn woning beheren als ik in het buitenland woon?", "a": "Ja. Veel van onze eigenaren wonen buiten Griekenland. Wij treden op als uw lokale vertegenwoordiger, communiceren in meerdere talen en houden u online op de hoogte." },
+      { "q": "Hoe gaan we van start?", "a": "Vraag een vastgoedbeoordeling aan. Wij plannen een gesprek, bezoeken de woning en sturen u een beheervoorstel op maat." }
+    ],
+    "cta": "Alle veelgestelde vragen"
+  },
+  "cta": {
+    "eyebrow": "Aan de slag",
+    "title": "Laten we het over uw vastgoed hebben.",
+    "body": "Vertel ons over uw woning, waar die ligt en wat u wilt bereiken. Wij bekijken uw wensen en stellen een beheeraanpak voor die is afgestemd op uw vastgoed.",
+    "button": "Ontvang een beheervoorstel op maat"
+  }
+}

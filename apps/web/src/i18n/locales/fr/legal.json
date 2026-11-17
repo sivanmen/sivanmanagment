@@ -1,0 +1,105 @@
+{
+  "reviewNotice": "Ce document est fourni à titre informatif et doit être relu par un conseiller juridique qualifié avant publication.",
+  "lastUpdated": "Dernière mise à jour",
+  "privacy": {
+    "seoTitle": "Politique de confidentialité | Sivan Management",
+    "title": "Politique de confidentialité",
+    "sections": [
+      {
+        "h": "Qui sommes-nous",
+        "p": "Ce site est exploité par Sivan Menahem Management, Plateia Eleftherias 2, 73132 Chania, Grèce (le « responsable du traitement »). Contact : support@sivanmanagment.com."
+      },
+      {
+        "h": "Quelles données nous collectons",
+        "p": "Lorsque vous envoyez un formulaire, nous collectons les informations que vous fournissez : nom, e-mail, numéro de téléphone, informations sur le bien et votre message. Nous enregistrons également les données techniques nécessaires pour protéger le formulaire contre les abus, comme l’heure d’envoi et la page de provenance. Si vous acceptez la mesure d’audience, nous collectons des statistiques d’utilisation anonymes et agrégées."
+      },
+      {
+        "h": "Pourquoi nous les utilisons",
+        "p": "Nous utilisons vos données pour répondre à votre demande, préparer une proposition et, si vous devenez client, exécuter notre contrat. Les bases légales sont votre consentement et les mesures précontractuelles prises à votre demande (art. 6, paragraphe 1, points a) et b) du RGPD)."
+      },
+      {
+        "h": "Avec qui nous les partageons",
+        "p": "Vos données sont conservées dans nos outils de gestion de la relation client (tels qu’Airtable) et dans notre logiciel de gestion immobilière, exploités par des sous-traitants liés par des accords de traitement des données. Nous ne vendons pas vos données."
+      },
+      {
+        "h": "Transferts internationaux",
+        "p": "Certains sous-traitants peuvent stocker des données en dehors de l’Espace économique européen. Le cas échéant, ces transferts sont encadrés par des garanties appropriées, telles que les clauses contractuelles types de l’UE."
+      },
+      {
+        "h": "Durée de conservation",
+        "p": "Les demandes qui n’aboutissent pas à un contrat sont supprimées dans un délai de 24 mois. Les données clients sont conservées aussi longtemps que l’exigent notre contrat et la législation fiscale et comptable grecque."
+      },
+      {
+        "h": "Vos droits",
+        "p": "Vous pouvez demander l’accès, la rectification, l’effacement, la limitation ou la portabilité de vos données, vous opposer à leur traitement et retirer votre consentement à tout moment, en écrivant à support@sivanmanagment.com. Vous pouvez également déposer une réclamation auprès de l’Autorité hellénique de protection des données (www.dpa.gr)."
+      }
+    ]
+  },
+  "cookies": {
+    "seoTitle": "Politique relative aux cookies | Sivan Management",
+    "title": "Politique relative aux cookies",
+    "sections": [
+      {
+        "h": "Stockage essentiel",
+        "p": "Nous enregistrons votre choix en matière de cookies et votre langue préférée dans votre navigateur. Ces éléments sont nécessaires au fonctionnement du site et ne vous pistent pas."
+      },
+      {
+        "h": "Mesure d’audience (facultative)",
+        "p": "Uniquement si vous l’acceptez, nous pouvons charger un outil de mesure d’audience respectueux de la vie privée afin de comprendre l’utilisation du site. Aucun cookie publicitaire n’est utilisé."
+      },
+      {
+        "h": "Modifier votre choix",
+        "p": "Vous pouvez modifier votre choix à tout moment en effaçant les données de ce site dans votre navigateur ; le bandeau s’affichera alors de nouveau."
+      }
+    ]
+  },
+  "terms": {
+    "seoTitle": "Conditions d’utilisation | Sivan Management",
+    "title": "Conditions d’utilisation",
+    "sections": [
+      {
+        "h": "À propos de ce site",
+        "p": "Ce site présente les services de Sivan Menahem Management. Les informations sont générales et ne constituent ni une offre, ni un conseil juridique, fiscal ou en investissement."
+      },
+      {
+        "h": "Absence de garantie",
+        "p": "Toute estimation de performance locative est indicative. Nous ne garantissons ni les revenus, ni le taux d’occupation, ni la valeur des biens. Les services ne sont fournis que dans le cadre d’un contrat écrit signé."
+      },
+      {
+        "h": "Images",
+        "p": "Certaines images de ce site sont illustratives, y compris des images générées par IA, et ne représentent pas des biens sous notre gestion, sauf mention contraire."
+      },
+      {
+        "h": "Propriété intellectuelle",
+        "p": "Les textes, la conception graphique et les logos de ce site appartiennent à Sivan Menahem Management ou à ses concédants de licence. Les marques de tiers appartiennent à leurs propriétaires."
+      },
+      {
+        "h": "Droit applicable",
+        "p": "Les présentes conditions sont régies par le droit grec. Les tribunaux de Chania sont compétents, sans préjudice des règles impératives de protection des consommateurs."
+      }
+    ]
+  },
+  "imprint": {
+    "seoTitle": "Informations sur la société | Sivan Management",
+    "title": "Informations sur la société",
+    "intro": "Informations fournies conformément aux règles grecques et européennes relatives au commerce électronique.",
+    "labels": {
+      "name": "Raison sociale",
+      "brand": "Nom commercial",
+      "address": "Siège social",
+      "vat": "Numéro de TVA (AFM)",
+      "gemi": "Numéro G.E.MI.",
+      "taxOffice": "Centre des impôts",
+      "phone": "Téléphone",
+      "email": "E-mail"
+    }
+  },
+  "credits": {
+    "seoTitle": "Crédits photo | Sivan Management",
+    "title": "Crédits photo",
+    "intro": "Certaines photographies de ce site sont utilisées sous licence libre et sont créditées ci-dessous. Toutes les autres images sont des visuels illustratifs générés par IA pour Sivan Management ; elles ne représentent ni des biens gérés ni de vrais collaborateurs.",
+    "photoLabel": "Photographies sous licence libre",
+    "aiLabel": "Images illustratives générées par IA",
+    "aiBody": "Les images de littoral, de villa, d’intérieur, d’hôtellerie, d’inspection et d’immeuble commercial ont été générées pour ce site. Il s’agit uniquement d’illustrations."
+  }
+}

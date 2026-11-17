@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "siteName": "Sivan Management",
+    "tagline": "Votre bien. Notre responsabilité.",
+    "defaultTitle": "Sivan Management — Gestion immobilière, patrimoniale et hôtelière en Crète",
+    "defaultDescription": "Une gestion de A à Z pour biens résidentiels, locations saisonnières, locaux commerciaux et établissements hôteliers à Chania, Réthymnon et Héraklion. Un partenaire local unique et responsable, pour les propriétaires en Grèce comme à l’étranger."
+  },
+  "nav": {
+    "home": "Accueil",
+    "about": "À propos",
+    "services": "Services",
+    "allServices": "Tous les services",
+    "locations": "Nos secteurs",
+    "portfolio": "Portefeuille",
+    "team": "Notre équipe",
+    "insights": "Conseils",
+    "faq": "FAQ",
+    "contact": "Contact",
+    "ownerLogin": "Espace propriétaire",
+    "cta": "Demander une évaluation",
+    "menu": "Menu",
+    "close": "Fermer",
+    "language": "Langue",
+    "skip": "Aller au contenu",
+    "breadcrumbHome": "Accueil"
+  },
+  "common": {
+    "requestAssessment": "Demander une évaluation de votre bien",
+    "exploreServices": "Découvrir nos services",
+    "talkToTeam": "Parler à notre équipe",
+    "getProposal": "Recevoir une proposition de gestion sur mesure",
+    "learnMore": "En savoir plus",
+    "readMore": "Lire la suite",
+    "viewAll": "Tout voir",
+    "discover": "Découvrir",
+    "faqTitle": "Questions fréquentes",
+    "relatedServices": "Services associés",
+    "relatedLocations": "Où nous proposons ce service",
+    "illustrative": "Interface illustrative",
+    "imageNotice": "Les images de cette page sont illustratives et ne représentent pas des biens sous notre gestion.",
+    "photoCredit": "Photo",
+    "whatsapp": "WhatsApp",
+    "call": "Appeler",
+    "email": "E-mail",
+    "office": "Bureau",
+    "minutesRead": "min de lecture",
+    "updated": "Mis à jour",
+    "backToTop": "Retour en haut"
+  },
+  "footer": {
+    "headline": "Parlons de votre bien.",
+    "body": "Dites-nous ce que vous possédez, où il se situe et ce que vous souhaitez accomplir. Nous vous répondons personnellement, généralement sous un jour ouvré.",
+    "explore": "Explorer",
+    "services": "Services",
+    "company": "Entreprise",
+    "legal": "Mentions légales",
+    "contact": "Contact",
+    "privacy": "Politique de confidentialité",
+    "cookies": "Politique relative aux cookies",
+    "terms": "Conditions d’utilisation",
+    "imprint": "Informations sur la société",
+    "credits": "Crédits photo",
+    "rights": "Tous droits réservés.",
+    "legalEntity": "Entité juridique",
+    "vat": "TVA / AFM",
+    "gemi": "N° G.E.MI.",
+    "taxOffice": "Centre des impôts",
+    "taxOfficeName": "D.O.Y. Chania",
+    "builtWith": "Une gestion immobilière au service des propriétaires, depuis Chania, en Crète."
+  },
+  "cookie": {
+    "text": "Nous utilisons uniquement les cookies essentiels au fonctionnement de ce site. Avec votre accord, nous pouvons aussi recourir à une mesure d’audience respectueuse de la vie privée pour l’améliorer.",
+    "accept": "Accepter la mesure d’audience",
+    "decline": "Essentiels uniquement",
+    "more": "Politique relative aux cookies"
+  },
+  "notFound": {
+    "title": "Page introuvable",
+    "body": "La page que vous recherchez a été déplacée ou n’existe plus.",
+    "cta": "Retour à l’accueil"
+  }
+}

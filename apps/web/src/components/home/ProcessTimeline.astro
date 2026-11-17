@@ -1,0 +1,44 @@
+---
+import { getDict } from '~/i18n';
+import type { Locale } from '~/i18n/config';
+interface Props { locale: Locale }
+const p = getDict(Astro.props.locale).home.process;
+---
+<section class="section section--white process" aria-labelledby="process-title">
+  <div class="container split">
+    <div class="process-intro">
+      <p class="eyebrow" data-reveal="fade">{p.eyebrow}</p>
+      <h2 id="process-title" class="h-1" data-split>{p.title}</h2>
+      <p class="lead" data-reveal style="--d:150ms">{p.sub}</p>
+    </div>
+    <ol class="steps" data-progress>
+      <span class="rail" aria-hidden="true"><span class="rail-fill"></span></span>
+      {p.steps.map((s, i) => (
+        <li class="step" data-reveal style={`--d:${i * 40}ms`}>
+          <span class="num" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+          <div>
+            <h3 class="h-3">{s.title}</h3>
+            <p class="muted">{s.body}</p>
+          </div>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>
+
+<style>
+  .process-intro { display: grid; gap: 1.1rem; align-content: start; }
+  @media (min-width: 960px) { .process-intro { position: sticky; top: 120px; } }
+  .steps { position: relative; display: grid; gap: clamp(1.75rem, 1rem + 2vw, 2.75rem); padding-inline-start: 4.25rem; list-style: none; margin: 0; --p: 0; }
+  .rail { position: absolute; inset-inline-start: 1.35rem; top: 0.6rem; bottom: 0.6rem; width: 2px; background: var(--line); border-radius: 2px; overflow: hidden; }
+  .rail-fill { position: absolute; inset: 0; background: linear-gradient(var(--violet), var(--lavender)); transform-origin: top; transform: scaleY(var(--p)); transition: transform 0.15s linear; }
+  .step { position: relative; display: grid; gap: 0.4rem; }
+  .step h3 { margin-bottom: 0.35rem; }
+  .num {
+    position: absolute; inset-inline-start: -4.25rem; top: -0.15rem; width: 2.75rem; height: 2.75rem; border-radius: 14px;
+    display: grid; place-items: center; background: var(--paper); border: 1px solid var(--line);
+    font-family: var(--font-label); font-weight: 700; font-size: 0.8rem; color: var(--violet);
+    transition: background-color 0.4s, color 0.4s, box-shadow 0.4s;
+  }
+  .step:global(.is-in) .num { background: var(--violet); color: #fff; border-color: var(--violet); box-shadow: var(--glow); }
+</style>

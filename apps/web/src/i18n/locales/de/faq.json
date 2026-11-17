@@ -1,0 +1,51 @@
+{
+  "seoTitle": "FAQ – Immobilienverwaltung auf Kreta | Sivan Management",
+  "seoDescription": "Antworten zu Verwaltungsgebühren, Reporting, Instandhaltung, Regeln für Ferienvermietung und zur Verwaltung einer Immobilie in Griechenland aus dem Ausland.",
+  "eyebrow": "FAQ",
+  "title": "Was Eigentümer uns fragen.",
+  "lead": "Keine Antwort gefunden? Schreiben Sie uns – wir antworten persönlich.",
+  "groups": [
+    {
+      "title": "Der Einstieg",
+      "items": [
+        { "q": "Wie fangen wir an?", "a": "Fragen Sie über das Formular eine Immobilienbewertung an. Wir vereinbaren ein Gespräch, besichtigen die Immobilie und senden Ihnen ein schriftliches Angebot mit Leistungsumfang und Gebühren." },
+        { "q": "Ist die Bewertung kostenlos?", "a": "Das Erstgespräch und die Immobilienbewertung sind unverbindlich. Sie zahlen erst, wenn Sie einem schriftlichen Angebot zugestimmt haben." },
+        { "q": "Muss ich einen langen Vertrag unterschreiben?", "a": "Vereinbarungen laufen in der Regel ein Jahr mit angemessener Kündigungsfrist. Die Konditionen besprechen und vereinbaren wir vorab mit Ihnen." },
+        { "q": "Welche Unterlagen benötigen Sie?", "a": "In der Regel einen Eigentumsnachweis, die Registrierungsdaten der Immobilie, vorhandene Zertifikate sowie bestehende Mietverträge oder Vermietungsregistrierungen. Sie erhalten von uns eine Checkliste." }
+      ]
+    },
+    {
+      "title": "Gebühren & Finanzen",
+      "items": [
+        { "q": "Wie sind die Verwaltungsgebühren aufgebaut?", "a": "Ein Prozentsatz der Mieteinnahmen, eine feste Monatsgebühr, Preise pro Leistung oder eine Kombination – je nach Immobilie und Leistungsumfang. Alles wird schriftlich festgehalten." },
+        { "q": "Wie erhalte ich meine Einnahmen?", "a": "Die Einnahmen werden gemäß dem in Ihrer Vereinbarung festgelegten Zeitplan auf Ihr Bankkonto überwiesen, zusammen mit einer aufgeschlüsselten Abrechnung." },
+        { "q": "Wie werden Ausgaben freigegeben?", "a": "Laufende Kosten innerhalb eines vereinbarten Limits erledigen wir direkt. Alles darüber legen wir Ihnen mit einem Angebot zur Freigabe vor." },
+        { "q": "Garantieren Sie Mieteinnahmen?", "a": "Nein. Mieteinnahmen hängen vom Markt ab. Wir geben realistische Einschätzungen und arbeiten daran, die Ergebnisse zu optimieren, versprechen aber niemals garantierte Einnahmen oder Auslastung." }
+      ]
+    },
+    {
+      "title": "Reporting & Kommunikation",
+      "items": [
+        { "q": "Woher weiß ich, was in meiner Immobilie passiert?", "a": "Über unser Online-Eigentümerportal, regelmäßige Abrechnungen und den direkten Kontakt mit Ihrem Objektbetreuer." },
+        { "q": "In welchen Sprachen können wir kommunizieren?", "a": "Englisch und Hebräisch; Griechisch und weitere Sprachen über unser Team und unsere Partner." },
+        { "q": "Was enthält ein Bericht?", "a": "Buchungen bzw. eingegangene Mieten, aufgeschlüsselte Ausgaben, durchgeführte Instandhaltung, Probleme und Empfehlungen." }
+      ]
+    },
+    {
+      "title": "Betrieb & Instandhaltung",
+      "items": [
+        { "q": "Was passiert im Notfall?", "a": "Gäste und Mieter haben eine Kontaktnummer. Dringende Probleme werden sofort von unserem Team und vertrauenswürdigen Fachleuten behoben, und Sie werden informiert." },
+        { "q": "Wer führt die Instandhaltung durch?", "a": "Routineaufgaben übernimmt unser Team. Facharbeiten werden von zugelassenen Fachleuten ausgeführt, die wir koordinieren und beaufsichtigen." },
+        { "q": "Betreuen Sie die Immobilie auch im Winter?", "a": "Ja. Wir bieten Winterkontrollen, Kontrollen nach Unwettern sowie das saisonale Öffnen und Schließen der Immobilie." }
+      ]
+    },
+    {
+      "title": "Regeln, Registrierung & Steuern",
+      "items": [
+        { "q": "Muss eine Ferienvermietung in Griechenland registriert werden?", "a": "Ja. Immobilien in der Kurzzeitvermietung müssen registriert sein und eine Registrierungsnummer (AMA) ausweisen; zudem gelten besondere Steuer- und Meldepflichten. Wir begleiten Sie und stimmen uns mit Ihrem Steuerberater ab." },
+        { "q": "Bieten Sie Rechts- oder Steuerberatung an?", "a": "Nein. Wir arbeiten mit qualifizierten Anwälten, Steuerberatern und Ingenieuren zusammen. Unsere Rolle ist die operative Verwaltung." },
+        { "q": "Wie ist es mit Versicherungen?", "a": "Wir empfehlen eine passende Gebäude- und Haftpflichtversicherung und können uns mit Ihrem Versicherer abstimmen. Die Police bleibt auf den Namen des Eigentümers." }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,132 @@
+{
+  "about": {
+    "seoTitle": "À propos de Sivan Management — Gestion immobilière à Chania",
+    "seoDescription": "Sivan Management, gestion immobilière et hôtelière basée à Chania, accompagne les propriétaires de biens résidentiels, commerciaux et touristiques en Crète.",
+    "eyebrow": "À propos",
+    "title": "Dévoués à votre bien. Engagés pour votre tranquillité d’esprit.",
+    "lead": "Sivan Management est une société de gestion immobilière et hôtelière dédiée à la Grèce, basée à Chania (La Canée), au service des propriétaires de biens résidentiels, commerciaux et touristiques.",
+    "body": [
+      "Notre approche repose sur un principe : posséder un bien de manière professionnelle exige une gestion locale fiable, une communication transparente et une attention constante aux détails.",
+      "Posséder un bien à l’étranger offre de vraies opportunités, et implique de vraies responsabilités. Un bien d’investissement demande une supervision régulière, des prestataires fiables, un entretien suivi, une exploitation locative efficace et des décisions éclairées. Notre raison d’être est de simplifier cette complexité pour les propriétaires."
+    ],
+    "approachTitle": "Une approche globale de la gestion immobilière",
+    "approachBody": "Nous réunissons l’exploitation du bien, la gestion locative, la coordination hôtelière, l’entretien et les services aux propriétaires dans un cadre unique et structuré. Plutôt que de traiter chaque problème isolément, nous considérons l’ensemble du cycle de vie du bien : son état, ses besoins opérationnels, son potentiel commercial et l’expérience de ceux qui l’occupent.",
+    "rootedTitle": "Ancrés en Crète. Proches des propriétaires du monde entier.",
+    "rootedBody": "Nous nous concentrons sur Chania, Réthymnon et Héraklion, là où la connaissance du marché local et une coordination fiable font la différence. Nous accompagnons des propriétaires, investisseurs et professionnels de l’immobilier grecs et internationaux, attachés à la responsabilité et à une communication proactive.",
+    "techTitle": "Notre propre plateforme de gestion",
+    "techBody": "Nos opérations reposent sur un logiciel de gestion immobilière que nous avons développé pour nos propres besoins, reliant réservations, entretien, dépenses, documents et reporting propriétaire. Les propriétaires voient les mêmes informations que nous, via l’espace propriétaire en ligne.",
+    "philosophyTitle": "Notre philosophie",
+    "values": [
+      {
+        "title": "Responsabilité",
+        "body": "Nous traitons chaque bien avec l’attention et le soin qu’il mérite."
+      },
+      {
+        "title": "Transparence",
+        "body": "Un propriétaire doit toujours savoir comment son bien est géré et ce qu’il coûte."
+      },
+      {
+        "title": "Constance",
+        "body": "Une bonne gestion repose sur des processus fiables et un suivi régulier."
+      },
+      {
+        "title": "Expertise locale",
+        "body": "Une connaissance concrète du marché, des prestataires et de l’environnement opérationnel."
+      },
+      {
+        "title": "Vision à long terme",
+        "body": "Nous regardons au-delà de la saison en cours, vers l’état et la valeur du bien."
+      }
+    ],
+    "commitmentTitle": "Notre engagement",
+    "commitmentBody": "Nous voulons être plus qu’un prestataire : un partenaire local de long terme pour les propriétaires qui souhaitent que leur bien soit entretenu avec soin, exploité de manière professionnelle et supervisé avec constance.",
+    "signature": "Sivan Management — Votre bien. Notre responsabilité."
+  },
+  "team": {
+    "seoTitle": "Notre équipe | Sivan Management, Chania",
+    "seoDescription": "Découvrez la direction et l’organisation de Sivan Management : gestion immobilière, hôtellerie, entretien, relation propriétaires et reporting.",
+    "eyebrow": "Notre équipe",
+    "title": "Des personnes qui assument leurs responsabilités.",
+    "lead": "Une équipe locale organisée autour des besoins de votre bien, dirigée par la direction fondatrice et épaulée par un réseau de professionnels de confiance.",
+    "founderRole": "Fondation et direction générale",
+    "founderBio": "Sivan Menahem a fondé Sivan Management pour offrir aux propriétaires en Crète ce que tout propriétaire attend : un partenaire local unique et responsable, une communication claire et une visibilité totale sur la gestion de son bien.",
+    "departmentsTitle": "Notre organisation",
+    "departmentsLead": "Chaque domaine de responsabilité a un référent clairement identifié. Les profils de l’équipe seront ajoutés ici au fur et à mesure.",
+    "departments": [
+      {
+        "title": "Opérations",
+        "body": "Coordonne l’activité quotidienne de l’ensemble des biens et des prestataires."
+      },
+      {
+        "title": "Gestion immobilière",
+        "body": "Relation avec les propriétaires, locations et état général de chaque bien."
+      },
+      {
+        "title": "Opérations hôtelières",
+        "body": "Communication avec les voyageurs, arrivées, standards de qualité et expérience client."
+      },
+      {
+        "title": "Revenus et réservations",
+        "body": "Tarification, disponibilités et gestion des canaux."
+      },
+      {
+        "title": "Maintenance et services techniques",
+        "body": "Plans préventifs, réparations et coordination technique."
+      },
+      {
+        "title": "Biens commerciaux",
+        "body": "Relations locataires, budgets et exploitation des immeubles."
+      },
+      {
+        "title": "Relation propriétaires",
+        "body": "Intégration, communication et accompagnement des propriétaires."
+      },
+      {
+        "title": "Qualité du ménage",
+        "body": "Procédures de nettoyage, contrôles et standards du linge."
+      },
+      {
+        "title": "Finance et reporting",
+        "body": "Relevés, contrôle des dépenses et rapports aux propriétaires."
+      }
+    ],
+    "joinTitle": "Travailler avec nous",
+    "joinBody": "Nous sommes toujours heureux d’échanger avec des professionnels fiables en Crète : ménage, maintenance, hôtellerie et administration.",
+    "joinCta": "Nous contacter"
+  },
+  "portfolio": {
+    "seoTitle": "Biens et portefeuille | Sivan Management",
+    "seoDescription": "Les types de biens que nous gérons en Crète : villas, appartements de vacances, locations résidentielles, locaux commerciaux et établissements hôteliers.",
+    "eyebrow": "Biens et portefeuille",
+    "title": "Les biens dont nous prenons soin.",
+    "lead": "Nous gérons un ensemble de villas de vacances, d’appartements, de locations résidentielles et de biens commerciaux et hôteliers dans l’ouest et le centre de la Crète.",
+    "policyTitle": "Uniquement des biens réels",
+    "policyBody": "Les études de cas ne sont publiées ici qu’avec l’accord écrit du propriétaire, accompagnées de photos réelles et de chiffres vérifiés. Nous ne présentons jamais d’images illustratives ou générées par IA comme des biens sous gestion.",
+    "typesTitle": "Les types de biens que nous gérons",
+    "types": [
+      {
+        "title": "Villas avec piscine",
+        "body": "Villas de vacances exploitées en location courte durée, avec entretien de la piscine et du jardin."
+      },
+      {
+        "title": "Appartements de vacances",
+        "body": "Appartements en ville ou en bord de mer, exploités en location saisonnière."
+      },
+      {
+        "title": "Locations résidentielles",
+        "body": "Appartements et maisons loués à des locataires de longue durée."
+      },
+      {
+        "title": "Locaux commerciaux",
+        "body": "Bureaux et commerces occupés par des locataires professionnels."
+      },
+      {
+        "title": "Établissements hôteliers",
+        "body": "Maisons d’hôtes, appartements avec services et petits hôtels."
+      }
+    ],
+    "comingSoon": "Des études de cas approuvées par les propriétaires sont en préparation.",
+    "ctaTitle": "Votre bien a-t-il sa place dans notre portefeuille ?",
+    "ctaBody": "Demandez une évaluation : nous vous dirons honnêtement ce dont votre bien a besoin, selon nous."
+  }
+}

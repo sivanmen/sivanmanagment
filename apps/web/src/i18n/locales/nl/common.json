@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "siteName": "Sivan Management",
+    "tagline": "Uw vastgoed. Onze verantwoordelijkheid.",
+    "defaultTitle": "Sivan Management — Vastgoed-, asset- en hospitalitybeheer op Kreta, Griekenland",
+    "defaultDescription": "Integraal beheer van woningen, vakantiewoningen, commercieel vastgoed en hospitality in Chania, Rethymnon en Heraklion. Eén lokale partner die verantwoordelijkheid neemt, voor eigenaren in Griekenland en daarbuiten."
+  },
+  "nav": {
+    "home": "Home",
+    "about": "Over ons",
+    "services": "Diensten",
+    "allServices": "Alle diensten",
+    "locations": "Locaties",
+    "portfolio": "Portfolio",
+    "team": "Ons team",
+    "insights": "Kennisbank",
+    "faq": "Veelgestelde vragen",
+    "contact": "Contact",
+    "ownerLogin": "Eigenarenportaal",
+    "cta": "Vraag een beoordeling aan",
+    "menu": "Menu",
+    "close": "Sluiten",
+    "language": "Taal",
+    "skip": "Naar de inhoud",
+    "breadcrumbHome": "Home"
+  },
+  "common": {
+    "requestAssessment": "Vraag een vastgoedbeoordeling aan",
+    "exploreServices": "Bekijk onze diensten",
+    "talkToTeam": "Spreek ons team",
+    "getProposal": "Ontvang een beheervoorstel op maat",
+    "learnMore": "Meer informatie",
+    "readMore": "Lees verder",
+    "viewAll": "Alles bekijken",
+    "discover": "Ontdek",
+    "faqTitle": "Veelgestelde vragen",
+    "relatedServices": "Gerelateerde diensten",
+    "relatedLocations": "Waar wij dit aanbieden",
+    "illustrative": "Illustratieve weergave",
+    "imageNotice": "De beelden op deze pagina zijn illustratief en tonen geen woningen die wij beheren.",
+    "photoCredit": "Foto",
+    "whatsapp": "WhatsApp",
+    "call": "Bellen",
+    "email": "E-mail",
+    "office": "Kantoor",
+    "minutesRead": "min lezen",
+    "updated": "Bijgewerkt",
+    "backToTop": "Terug naar boven"
+  },
+  "footer": {
+    "headline": "Laten we het over uw vastgoed hebben.",
+    "body": "Vertel ons wat u bezit, waar het ligt en wat u wilt bereiken. Wij reageren persoonlijk, doorgaans binnen één werkdag.",
+    "explore": "Ontdekken",
+    "services": "Diensten",
+    "company": "Bedrijf",
+    "legal": "Juridisch",
+    "contact": "Contact",
+    "privacy": "Privacybeleid",
+    "cookies": "Cookiebeleid",
+    "terms": "Gebruiksvoorwaarden",
+    "imprint": "Bedrijfsgegevens",
+    "credits": "Beeldverantwoording",
+    "rights": "Alle rechten voorbehouden.",
+    "legalEntity": "Rechtspersoon",
+    "vat": "Btw / AFM",
+    "gemi": "G.E.MI.-nr.",
+    "taxOffice": "Belastingkantoor",
+    "taxOfficeName": "D.O.Y. Chania",
+    "builtWith": "Vastgoedbeheer met de eigenaar voorop, vanuit Chania, Kreta."
+  },
+  "cookie": {
+    "text": "Wij gebruiken alleen essentiële cookies om deze website te laten werken. Met uw toestemming gebruiken wij mogelijk ook privacyvriendelijke analytics om de site te verbeteren.",
+    "accept": "Analytics accepteren",
+    "decline": "Alleen essentieel",
+    "more": "Cookiebeleid"
+  },
+  "notFound": {
+    "title": "Pagina niet gevonden",
+    "body": "De pagina die u zoekt is verplaatst of bestaat niet meer.",
+    "cta": "Terug naar de homepage"
+  }
+}

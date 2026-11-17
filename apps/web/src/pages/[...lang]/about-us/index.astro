@@ -1,0 +1,91 @@
+---
+import { Image } from 'astro:assets';
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import PageHero from '~/components/PageHero.astro';
+import CtaBand from '~/components/CtaBand.astro';
+import Dashboard from '~/components/home/Dashboard.astro';
+import Icon from '~/components/Icon.astro';
+import { getDict } from '~/i18n';
+import { localePaths, localizePath, type Locale } from '~/i18n/config';
+import { IMAGES } from '~/lib/images';
+
+export const getStaticPaths = localePaths;
+const { locale } = Astro.props as { locale: Locale };
+const t = getDict(locale);
+const a = t.about.about;
+const icons = ['shield', 'eye', 'layers', 'compass', 'clock'];
+---
+<BaseLayout locale={locale} path="/about-us/" title={a.seoTitle} description={a.seoDescription} overlay>
+  <PageHero locale={locale} eyebrow={a.eyebrow} title={a.title} lead={a.lead} image={IMAGES.chania} crumbs={[{ label: t.common.nav.about }]} />
+
+  <section class="section">
+    <div class="container split">
+      <h2 class="h-2" data-split>{a.approachTitle}</h2>
+      <div class="stack" style="--stack:1.25rem">
+        {a.body.map((p) => <p class="lead" data-reveal>{p}</p>)}
+        <p class="muted" data-reveal>{a.approachBody}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--white">
+    <div class="container split split--even">
+      <div class="media tall" data-reveal="scale"><Image src={IMAGES.inspection.src} alt={IMAGES.inspection.alt} widths={[640, 1000]} sizes="(min-width: 960px) 50vw, 100vw" /></div>
+      <div class="stack center-y" style="--stack:1.25rem">
+        <p class="eyebrow" data-reveal="fade">{t.common.nav.locations}</p>
+        <h2 class="h-2" data-split>{a.rootedTitle}</h2>
+        <p class="lead" data-reveal>{a.rootedBody}</p>
+        <div data-reveal><a href={localizePath('/locations/', locale)} class="link-arrow">{t.common.nav.locations}<Icon name="arrow" size={18} class="arrow" /></a></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--dark grain">
+    <div class="aurora" aria-hidden="true"></div>
+    <div class="container split split--even relative">
+      <div class="stack" style="--stack:1.25rem">
+        <p class="eyebrow" data-reveal="fade">{t.common.nav.ownerLogin}</p>
+        <h2 class="h-2" data-split>{a.techTitle}</h2>
+        <p class="lead" data-reveal>{a.techBody}</p>
+      </div>
+      <div data-reveal="scale"><Dashboard locale={locale} /></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <h2 class="h-2 vtitle" data-split>{a.philosophyTitle}</h2>
+      <div class="values">
+        {a.values.map((v, i) => (
+          <div class="value" data-reveal style={`--d:${i * 80}ms`}>
+            <span class="icon-badge"><Icon name={icons[i]} /></span>
+            <h3 class="h-3">{v.title}</h3>
+            <p class="muted">{v.body}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--lilac">
+    <div class="container-narrow center stack" style="--stack:1.25rem">
+      <p class="eyebrow" data-reveal="fade">{a.commitmentTitle}</p>
+      <p class="h-2" data-split>{a.commitmentBody}</p>
+      <p class="sig" data-reveal>{a.signature}</p>
+    </div>
+  </section>
+
+  <CtaBand locale={locale} />
+</BaseLayout>
+
+<style>
+  .tall { aspect-ratio: 4 / 5; }
+  .center-y { align-self: center; }
+  .vtitle { margin-bottom: 2.5rem; }
+  .values { display: grid; gap: 1px; background: var(--line); border-radius: var(--radius-lg); overflow: hidden; }
+  @media (min-width: 720px) { .values { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 1100px) { .values { grid-template-columns: repeat(5, 1fr); } }
+  .value { background: var(--white); padding: 2rem 1.6rem; display: grid; gap: 0.9rem; align-content: start; }
+  .center { text-align: center; display: grid; justify-items: center; }
+  .sig { font-family: var(--font-display); font-weight: 560; color: var(--violet); }
+</style>

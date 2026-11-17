@@ -1,0 +1,40 @@
+---
+import { Image } from 'astro:assets';
+import { img } from '~/lib/images';
+import { formatDate, readingMinutes, parseId, coverOf, type Insight } from '~/lib/insights';
+import { getDict } from '~/i18n';
+import { localizePath, type Locale } from '~/i18n/config';
+interface Props { entry: Insight; locale: Locale; index?: number; featured?: boolean }
+const { entry, locale, index = 0, featured = false } = Astro.props;
+const t = getDict(locale);
+const { slug, locale: entryLocale } = parseId(entry);
+const href = localizePath(`/insights/${slug}/`, entryLocale);
+const cover = coverOf(entry);
+const isUpload = cover.startsWith('/');
+const local = img(cover);
+const cat = (t.insights.categories as Record<string, string>)[entry.data.category] ?? entry.data.category;
+---
+<a href={href} class:list={['art', { 'art--featured': featured }]} data-reveal style={`--d:${index * 80}ms`} lang={entryLocale !== locale ? 'en' : undefined}>
+  <div class="art-media">
+    {isUpload
+      ? <img src={cover} alt="" loading="lazy" decoding="async" />
+      : <Image src={local.src} alt="" widths={[480, 960]} sizes={featured ? '(min-width: 1024px) 60vw, 100vw' : '(min-width: 1024px) 33vw, 100vw'} />}
+  </div>
+  <div class="art-body">
+    <p class="art-meta"><span class="chip">{cat}</span><span>{formatDate(entry.data.date, locale)}</span><span>· {readingMinutes(entry.body)} {t.common.common.minutesRead}</span></p>
+    <h3 class:list={[featured ? 'h-2' : 'h-3']}>{entry.data.title}</h3>
+    <p class="muted">{entry.data.description}</p>
+  </div>
+</a>
+
+<style>
+  .art { display: grid; gap: 1.1rem; align-content: start; }
+  .art-media { aspect-ratio: 16 / 10; border-radius: var(--radius-lg); overflow: hidden; background: var(--lilac); }
+  .art-media :global(img), .art-media img { width: 100%; height: 100%; object-fit: cover; transition: transform 1.2s var(--ease-out); }
+  .art:hover .art-media :global(img) { transform: scale(1.05); }
+  .art-body { display: grid; gap: 0.7rem; }
+  .art-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; font-size: 0.85rem; color: var(--text-muted); }
+  .art h3 { transition: color 0.2s; }
+  .art:hover h3 { color: var(--violet); }
+  @media (min-width: 1024px) { .art--featured { grid-template-columns: 1.3fr 1fr; gap: 2.5rem; align-items: center; } }
+</style>

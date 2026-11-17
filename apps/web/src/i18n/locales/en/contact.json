@@ -1,0 +1,68 @@
+{
+  "seoTitle": "Request a Property Assessment | Contact Sivan Management, Chania",
+  "seoDescription": "Tell us about your property in Crete. Request an assessment and a tailored management proposal from Sivan Management in Chania.",
+  "eyebrow": "Contact",
+  "title": "Request a property assessment.",
+  "lead": "Four short steps. We reply personally, usually within one business day.",
+  "directTitle": "Prefer to talk?",
+  "directBody": "Call, WhatsApp or email us, or visit our office in central Chania.",
+  "hours": "Monday to Friday, 09:00–17:00 (Greece time)",
+  "mapLink": "Open in Google Maps",
+  "form": {
+    "steps": ["Property", "Location", "Services", "Contact"],
+    "stepOf": "Step {n} of {total}",
+    "back": "Back",
+    "next": "Continue",
+    "submit": "Send request",
+    "sending": "Sending…",
+    "propertyType": "What type of property?",
+    "types": {
+      "short-term": "Vacation rental / villa",
+      "long-term": "Long-term residential",
+      "commercial": "Commercial",
+      "hospitality": "Hotel or hospitality",
+      "not-sure": "Not sure yet"
+    },
+    "units": "Number of units",
+    "unitsHint": "For a single villa or apartment, enter 1.",
+    "location": "Where is the property?",
+    "locations": {
+      "chania": "Chania",
+      "rethymno": "Rethymno",
+      "heraklion": "Heraklion",
+      "other": "Elsewhere"
+    },
+    "area": "Area or village (optional)",
+    "status": "Current status",
+    "statuses": {
+      "rented": "Currently rented",
+      "vacant": "Vacant / ready",
+      "renovation": "Being renovated or built",
+      "managed": "Managed by someone else"
+    },
+    "services": "Which services interest you?",
+    "servicesHint": "Select all that apply.",
+    "goals": "What would you like to achieve? (optional)",
+    "goalsPlaceholder": "For example: start renting next season, reduce my involvement, improve results…",
+    "name": "Full name",
+    "email": "Email",
+    "phone": "Phone / WhatsApp",
+    "phoneHint": "Include your country code, e.g. +44…",
+    "preferred": "Preferred contact",
+    "preferredOptions": { "email": "Email", "phone": "Phone", "whatsapp": "WhatsApp" },
+    "consent": "I agree that Sivan Management may process my details to respond to this request, as described in the Privacy Policy.",
+    "consentLink": "Privacy Policy",
+    "required": "Please complete this field.",
+    "invalidEmail": "Please enter a valid email address.",
+    "errorGeneric": "Something went wrong. Please try again, or contact us directly by email or phone.",
+    "successTitle": "Thank you, we have received your request.",
+    "successBody": "We will review the details and contact you shortly. A confirmation has been noted in our system."
+  },
+  "thanks": {
+    "seoTitle": "Thank you | Sivan Management",
+    "title": "Thank you.",
+    "body": "Your request has reached us. A member of our team will contact you personally, usually within one business day.",
+    "next": "While you wait, read our guides for property owners.",
+    "cta": "Browse insights"
+  }
+}

@@ -1,0 +1,69 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import PageHero from '~/components/PageHero.astro';
+import ArticleCard from '~/components/ArticleCard.astro';
+import CtaBand from '~/components/CtaBand.astro';
+import { getDict } from '~/i18n';
+import { localePaths, localizePath, type Locale } from '~/i18n/config';
+import { insightsFor } from '~/lib/insights';
+
+export const getStaticPaths = localePaths;
+const { locale } = Astro.props as { locale: Locale };
+const t = getDict(locale);
+const i = t.insights;
+const posts = await insightsFor(locale);
+const english = posts.length ? [] : await insightsFor('en');
+const [featured, ...rest] = posts;
+const cats = [...new Set(posts.map((p) => p.data.category))];
+const catLabels = i.categories as Record<string, string>;
+const catLabel = (c: string) => catLabels[c] ?? c;
+---
+<BaseLayout locale={locale} path="/insights/" title={i.seoTitle} description={i.seoDescription}>
+  <PageHero locale={locale} eyebrow={i.eyebrow} title={i.title} lead={i.lead} crumbs={[{ label: t.common.nav.insights }]} />
+
+  <section class="section">
+    <div class="container">
+      {posts.length === 0 && (
+        <div class="empty card">
+          <p>{i.empty}</p>
+          <a class="link-arrow" href={localizePath('/insights/', 'en')}>{i.readInEnglish}</a>
+        </div>
+      )}
+      {cats.length > 1 && (
+        <div class="filters" role="toolbar" data-filters>
+          <button type="button" class="chip is-on" data-cat="">{i.all}</button>
+          {cats.map((c) => <button type="button" class="chip" data-cat={c}>{catLabel(c)}</button>)}
+        </div>
+      )}
+      {featured && <div class="featured" data-item={featured.data.category}><ArticleCard entry={featured} locale={locale} featured /></div>}
+      <div class="grid grid-3 list">
+        {rest.map((p, k) => <div data-item={p.data.category}><ArticleCard entry={p} locale={locale} index={k % 3} /></div>)}
+        {english.map((p, k) => <div><ArticleCard entry={p} locale={locale} index={k % 3} /></div>)}
+      </div>
+    </div>
+  </section>
+
+  <CtaBand locale={locale} title={i.ctaTitle} body={i.ctaBody} />
+</BaseLayout>
+
+<style>
+  .empty { display: grid; gap: 0.75rem; margin-bottom: 2.5rem; }
+  .filters { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 2.5rem; }
+  .filters .chip { border: 0; cursor: pointer; background: var(--white); color: var(--text); box-shadow: inset 0 0 0 1px var(--line); }
+  .filters .chip.is-on { background: var(--ink); color: #fff; box-shadow: none; }
+  .featured { margin-bottom: 4rem; }
+  .list { row-gap: 3.5rem; }
+  [data-item][hidden] { display: none; }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-filters]').forEach((bar) => {
+    bar.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-cat]');
+      if (!btn) return;
+      bar.querySelectorAll('[data-cat]').forEach((b) => b.classList.toggle('is-on', b === btn));
+      const cat = btn.dataset.cat;
+      document.querySelectorAll<HTMLElement>('[data-item]').forEach((el) => (el.hidden = !!cat && el.dataset.item !== cat));
+    });
+  });
+</script>

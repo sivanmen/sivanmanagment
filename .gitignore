@@ -16,3 +16,7 @@ coverage/
 agentdb.rvf
 agentdb.rvf.lock
 ruvector.db
+
+# Astro website
+apps/web/.astro/
+apps/web/src/.astro/

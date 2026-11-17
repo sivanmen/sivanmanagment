@@ -1,0 +1,105 @@
+{
+  "reviewNotice": "This document is provided for information and must be reviewed by a qualified legal adviser before publication.",
+  "lastUpdated": "Last updated",
+  "privacy": {
+    "seoTitle": "Privacy Policy | Sivan Management",
+    "title": "Privacy Policy",
+    "sections": [
+      {
+        "h": "Who we are",
+        "p": "This website is operated by Sivan Menahem Management, Plateia Eleftherias 2, 73132 Chania, Greece (the “controller”). Contact: support@sivanmanagment.com."
+      },
+      {
+        "h": "What data we collect",
+        "p": "When you submit a form, we collect the details you provide: name, email, phone number, property information and your message. We also record technical data needed to protect the form against abuse, such as the time of submission and the page you came from. If you accept analytics, we collect anonymous, aggregated usage statistics."
+      },
+      {
+        "h": "Why we use it",
+        "p": "We use your data to respond to your request, prepare a proposal and, if you become a client, to perform our agreement. The legal bases are your consent and the steps taken at your request before entering into a contract (Art. 6(1)(a) and (b) GDPR)."
+      },
+      {
+        "h": "Who we share it with",
+        "p": "Your data is stored in our customer-management tools (such as Airtable) and our property-management system, operated by processors bound by data-processing agreements. We do not sell your data."
+      },
+      {
+        "h": "International transfers",
+        "p": "Some processors may store data outside the European Economic Area. Where this happens, transfers are covered by appropriate safeguards such as the EU Standard Contractual Clauses."
+      },
+      {
+        "h": "How long we keep it",
+        "p": "Enquiries that do not lead to an agreement are deleted within 24 months. Client data is kept for as long as required by our agreement and by Greek tax and accounting law."
+      },
+      {
+        "h": "Your rights",
+        "p": "You can request access, correction, deletion, restriction, portability or object to processing, and withdraw consent at any time, by emailing support@sivanmanagment.com. You may also complain to the Hellenic Data Protection Authority (www.dpa.gr)."
+      }
+    ]
+  },
+  "cookies": {
+    "seoTitle": "Cookie Policy | Sivan Management",
+    "title": "Cookie Policy",
+    "sections": [
+      {
+        "h": "Essential storage",
+        "p": "We store your cookie choice and language preference in your browser. These are necessary for the site to work and do not track you."
+      },
+      {
+        "h": "Analytics (optional)",
+        "p": "Only if you accept, we may load privacy-friendly analytics to understand how the site is used. No advertising cookies are used."
+      },
+      {
+        "h": "Changing your choice",
+        "p": "You can change your choice at any time by clearing this site's data in your browser; the banner will then appear again."
+      }
+    ]
+  },
+  "terms": {
+    "seoTitle": "Terms of Use | Sivan Management",
+    "title": "Terms of Use",
+    "sections": [
+      {
+        "h": "About this website",
+        "p": "This website presents the services of Sivan Menahem Management. The information is general and does not constitute an offer, or legal, tax or investment advice."
+      },
+      {
+        "h": "No guarantees",
+        "p": "Any estimates of rental performance are indicative. We do not guarantee income, occupancy or property values. Services are provided only under a signed written agreement."
+      },
+      {
+        "h": "Imagery",
+        "p": "Some images on this website are illustrative, including AI-generated images, and do not depict properties under our management unless stated."
+      },
+      {
+        "h": "Intellectual property",
+        "p": "Text, design and logos on this website belong to Sivan Menahem Management or their licensors. Third-party trademarks belong to their owners."
+      },
+      {
+        "h": "Governing law",
+        "p": "These terms are governed by Greek law. The courts of Chania have jurisdiction, without prejudice to mandatory consumer-protection rules."
+      }
+    ]
+  },
+  "imprint": {
+    "seoTitle": "Company Information | Sivan Management",
+    "title": "Company Information",
+    "intro": "Information provided in accordance with Greek and EU rules on electronic commerce.",
+    "labels": {
+      "name": "Business name",
+      "brand": "Trading as",
+      "address": "Registered address",
+      "vat": "VAT number (AFM)",
+      "gemi": "G.E.MI. number",
+      "taxOffice": "Tax office",
+      "phone": "Phone",
+      "email": "Email"
+    }
+  },
+  "credits": {
+    "seoTitle": "Image Credits | Sivan Management",
+    "title": "Image Credits",
+    "intro": "Some photographs on this website are used under open licences and are credited below. All other images are illustrative, AI-generated visuals created for Sivan Management and do not depict managed properties or real staff.",
+    "photoLabel": "Openly licensed photography",
+    "aiLabel": "AI-generated illustrative imagery",
+    "aiBody": "Coastline, villa, interior, hospitality, inspection and commercial building images were generated for this website. They are illustrations only."
+  }
+}

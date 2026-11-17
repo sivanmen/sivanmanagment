@@ -1,0 +1,120 @@
+{
+  "seoTitle": "Immobilienverwaltung Kreta: Chania, Rethymno, Heraklion | Sivan",
+  "seoDescription": "Immobilienverwaltung auf Kreta: Ferien- und Langzeitvermietung, Gewerbe, Hotels, Instandhaltung – ein Partner vor Ort mit transparentem Reporting.",
+  "hero": {
+    "eyebrow": "Immobilien · Asset · Hospitality Management — Kreta, Griechenland",
+    "titleA": "Ihre Immobilie.",
+    "titleB": "Unsere Verantwortung.",
+    "sub": "Ganzheitliches Immobilien-, Asset- & Hospitality-Management in Griechenland.",
+    "body": "Von Vermietung und Gästebetreuung bis zu Instandhaltung und Eigentümer-Reporting: Wir helfen Eigentümern aus Griechenland und aller Welt, ihre Immobilien mit Zuversicht zu führen.",
+    "cta1": "Immobilienbewertung anfragen",
+    "cta2": "Unsere Leistungen entdecken",
+    "chipLocal": "Eigenes Büro in Chania",
+    "chipPortal": "Online-Eigentümerportal",
+    "chipAssets": "Wohnen · Vermietung · Gewerbe · Hotels",
+    "scroll": "Scrollen"
+  },
+  "intro": {
+    "eyebrow": "Warum Eigentümer uns wählen",
+    "title": "Eine Immobilie in Griechenland sollte eine Chance sein – keine Last.",
+    "body1": "Sivan Management bietet umfassende Verwaltung, Vermietung und Objektbetreuung für Wohn-, Gewerbe- und Hotelimmobilien auf ganz Kreta, mit besonderem Fokus auf Chania, Rethymno und Heraklion.",
+    "body2": "Von der Vorbereitung Ihrer Immobilie für den Markt und der Suche nach den passenden Mietern oder Gästen bis zu Tagesgeschäft, Instandhaltung und Reporting: Wir bündeln alle wesentlichen Leistungen in einem abgestimmten Ansatz.",
+    "closing": "Eine Immobilie. Ein Partner, dem Sie vertrauen. Rundum sorgenfrei.",
+    "pillars": [
+      { "title": "Verantwortung", "body": "Wir behandeln jede Immobilie als Wert, den es zu schützen gilt – nicht nur als Kalender, der gefüllt werden soll." },
+      { "title": "Transparenz", "body": "Klare Vereinbarungen, aufgeschlüsselte Ausgaben und regelmäßige Berichte, die man wirklich versteht." },
+      { "title": "Lokale Expertise", "body": "Praxiswissen über den kretischen Markt, Dienstleister und Vorschriften." },
+      { "title": "Eigentümer zuerst", "body": "Ihre Ziele bestimmen die Strategie. Wir setzen sie um und halten Sie auf dem Laufenden." }
+    ]
+  },
+  "manage": {
+    "eyebrow": "Was wir verwalten",
+    "title": "Vier Objektarten. Ein Standard.",
+    "sub": "Ob private Villa, Wohnung, Gewerbefläche oder Hotelbetrieb: Wir richten unsere Leistung auf das Objekt und Ihre Anlagestrategie aus.",
+    "items": [
+      { "key": "short-term-rental-management", "title": "Ferienimmobilien & Villen", "body": "Präsentation, internationaler Vertrieb, Preisgestaltung, Buchungen, Gästebetreuung und Housekeeping – das komplette Vermietungserlebnis." },
+      { "key": "long-term-rental-management", "title": "Wohnungsvermietung", "body": "Strukturierte Vermietung, Mieterbetreuung, Mietkontrolle und Objektaufsicht für stabile, gut geführte Mietverhältnisse." },
+      { "key": "commercial-property-management", "title": "Gewerbeimmobilien", "body": "Mieterbeziehungen, Instandhaltungsplanung, Dienstleistersteuerung und Budgetkontrolle für Büro-, Einzelhandels- und Mischobjekte." },
+      { "key": "hotel-hospitality-management", "title": "Hotels & Hospitality", "body": "Operative Unterstützung für Boutique-Hotels, Serviced Apartments und Ferienunterkunfts-Portfolios." }
+    ]
+  },
+  "statement": {
+    "line1": "Erfolgreiche Immobilienverwaltung heißt nicht, einen Kalender zu füllen oder Miete einzuziehen.",
+    "line2": "Es geht darum, den Wert zu erhalten, Kosten zu kontrollieren, hohe Standards zu halten und fundierte Entscheidungen zu treffen – Jahr für Jahr."
+  },
+  "process": {
+    "eyebrow": "Komplettverwaltung von A bis Z",
+    "title": "Vom ersten Besuch bis zum Monatsbericht.",
+    "sub": "Ein klarer, wiederholbarer Prozess verbindet Strategie mit der täglichen Umsetzung.",
+    "steps": [
+      { "title": "Kennenlernen", "body": "Wir lernen Ihre Immobilie und Ihre Ziele kennen und klären, wie stark Sie eingebunden sein möchten." },
+      { "title": "Bewertung & Strategie", "body": "Prüfung vor Ort zu Zustand, Vorschriften und Potenzial. Wir empfehlen die passende Nutzung: Kurzzeit-, Langzeitvermietung, Gewerbe oder Hospitality." },
+      { "title": "Angebot & Vertrag", "body": "Ein schriftlicher Leistungsumfang: Zuständigkeiten, Gebühren, Ausgabenfreigaben, Befugnisse und Reporting." },
+      { "title": "Vorbereitung", "body": "Reparaturen, Einrichtungsberatung, professionelle Fotografie, Inventar und Sicherheitschecks." },
+      { "title": "Vermarktung", "body": "Inserate, Vertriebskanäle, Preisgestaltung und Prüfung von Mietern oder Gästen." },
+      { "title": "Betrieb & Instandhaltung", "body": "Gäste, Mieter, Housekeeping, Dienstleister, vorbeugende Pflege und schnelle Reaktion bei Problemen." },
+      { "title": "Eigentümer-Reporting", "body": "Einnahmen- und Ausgabenaufstellungen, gemeldete Probleme und ergriffene Maßnahmen sowie Empfehlungen." }
+    ]
+  },
+  "control": {
+    "eyebrow": "Verwaltung & Kontrolle",
+    "title": "Volle Transparenz, wo immer Sie leben.",
+    "body": "Jeder Eigentümer erhält Zugang zu unserem Online-Eigentümerportal, das mit dem Property-Management-System verbunden ist, mit dem wir unser Geschäft führen. Buchungen, Abrechnungen, Wartungsanfragen und Dokumente liegen an einem Ort – Sie müssen keinem Update hinterherlaufen.",
+    "features": [
+      { "title": "Buchungen & Auslastung", "body": "Reservierungen aller Kanäle in einem Kalender." },
+      { "title": "Einnahmen- & Ausgabenübersicht", "body": "Aufgeschlüsselt, mit Belegen und Freigaben für größere Kosten." },
+      { "title": "Wartungsverfolgung", "body": "Aufträge von der Anfrage bis zur Erledigung, mit Fotos." },
+      { "title": "Alle Dokumente an einem Ort", "body": "Verträge, Zertifikate, Rechnungen und Berichte." }
+    ],
+    "cta": "Eigentümerportal öffnen",
+    "dashboard": {
+      "title": "Eigentümerübersicht",
+      "period": "Dieser Monat",
+      "revenue": "Bruttoeinnahmen",
+      "expenses": "Ausgaben",
+      "net": "Netto an Eigentümer",
+      "occupancy": "Auslastung",
+      "tasks": "Offene Wartungsaufgaben",
+      "next": "Nächster Check-in",
+      "report": "Monatsbericht verfügbar",
+      "taskA": "Wartung Poolpumpe",
+      "taskB": "Terrassenleuchte ersetzen",
+      "statusDone": "Erledigt",
+      "statusOpen": "Geplant"
+    }
+  },
+  "local": {
+    "eyebrow": "Lokale Expertise",
+    "title": "Verwurzelt auf Kreta. Verbunden mit Eigentümern weltweit.",
+    "body": "Unser Büro liegt im Zentrum von Chania. Wir kennen die Viertel, die Saisons, die Dienstleister und die Formalitäten – und betreuen Eigentümer in Griechenland und im Ausland mit einem einzigen Ansprechpartner vor Ort.",
+    "cta": "Unsere Standorte ansehen"
+  },
+  "platforms": {
+    "title": "Wir inserieren und verwalten Ihre Immobilie auf den Kanälen, die Gäste nutzen",
+    "note": "Die Auswahl der Kanäle hängt von Objektart und Strategie ab. Marken sind Eigentum der jeweiligen Inhaber."
+  },
+  "insights": {
+    "eyebrow": "Ratgeber & Wissen",
+    "title": "Wissen für Immobilieneigentümer in Griechenland.",
+    "cta": "Alle Artikel"
+  },
+  "faq": {
+    "eyebrow": "Was Eigentümer fragen",
+    "title": "Gute Fragen verdienen klare Antworten.",
+    "items": [
+      { "q": "Was genau umfasst Ihre Verwaltung?", "a": "Das hängt vom Objekt und der Vereinbarung ab. Ein Vollmandat umfasst in der Regel Vermarktung, Preisgestaltung, Kommunikation mit Gästen oder Mietern, Check-in und Check-out, Housekeeping, Koordination der Instandhaltung, Dienstleistermanagement, Ausgabenkontrolle und regelmäßiges Eigentümer-Reporting. Den Leistungsumfang halten wir vor Beginn schriftlich fest." },
+      { "q": "Wie sind die Verwaltungsgebühren aufgebaut?", "a": "Wir arbeiten mit einem Prozentsatz der Mieteinnahmen, einer festen Monatsgebühr, Gebühren für einzelne Leistungen oder einer Kombination. Das passende Modell hängt von Objektart, Größe und Umfang unserer Verwaltung ab. Nach der Bewertung erhalten Sie ein schriftliches Angebot – versteckte Kosten gibt es nicht." },
+      { "q": "Wie erhalte ich Berichte?", "a": "Über unser Online-Eigentümerportal und per E-Mail. Buchungen, Einnahmen, Ausgaben und Instandhaltung sehen Sie jederzeit, und Sie erhalten regelmäßig eine detaillierte Abrechnung." },
+      { "q": "Wie gehen Sie mit Reparaturen und Notfällen um?", "a": "Kleine, dringende Probleme werden sofort im Rahmen eines vereinbarten Ausgabenlimits erledigt. Für größere Arbeiten holen wir ein Angebot ein und legen es Ihnen zuerst zur Freigabe vor. Jeder Einsatz wird mit Fotos und Rechnungen dokumentiert." },
+      { "q": "Können Sie meine Immobilie verwalten, wenn ich im Ausland lebe?", "a": "Ja. Viele unserer Eigentümer leben außerhalb Griechenlands. Wir vertreten Sie vor Ort, kommunizieren in mehreren Sprachen und halten Sie online auf dem Laufenden." },
+      { "q": "Wie fangen wir an?", "a": "Fragen Sie eine Immobilienbewertung an. Wir vereinbaren ein Gespräch, besichtigen die Immobilie und senden Ihnen ein individuelles Verwaltungsangebot." }
+    ],
+    "cta": "Alle FAQs"
+  },
+  "cta": {
+    "eyebrow": "Jetzt starten",
+    "title": "Sprechen wir über Ihre Immobilie.",
+    "body": "Erzählen Sie uns von Ihrer Immobilie, wo sie liegt und was Sie erreichen möchten. Wir prüfen Ihre Anforderungen und schlagen ein Verwaltungskonzept vor, das auf Ihr Objekt zugeschnitten ist.",
+    "button": "Individuelles Verwaltungsangebot erhalten"
+  }
+}

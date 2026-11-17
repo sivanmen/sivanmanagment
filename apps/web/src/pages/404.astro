@@ -1,0 +1,23 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import Icon from '~/components/Icon.astro';
+import { getDict } from '~/i18n';
+const t = getDict('en').common.notFound;
+---
+<BaseLayout locale="en" path="/404/" title={`${t.title} | Sivan Management`} description={t.body} noindex>
+  <section class="section section--dark grain nf">
+    <div class="aurora" aria-hidden="true"></div>
+    <div class="container-narrow relative stack center" style="--stack:1.25rem">
+      <p class="code">404</p>
+      <h1 class="h-1">{t.title}</h1>
+      <p class="lead">{t.body}</p>
+      <a href="/" class="btn btn--light">{t.cta}<Icon name="arrow" size={18} class="arrow" /></a>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .nf { min-height: 90svh; display: grid; align-items: center; padding-top: 8rem; }
+  .center { text-align: center; display: grid; justify-items: center; }
+  .code { font-family: var(--font-display); font-weight: 600; font-size: clamp(6rem, 4rem + 10vw, 12rem); line-height: 1; letter-spacing: -0.06em; }
+</style>
