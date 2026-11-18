@@ -35,9 +35,11 @@ Status legend: ✅ done · ⬜ open · 🟡 needs the owner
 - ✅ 225 pages build; `astro check` 0 errors.
 - ✅ hreflang + x-default, canonical, sitemap, robots, JSON-LD.
 - ✅ RTL verified (Hebrew), mobile verified (iPhone 13 viewport).
-- ✅ Lead endpoint: validation, honeypot, timing trap, rate limit, origin check.
-- ⬜ Railway `web` service + env vars (DEPLOYMENT.md).
-- ⬜ Airtable leads base (or n8n webhook) connected; end-to-end test submission.
+- ✅ Lead endpoint (PHP 8.3): validation, honeypot, timing trap, rate limit, origin check; end-to-end form test passed (Hebrew).
+- ⬜ Go-live on cPanel: back up + move WordPress aside, upload & extract the ZIP (DEPLOYMENT.md §2).
+- ⬜ FTP account + GitHub secrets for auto-deploy (DEPLOYMENT.md §3).
+- ⬜ Real test submission on the live site → e-mail arrives at support@sivanmanagment.com (check spam; add SPF/DKIM in cPanel → Email Deliverability if needed).
+- ⬜ Optional: Airtable leads base or n8n webhook in `~/sivanmanagment-config.php`.
 - ⬜ Lighthouse run on production (target ≥ 90 performance/accessibility/SEO).
 - ⬜ Google Search Console + Bing; Google Business Profile with the same NAP.
 - ⬜ Keyword volumes per language (Ahrefs/Similarweb connectors need authorisation).

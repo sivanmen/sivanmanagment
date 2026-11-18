@@ -20,3 +20,4 @@ ruvector.db
 # Astro website
 apps/web/.astro/
 apps/web/src/.astro/
+apps/web/release/

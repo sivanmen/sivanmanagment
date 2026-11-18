@@ -1,6 +1,5 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
-import node from '@astrojs/node';
 import sitemap from '@astrojs/sitemap';
 
 // Canonical production origin. Override with SITE_URL once the final
@@ -12,9 +11,8 @@ const LOCALES = ['en', 'he', 'el', 'fr', 'de', 'nl', 'ru', 'zh-cn'];
 export default defineConfig({
   site: SITE,
   trailingSlash: 'always',
-  // Pages are pre-rendered (static HTML). Only /api/* routes run on the server.
+  // Fully static HTML. The lead form posts to public/api/lead/index.php (PHP on the cPanel host).
   output: 'static',
-  adapter: node({ mode: 'standalone' }),
   build: { format: 'directory' },
   image: { responsiveStyles: true },
   integrations: [

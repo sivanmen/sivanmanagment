@@ -77,7 +77,7 @@ _(No remaining CRITICAL issues. P0 security batch resolved 2026-05-25 — see FI
 ## LOW
 
 ### W1. Website not deployed (apps/web)
-- **Needs:** Railway `web` service, `SITE_URL`, Airtable token/base or `LEAD_WEBHOOK_URL`, DNS cut-over from WordPress.
+- **Needs:** one manual ZIP upload in cPanel (WordPress moved aside first), an FTP account + 3 GitHub secrets for auto-deploy. No DNS change needed (same host).
 - **Docs:** `docs/website/DEPLOYMENT.md`, `docs/website/LAUNCH_CHECKLIST.md` (owner facts to verify, legal review, native-speaker review).
 
 ### W2. Company IBAN/BIC hard-coded as defaults in a public repo

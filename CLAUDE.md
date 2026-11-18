@@ -29,7 +29,7 @@ Before writing a single line of code, you MUST read these 4 files:
 | API | Express + Prisma + PostgreSQL + Redis | api.sivanmanagment.com |
 | Admin | React + Vite + Tailwind + shadcn/ui | admin.sivanmanagment.com |
 | Client (Owner Portal) | React + Vite + Tailwind + shadcn/ui | client.sivanmanagment.com |
-| Web (public website) | Astro 5 + Node adapter, 8 languages | sivanmanagment.com (not deployed yet) |
+| Web (public website) | Astro 5 (static) + PHP lead endpoint, 8 languages; hosted on JetServer cPanel, auto-deployed by `.github/workflows/deploy-web-cpanel.yml` | sivanmanagment.com (not deployed yet) |
 
 **Website work:** read `docs/website/README.md` first (decisions, design system, content sources, CMS, deployment, launch checklist). Copy lives in `apps/web/src/i18n/locales/<lang>/*.json` (English is master); verified company facts only in `apps/web/src/lib/company.ts`. Run `pnpm --filter web check:i18n` after copy changes. Never publish invented clients, staff, figures or guarantees; never publish the IBAN.
 

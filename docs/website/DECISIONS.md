@@ -47,10 +47,17 @@ licensed agents, so the page is framed as preparation, marketing and coordinatio
 alongside licensed agents and lawyers. Asset Management is framed as operational
 representation — explicitly *not* regulated investment advice.
 
-## D5. Leads go to Airtable/webhook from a server route
-The form posts to `/api/lead/` (same origin). Tokens live in server env vars only. If neither
-Airtable nor a webhook is configured the endpoint returns 503 — the form then shows the direct
-contact options. See DEPLOYMENT.md.
+## D5. Leads: PHP endpoint, e-mail first
+The form posts to `/api/lead/` (same origin) → `index.php`. It e-mails the lead (works on cPanel
+without setup), writes a backup line outside the web root, and optionally forwards to Airtable or
+an n8n webhook. Secrets live only in `~/sivanmanagment-config.php` on the server.
+
+## D7. Hosting on the existing JetServer cPanel (17 Nov 2026)
+The owner preferred the existing JetServer account over a new Railway service. The site was made
+fully static (Node adapter removed) and the lead route rewritten in PHP 8. This cloud workspace
+cannot reach cPanel/FTP/SSH (connections refused), so deployment runs from GitHub Actions over
+FTPS with an FTP account restricted to the site folder. A marker file (`sivan-web-root.txt`)
+must exist remotely before the workflow writes, so `--delete` can never touch another site.
 
 ## D6. No IBAN on the website
 The owner supplied bank details. They are **not** published (the PMS already treats a public

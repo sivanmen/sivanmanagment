@@ -14,7 +14,7 @@
 | Client | https://client.sivanmanagment.com | RUNNING | 2026-04-13 |
 | PostgreSQL | Railway managed (internal) | RUNNING | — |
 | Redis | Railway managed (internal) | RUNNING | — |
-| Web (public site, `apps/web`) | https://sivanmanagment.com | BUILT, NOT DEPLOYED — WordPress template still live | — |
+| Web (public site, `apps/web`) | https://sivanmanagment.com (JetServer cPanel) | BUILT, NOT DEPLOYED — WordPress template still live | — |
 
 **Railway Project**: Property Management System
 **GitHub**: github.com/sivanmen/sivanmanagment (main branch)
@@ -24,9 +24,10 @@
 
 ## Public Website (`apps/web`) — added 2026-11-16
 
-- Astro 5 static site + `/api/lead/` server route; 8 languages × 28 pages = 225 pages; `astro check` 0 errors; i18n checker passes.
+- Astro 5 fully static site + PHP lead endpoint (`public/api/lead/index.php`); 8 languages × 28 pages = 225 pages; `astro check` 0 errors; i18n checker passes.
+- Hosting: JetServer cPanel (folder `sivanmanagment.com`, LiteSpeed, PHP 8.3). Deploy: manual ZIP once, then `deploy-web-cpanel.yml` (FTPS) on every push to main touching `apps/web`.
 - Content Studio at `/admin/` (Sveltia CMS, GitHub backend) for articles.
-- Lead form delivers to Airtable and/or `LEAD_WEBHOOK_URL` — **neither configured yet** (endpoint returns 503 until set).
+- Lead form: e-mails every lead to support@sivanmanagment.com via PHP mail() and keeps a backup log outside the web root; Airtable / webhook optional via `~/sivanmanagment-config.php`.
 - Images: 8 AI-generated illustrations (Figma) + 1 CC0 photo; to be replaced with the owner's own Crete photos.
 - Full docs: `docs/website/` (README, DECISIONS, DEPLOYMENT, LAUNCH_CHECKLIST…).
 
