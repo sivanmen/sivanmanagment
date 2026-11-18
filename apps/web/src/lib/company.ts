@@ -11,7 +11,7 @@ export const COMPANY = {
   founder: 'Sivan Menahem',
   vat: 'EL802555027',
   afm: '802555027',
-  gemi: '178525658000',
+  gemi: '178690758000', // corrected by the owner on 18 Nov 2026 (earlier value 178525658000 was wrong)
   taxOffice: 'Δ.Ο.Υ. Χανίων',
   address: {
     street: 'Plateia Eleftherias 2',
@@ -31,6 +31,15 @@ export const COMPANY = {
   ownerPortalUrl: 'https://client.sivanmanagment.com',
   mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Plateia+Eleftherias+2,+73132+Chania,+Greece',
   areaServed: ['Chania', 'Rethymno', 'Heraklion', 'Crete'],
+  /**
+   * Accessibility coordinator (Israeli Service Accessibility Regulations, reg. 35).
+   * Set `name` once the owner designates a person; until then the statement shows the contact channels only.
+   */
+  accessibility: { name: null as string | null, email: 'support@sivanmanagment.com', phone: '+306983924820', phoneDisplay: '+30 698 392 4820' },
+  /** Date the accessibility statement was last reviewed (ISO). */
+  accessibilityReviewed: '2026-11-18',
+  /** Date the privacy policy was last updated (ISO). */
+  privacyUpdated: '2026-11-18',
 } as const;
 
 export const SERVICE_SLUGS = [

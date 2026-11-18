@@ -7,7 +7,7 @@
     "sections": [
       {
         "h": "Wie wij zijn",
-        "p": "Deze website wordt beheerd door Sivan Menahem Management, Plateia Eleftherias 2, 73132 Chania, Griekenland (de “verwerkingsverantwoordelijke”). Contact: support@sivanmanagment.com."
+        "p": "Deze website wordt beheerd door Sivan Menahem Management, Plateia Eleftherias 2, 73132 Chania, Griekenland (de “verwerkingsverantwoordelijke”). Contact: support@sivanmanagment.com, +30 698 392 4820."
       },
       {
         "h": "Welke gegevens wij verzamelen",
@@ -15,23 +15,35 @@
       },
       {
         "h": "Waarom wij ze gebruiken",
-        "p": "Wij gebruiken uw gegevens om op uw aanvraag te reageren, een voorstel op te stellen en, als u klant wordt, onze overeenkomst uit te voeren. De rechtsgronden zijn uw toestemming en de stappen die op uw verzoek worden gezet voorafgaand aan het sluiten van een overeenkomst (art. 6, lid 1, onder a en b AVG)."
+        "p": "Wij gebruiken uw gegevens om op uw aanvraag te reageren, een voorstel op te stellen en, als u klant wordt, onze overeenkomst uit te voeren. De rechtsgronden zijn uw toestemming en de stappen die op uw verzoek worden gezet voorafgaand aan het sluiten van een overeenkomst (art. 6, lid 1, onder a en b AVG). U bent wettelijk niet verplicht uw gegevens te verstrekken, maar zonder deze gegevens kunnen wij niet op uw aanvraag reageren."
       },
       {
-        "h": "Met wie wij ze delen",
-        "p": "Uw gegevens worden opgeslagen in onze klantbeheertools (zoals Airtable) en ons vastgoedbeheersysteem, die worden beheerd door verwerkers die gebonden zijn aan verwerkersovereenkomsten. Wij verkopen uw gegevens niet."
+        "h": "Waar ze worden opgeslagen en wie ze ontvangt",
+        "p": "Formulierinzendingen worden per e-mail naar ons team gestuurd en bewaard op onze webserver, die wordt gehost door JetServer in Israël, een land waarvan de Europese Commissie heeft erkend dat het een passend niveau van gegevensbescherming biedt. Wanneer wij aanvullende tools gebruiken, zoals ons klantbeheersysteem (bijvoorbeeld Airtable) of ons vastgoedbeheersysteem, treden deze op als verwerkers die gebonden zijn aan verwerkersovereenkomsten. Wij verkopen uw gegevens niet en gebruiken ze niet voor advertentiedoeleinden."
       },
       {
         "h": "Internationale doorgifte",
-        "p": "Sommige verwerkers kunnen gegevens buiten de Europese Economische Ruimte opslaan. Wanneer dat gebeurt, is de doorgifte gedekt door passende waarborgen, zoals de modelcontractbepalingen van de EU."
+        "p": "Sommige verwerkers kunnen gegevens buiten de Europese Economische Ruimte opslaan. Wanneer dat gebeurt, berust de doorgifte op een adequaatheidsbesluit of op passende waarborgen, zoals de modelcontractbepalingen van de EU."
       },
       {
         "h": "Hoe lang wij ze bewaren",
         "p": "Aanvragen die niet tot een overeenkomst leiden, worden binnen 24 maanden verwijderd. Klantgegevens worden bewaard zolang dat nodig is op grond van onze overeenkomst en de Griekse fiscale en boekhoudwetgeving."
       },
       {
+        "h": "Informatiebeveiliging",
+        "p": "Wij beschermen persoonsgegevens met versleutelde verbindingen (HTTPS), toegang die beperkt is tot bevoegde medewerkers, opslag buiten het openbare deel van de webserver en overeenkomsten met onze dienstverleners. Geen enkel systeem is volledig veilig; als een beveiligingsincident uw gegevens treft, stellen wij u en de bevoegde autoriteiten daarvan op de hoogte, zoals de wet voorschrijft."
+      },
+      {
+        "h": "Cookies en lokale opslag",
+        "p": "Wij slaan in uw browser alleen uw cookiekeuze en taalvoorkeur op. Analytics worden alleen geladen als u ze accepteert. Zie ons Cookiebeleid voor meer informatie."
+      },
+      {
         "h": "Uw rechten",
-        "p": "U kunt verzoeken om inzage, rectificatie, verwijdering, beperking of overdraagbaarheid van uw gegevens, bezwaar maken tegen de verwerking en uw toestemming op elk moment intrekken, door te mailen naar support@sivanmanagment.com. U kunt ook een klacht indienen bij de Griekse toezichthouder voor gegevensbescherming (www.dpa.gr)."
+        "p": "U kunt verzoeken om inzage, rectificatie, verwijdering, beperking of overdraagbaarheid van uw gegevens, bezwaar maken tegen de verwerking en uw toestemming op elk moment intrekken, door te mailen naar support@sivanmanagment.com. Wij reageren binnen één maand. U kunt ook een klacht indienen bij de Griekse toezichthouder voor gegevensbescherming (www.dpa.gr)."
+      },
+      {
+        "h": "Gebruikers in Israël",
+        "p": "Als u zich in Israël bevindt, zijn op de verwerking van uw gegevens ook de Israëlische wet op de bescherming van de privacy (Protection of Privacy Law), 5741-1981, en de bijbehorende regelgeving van toepassing. U hebt het recht de gegevens die wij over u bewaren in te zien en om rectificatie of verwijdering ervan te verzoeken, door te schrijven naar support@sivanmanagment.com. U kunt ook contact opnemen met de Israëlische Autoriteit voor Privacybescherming (www.gov.il/en/departments/the_privacy_protection_authority)."
       }
     ]
   },
@@ -101,5 +113,44 @@
     "photoLabel": "Foto’s onder open licentie",
     "aiLabel": "Door AI gegenereerd illustratief beeldmateriaal",
     "aiBody": "De afbeeldingen van de kust, villa’s, interieurs, hospitality, inspecties en commerciële gebouwen zijn voor deze website gegenereerd. Het zijn uitsluitend illustraties."
+  },
+  "accessibility": {
+    "seoTitle": "Toegankelijkheidsverklaring | Sivan Management",
+    "title": "Toegankelijkheidsverklaring",
+    "intro": "Sivan Management zet zich ervoor in om deze website voor iedereen bruikbaar te maken, ook voor mensen met een beperking. In deze verklaring leest u wat wij hebben gedaan, waar wij nog aan werken en hoe u ons kunt bereiken.",
+    "sections": [
+      {
+        "h": "Norm",
+        "p": "Wij streven ernaar te voldoen aan de Web Content Accessibility Guidelines (WCAG) 2.1 op niveau AA. Dit omvat ook de Israëlische norm IS 5568 (gebaseerd op WCAG 2.0 AA), die wordt vereist door de Israëlische regeling inzake gelijke rechten voor personen met een handicap (toegankelijkheidsaanpassingen van diensten) (Equal Rights for Persons with Disabilities (Service Accessibility Adjustments) Regulations), 5773-2013, en de Europese norm EN 301 549."
+      },
+      {
+        "h": "Wat wij hebben gedaan",
+        "p": "Een semantische paginastructuur met duidelijke koppen; volledige bediening met het toetsenbord, met een zichtbare focusindicator en een link “Naar de inhoud”; tekstalternatieven voor betekenisvolle afbeeldingen, terwijl decoratieve afbeeldingen en achtergrondvideo’s verborgen zijn voor schermlezers; kleurcontrast ontworpen voor niveau AA; animaties en achtergrondvideo’s die automatisch worden uitgeschakeld wanneer “beweging verminderen” op uw apparaat is ingeschakeld; een responsieve lay-out die zoomen tot 200% ondersteunt; formuliervelden met labels, duidelijke foutmeldingen en zonder tijdslimieten; en de juiste taal en leesrichting op elke pagina in alle acht talen, inclusief het van rechts naar links geschreven Hebreeuws."
+      },
+      {
+        "h": "Bekende beperkingen",
+        "p": "Achtergrondvideo’s hebben geen geluid en bevatten geen informatie. De omgeving voor contentbeheer (/admin/), die alleen door onze medewerkers wordt gebruikt, is een tool van een derde partij en valt niet onder deze verklaring. Sommige vertalingen worden nog door moedertaalsprekers gecontroleerd. Als iets voor u niet werkt, laat het ons dan weten; wij lossen het op of bieden u de informatie op een andere manier aan."
+      },
+      {
+        "h": "Compatibiliteit",
+        "p": "De website is ontworpen voor de huidige versies van Chrome, Safari, Firefox en Edge op desktop- en mobiele apparaten, en voor gangbare schermlezers."
+      },
+      {
+        "h": "Ons kantoor",
+        "p": "Ons kantoor is gevestigd aan Plateia Eleftherias 2, Chania. Neem contact met ons op voor informatie over de fysieke toegankelijkheid vóór een bezoek, of om een afspraak op een andere locatie te maken."
+      },
+      {
+        "h": "Feedback en contact",
+        "p": "Stuit u op een toegankelijkheidsbelemmering, neem dan contact op met onze toegankelijkheidscoördinator. Vermeld de pagina, wat u probeerde te doen en het apparaat of de browser die u gebruikte. Wij streven ernaar binnen vijf werkdagen te reageren."
+      }
+    ],
+    "coordinatorTitle": "Toegankelijkheidscoördinator",
+    "coordinatorPending": "Toegankelijkheidsteam van Sivan Management",
+    "labels": {
+      "name": "Naam",
+      "email": "E-mail",
+      "phone": "Telefoon"
+    },
+    "reviewed": "Deze verklaring is voor het laatst herzien op"
   }
 }

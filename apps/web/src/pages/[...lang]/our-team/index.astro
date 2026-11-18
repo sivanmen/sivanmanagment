@@ -6,14 +6,16 @@ import Icon from '~/components/Icon.astro';
 import { getDict } from '~/i18n';
 import { localePaths, localizePath, type Locale } from '~/i18n/config';
 import { COMPANY } from '~/lib/company';
+import { Image } from 'astro:assets';
+import { IMAGES } from '~/lib/images';
 
 export const getStaticPaths = localePaths;
 const { locale } = Astro.props as { locale: Locale };
 const t = getDict(locale);
 const tm = t.about.team;
 const icons = ['compass', 'home', 'heart', 'chart', 'wrench', 'building', 'users', 'sparkle', 'file'];
-// Founder portrait: place an approved photo at public/team/sivan-menahem.jpg (4:5) and set this to its path.
-const founderPhoto: string | null = null;
+// Founder portrait from the owner's Drive (see docs/website/MEDIA_LIBRARY.md).
+const founderPhoto = IMAGES.founder;
 ---
 <BaseLayout locale={locale} path="/our-team/" title={tm.seoTitle} description={tm.seoDescription}>
   <PageHero locale={locale} eyebrow={tm.eyebrow} title={tm.title} lead={tm.lead} crumbs={[{ label: t.common.nav.team }]} />
@@ -22,7 +24,7 @@ const founderPhoto: string | null = null;
     <div class="container founder">
       <div class="portrait" data-reveal="scale">
         {founderPhoto
-          ? <img src={founderPhoto} alt={COMPANY.founder} width="800" height="1000" loading="lazy" />
+          ? <Image src={founderPhoto.src} alt={founderPhoto.alt} widths={[480, 800, 1200]} sizes="(min-width: 900px) 40vw, 100vw" />
           : <div class="monogram" aria-hidden="true"><span>SM</span></div>}
       </div>
       <div class="stack" style="--stack:1.1rem">

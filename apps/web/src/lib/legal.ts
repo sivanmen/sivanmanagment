@@ -5,5 +5,6 @@ export const LEGAL_DOCS = {
   terms: 'terms',
   'company-information': 'imprint',
   'image-credits': 'credits',
+  'accessibility-statement': 'accessibility',
 } as const;
 export type LegalSlug = keyof typeof LEGAL_DOCS;

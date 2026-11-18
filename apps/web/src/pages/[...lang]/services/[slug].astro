@@ -33,7 +33,7 @@ const serviceLd = {
 const faqLd = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: s.faq.map((i) => ({ '@type': 'Question', name: i.q, acceptedAnswer: { '@type': 'Answer', text: i.a } })) };
 ---
 <BaseLayout locale={locale} path={`/services/${slug}/`} title={s.seoTitle} description={s.seoDescription} overlay jsonLd={[serviceLd, faqLd]}>
-  <PageHero locale={locale} eyebrow={s.name} title={s.headline} lead={s.sub} image={image}
+  <PageHero locale={locale} eyebrow={s.name} title={s.headline} lead={s.sub} image={image} video={slug === 'short-term-rental-management' ? 'villaOrbit' : undefined}
     crumbs={[{ label: t.common.nav.services, href: L('/services/') }, { label: s.name }]}>
     <div class="btn-row hero-ctas" data-reveal style="--d:300ms">
       <a href={`${L('/contact/')}?service=${slug}`} class="btn btn--violet">{t.common.common.requestAssessment}<Icon name="arrow" size={18} class="arrow" /></a>

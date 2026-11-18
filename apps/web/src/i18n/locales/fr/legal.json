@@ -7,7 +7,7 @@
     "sections": [
       {
         "h": "Qui sommes-nous",
-        "p": "Ce site est exploité par Sivan Menahem Management, Plateia Eleftherias 2, 73132 Chania, Grèce (le « responsable du traitement »). Contact : support@sivanmanagment.com."
+        "p": "Ce site est exploité par Sivan Menahem Management, Plateia Eleftherias 2, 73132 Chania, Grèce (le « responsable du traitement »). Contact : support@sivanmanagment.com, +30 698 392 4820."
       },
       {
         "h": "Quelles données nous collectons",
@@ -15,23 +15,35 @@
       },
       {
         "h": "Pourquoi nous les utilisons",
-        "p": "Nous utilisons vos données pour répondre à votre demande, préparer une proposition et, si vous devenez client, exécuter notre contrat. Les bases légales sont votre consentement et les mesures précontractuelles prises à votre demande (art. 6, paragraphe 1, points a) et b) du RGPD)."
+        "p": "Nous utilisons vos données pour répondre à votre demande, préparer une proposition et, si vous devenez client, exécuter notre contrat. Les bases légales sont votre consentement et les mesures précontractuelles prises à votre demande (art. 6, paragraphe 1, points a) et b) du RGPD). Vous n’êtes pas légalement tenu de fournir vos informations, mais sans elles nous ne pouvons pas répondre à votre demande."
       },
       {
-        "h": "Avec qui nous les partageons",
-        "p": "Vos données sont conservées dans nos outils de gestion de la relation client (tels qu’Airtable) et dans notre logiciel de gestion immobilière, exploités par des sous-traitants liés par des accords de traitement des données. Nous ne vendons pas vos données."
+        "h": "Où elles sont stockées et qui les reçoit",
+        "p": "Les formulaires envoyés sont transmis par e-mail à notre équipe et conservés sur notre serveur web, hébergé par JetServer en Israël, pays reconnu par la Commission européenne comme assurant un niveau adéquat de protection des données. Lorsque nous utilisons des outils supplémentaires, tels que notre outil de gestion de la relation client (par exemple Airtable) ou notre logiciel de gestion immobilière, ceux-ci agissent en qualité de sous-traitants liés par des accords de traitement des données. Nous ne vendons pas vos données et ne les utilisons pas à des fins publicitaires."
       },
       {
         "h": "Transferts internationaux",
-        "p": "Certains sous-traitants peuvent stocker des données en dehors de l’Espace économique européen. Le cas échéant, ces transferts sont encadrés par des garanties appropriées, telles que les clauses contractuelles types de l’UE."
+        "p": "Certains sous-traitants peuvent stocker des données en dehors de l’Espace économique européen. Le cas échéant, ces transferts reposent sur une décision d’adéquation ou sur des garanties appropriées, telles que les clauses contractuelles types de l’UE."
       },
       {
         "h": "Durée de conservation",
         "p": "Les demandes qui n’aboutissent pas à un contrat sont supprimées dans un délai de 24 mois. Les données clients sont conservées aussi longtemps que l’exigent notre contrat et la législation fiscale et comptable grecque."
       },
       {
+        "h": "Sécurité des informations",
+        "p": "Nous protégeons les données personnelles au moyen de connexions chiffrées (HTTPS), d’un accès limité au personnel autorisé, d’un stockage en dehors de la partie publique du serveur web et d’accords conclus avec nos prestataires de services. Aucun système n’est totalement sûr ; si un incident de sécurité affecte vos données, nous vous en informerons, ainsi que les autorités compétentes, comme l’exige la loi."
+      },
+      {
+        "h": "Cookies et stockage local",
+        "p": "Nous enregistrons dans votre navigateur uniquement votre choix en matière de cookies et votre préférence de langue. Les outils de mesure d’audience ne sont chargés que si vous les acceptez. Pour plus de détails, consultez notre Politique relative aux cookies."
+      },
+      {
         "h": "Vos droits",
-        "p": "Vous pouvez demander l’accès, la rectification, l’effacement, la limitation ou la portabilité de vos données, vous opposer à leur traitement et retirer votre consentement à tout moment, en écrivant à support@sivanmanagment.com. Vous pouvez également déposer une réclamation auprès de l’Autorité hellénique de protection des données (www.dpa.gr)."
+        "p": "Vous pouvez demander l’accès, la rectification, l’effacement, la limitation ou la portabilité de vos données, vous opposer à leur traitement et retirer votre consentement à tout moment, en écrivant à support@sivanmanagment.com. Nous répondons dans un délai d’un mois. Vous pouvez également déposer une réclamation auprès de l’Autorité hellénique de protection des données (www.dpa.gr)."
+      },
+      {
+        "h": "Utilisateurs en Israël",
+        "p": "Si vous vous trouvez en Israël, la loi israélienne sur la protection de la vie privée (Protection of Privacy Law), 5741-1981, et ses règlements d’application s’appliquent également au traitement de vos informations. Vous avez le droit de consulter les informations que nous détenons à votre sujet et d’en demander la rectification ou la suppression, en écrivant à support@sivanmanagment.com. Vous pouvez également contacter l’Autorité israélienne de protection de la vie privée (www.gov.il/en/departments/the_privacy_protection_authority)."
       }
     ]
   },
@@ -101,5 +113,44 @@
     "photoLabel": "Photographies sous licence libre",
     "aiLabel": "Images illustratives générées par IA",
     "aiBody": "Les images de littoral, de villa, d’intérieur, d’hôtellerie, d’inspection et d’immeuble commercial ont été générées pour ce site. Il s’agit uniquement d’illustrations."
+  },
+  "accessibility": {
+    "seoTitle": "Déclaration d’accessibilité | Sivan Management",
+    "title": "Déclaration d’accessibilité",
+    "intro": "Sivan Management s’engage à rendre ce site utilisable par tous, y compris par les personnes en situation de handicap. La présente déclaration décrit ce que nous avons fait, ce sur quoi nous travaillons encore et comment nous contacter.",
+    "sections": [
+      {
+        "h": "Norme",
+        "p": "Nous visons la conformité aux Règles pour l’accessibilité des contenus Web (WCAG) 2.1, niveau AA. Cela couvre également la norme israélienne IS 5568 (fondée sur les WCAG 2.0 AA), exigée par le règlement israélien sur l’égalité des droits des personnes handicapées (adaptations d’accessibilité des services) (Equal Rights for Persons with Disabilities (Service Accessibility Adjustments) Regulations), 5773-2013, ainsi que la norme européenne EN 301 549."
+      },
+      {
+        "h": "Ce que nous avons fait",
+        "p": "Une structure de page sémantique avec des titres clairs ; une navigation complète au clavier avec un indicateur de focus visible et un lien « Aller au contenu » ; des alternatives textuelles pour les images porteuses de sens, tandis que les images décoratives et les vidéos d’arrière-plan sont masquées aux lecteurs d’écran ; des contrastes de couleurs conçus pour le niveau AA ; des animations et vidéos d’arrière-plan qui se désactivent automatiquement lorsque l’option « réduire les animations » est activée sur votre appareil ; une mise en page adaptative qui prend en charge un zoom jusqu’à 200 % ; des champs de formulaire dotés d’étiquettes et de messages d’erreur clairs, sans limite de temps ; ainsi que la langue et le sens de lecture corrects sur chaque page, dans les huit langues, y compris l’hébreu, qui se lit de droite à gauche."
+      },
+      {
+        "h": "Limites connues",
+        "p": "Les vidéos d’arrière-plan sont muettes et ne véhiculent aucune information. L’espace de gestion de contenu (/admin/), utilisé uniquement par notre personnel, est un outil tiers et n’est pas couvert par la présente déclaration. Certaines traductions sont encore en cours de relecture par des locuteurs natifs. Si quelque chose ne fonctionne pas pour vous, veuillez nous le signaler : nous le corrigerons ou vous fournirons l’information sous une autre forme."
+      },
+      {
+        "h": "Compatibilité",
+        "p": "Le site est conçu pour les versions actuelles de Chrome, Safari, Firefox et Edge sur ordinateur et appareils mobiles, ainsi que pour les lecteurs d’écran courants."
+      },
+      {
+        "h": "Nos bureaux",
+        "p": "Nos bureaux se trouvent Plateia Eleftherias 2, à Chania. Pour toute information sur l’accès physique avant une visite, ou pour organiser un rendez-vous dans un autre lieu, veuillez nous contacter."
+      },
+      {
+        "h": "Signalement et contact",
+        "p": "Si vous rencontrez un obstacle à l’accessibilité, veuillez contacter notre référent accessibilité. Indiquez-nous la page concernée, ce que vous essayiez de faire et l’appareil ou le navigateur utilisé. Nous nous efforçons de répondre dans un délai de cinq jours ouvrés."
+      }
+    ],
+    "coordinatorTitle": "Référent accessibilité",
+    "coordinatorPending": "Équipe accessibilité de Sivan Management",
+    "labels": {
+      "name": "Nom",
+      "email": "E-mail",
+      "phone": "Téléphone"
+    },
+    "reviewed": "Cette déclaration a été révisée pour la dernière fois le"
   }
 }

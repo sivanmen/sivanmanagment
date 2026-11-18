@@ -26,7 +26,7 @@ const services = slug === 'heraklion'
 const faqLd = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: it.faq.map((i) => ({ '@type': 'Question', name: i.q, acceptedAnswer: { '@type': 'Answer', text: i.a } })) };
 ---
 <BaseLayout locale={locale} path={`/locations/${slug}/`} title={it.seoTitle} description={it.seoDescription} overlay jsonLd={[faqLd]}>
-  <PageHero locale={locale} eyebrow={t.common.nav.locations} title={it.headline} lead={it.lead} image={im}
+  <PageHero locale={locale} eyebrow={t.common.nav.locations} title={it.headline} lead={it.lead} image={im} video={slug === 'chania' ? 'chaniaLighthouse' : undefined}
     crumbs={[{ label: t.common.nav.locations, href: L('/locations/') }, { label: it.name }]}>
     <div class="btn-row" data-reveal style="--d:300ms">
       <a href={L('/contact/')} class="btn btn--violet">{t.common.common.requestAssessment}<Icon name="arrow" size={18} class="arrow" /></a>

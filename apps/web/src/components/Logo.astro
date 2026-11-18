@@ -1,7 +1,26 @@
 ---
-interface Props { class?: string }
-const { class: cls } = Astro.props;
+/**
+ * Brand logo. If the official files exist in public/brand/ they are used:
+ *   logo-on-light.svg|png  (dark logo, for light backgrounds)
+ *   logo-on-dark.svg|png   (white logo, for dark backgrounds)
+ * Otherwise this falls back to the interim wordmark below.
+ */
+import fs from 'node:fs';
+import path from 'node:path';
+interface Props { class?: string; tone?: 'auto' | 'light' | 'dark' }
+const { class: cls, tone = 'auto' } = Astro.props;
+const brandDir = path.resolve('public/brand');
+const pick = (base: string) => ['svg', 'png', 'webp'].map((e) => `${base}.${e}`).find((f) => fs.existsSync(path.join(brandDir, f)));
+const onLight = pick('logo-on-light');
+const onDark = pick('logo-on-dark');
+const official = onLight && onDark;
 ---
+{official ? (
+  <span class:list={['logo-official', `tone-${tone}`, cls]}>
+    <img class="on-light" src={`/brand/${onLight}`} alt="Sivan Management" width="170" height="50" />
+    <img class="on-dark" src={`/brand/${onDark}`} alt="" aria-hidden="true" width="170" height="50" />
+  </span>
+) : (
 <span class:list={['logo', cls]} aria-label="Sivan Management">
   <svg class="logo-mark" viewBox="0 0 40 40" width="34" height="34" aria-hidden="true">
     <defs>
@@ -19,8 +38,14 @@ const { class: cls } = Astro.props;
     <span class="logo-sub">Management</span>
   </span>
 </span>
+)}
 
 <style>
+  .logo-official { display: inline-flex; align-items: center; direction: ltr; }
+  .logo-official img { height: 42px; width: auto; }
+  .logo-official .on-dark { display: none; }
+  :global(.is-overlay:not(.is-scrolled)) .logo-official .on-light, :global(.section--ink) .logo-official .on-light, .tone-dark .on-light { display: none; }
+  :global(.is-overlay:not(.is-scrolled)) .logo-official .on-dark, :global(.section--ink) .logo-official .on-dark, .tone-dark .on-dark { display: block; }
   .logo { display: inline-flex; align-items: center; gap: 0.6rem; direction: ltr; }
   .logo-mark { flex: none; filter: drop-shadow(0 6px 14px rgba(103, 84, 233, 0.35)); }
   .logo-word { display: flex; flex-direction: column; line-height: 1; }

@@ -10,6 +10,7 @@
 | [`DECISIONS.md`](DECISIONS.md) | Why clean code (Astro) instead of WordPress, and other key decisions |
 | [`COMPETITOR_RESEARCH.md`](COMPETITOR_RESEARCH.md) | What competitors do, what we adopted, how we differentiate |
 | [`DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md) | Colours, type, motion, components — derived from the VamTam template |
+| [`MEDIA_LIBRARY.md`](MEDIA_LIBRARY.md) | Catalogue of the owner's Drive photos/videos, what is used where, licensing to verify |
 | [`CONTENT_SOURCES.md`](CONTENT_SOURCES.md) | Where images/videos come from (Mac folders, Openverse, Figma AI), licence rules |
 | [`CMS_GUIDE.md`](CMS_GUIDE.md) | How to write and translate articles in the Content Studio (`/admin/`) — Hebrew + English |
 | [`DEPLOYMENT.md`](DEPLOYMENT.md) | cPanel (JetServer) go-live steps, auto-deploy from GitHub, lead e-mail/Airtable/n8n |

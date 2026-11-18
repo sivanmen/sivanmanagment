@@ -1,12 +1,13 @@
 ---
 import { Image } from 'astro:assets';
-import type { SiteImage } from '~/lib/images';
+import type { SiteImage, VideoKey } from '~/lib/images';
+import BgVideo from './BgVideo.astro';
 import { getDict } from '~/i18n';
 import { localizePath, type Locale } from '~/i18n/config';
 
 interface Crumb { label: string; href?: string }
-interface Props { locale: Locale; eyebrow?: string; title: string; lead?: string; image?: SiteImage; crumbs?: Crumb[] }
-const { locale, eyebrow, title, lead, image, crumbs = [] } = Astro.props;
+interface Props { locale: Locale; eyebrow?: string; title: string; lead?: string; image?: SiteImage; video?: VideoKey; crumbs?: Crumb[] }
+const { locale, eyebrow, title, lead, image, video, crumbs = [] } = Astro.props;
 const t = getDict(locale);
 const site = Astro.site!;
 const all: Crumb[] = [{ label: t.common.nav.breadcrumbHome, href: localizePath('/', locale) }, ...crumbs];
@@ -22,7 +23,7 @@ const crumbLd = {
 <section class:list={['page-hero section--dark grain', { 'has-image': !!image }]}>
   {image && (
     <div class="ph-media" aria-hidden="true">
-      <div data-parallax="-0.08" class="ph-img"><Image src={image.src} alt="" widths={[768, 1280, 1920]} sizes="100vw" loading="eager" fetchpriority="high" /></div>
+      <div data-parallax="-0.08" class="ph-img"><Image src={image.src} alt="" widths={[768, 1280, 1920]} sizes="100vw" loading="eager" fetchpriority="high" />{video && <BgVideo name={video} />}</div>
     </div>
   )}
   <div class="aurora" aria-hidden="true"></div>
@@ -48,7 +49,12 @@ const crumbLd = {
   .ph-media { position: absolute; inset: 0; z-index: -1; }
   .ph-img { position: absolute; inset: -6% 0; }
   .ph-img :global(img) { width: 100%; height: 100%; object-fit: cover; }
-  .ph-media::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(18, 15, 36, 0.6) 0%, rgba(18, 15, 36, 0.25) 35%, rgba(18, 15, 36, 0.94) 100%); }
+  .ph-media::after { content: ''; position: absolute; inset: 0; background:
+    linear-gradient(90deg, rgba(18, 15, 36, 0.78) 0%, rgba(18, 15, 36, 0.45) 45%, rgba(18, 15, 36, 0.1) 80%),
+    linear-gradient(180deg, rgba(18, 15, 36, 0.6) 0%, rgba(18, 15, 36, 0.2) 35%, rgba(18, 15, 36, 0.94) 100%); }
+  :global([dir='rtl']) .ph-media::after { background:
+    linear-gradient(270deg, rgba(18, 15, 36, 0.78) 0%, rgba(18, 15, 36, 0.45) 45%, rgba(18, 15, 36, 0.1) 80%),
+    linear-gradient(180deg, rgba(18, 15, 36, 0.6) 0%, rgba(18, 15, 36, 0.2) 35%, rgba(18, 15, 36, 0.94) 100%); }
   .has-image .aurora { opacity: 0.6; }
   .ph-inner { display: grid; gap: 1.25rem; width: min(100% - 2 * var(--gutter), var(--max)); }
   .ph-title { max-width: 20ch; }

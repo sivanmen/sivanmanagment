@@ -1,6 +1,7 @@
 ---
 import { Image } from 'astro:assets';
 import Icon from '../Icon.astro';
+import BgVideo from '../BgVideo.astro';
 import { IMAGES } from '~/lib/images';
 import { getDict } from '~/i18n';
 import { localizePath, type Locale } from '~/i18n/config';
@@ -9,12 +10,13 @@ interface Props { locale: Locale }
 const { locale } = Astro.props;
 const h = getDict(locale).home.hero;
 const L = (p: string) => localizePath(p, locale);
-const hero = IMAGES['hero-coast'];
+const hero = IMAGES['chania-lighthouse'];
 ---
 <section class="hero section--dark grain" aria-labelledby="hero-title">
   <div class="hero-media" aria-hidden="true">
     <div class="hero-img" data-parallax="-0.12">
       <Image src={hero.src} alt="" widths={[768, 1280, 1920]} sizes="100vw" loading="eager" fetchpriority="high" />
+      <BgVideo name="heroChania" class="hero-video" />
     </div>
     <div class="hero-shade"></div>
     <div class="orb orb-a"></div>
@@ -50,7 +52,8 @@ const hero = IMAGES['hero-coast'];
   .hero { position: relative; min-height: 100svh; display: flex; align-items: flex-end; overflow: hidden; isolation: isolate; padding-block: 7rem 2.75rem; }
   .hero-media { position: absolute; inset: 0; z-index: -1; }
   .hero-img { position: absolute; inset: -8% 0; will-change: transform; }
-  .hero-img :global(img) { width: 100%; height: 100%; object-fit: cover; animation: kenburns 24s var(--ease-in-out) infinite alternate; }
+  .hero-img :global(img), .hero-img :global(.hero-video) { width: 100%; height: 100%; object-fit: cover; animation: kenburns 24s var(--ease-in-out) infinite alternate; }
+  .hero-img :global(.hero-video) { position: absolute; inset: 0; }
   @keyframes kenburns { from { transform: scale(1.04); } to { transform: scale(1.14) translate3d(-1.5%, -1%, 0); } }
   .hero-shade {
     position: absolute; inset: 0;

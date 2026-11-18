@@ -7,7 +7,7 @@
     "sections": [
       {
         "h": "Who we are",
-        "p": "This website is operated by Sivan Menahem Management, Plateia Eleftherias 2, 73132 Chania, Greece (the “controller”). Contact: support@sivanmanagment.com."
+        "p": "This website is operated by Sivan Menahem Management, Plateia Eleftherias 2, 73132 Chania, Greece (the “controller”). Contact: support@sivanmanagment.com, +30 698 392 4820."
       },
       {
         "h": "What data we collect",
@@ -15,23 +15,35 @@
       },
       {
         "h": "Why we use it",
-        "p": "We use your data to respond to your request, prepare a proposal and, if you become a client, to perform our agreement. The legal bases are your consent and the steps taken at your request before entering into a contract (Art. 6(1)(a) and (b) GDPR)."
+        "p": "We use your data to respond to your request, prepare a proposal and, if you become a client, to perform our agreement. The legal bases are your consent and the steps taken at your request before entering into a contract (Art. 6(1)(a) and (b) GDPR). You are not legally required to provide your details, but without them we cannot answer your request."
       },
       {
-        "h": "Who we share it with",
-        "p": "Your data is stored in our customer-management tools (such as Airtable) and our property-management system, operated by processors bound by data-processing agreements. We do not sell your data."
+        "h": "Where it is stored and who receives it",
+        "p": "Form submissions are sent by e-mail to our team and kept on our web server, which is hosted by JetServer in Israel, a country recognised by the European Commission as providing an adequate level of data protection. Where we use additional tools, such as our customer-management system (for example Airtable) or our property-management system, they act as processors bound by data-processing agreements. We do not sell your data and do not use it for advertising."
       },
       {
         "h": "International transfers",
-        "p": "Some processors may store data outside the European Economic Area. Where this happens, transfers are covered by appropriate safeguards such as the EU Standard Contractual Clauses."
+        "p": "Some processors may store data outside the European Economic Area. Where this happens, transfers rely on an adequacy decision or on appropriate safeguards such as the EU Standard Contractual Clauses."
       },
       {
         "h": "How long we keep it",
         "p": "Enquiries that do not lead to an agreement are deleted within 24 months. Client data is kept for as long as required by our agreement and by Greek tax and accounting law."
       },
       {
+        "h": "Information security",
+        "p": "We protect personal data with encrypted connections (HTTPS), access limited to authorised staff, storage outside the public part of the web server and agreements with our service providers. No system is completely secure; if a security incident affects your data, we will notify you and the competent authorities as the law requires."
+      },
+      {
+        "h": "Cookies and local storage",
+        "p": "We store only your cookie choice and language preference in your browser. Analytics are loaded only if you accept them. See our Cookie Policy for details."
+      },
+      {
         "h": "Your rights",
-        "p": "You can request access, correction, deletion, restriction, portability or object to processing, and withdraw consent at any time, by emailing support@sivanmanagment.com. You may also complain to the Hellenic Data Protection Authority (www.dpa.gr)."
+        "p": "You can request access, correction, deletion, restriction, portability or object to processing, and withdraw consent at any time, by emailing support@sivanmanagment.com. We reply within one month. You may also complain to the Hellenic Data Protection Authority (www.dpa.gr)."
+      },
+      {
+        "h": "Users in Israel",
+        "p": "If you are in Israel, the Protection of Privacy Law, 5741-1981, and its regulations also apply to the processing of your information. You have the right to review the information we hold about you and to ask for it to be corrected or deleted, by writing to support@sivanmanagment.com. You may also contact the Israeli Privacy Protection Authority (www.gov.il/en/departments/the_privacy_protection_authority)."
       }
     ]
   },
@@ -101,5 +113,44 @@
     "photoLabel": "Openly licensed photography",
     "aiLabel": "AI-generated illustrative imagery",
     "aiBody": "Coastline, villa, interior, hospitality, inspection and commercial building images were generated for this website. They are illustrations only."
+  },
+  "accessibility": {
+    "seoTitle": "Accessibility Statement | Sivan Management",
+    "title": "Accessibility Statement",
+    "intro": "Sivan Management is committed to making this website usable by everyone, including people with disabilities. This statement describes what we have done, what we are still working on and how to reach us.",
+    "sections": [
+      {
+        "h": "Standard",
+        "p": "We aim to meet the Web Content Accessibility Guidelines (WCAG) 2.1 at level AA. This also covers Israeli Standard IS 5568 (based on WCAG 2.0 AA), required by the Equal Rights for Persons with Disabilities (Service Accessibility Adjustments) Regulations, 5773-2013, and the European standard EN 301 549."
+      },
+      {
+        "h": "What we have done",
+        "p": "Semantic page structure with clear headings; full keyboard navigation with a visible focus indicator and a “skip to content” link; text alternatives for meaningful images, while decorative images and background videos are hidden from screen readers; colour contrast designed for level AA; animations and background videos turn off automatically when “reduce motion” is enabled on your device; a responsive layout that supports zoom up to 200%; form fields with labels, clear error messages and no time limits; and the correct language and reading direction on every page in all eight languages, including right-to-left Hebrew."
+      },
+      {
+        "h": "Known limitations",
+        "p": "Background videos are silent and carry no information. The content-management area (/admin/), used only by our staff, is a third-party tool and is not covered by this statement. Some translations are still being reviewed by native speakers. If you find something that does not work for you, please tell us and we will fix it or provide the information in another way."
+      },
+      {
+        "h": "Compatibility",
+        "p": "The website is designed for current versions of Chrome, Safari, Firefox and Edge on desktop and mobile devices, and for common screen readers."
+      },
+      {
+        "h": "Our office",
+        "p": "Our office is at Plateia Eleftherias 2, Chania. For information about physical access before a visit, or to arrange a meeting at another location, please contact us."
+      },
+      {
+        "h": "Feedback and contact",
+        "p": "If you encounter an accessibility barrier, please contact our accessibility coordinator. Tell us the page, what you were trying to do and the device or browser you used. We aim to reply within five business days."
+      }
+    ],
+    "coordinatorTitle": "Accessibility coordinator",
+    "coordinatorPending": "Sivan Management accessibility team",
+    "labels": {
+      "name": "Name",
+      "email": "Email",
+      "phone": "Phone"
+    },
+    "reviewed": "This statement was last reviewed on"
   }
 }

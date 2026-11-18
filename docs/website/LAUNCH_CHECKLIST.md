@@ -15,12 +15,20 @@ Status legend: ✅ done · ⬜ open · 🟡 needs the owner
 - 🟡 **Domain/email:** site `sivanmanagment.com`, email `support@sivanmanagment.com` (as supplied). Decide whether to also secure `sivanmanagement.com` and redirect it.
 
 ## Legal
+- ✅ Accessibility statement (EN + HE + 6 languages) at `/legal/accessibility-statement/` — WCAG 2.1 AA / IS 5568 / EN 301 549.
+- 🟡 **Accessibility coordinator name** — set `COMPANY.accessibility.name` in `apps/web/src/lib/company.ts` (currently shows "accessibility team" + contact details).
+- ✅ Privacy policy extended (storage in Israel/JetServer, security, cookies, users in Israel / Protection of Privacy Law) in all 8 languages; Hebrew written for the Israeli public.
+- ✅ Internal compliance documents (NOT in this public repo): Google Drive → "Sivan Management — Compliance (internal)": *Record of Processing Activities (GDPR Art. 30)* and *נוהל אבטחת מידע* (Israeli Data Security Regulations 2017). Review the [TO VERIFY] items and sign.
+- ✅ G.E.MI. corrected to 178690758000 (18 Nov 2026).
 - ⬜ Privacy, Cookie and Terms pages reviewed by a Greek lawyer (currently marked "must be reviewed").
-- ✅ Company information page: legal name, address, VAT/AFM EL802555027, G.E.MI. 178525658000, Δ.Ο.Υ. Χανίων, phone, email.
+- ✅ Company information page: legal name, address, VAT/AFM EL802555027, G.E.MI. 178690758000 (corrected 18 Nov 2026), Δ.Ο.Υ. Χανίων, phone, email.
 - ✅ No IBAN/SWIFT published.
 - ⬜ Short-term-rental article checked by the accountant (rules change; no figures are quoted).
 
 ## Media
+- ✅ Real Chania drone video (home hero, Chania page), real Chania photos, owner's on-site photos, founder portrait — see MEDIA_LIBRARY.md.
+- 🟡 **Official logo files** → upload `logo-on-light` and `logo-on-dark` (SVG preferred, else PNG ≥ 600 px wide, transparent) and place in `apps/web/public/brand/`. Only the SivanInvest logo was found in Drive.
+- 🟡 Envato Elements licences registered for sivanmanagment.com (stock videos/photos).
 - ⬜ Replace AI images with real photos from `~/Documents/SivanInvest/תמונות כריתים` (see CONTENT_SOURCES.md).
 - ⬜ Founder portrait from `תמונות פורטרט סיון` → `/our-team/`.
 - ⬜ Optional hero video from `וידאו כריתים`.

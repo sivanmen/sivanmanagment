@@ -7,7 +7,7 @@
     "sections": [
       {
         "h": "Wer wir sind",
-        "p": "Diese Website wird betrieben von Sivan Menahem Management, Plateia Eleftherias 2, 73132 Chania, Griechenland (der „Verantwortliche“). Kontakt: support@sivanmanagment.com."
+        "p": "Diese Website wird betrieben von Sivan Menahem Management, Plateia Eleftherias 2, 73132 Chania, Griechenland (der „Verantwortliche“). Kontakt: support@sivanmanagment.com, +30 698 392 4820."
       },
       {
         "h": "Welche Daten wir erheben",
@@ -15,23 +15,35 @@
       },
       {
         "h": "Wofür wir sie nutzen",
-        "p": "Wir nutzen Ihre Daten, um Ihre Anfrage zu beantworten, ein Angebot zu erstellen und, falls Sie Kunde werden, unsere Vereinbarung zu erfüllen. Rechtsgrundlagen sind Ihre Einwilligung und die auf Ihre Anfrage erfolgenden vorvertraglichen Maßnahmen (Art. 6 Abs. 1 lit. a und b DSGVO)."
+        "p": "Wir nutzen Ihre Daten, um Ihre Anfrage zu beantworten, ein Angebot zu erstellen und, falls Sie Kunde werden, unsere Vereinbarung zu erfüllen. Rechtsgrundlagen sind Ihre Einwilligung und die auf Ihre Anfrage erfolgenden vorvertraglichen Maßnahmen (Art. 6 Abs. 1 lit. a und b DSGVO). Sie sind gesetzlich nicht verpflichtet, uns Ihre Angaben zu machen; ohne sie können wir Ihre Anfrage jedoch nicht beantworten."
       },
       {
-        "h": "An wen wir sie weitergeben",
-        "p": "Ihre Daten werden in unseren Kundenverwaltungs-Tools (etwa Airtable) und in unserem Property-Management-System gespeichert, betrieben von Auftragsverarbeitern, die an Auftragsverarbeitungsverträge gebunden sind. Wir verkaufen Ihre Daten nicht."
+        "h": "Wo sie gespeichert werden und wer sie erhält",
+        "p": "Formulareingaben werden per E-Mail an unser Team gesendet und auf unserem Webserver gespeichert, der von JetServer in Israel gehostet wird – einem Land, für das die Europäische Kommission ein angemessenes Datenschutzniveau anerkannt hat. Soweit wir weitere Tools einsetzen, etwa unser Kundenverwaltungssystem (zum Beispiel Airtable) oder unser Property-Management-System, handeln diese als Auftragsverarbeiter, die an Auftragsverarbeitungsverträge gebunden sind. Wir verkaufen Ihre Daten nicht und nutzen sie nicht für Werbezwecke."
       },
       {
         "h": "Übermittlungen in Drittländer",
-        "p": "Einige Auftragsverarbeiter speichern Daten möglicherweise außerhalb des Europäischen Wirtschaftsraums. In diesem Fall sind die Übermittlungen durch geeignete Garantien wie die EU-Standardvertragsklauseln abgesichert."
+        "p": "Einige Auftragsverarbeiter speichern Daten möglicherweise außerhalb des Europäischen Wirtschaftsraums. In diesem Fall stützen sich die Übermittlungen auf einen Angemessenheitsbeschluss oder auf geeignete Garantien wie die EU-Standardvertragsklauseln."
       },
       {
         "h": "Wie lange wir sie speichern",
         "p": "Anfragen, die nicht zu einer Vereinbarung führen, werden innerhalb von 24 Monaten gelöscht. Kundendaten werden so lange aufbewahrt, wie es unsere Vereinbarung und das griechische Steuer- und Handelsrecht erfordern."
       },
       {
+        "h": "Informationssicherheit",
+        "p": "Wir schützen personenbezogene Daten durch verschlüsselte Verbindungen (HTTPS), einen auf befugtes Personal beschränkten Zugriff, eine Speicherung außerhalb des öffentlichen Bereichs des Webservers sowie Verträge mit unseren Dienstleistern. Kein System ist vollkommen sicher; sollte ein Sicherheitsvorfall Ihre Daten betreffen, benachrichtigen wir Sie und die zuständigen Behörden, wie es das Gesetz vorschreibt."
+      },
+      {
+        "h": "Cookies und lokale Speicherung",
+        "p": "Wir speichern in Ihrem Browser nur Ihre Cookie-Auswahl und Ihre Spracheinstellung. Analysedienste werden nur geladen, wenn Sie ihnen zustimmen. Einzelheiten finden Sie in unserer Cookie-Richtlinie."
+      },
+      {
         "h": "Ihre Rechte",
-        "p": "Sie können jederzeit Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung oder Datenübertragbarkeit verlangen, der Verarbeitung widersprechen und Ihre Einwilligung widerrufen – per E-Mail an support@sivanmanagment.com. Zudem können Sie sich bei der griechischen Datenschutzbehörde (www.dpa.gr) beschweren."
+        "p": "Sie können jederzeit Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung oder Datenübertragbarkeit verlangen, der Verarbeitung widersprechen und Ihre Einwilligung widerrufen – per E-Mail an support@sivanmanagment.com. Wir antworten innerhalb eines Monats. Zudem können Sie sich bei der griechischen Datenschutzbehörde (www.dpa.gr) beschweren."
+      },
+      {
+        "h": "Nutzer in Israel",
+        "p": "Wenn Sie sich in Israel befinden, gelten für die Verarbeitung Ihrer Informationen zusätzlich das Datenschutzgesetz Israels (Protection of Privacy Law), 5741-1981, und die dazu erlassenen Verordnungen. Sie haben das Recht, die über Sie gespeicherten Informationen einzusehen und deren Berichtigung oder Löschung zu verlangen, indem Sie an support@sivanmanagment.com schreiben. Sie können sich auch an die israelische Datenschutzbehörde (www.gov.il/en/departments/the_privacy_protection_authority) wenden."
       }
     ]
   },
@@ -101,5 +113,44 @@
     "photoLabel": "Fotos unter offener Lizenz",
     "aiLabel": "KI-generierte Illustrationen",
     "aiBody": "Die Bilder von Küste, Villa, Innenräumen, Hospitality, Inspektion und Geschäftsgebäude wurden für diese Website generiert. Sie dienen ausschließlich der Illustration."
+  },
+  "accessibility": {
+    "seoTitle": "Erklärung zur Barrierefreiheit | Sivan Management",
+    "title": "Erklärung zur Barrierefreiheit",
+    "intro": "Sivan Management setzt sich dafür ein, dass diese Website für alle nutzbar ist, auch für Menschen mit Behinderungen. Diese Erklärung beschreibt, was wir umgesetzt haben, woran wir noch arbeiten und wie Sie uns erreichen.",
+    "sections": [
+      {
+        "h": "Standard",
+        "p": "Wir streben die Konformität mit den Web Content Accessibility Guidelines (WCAG) 2.1 auf Stufe AA an. Damit wird auch der israelische Standard IS 5568 (auf Grundlage der WCAG 2.0 AA) abgedeckt, der nach den israelischen Verordnungen über die Gleichberechtigung von Menschen mit Behinderungen (Anpassungen zur Barrierefreiheit von Dienstleistungen) (Equal Rights for Persons with Disabilities (Service Accessibility Adjustments) Regulations), 5773-2013, vorgeschrieben ist, sowie die europäische Norm EN 301 549."
+      },
+      {
+        "h": "Was wir umgesetzt haben",
+        "p": "Eine semantische Seitenstruktur mit klaren Überschriften; vollständige Bedienbarkeit per Tastatur mit sichtbarer Fokusanzeige und einem Link „Zum Inhalt springen“; Textalternativen für aussagekräftige Bilder, während dekorative Bilder und Hintergrundvideos vor Screenreadern verborgen sind; Farbkontraste, die auf Stufe AA ausgelegt sind; Animationen und Hintergrundvideos, die sich automatisch abschalten, wenn auf Ihrem Gerät „Bewegung reduzieren“ aktiviert ist; ein responsives Layout, das eine Vergrößerung bis 200 % unterstützt; Formularfelder mit Beschriftungen, klaren Fehlermeldungen und ohne Zeitlimits; sowie die korrekte Sprache und Leserichtung auf jeder Seite in allen acht Sprachen, einschließlich des von rechts nach links geschriebenen Hebräisch."
+      },
+      {
+        "h": "Bekannte Einschränkungen",
+        "p": "Hintergrundvideos sind stumm und enthalten keine Informationen. Der Bereich zur Inhaltsverwaltung (/admin/), den ausschließlich unsere Mitarbeitenden nutzen, ist ein Tool eines Drittanbieters und wird von dieser Erklärung nicht erfasst. Einige Übersetzungen werden noch von Muttersprachlern geprüft. Wenn etwas für Sie nicht funktioniert, teilen Sie uns das bitte mit – wir beheben es oder stellen Ihnen die Informationen auf anderem Weg zur Verfügung."
+      },
+      {
+        "h": "Kompatibilität",
+        "p": "Die Website ist für die aktuellen Versionen von Chrome, Safari, Firefox und Edge auf Desktop- und Mobilgeräten sowie für gängige Screenreader ausgelegt."
+      },
+      {
+        "h": "Unser Büro",
+        "p": "Unser Büro befindet sich an der Plateia Eleftherias 2 in Chania. Für Informationen zur baulichen Zugänglichkeit vor einem Besuch oder um ein Treffen an einem anderen Ort zu vereinbaren, kontaktieren Sie uns bitte."
+      },
+      {
+        "h": "Feedback und Kontakt",
+        "p": "Wenn Sie auf eine Barriere stoßen, wenden Sie sich bitte an unsere Ansprechperson für Barrierefreiheit. Nennen Sie uns die Seite, was Sie tun wollten, und das verwendete Gerät bzw. den verwendeten Browser. Wir bemühen uns, innerhalb von fünf Arbeitstagen zu antworten."
+      }
+    ],
+    "coordinatorTitle": "Ansprechperson für Barrierefreiheit",
+    "coordinatorPending": "Barrierefreiheits-Team von Sivan Management",
+    "labels": {
+      "name": "Name",
+      "email": "E-Mail",
+      "phone": "Telefon"
+    },
+    "reviewed": "Diese Erklärung wurde zuletzt überprüft am"
   }
 }

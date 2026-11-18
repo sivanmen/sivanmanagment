@@ -52,6 +52,11 @@ The form posts to `/api/lead/` (same origin) → `index.php`. It e-mails the lea
 without setup), writes a backup line outside the web root, and optionally forwards to Airtable or
 an n8n webhook. Secrets live only in `~/sivanmanagment-config.php` on the server.
 
+## D8. Internal compliance documents live in Drive, not in the repo (18 Nov 2026)
+The repository is public. The record of processing activities and the information-security
+procedure are internal and partly sensitive, so they were created as Google Docs in the owner's
+Drive folder "Sivan Management — Compliance (internal)". The repo only references them.
+
 ## D7. Hosting on the existing JetServer cPanel (17 Nov 2026)
 The owner preferred the existing JetServer account over a new Railway service. The site was made
 fully static (Node adapter removed) and the lead route rewritten in PHP 8. This cloud workspace

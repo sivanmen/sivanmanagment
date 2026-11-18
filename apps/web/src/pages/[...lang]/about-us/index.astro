@@ -16,7 +16,7 @@ const a = t.about.about;
 const icons = ['shield', 'eye', 'layers', 'compass', 'clock'];
 ---
 <BaseLayout locale={locale} path="/about-us/" title={a.seoTitle} description={a.seoDescription} overlay>
-  <PageHero locale={locale} eyebrow={a.eyebrow} title={a.title} lead={a.lead} image={IMAGES.chania} crumbs={[{ label: t.common.nav.about }]} />
+  <PageHero locale={locale} eyebrow={a.eyebrow} title={a.title} lead={a.lead} image={IMAGES['chania-street']} crumbs={[{ label: t.common.nav.about }]} />
 
   <section class="section">
     <div class="container split">
@@ -30,7 +30,7 @@ const icons = ['shield', 'eye', 'layers', 'compass', 'clock'];
 
   <section class="section section--white">
     <div class="container split split--even">
-      <div class="media tall" data-reveal="scale"><Image src={IMAGES.inspection.src} alt={IMAGES.inspection.alt} widths={[640, 1000]} sizes="(min-width: 960px) 50vw, 100vw" /></div>
+      <div class="media tall" data-reveal="scale"><Image src={IMAGES['onsite-founder'].src} alt={IMAGES['onsite-founder'].alt} widths={[640, 1000]} sizes="(min-width: 960px) 50vw, 100vw" /></div>
       <div class="stack center-y" style="--stack:1.25rem">
         <p class="eyebrow" data-reveal="fade">{t.common.nav.locations}</p>
         <h2 class="h-2" data-split>{a.rootedTitle}</h2>
