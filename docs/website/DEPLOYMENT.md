@@ -61,6 +61,15 @@ anything outside the site folder, and it refuses to run unless the remote folder
 If JetServer's firewall blocks GitHub's IPs for FTP, ask JetServer support to allow FTPS for that
 account, or fall back to the manual ZIP (§1–2).
 
+## 3b. Remote maintenance over HTTPS (sm-deploy.php)
+Because cPanel/FTP/SSH are not reachable from Claude's cloud workspace, `public/sm-deploy.php` (shipped with
+every build) allows deployment and fixes over HTTPS. It requires `DEPLOY_TOKEN` (≥ 40 random chars) in
+`~/sivanmanagment-config.php`; without the exact token it answers 404 and locks out an IP after 5 failures.
+Actions: `status`, `clean` (moves everything that is not part of the current build to `~/sivanmanagment-wp-old-<ts>/`),
+`deploy` (chunked upload, SHA-256 verified, previous site kept in `~/sivanmanagment-site-prev-<ts>/`, last 3 kept),
+`put`/`get` single files, `rollback`, `purge_backups`. Client: `SM_DEPLOY_TOKEN=… node apps/web/scripts/remote.mjs <command>`.
+All actions are logged to `~/sivanmanagment-deploy.log`. To revoke access, delete the token line from the config file.
+
 ## 4. Lead delivery & server-side settings
 
 By default every form submission is:

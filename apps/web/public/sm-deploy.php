@@ -15,6 +15,9 @@
  *   deploy        assemble upload &id, verify &sha256, extract, back up the current site
  *                 to ~/sivanmanagment-site-prev-<ts>/, publish the new build
  *   put / get     write / read one file inside the site folder (&path=…, body = file bytes)
+ *   clean         move everything NOT in the posted keep-list (JSON array of top-level names
+ *                 of the current build) to ~/sivanmanagment-wp-old-<ts>/  (reversible)
+ *   purge_backups permanently delete backup folders (&which=wp-old|site-prev|site-failed|all)
  *   rollback      restore the most recent ~/sivanmanagment-site-prev-* backup
  * Everything is logged to ~/sivanmanagment-deploy.log.
  */
@@ -128,6 +131,28 @@ case 'get':
     $src = safe_path((string) ($_GET['path'] ?? ''));
     if (!is_file($src) || filesize($src) > 2 * 1048576) out(404, ['ok' => false, 'error' => 'NOT_FOUND_OR_TOO_LARGE']);
     out(200, ['ok' => true, 'path' => substr($src, strlen($ROOT)), 'base64' => base64_encode((string) file_get_contents($src))]);
+
+case 'clean':
+    // Body: JSON array of top-level names that belong to the current site build.
+    // Everything else in the site folder (except protected entries) is MOVED to a backup folder.
+    $keep = json_decode((string) file_get_contents('php://input'), true);
+    if (!is_array($keep) || !in_array('index.html', $keep, true) || !in_array('sivan-web-root.txt', $keep, true)) out(400, ['ok' => false, 'error' => 'KEEP_LIST_REQUIRED']);
+    if (!is_file("$ROOT/sivan-web-root.txt")) out(409, ['ok' => false, 'error' => 'SITE_NOT_DEPLOYED_HERE']);
+    $dest = $HOME . '/sivanmanagment-wp-old-' . gmdate('Ymd-His');
+    $moved = move_entries($ROOT, $dest, array_merge($KEEP, array_map('strval', $keep)));
+    if (!$moved) @rmdir($dest);
+    logl('clean → ' . $dest . ' (' . implode(', ', $moved) . ')');
+    out(200, ['ok' => true, 'moved_to' => $moved ? $dest : null, 'moved' => $moved, 'files' => listing($ROOT)]);
+
+case 'purge_backups':
+    // Permanently delete backup folders created by this tool: ?which=wp-old|site-prev|all
+    $which = (string) ($_GET['which'] ?? '');
+    $pat = ['wp-old' => 'wp-old', 'site-prev' => 'site-prev', 'site-failed' => 'site-failed', 'all' => '{wp-old,site-prev,site-failed}'][$which] ?? null;
+    if (!$pat) out(400, ['ok' => false, 'error' => 'BAD_WHICH']);
+    $dirs = glob("$HOME/sivanmanagment-$pat-*", GLOB_BRACE | GLOB_ONLYDIR) ?: [];
+    foreach ($dirs as $d) rrmdir($d);
+    logl("purge_backups $which: " . implode(', ', array_map('basename', $dirs)));
+    out(200, ['ok' => true, 'deleted' => array_map('basename', $dirs)]);
 
 case 'rollback':
     $prevs = glob("$HOME/sivanmanagment-site-prev-*", GLOB_ONLYDIR) ?: []; sort($prevs);
