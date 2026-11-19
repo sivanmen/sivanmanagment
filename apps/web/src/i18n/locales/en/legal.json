@@ -44,6 +44,22 @@
       {
         "h": "Users in Israel",
         "p": "If you are in Israel, the Protection of Privacy Law, 5741-1981, and its regulations also apply to the processing of your information. You have the right to review the information we hold about you and to ask for it to be corrected or deleted, by writing to support@sivanmanagment.com. You may also contact the Israeli Privacy Protection Authority (www.gov.il/en/departments/the_privacy_protection_authority)."
+      },
+      {
+        "h": "Automated decisions",
+        "p": "We do not make decisions about you based solely on automated processing, and we do not create marketing profiles."
+      },
+      {
+        "h": "Marketing messages",
+        "p": "We do not send marketing e-mails, SMS or WhatsApp messages without your prior consent. You can withdraw consent at any time by replying “stop” or writing to us."
+      },
+      {
+        "h": "Children",
+        "p": "Our services are intended for adults. We do not knowingly collect information from children under 16."
+      },
+      {
+        "h": "Changes to this policy",
+        "p": "We may update this policy. The date of the latest update appears at the top of this page; material changes will be highlighted on the website."
       }
     ]
   },
@@ -52,16 +68,24 @@
     "title": "Cookie Policy",
     "sections": [
       {
-        "h": "Essential storage",
-        "p": "We store your cookie choice and language preference in your browser. These are necessary for the site to work and do not track you."
+        "h": "No cookies",
+        "p": "This website does not set any cookies and does not use advertising, tracking or social-media pixels. Fonts, images and videos are served from our own server, so no information is sent to third parties when you browse."
       },
       {
-        "h": "Analytics (optional)",
-        "p": "Only if you accept, we may load privacy-friendly analytics to understand how the site is used. No advertising cookies are used."
+        "h": "What we store in your browser",
+        "p": "sm-consent (local storage, 12 months): saved only if you click “Allow statistics”, to remember your choice. If you click “Decline”, your choice is kept only in session storage and is deleted when you close the browser — nothing is stored permanently. sm-a11y (session storage, until the browser is closed): your accessibility-menu settings, only if you use the menu."
+      },
+      {
+        "h": "Statistics",
+        "p": "No statistics tool is active at present. If we add one, it will be privacy-friendly and anonymous, and it will load only after you have clicked “Allow statistics”."
+      },
+      {
+        "h": "Server logs",
+        "p": "Like every web server, our hosting provider (JetServer, Israel) records technical access logs (IP address, browser type, page and time) for security. They are kept for a short period and are not used to identify you."
       },
       {
         "h": "Changing your choice",
-        "p": "You can change your choice at any time by clearing this site's data in your browser; the banner will then appear again."
+        "p": "You can change or withdraw your choice at any time through the “Cookie settings” link at the bottom of every page, or by clearing this website's data in your browser."
       }
     ]
   },
@@ -125,7 +149,11 @@
       },
       {
         "h": "What we have done",
-        "p": "Semantic page structure with clear headings; full keyboard navigation with a visible focus indicator and a “skip to content” link; text alternatives for meaningful images, while decorative images and background videos are hidden from screen readers; colour contrast designed for level AA; animations and background videos turn off automatically when “reduce motion” is enabled on your device; a responsive layout that supports zoom up to 200%; form fields with labels, clear error messages and no time limits; and the correct language and reading direction on every page in all eight languages, including right-to-left Hebrew."
+        "p": "Semantic page structure with clear headings; full keyboard navigation with a visible focus indicator and a “skip to content” link; an accessibility menu on every page (text size, high contrast, highlighted links, readable font, line spacing, large cursor, stop animations); background videos can be paused and stop automatically when “reduce motion” is enabled; text alternatives for meaningful images, while decorative images and videos are hidden from screen readers; colour contrast designed for level AA; a responsive layout that supports zoom up to 200%; form fields with labels, clear error messages and no time limits; and the correct language and reading direction on every page in all eight languages, including right-to-left Hebrew."
+      },
+      {
+        "h": "How we checked",
+        "p": "The website was checked on 18 November 2026 with automated testing (axe-core, WCAG 2.1 AA rules) on the main pages in English and Hebrew, together with manual keyboard and screen-reader-structure review. Issues found were corrected. We re-check after every significant change and at least once a year."
       },
       {
         "h": "Known limitations",

@@ -9,7 +9,12 @@
   "hours": "Monday to Friday, 09:00–17:00 (Greece time)",
   "mapLink": "Open in Google Maps",
   "form": {
-    "steps": ["Property", "Location", "Services", "Contact"],
+    "steps": [
+      "Property",
+      "Location",
+      "Services",
+      "Contact"
+    ],
     "stepOf": "Step {n} of {total}",
     "back": "Back",
     "next": "Continue",
@@ -49,14 +54,19 @@
     "phone": "Phone / WhatsApp",
     "phoneHint": "Include your country code, e.g. +44…",
     "preferred": "Preferred contact",
-    "preferredOptions": { "email": "Email", "phone": "Phone", "whatsapp": "WhatsApp" },
+    "preferredOptions": {
+      "email": "Email",
+      "phone": "Phone",
+      "whatsapp": "WhatsApp"
+    },
     "consent": "I agree that Sivan Management may process my details to respond to this request, as described in the Privacy Policy.",
     "consentLink": "Privacy Policy",
     "required": "Please complete this field.",
     "invalidEmail": "Please enter a valid email address.",
     "errorGeneric": "Something went wrong. Please try again, or contact us directly by email or phone.",
     "successTitle": "Thank you, we have received your request.",
-    "successBody": "We will review the details and contact you shortly. A confirmation has been noted in our system."
+    "successBody": "We will review the details and contact you shortly. A confirmation has been noted in our system.",
+    "privacyNotice": "Providing your details is voluntary. We use them only to answer your request and prepare a proposal; they are e-mailed to our team and stored on our server in Israel, and are not shared for marketing. You can ask to see, correct or delete them at any time. Details in our Privacy Policy."
   },
   "thanks": {
     "seoTitle": "Thank you | Sivan Management",

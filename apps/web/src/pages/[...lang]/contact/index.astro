@@ -6,6 +6,8 @@ import Icon from '~/components/Icon.astro';
 import { getDict } from '~/i18n';
 import { localePaths, type Locale } from '~/i18n/config';
 import { COMPANY } from '~/lib/company';
+import { Image } from 'astro:assets';
+import { IMAGES } from '~/lib/images';
 
 export const getStaticPaths = localePaths;
 const { locale } = Astro.props as { locale: Locale };
@@ -20,6 +22,10 @@ const cc = t.common.common;
       <AssessmentForm locale={locale} />
       <aside class="side">
         <div class="card stack" style="--stack:1rem">
+          <div class="person">
+            <Image src={IMAGES['founder-evening'].src} alt={IMAGES['founder-evening'].alt} widths={[160, 320]} sizes="80px" class="avatar" />
+            <div><strong>{COMPANY.founder}</strong><small>{t.about.team.founderRole}</small></div>
+          </div>
           <h2 class="h-3">{c.directTitle}</h2>
           <p class="muted">{c.directBody}</p>
           <ul class="ways">
@@ -44,5 +50,9 @@ const cc = t.common.common;
   .ways a:hover { background: var(--paper); }
   .ways small { display: block; color: var(--text-muted); font-size: 0.8rem; }
   .ways strong { font-weight: 400; word-break: break-word; }
+  .person { display: flex; gap: 0.9rem; align-items: center; }
+  .person :global(.avatar) { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; object-position: center 20%; }
+  .person strong { display: block; font-family: var(--font-display); font-weight: 560; }
+  .person small { color: var(--text-muted); font-size: 0.85rem; }
   .hours { display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: var(--text-muted); }
 </style>

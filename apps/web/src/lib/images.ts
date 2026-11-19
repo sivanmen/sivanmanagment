@@ -12,6 +12,8 @@ import chaniaLighthouse from '~/assets/images/chania-lighthouse-photo.jpg';
 import onsiteFounder from '~/assets/images/onsite-founder.jpg';
 import onsiteWorks from '~/assets/images/onsite-works.jpg';
 import founder from '~/assets/images/founder-sivan-menahem.jpg';
+import founderVilla from '~/assets/images/founder-villa.jpg';
+import founderEvening from '~/assets/images/founder-evening.jpg';
 import rethymno from '~/assets/images/rethymno-photo.jpg';
 import heraklion from '~/assets/images/heraklion.jpg';
 import type { LocationSlug, ServiceSlug } from './company';
@@ -40,7 +42,9 @@ export const IMAGES = {
   'chania-lighthouse': { src: chaniaLighthouse, alt: 'The Venetian lighthouse of Chania at sunset', illustrative: false, source: 'owner-library: lighthouse-of-chania (licensed stock)' },
   'onsite-founder': { src: onsiteFounder, alt: 'Sivan Menahem on site during access-road works in Crete', illustrative: false, source: 'owner photo: Drive / Accesses Road / IMG_1113' },
   'onsite-works': { src: onsiteWorks, alt: 'Excavator preparing an access road on a sea-view plot in Crete', illustrative: false, source: 'owner photo: Drive / Accesses Road / IMG_1103' },
-  founder: { src: founder, alt: 'Sivan Menahem, founder of Sivan Management', illustrative: false, source: 'owner portrait: Drive / תמונות סיון אישי AI (AI-assisted studio portrait of the founder)' },
+  'founder-villa': { src: founderVilla, alt: 'Sivan Menahem on the terrace of a villa overlooking the sea in Crete', illustrative: false, source: 'owner-supplied portrait (chat, 18 Nov 2026)' },
+  'founder-evening': { src: founderEvening, alt: 'Sivan Menahem, founder of Sivan Management', illustrative: false, source: 'owner-supplied portrait (chat, 18 Nov 2026)' },
+  founder: { src: founder, alt: 'Sivan Menahem, founder of Sivan Management', illustrative: false, source: 'owner-supplied portrait (chat, 18 Nov 2026)' },
   rethymno: {
     src: rethymno,
     alt: 'The ramparts of the Fortezza in Rethymno',

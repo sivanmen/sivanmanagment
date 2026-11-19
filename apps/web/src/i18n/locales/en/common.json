@@ -70,14 +70,34 @@
     "accessibility": "Accessibility"
   },
   "cookie": {
-    "text": "We use only essential cookies to run this website. With your consent we may also use privacy-friendly analytics to improve it.",
-    "accept": "Accept analytics",
-    "decline": "Essential only",
-    "more": "Cookie Policy"
+    "text": "This website uses no cookies and no tracking. We would like to use privacy-friendly, anonymous statistics only if you allow it. If you decline, nothing is saved in your browser.",
+    "accept": "Allow statistics",
+    "decline": "Decline",
+    "more": "Cookie Policy",
+    "settings": "Cookie settings",
+    "title": "Your privacy choice"
   },
   "notFound": {
     "title": "Page not found",
     "body": "The page you are looking for has moved or no longer exists.",
     "cta": "Back to the homepage"
+  },
+  "a11y": {
+    "open": "Accessibility menu",
+    "title": "Accessibility",
+    "close": "Close accessibility menu",
+    "textBigger": "Increase text size",
+    "textSmaller": "Decrease text size",
+    "contrast": "High contrast",
+    "links": "Highlight links",
+    "font": "Readable font",
+    "motion": "Stop animations and videos",
+    "spacing": "Increase line spacing",
+    "cursor": "Large cursor",
+    "reset": "Reset settings",
+    "statement": "Accessibility statement",
+    "pause": "Pause background video",
+    "play": "Play background video",
+    "note": "Settings apply until you close the browser and are not stored permanently."
   }
 }
