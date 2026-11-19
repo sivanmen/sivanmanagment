@@ -1,0 +1,72 @@
+---
+import { LOCALES, LOCALE_META, localizePath, type Locale } from '~/i18n/config';
+import { COMPANY } from '~/lib/company';
+
+interface Props {
+  locale: Locale;
+  /** English path of this page, e.g. "/services/" */
+  path: string;
+  title: string;
+  description: string;
+  image?: string;
+  type?: 'website' | 'article';
+  /** Locales in which this page exists (defaults to all). */
+  alternates?: readonly Locale[];
+  noindex?: boolean;
+  jsonLd?: Record<string, unknown>[];
+}
+
+const { locale, path, title, description, image, type = 'website', alternates = LOCALES, noindex = false, jsonLd = [] } = Astro.props;
+const site = Astro.site!;
+const canonical = new URL(localizePath(path, locale), site).href;
+const ogImage = image ? new URL(image, site).href : new URL('/og-default.jpg', site).href;
+
+const org = {
+  '@context': 'https://schema.org',
+  '@type': ['LocalBusiness', 'ProfessionalService'],
+  '@id': new URL('/#organization', site).href,
+  name: COMPANY.brand,
+  legalName: COMPANY.legalName,
+  slogan: 'Your Property. Our Responsibility.',
+  url: site.href,
+  logo: new URL('/icon-512.png', site).href,
+  image: ogImage,
+  email: COMPANY.email,
+  telephone: COMPANY.phone,
+  vatID: COMPANY.vat,
+  founder: { '@type': 'Person', name: COMPANY.founder },
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: COMPANY.address.street,
+    postalCode: COMPANY.address.postalCode,
+    addressLocality: COMPANY.address.city,
+    addressRegion: COMPANY.address.region,
+    addressCountry: COMPANY.address.countryCode,
+  },
+  geo: { '@type': 'GeoCoordinates', latitude: COMPANY.geo.lat, longitude: COMPANY.geo.lng },
+  areaServed: COMPANY.areaServed.map((name) => ({ '@type': 'Place', name })),
+  knowsLanguage: LOCALES.map((l) => LOCALE_META[l].hreflang),
+};
+const graphs = [org, ...jsonLd];
+---
+<title>{title}</title>
+<meta name="description" content={description} />
+<link rel="canonical" href={canonical} />
+{noindex && <meta name="robots" content="noindex, follow" />}
+{alternates.map((l) => (
+  <link rel="alternate" hreflang={LOCALE_META[l].hreflang} href={new URL(localizePath(path, l), site).href} />
+))}
+{alternates.includes('en') && <link rel="alternate" hreflang="x-default" href={new URL(localizePath(path, 'en'), site).href} />}
+<meta property="og:type" content={type} />
+<meta property="og:site_name" content={COMPANY.brand} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonical} />
+<meta property="og:image" content={ogImage} />
+<meta property="og:locale" content={LOCALE_META[locale].og} />
+{alternates.filter((l) => l !== locale).map((l) => <meta property="og:locale:alternate" content={LOCALE_META[l].og} />)}
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={ogImage} />
+{graphs.map((g) => <script type="application/ld+json" is:inline set:html={JSON.stringify(g)} />)}

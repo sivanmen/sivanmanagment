@@ -19,7 +19,9 @@
     "db:push": "pnpm --filter api prisma:push",
     "db:seed": "pnpm --filter api prisma:seed",
     "db:studio": "pnpm --filter api prisma:studio",
-    "clean": "pnpm -r exec rm -rf dist node_modules .turbo"
+    "clean": "pnpm -r exec rm -rf dist node_modules .turbo",
+    "dev:web": "pnpm --filter web dev",
+    "build:web": "pnpm --filter web build"
   },
   "engines": {
     "node": ">=20.0.0",
@@ -31,7 +33,8 @@
       "@prisma/engines",
       "prisma",
       "esbuild",
-      "msgpackr-extract"
+      "msgpackr-extract",
+      "sharp"
     ]
   }
 }

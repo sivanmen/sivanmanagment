@@ -1,0 +1,86 @@
+{
+  "overview": {
+    "seoTitle": "Where We Work — Chania, Rethymno & Heraklion | Sivan Management",
+    "seoDescription": "Property management across Crete with a focus on Chania, Rethymno and Heraklion. Local knowledge, trusted suppliers and one point of contact.",
+    "eyebrow": "Locations",
+    "title": "Local knowledge across Crete.",
+    "lead": "Our office is in Chania, and we work across western and central Crete. Each area has its own market, seasons and regulations, and we manage accordingly.",
+    "mapLabel": "Stylised map of Crete showing Chania, Rethymno and Heraklion",
+    "officeLabel": "Our office",
+    "otherTitle": "Property elsewhere in Crete or Greece?",
+    "otherBody": "Get in touch. We will tell you honestly whether we can serve your property well, or recommend another solution."
+  },
+  "labels": {
+    "propertyTypes": "Properties we manage here",
+    "whyTitle": "Why owners invest here",
+    "servicesHere": "Services available"
+  },
+  "items": {
+    "chania": {
+      "name": "Chania",
+      "headline": "Property management in Chania.",
+      "lead": "Our home base. From the Venetian harbour and the old town to Akrotiri, Platanias, Kissamos and Apokoronas.",
+      "body": [
+        "Chania combines a historic city centre with some of the most sought-after coastline in Greece. Demand comes from international holidaymakers, long-stay visitors and a growing community of foreign residents.",
+        "Because our office is on Plateia Eleftherias in the centre of Chania, we can respond quickly, supervise in person and work with a well-established local network of cleaners, technicians and suppliers."
+      ],
+      "propertyTypes": ["Villas with pools", "Old-town apartments", "Beach apartments", "Long-term residential rentals", "Commercial units"],
+      "highlights": [
+        "Strong international holiday demand from spring to autumn",
+        "Year-round appeal of the city and old town",
+        "Wide range of villas in Apokoronas, Akrotiri and Platanias"
+      ],
+      "faq": [
+        { "q": "Which areas around Chania do you cover?", "a": "Chania city and old town, Akrotiri, Platanias and Agia Marina, Kissamos, Apokoronas (including Kalyves and Almyrida) and surrounding villages. Contact us for other locations." },
+        { "q": "Can you visit my property quickly?", "a": "Yes. With our office in central Chania, we can usually arrange a visit within a few days." },
+        { "q": "Do you manage old-town apartments?", "a": "Yes. Old-town properties have their own considerations, such as access, noise and building rules, and we manage them accordingly." }
+      ],
+      "seoTitle": "Property Management Chania | Villa & Rental Management | Sivan Management",
+      "seoDescription": "Property management in Chania from our office in the city centre: villas, holiday rentals, long-term rentals, maintenance and commercial properties."
+    },
+    "rethymno": {
+      "name": "Rethymno",
+      "headline": "Property management in Rethymno.",
+      "lead": "From the Venetian old town and the long sandy beaches to the villages of the hinterland.",
+      "body": [
+        "Rethymno offers a lively old town, a long coastline and charming villages inland, with a mix of holiday homes, apartments and family-run hospitality.",
+        "We support owners in the Rethymno area with rental operations, maintenance and representation, coordinated from our Chania office and through trusted local partners."
+      ],
+      "propertyTypes": ["Holiday villas", "Beach apartments", "Village houses", "Residential rentals", "Small hospitality properties"],
+      "highlights": [
+        "Long sandy beaches with established tourist demand",
+        "Authentic villages attractive to villa guests",
+        "University town with long-term rental demand"
+      ],
+      "faq": [
+        { "q": "Which parts of Rethymno do you cover?", "a": "Rethymno town and the coastal strip, plus villages within reach. Let us know the location and we will confirm." },
+        { "q": "Do you have staff in Rethymno?", "a": "We coordinate operations from Chania and work with trusted local professionals in the Rethymno area." },
+        { "q": "Can you manage a village house as a holiday rental?", "a": "Yes, subject to an assessment of the property, its access and the local registration requirements." }
+      ],
+      "seoTitle": "Property Management Rethymno | Holiday Rental Management | Sivan Management",
+      "seoDescription": "Holiday rental, long-term rental and maintenance services for property owners in Rethymno and the surrounding area."
+    },
+    "heraklion": {
+      "name": "Heraklion",
+      "headline": "Property management in Heraklion.",
+      "lead": "Crete's capital and largest city, with year-round business, tourism and residential demand.",
+      "body": [
+        "Heraklion is the island's economic centre, with an international airport, a busy port, a university and a diverse property market, from city apartments to commercial buildings and coastal resorts.",
+        "We work with owners in Heraklion on residential, commercial and hospitality assets, coordinated from our Chania office with local partners. The scope we can offer depends on the property and its location."
+      ],
+      "propertyTypes": ["City apartments", "Long-term residential rentals", "Commercial and office units", "Coastal holiday rentals", "Serviced apartments"],
+      "highlights": [
+        "Year-round demand from business, students and residents",
+        "Strong commercial and office market",
+        "Gateway airport for much of the island"
+      ],
+      "faq": [
+        { "q": "Do you manage commercial properties in Heraklion?", "a": "Yes. Commercial and office properties in Heraklion are a good fit for our commercial management service." },
+        { "q": "Is there a Sivan Management office in Heraklion?", "a": "Our office is in Chania. In Heraklion we work with trusted local partners and visit as the property requires." },
+        { "q": "Which services are available in Heraklion?", "a": "Long-term rental, commercial and asset management are available across the city. Short-term rental operations depend on location; we confirm after an assessment." }
+      ],
+      "seoTitle": "Property Management Heraklion | Residential & Commercial | Sivan Management",
+      "seoDescription": "Residential, commercial and hospitality property management for owners in Heraklion, Crete."
+    }
+  }
+}

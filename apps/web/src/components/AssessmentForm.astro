@@ -1,0 +1,216 @@
+---
+import Icon from './Icon.astro';
+import { getDict, fmt } from '~/i18n';
+import { localizePath, type Locale } from '~/i18n/config';
+import { SERVICE_SLUGS } from '~/lib/company';
+
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const t = getDict(locale);
+const f = t.contact.form;
+const steps = f.steps;
+const thanks = localizePath('/thank-you/', locale);
+const privacy = localizePath('/legal/privacy-policy/', locale);
+---
+<form class="af card" method="post" action="/api/lead/" novalidate data-af data-thanks={thanks}
+  data-msg-required={f.required} data-msg-email={f.invalidEmail} data-msg-error={f.errorGeneric} data-msg-sending={f.sending}>
+  <input type="hidden" name="locale" value={locale} />
+  <input type="hidden" name="source" value="" data-source />
+  <input type="hidden" name="startedAt" value="" data-started />
+  <div class="hp" aria-hidden="true"><label>Company website<input type="text" name="website" tabindex="-1" autocomplete="off" /></label></div>
+
+  <div class="af-progress" aria-hidden="true">
+    {steps.map((s, i) => <span class:list={['af-dot', { 'is-on': i === 0 }]} data-dot={i}><b>{i + 1}</b><em>{s}</em></span>)}
+  </div>
+  <p class="af-count" aria-live="polite" data-count data-template={f.stepOf}>{fmt(f.stepOf, { n: 1, total: steps.length })}</p>
+
+  <!-- Step 1: property -->
+  <fieldset class="af-step" data-step="0">
+    <legend class="h-3">{f.propertyType}</legend>
+    <div class="tiles">
+      {Object.entries(f.types).map(([v, label]) => (
+        <label class="tile"><input type="radio" name="propertyType" value={v} required /><span>{label}</span></label>
+      ))}
+    </div>
+    <label class="field">
+      <span>{f.units}</span>
+      <input type="number" name="units" min="1" max="500" value="1" inputmode="numeric" />
+      <small>{f.unitsHint}</small>
+    </label>
+  </fieldset>
+
+  <!-- Step 2: location -->
+  <fieldset class="af-step" data-step="1" hidden>
+    <legend class="h-3">{f.location}</legend>
+    <div class="tiles tiles--4">
+      {Object.entries(f.locations).map(([v, label]) => (
+        <label class="tile"><input type="radio" name="location" value={v} required /><span>{label}</span></label>
+      ))}
+    </div>
+    <label class="field"><span>{f.area}</span><input type="text" name="area" maxlength="120" autocomplete="address-level2" /></label>
+    <p class="field-label">{f.status}</p>
+    <div class="tiles tiles--4">
+      {Object.entries(f.statuses).map(([v, label]) => (
+        <label class="tile tile--sm"><input type="radio" name="status" value={v} /><span>{label}</span></label>
+      ))}
+    </div>
+  </fieldset>
+
+  <!-- Step 3: services -->
+  <fieldset class="af-step" data-step="2" hidden>
+    <legend class="h-3">{f.services}</legend>
+    <p class="muted">{f.servicesHint}</p>
+    <div class="tiles">
+      {SERVICE_SLUGS.map((s) => (
+        <label class="tile tile--check"><input type="checkbox" name="services" value={s} /><span>{t.services.items[s].name}</span></label>
+      ))}
+    </div>
+    <label class="field"><span>{f.goals}</span><textarea name="goals" rows="4" maxlength="2000" placeholder={f.goalsPlaceholder}></textarea></label>
+  </fieldset>
+
+  <!-- Step 4: contact -->
+  <fieldset class="af-step" data-step="3" hidden>
+    <legend class="h-3">{steps[3]}</legend>
+    <div class="row-2">
+      <label class="field"><span>{f.name} *</span><input type="text" name="name" required maxlength="120" autocomplete="name" /></label>
+      <label class="field"><span>{f.email} *</span><input type="email" name="email" required maxlength="160" autocomplete="email" /></label>
+    </div>
+    <label class="field"><span>{f.phone}</span><input type="tel" name="phone" maxlength="40" autocomplete="tel" dir="ltr" /><small>{f.phoneHint}</small></label>
+    <p class="field-label">{f.preferred}</p>
+    <div class="tiles tiles--3">
+      {Object.entries(f.preferredOptions).map(([v, label], i) => (
+        <label class="tile tile--sm"><input type="radio" name="preferred" value={v} checked={i === 0} /><span>{label}</span></label>
+      ))}
+    </div>
+    <p class="notice" id="privacy-notice">{f.privacyNotice}</p>
+    <label class="consent"><input type="checkbox" name="consent" value="yes" required aria-describedby="privacy-notice" /><span>{f.consent} <a href={privacy} target="_blank" rel="noopener">{f.consentLink}</a></span></label>
+  </fieldset>
+
+  <p class="af-error" role="alert" hidden data-error id="af-error"></p>
+
+  <div class="af-nav">
+    <button type="button" class="btn btn--ghost" data-back hidden>{f.back}</button>
+    <button type="button" class="btn btn--violet" data-next>{f.next}<Icon name="arrow" size={18} class="arrow" /></button>
+    <button type="submit" class="btn btn--violet" data-submit hidden>{f.submit}<Icon name="arrow" size={18} class="arrow" /></button>
+  </div>
+</form>
+
+<style>
+  .af { display: grid; gap: 1.5rem; padding: clamp(1.4rem, 1rem + 2vw, 2.6rem); }
+  .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  .af-progress { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
+  .af-dot { display: grid; gap: 0.45rem; font-size: 0.78rem; color: var(--text-muted); }
+  .af-dot::before { content: ''; height: 4px; border-radius: 4px; background: var(--line); transition: background-color 0.4s; }
+  .af-dot.is-on::before { background: var(--violet); }
+  .af-dot b { display: none; }
+  .af-dot em { font-style: normal; }
+  .af-count { font-size: 0.8rem; color: var(--text-muted); margin-top: -0.75rem; }
+  .af-step { border: 0; padding: 0; margin: 0; display: grid; gap: 1.25rem; animation: stepIn 0.5s var(--ease-out); }
+  @keyframes stepIn { from { opacity: 0; transform: translateY(10px); } }
+  legend { padding: 0; margin-bottom: 0.25rem; }
+  .tiles { display: grid; gap: 0.6rem; grid-template-columns: 1fr; }
+  @media (min-width: 560px) { .tiles { grid-template-columns: 1fr 1fr; } .tiles--4 { grid-template-columns: repeat(2, 1fr); } .tiles--3 { grid-template-columns: repeat(3, 1fr); } }
+  @media (min-width: 900px) { .tiles--4 { grid-template-columns: repeat(4, 1fr); } }
+  .tile { position: relative; cursor: pointer; }
+  .tile input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+  .tile span { display: flex; align-items: center; min-height: 3.6rem; padding: 0.9rem 1.1rem; border-radius: 16px; border: 1.5px solid var(--line); background: var(--paper); transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s; line-height: 1.35; }
+  .tile--sm span { min-height: 3rem; padding: 0.65rem 0.9rem; font-size: 0.9375rem; }
+  .tile:hover span { border-color: var(--lavender); }
+  .tile input:checked + span { border-color: var(--violet); background: var(--lilac); box-shadow: 0 0 0 3px rgba(103, 84, 233, 0.12); color: var(--violet-700); font-weight: 400; }
+  .tile input:focus-visible + span { outline: 2px solid var(--violet); outline-offset: 2px; }
+  .field { display: grid; gap: 0.4rem; }
+  .field > span, .field-label { font-size: 0.9rem; font-weight: 400; }
+  .field small { color: var(--text-muted); font-size: 0.8rem; }
+  .field input, .field textarea { width: 100%; padding: 0.85rem 1rem; border-radius: var(--radius); border: 1.5px solid var(--line); background: var(--white); transition: border-color 0.2s, box-shadow 0.2s; }
+  .field input:focus, .field textarea:focus { outline: none; border-color: var(--violet); box-shadow: 0 0 0 4px rgba(103, 84, 233, 0.12); }
+  .field input[aria-invalid='true'] { border-color: #d64545; }
+  .row-2 { display: grid; gap: 1rem; }
+  @media (min-width: 640px) { .row-2 { grid-template-columns: 1fr 1fr; } }
+  .notice { font-size: 0.82rem; color: var(--text-muted); background: var(--paper); border-radius: 12px; padding: 0.75rem 0.9rem; }
+  .consent { display: flex; gap: 0.75rem; align-items: flex-start; font-size: 0.9rem; color: var(--text-muted); }
+  .consent input { width: 1.2rem; height: 1.2rem; margin-top: 0.15rem; accent-color: var(--violet); flex: none; }
+  .consent a { color: var(--violet-text); text-decoration: underline; }
+  .af-error { color: #b42318; background: #fef3f2; border-radius: 12px; padding: 0.75rem 1rem; font-size: 0.9rem; }
+  .af-nav { display: flex; justify-content: space-between; gap: 0.75rem; }
+  .af-nav [data-next], .af-nav [data-submit] { margin-inline-start: auto; }
+  .btn--ghost { color: var(--ink); }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLFormElement>('[data-af]').forEach((form) => {
+    const steps = [...form.querySelectorAll<HTMLFieldSetElement>('.af-step')];
+    const dots = [...form.querySelectorAll<HTMLElement>('[data-dot]')];
+    const back = form.querySelector<HTMLButtonElement>('[data-back]')!;
+    const next = form.querySelector<HTMLButtonElement>('[data-next]')!;
+    const submit = form.querySelector<HTMLButtonElement>('[data-submit]')!;
+    const err = form.querySelector<HTMLElement>('[data-error]')!;
+    const count = form.querySelector<HTMLElement>('[data-count]')!;
+    const ds = form.dataset;
+    let i = 0;
+
+    // Attribution metadata (UTM + referrer) for the CRM.
+    const params = new URLSearchParams(location.search);
+    const utm = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content']
+      .filter((k) => params.get(k)).map((k) => `${k}=${params.get(k)}`).join('&');
+    form.querySelector<HTMLInputElement>('[data-source]')!.value = JSON.stringify({ page: location.pathname, referrer: document.referrer || '', utm });
+    form.querySelector<HTMLInputElement>('[data-started]')!.value = String(Date.now());
+
+    // Preselect a service when arriving from a service page (?service=slug).
+    const pre = params.get('service');
+    if (pre) form.querySelectorAll<HTMLInputElement>(`input[name="services"][value="${CSS.escape(pre)}"]`).forEach((c) => (c.checked = true));
+
+    const show = (n: number) => {
+      steps.forEach((s, k) => (s.hidden = k !== n));
+      dots.forEach((d, k) => d.classList.toggle('is-on', k <= n));
+      back.hidden = n === 0;
+      next.hidden = n === steps.length - 1;
+      submit.hidden = n !== steps.length - 1;
+      count.textContent = (count.dataset.template || '').replace('{n}', String(n + 1)).replace('{total}', String(steps.length));
+      err.hidden = true;
+      i = n;
+    };
+
+    const validate = (n: number): boolean => {
+      const step = steps[n];
+      let ok = true;
+      const radios = new Set<string>();
+      step.querySelectorAll<HTMLInputElement>('input[required]').forEach((inp) => {
+        if (inp.type === 'radio') { radios.add(inp.name); return; }
+        const valid = inp.type === 'checkbox' ? inp.checked : inp.value.trim() !== '' && inp.checkValidity();
+        inp.setAttribute('aria-invalid', String(!valid));
+        if (!valid) ok = false;
+      });
+      radios.forEach((name) => { if (!step.querySelector(`input[name="${name}"]:checked`)) ok = false; });
+      if (!ok) {
+        const email = step.querySelector<HTMLInputElement>('input[type="email"]');
+        err.textContent = email && email.value && !email.checkValidity() ? ds.msgEmail! : ds.msgRequired!;
+        err.hidden = false;
+        step.querySelector<HTMLElement>('[aria-invalid="true"], input:not(:checked)')?.focus();
+      }
+      return ok;
+    };
+
+    next.addEventListener('click', () => { if (validate(i)) { show(i + 1); form.scrollIntoView({ behavior: 'smooth', block: 'start' }); } });
+    back.addEventListener('click', () => show(i - 1));
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!validate(i)) return;
+      const label = submit.innerHTML;
+      submit.disabled = true;
+      submit.textContent = ds.msgSending!;
+      const fd = new FormData(form);
+      const body = Object.fromEntries([...fd.keys()].map((k) => [k, k === 'services' ? fd.getAll(k) : fd.get(k)]));
+      try {
+        const res = await fetch(form.action, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        if (!res.ok) throw new Error(String(res.status));
+        location.href = ds.thanks!;
+      } catch {
+        err.textContent = ds.msgError!;
+        err.hidden = false;
+        submit.disabled = false;
+        submit.innerHTML = label;
+      }
+    });
+  });
+</script>

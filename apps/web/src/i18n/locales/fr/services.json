@@ -1,0 +1,379 @@
+{
+  "overview": {
+    "seoTitle": "Services de gestion locative en Crète | Sivan Management",
+    "seoDescription": "Location courte et longue durée, gestion commerciale et hôtelière, entretien, commercialisation et représentation à Chania, Réthymnon et Héraklion.",
+    "eyebrow": "Services",
+    "title": "Tout ce dont votre bien a besoin. Sous un même toit.",
+    "sub": "Choisissez un mandat de gestion complète ou uniquement les services dont vous avez besoin. Chaque collaboration commence par un périmètre clairement défini par écrit.",
+    "labels": {
+      "audience": "Pour qui",
+      "scope": "Périmètre des services",
+      "benefits": "Ce que vous y gagnez",
+      "workflow": "Comment ça marche",
+      "includes": "Inclus"
+    },
+    "modelsTitle": "Des formules de collaboration flexibles",
+    "models": [
+      { "title": "Gestion complète", "body": "Nous gérons le bien de A à Z : commercialisation, exploitation, entretien et reporting." },
+      { "title": "Services à la carte", "body": "Choisissez ce dont vous avez besoin : ménage, entretien, services aux voyageurs ou représentation." },
+      { "title": "Mission ponctuelle", "body": "Préparation avant saison, suivi de rénovation ou intégration d’un nouveau bien." }
+    ],
+    "pricingNote": "Les honoraires reposent sur un pourcentage des revenus, un forfait, une tarification à la prestation ou une combinaison, convenus par écrit après l’évaluation. Nous ne promettons jamais de revenus ni de taux d’occupation garantis."
+  },
+  "items": {
+    "short-term-rental-management": {
+      "name": "Gestion de location courte durée",
+      "short": "Villas, maisons de vacances et appartements, gérés de l’annonce au départ des voyageurs.",
+      "headline": "Des séjours d’exception. Une gestion professionnelle.",
+      "sub": "Gestion complète de locations saisonnières pour villas, maisons de vacances et appartements dans toute la Crète.",
+      "intro": [
+        "Une location de vacances réussie tient à des centaines de petits détails : les photos que les voyageurs découvrent en premier, le prix d’un mardi de mai, une réponse rapide à minuit, un linge impeccable, une piscine toujours limpide.",
+        "Nous nous occupons de chacun d’eux. Votre bien est préparé, mis en valeur et diffusé de manière professionnelle, chaque séjour est géré selon des standards hôteliers, et vous gardez une visibilité totale sur les réservations, les recettes et les coûts."
+      ],
+      "audience": [
+        "Propriétaires de villas et de maisons de vacances en Crète",
+        "Propriétaires d’appartements souhaitant une exploitation professionnelle en courte durée",
+        "Propriétaires vivant à l’étranger qui ont besoin d’une équipe locale fiable",
+        "Investisseurs qui transforment un bien en location de vacances"
+      ],
+      "scope": [
+        "Analyse du potentiel locatif et positionnement",
+        "Préparation du bien, inventaire et conseils sur les équipements",
+        "Photographie professionnelle et rédaction des annonces",
+        "Diffusion sur Airbnb, Booking.com, Vrbo et d’autres canaux pertinents",
+        "Tarification dynamique et gestion du calendrier",
+        "Réservations et communication avec les voyageurs 7 jours sur 7",
+        "Arrivées, départs et assistance locale aux voyageurs",
+        "Ménage, blanchisserie et gestion du linge",
+        "Coordination de l’entretien de la piscine et du jardin",
+        "Réparations, consommables et contrôle des dépenses",
+        "Accompagnement pour l’enregistrement en location courte durée (AMA) et les obligations liées à la taxe de séjour",
+        "Relevés mensuels au propriétaire et accès à l’espace en ligne"
+      ],
+      "benefits": [
+        { "title": "Une propriété sans contraintes", "body": "Nous gérons voyageurs, agents d’entretien, prestataires et imprévus pour que vous n’ayez pas à le faire." },
+        { "title": "Une qualité constante", "body": "Listes de contrôle et inspections après chaque séjour : le bien est toujours prêt à accueillir." },
+        { "title": "Une tarification éclairée", "body": "Les tarifs sont revus en fonction de la saison, de la demande et des biens comparables." },
+        { "title": "Une transparence totale", "body": "Chaque réservation, facture et dépense est visible dans votre espace propriétaire." }
+      ],
+      "workflow": [
+        "Visite du bien et évaluation locative",
+        "Contrat et plan d’intégration",
+        "Préparation, photos et mise en ligne des annonces",
+        "Exploitation quotidienne tout au long de la saison",
+        "Reporting mensuel et bilan annuel"
+      ],
+      "faq": [
+        { "q": "Sur quelles plateformes diffusez-vous les annonces ?", "a": "Généralement Airbnb, Booking.com et Vrbo, ainsi que d’autres canaux lorsqu’ils conviennent au bien. Tous les calendriers sont synchronisés pour éviter les doubles réservations." },
+        { "q": "Puis-je continuer à profiter de mon bien ?", "a": "Oui. Vous bloquez vos dates à l’avance via l’espace propriétaire ou en nous prévenant, et nous organisons les locations en conséquence." },
+        { "q": "Garantissez-vous un taux d’occupation ou des revenus ?", "a": "Non. Un gestionnaire responsable ne peut pas garantir des résultats qui dépendent du marché. Nous vous fournissons une estimation réaliste fondée sur le bien, sa localisation et des données comparables, et nous travaillons à optimiser ses performances." },
+        { "q": "Qui paie le ménage et les consommables ?", "a": "Le ménage est généralement couvert par les frais de ménage facturés aux voyageurs. Les consommables et les réparations sont refacturés au prix coûtant et apparaissent sur votre relevé. Les modalités exactes sont définies dans votre contrat." },
+        { "q": "Qu’en est-il de l’enregistrement et de la fiscalité des locations courte durée ?", "a": "En Grèce, les locations courte durée nécessitent un numéro d’enregistrement du bien (AMA) et sont soumises à des règles fiscales et déclaratives spécifiques. Nous vous guidons dans les démarches et nous coordonnons avec votre comptable. Nous ne fournissons pas nous-mêmes de conseil fiscal." },
+        { "q": "Comment sélectionnez-vous les voyageurs ?", "a": "Nous examinons les profils des voyageurs, les vérifications des plateformes et les avis, fixons un règlement intérieur clair et des cautions lorsque c’est pertinent, et restons en contact tout au long du séjour." }
+      ],
+      "seoTitle": "Gestion de villa et location saisonnière en Crète | Sivan",
+      "seoDescription": "Conciergerie et gestion de location saisonnière à Chania, Réthymnon et Héraklion : annonces, tarifs, accueil, ménage, entretien et reporting transparent."
+    },
+    "long-term-rental-management": {
+      "name": "Gestion de location longue durée",
+      "short": "Des locations stables, une gestion attentive et un suivi rigoureux des loyers.",
+      "headline": "Des locations stables. Une gestion attentive.",
+      "sub": "Mise en location et gestion locative professionnelles pour biens résidentiels en Crète.",
+      "intro": [
+        "Une location longue durée doit vous apporter des revenus prévisibles, sans le stress d’être propriétaire bailleur à distance.",
+        "Nous commercialisons le bien, vous aidons à choisir des locataires adaptés, coordonnons le bail avec les professionnels compétents, puis gérons la location au quotidien : loyers, demandes, réparations et renouvellements."
+      ],
+      "audience": [
+        "Propriétaires d’appartements et de maisons à la recherche de revenus locatifs stables",
+        "Propriétaires partis à l’étranger ou ne vivant plus sur place",
+        "Investisseurs possédant plusieurs logements",
+        "Propriétaires passant de la location courte durée à la location longue durée"
+      ],
+      "scope": [
+        "Estimation locative et positionnement sur le marché",
+        "Commercialisation, annonces et visites",
+        "Vérification des locataires dans les limites prévues par la loi",
+        "Préparation du bail en coordination avec des professionnels qualifiés",
+        "État des lieux d’entrée, inventaire et remise des clés",
+        "Suivi des loyers et relance des impayés",
+        "Demandes des locataires et coordination des réparations",
+        "Inspections périodiques avec rapports photo",
+        "Renouvellements de bail, révisions de loyer et états des lieux de sortie",
+        "Reporting au propriétaire et archivage des documents"
+      ],
+      "benefits": [
+        { "title": "Moins de vacance locative", "body": "Un bien bien présenté et des réponses rapides réduisent le délai entre deux locataires." },
+        { "title": "Un bien préservé", "body": "Des inspections régulières détectent les petits problèmes avant qu’ils ne deviennent coûteux." },
+        { "title": "Un suivi documenté", "body": "Inventaires, photos et échanges sont consignés pour chaque location." },
+        { "title": "Un seul interlocuteur", "body": "Les locataires nous appellent, pas vous. Nous ne vous sollicitons que pour ce qui requiert votre décision." }
+      ],
+      "workflow": [
+        "Estimation et stratégie de mise en location",
+        "Commercialisation et visites",
+        "Sélection du locataire et coordination du bail",
+        "Entrée dans les lieux et gestion locative continue",
+        "Renouvellement ou départ, puis remise en location"
+      ],
+      "faq": [
+        { "q": "Rédigez-vous le contrat de bail ?", "a": "Les baux sont préparés et enregistrés par des professionnels qualifiés, comme un avocat ou un comptable. Nous coordonnons le processus et veillons à ce que les clauses reflètent ce qui a été convenu." },
+        { "q": "Comment vérifiez-vous les locataires ?", "a": "Nous vérifions leur identité, demandons des références et des justificatifs de revenus lorsque c’est pertinent, toujours dans le respect du droit grec et européen de la protection des données." },
+        { "q": "Que se passe-t-il en cas de retard de loyer ?", "a": "Nous relançons immédiatement et vous tenons informé. Si les impayés persistent, nous nous coordonnons avec votre avocat sur la suite à donner." },
+        { "q": "Qui s’occupe des réparations ?", "a": "Nous recevons la demande du locataire, l’évaluons et faisons intervenir un professionnel de confiance. Les coûts au-delà d’un plafond convenu sont d’abord soumis à votre accord." },
+        { "q": "À quelle fréquence inspectez-vous le bien ?", "a": "En général une ou deux fois par an, en plus des états des lieux d’entrée et de sortie. La fréquence est fixée dans votre contrat." },
+        { "q": "Pouvez-vous gérer un bien déjà loué ?", "a": "Oui. Nous examinons le bail en cours et l’état du bien, nous nous présentons au locataire et reprenons la gestion en douceur." }
+      ],
+      "seoTitle": "Gestion locative longue durée en Crète | Sivan Management",
+      "seoDescription": "Location longue durée et gestion locative à Chania, Réthymnon et Héraklion : choix des locataires, suivi des loyers, réparations, inspections, reporting."
+    },
+    "commercial-property-management": {
+      "name": "Gestion d’immobilier commercial",
+      "short": "Bureaux, commerces et immeubles mixtes, gérés avec rigueur.",
+      "headline": "Protéger le patrimoine. Soutenir l’activité.",
+      "sub": "Gestion opérationnelle et technique de l’immobilier commercial en Crète.",
+      "intro": [
+        "L’immobilier commercial exige une autre forme de gestion : entretien planifié, installations techniques, conformité, budgets, et des locataires dont l’activité dépend du bon fonctionnement de l’immeuble chaque jour.",
+        "Nous sommes l’équipe opérationnelle du propriétaire sur le terrain : nous maintenons le bien en bon état, accompagnons les locataires et maîtrisons les coûts."
+      ],
+      "audience": [
+        "Propriétaires de bureaux, de commerces et d’immeubles mixtes",
+        "Investisseurs détenant des locaux commerciaux en Crète",
+        "Propriétaires d’immeubles comptant plusieurs locataires commerciaux",
+        "Promoteurs ayant besoin d’un exploitant après livraison"
+      ],
+      "scope": [
+        "Relations locataires et communication au quotidien",
+        "Programmes d’entretien planifié et préventif",
+        "Coordination des installations techniques : CVC, électricité, plomberie, ascenseurs",
+        "Gestion des prestataires et des entreprises",
+        "Contrôle des charges et du budget d’exploitation",
+        "Inspections périodiques et rapports sur l’état du bien",
+        "Coordination des certificats et contrôles de sécurité obligatoires avec des professionnels agréés",
+        "Suivi des travaux d’aménagement et de rénovation",
+        "Soutien à la commercialisation des locaux vacants",
+        "Reporting au propriétaire et analyse des écarts budgétaires"
+      ],
+      "benefits": [
+        { "title": "Anticiper plutôt que subir", "body": "L’entretien préventif réduit les coûts d’urgence et les interruptions." },
+        { "title": "Rigueur budgétaire", "body": "Les coûts d’exploitation sont suivis par rapport au budget, avec des écarts expliqués." },
+        { "title": "Des locataires satisfaits", "body": "Des réponses rapides et professionnelles aident à fidéliser les bons locataires." },
+        { "title": "Valeur du patrimoine", "body": "Un immeuble bien entretenu soutient le niveau des loyers et sa valorisation future." }
+      ],
+      "workflow": [
+        "Audit technique et opérationnel",
+        "Plan de gestion et budget annuel",
+        "Contrats prestataires et calendrier d’entretien",
+        "Exploitation continue et accompagnement des locataires",
+        "Reporting et bilan trimestriels"
+      ],
+      "faq": [
+        { "q": "Quels types de biens commerciaux gérez-vous ?", "a": "Bureaux, commerces, immeubles mixtes et petits portefeuilles commerciaux en Crète. Nous évaluons chaque bien avant de convenir d’un périmètre." },
+        { "q": "Encaissez-vous les loyers et les charges ?", "a": "Lorsque cela est convenu, nous suivons le paiement des loyers et des charges et relançons les locataires. Les modalités d’encaissement sont définies dans le contrat de gestion." },
+        { "q": "Pouvez-vous gérer les certifications techniques ?", "a": "Nous planifions et coordonnons les contrôles et certificats dont l’immeuble a besoin avec des ingénieurs et techniciens agréés, et tenons les registres à jour." },
+        { "q": "Comment choisissez-vous les entreprises ?", "a": "Nous travaillons avec des professionnels locaux sélectionnés et demandons des devis comparables pour les travaux importants. Vous validez les dépenses majeures." },
+        { "q": "Recevrai-je un budget ?", "a": "Oui. Nous établissons un budget d’exploitation annuel et rendons compte des coûts réels par rapport à celui-ci, en expliquant les éventuels écarts." },
+        { "q": "Pouvez-vous aider à trouver des locataires pour les locaux vacants ?", "a": "Nous soutenons la commercialisation des locaux vacants et coordonnons les visites. Lorsqu’un agent immobilier agréé est requis, nous travaillons à ses côtés." }
+      ],
+      "seoTitle": "Gestion d’immobilier commercial en Grèce | Sivan Management",
+      "seoDescription": "Bureaux, commerces et immeubles mixtes en Crète : relations locataires, entretien préventif, contrôle des prestataires, budgets et reporting propriétaire."
+    },
+    "hotel-hospitality-management": {
+      "name": "Gestion hôtelière",
+      "short": "Hôtels de charme, appartements avec services et maisons d’hôtes, gérés avec rigueur opérationnelle.",
+      "headline": "L’excellence hôtelière. La rigueur opérationnelle.",
+      "sub": "Soutien et coordination opérationnels pour hôtels de charme, appartements avec services et complexes d’hébergement de vacances.",
+      "intro": [
+        "Les petits établissements hôteliers font face aux mêmes attentes que les grands hôtels, généralement avec une équipe bien plus réduite.",
+        "Nous apportons aux propriétaires la colonne vertébrale opérationnelle : réservations et distribution, expérience client, standards de ménage, entretien, prestataires et reporting. Le périmètre est défini dans chaque contrat, toujours dans le cadre des licences et autorisations du bien."
+      ],
+      "audience": [
+        "Propriétaires d’hôtels de charme et de maisons d’hôtes",
+        "Exploitants d’appartements avec services et d’apparthôtels",
+        "Propriétaires de complexes d’hébergement de vacances",
+        "Investisseurs qui acquièrent ou repositionnent un établissement hôtelier"
+      ],
+      "scope": [
+        "Réservations, gestion des canaux et coordination tarifaire",
+        "Standards d’expérience client et communication",
+        "Procédures de ménage et contrôles qualité",
+        "Aide à la planification du personnel et coordination des prestataires",
+        "Entretien préventif et préparation avant saison",
+        "Achat des consommables et des produits d’accueil",
+        "Suivi de la e-réputation et des avis",
+        "Reporting des revenus et des coûts",
+        "Coordination de la conformité avec des conseillers agréés"
+      ],
+      "benefits": [
+        { "title": "Des systèmes évolutifs", "body": "Des procédures claires et un logiciel de gestion (PMS) derrière chaque opération." },
+        { "title": "Une meilleure expérience client", "body": "Des standards constants se traduisent par de meilleurs avis et des clients fidèles." },
+        { "title": "Maîtrise des coûts", "body": "Achats, personnel et entretien suivis par rapport au plan." },
+        { "title": "Visibilité pour le propriétaire", "body": "Performances et coûts présentés dans un format sur lequel vous pouvez agir." }
+      ],
+      "workflow": [
+        "Audit opérationnel de l’établissement",
+        "Périmètre, responsabilités et indicateurs clés convenus",
+        "Mise en place des systèmes, procédures et prestataires",
+        "Exploitation saisonnière et contrôle qualité",
+        "Reporting et planification de l’intersaison"
+      ],
+      "faq": [
+        { "q": "Reprenez-vous la licence de l’hôtel ?", "a": "Non. La licence d’exploitation reste au nom du propriétaire ou de l’exploitant titulaire. Nous assurons la gestion et le soutien opérationnel dans le périmètre convenu." },
+        { "q": "Pouvez-vous travailler avec mon personnel actuel ?", "a": "Oui. Nous accompagnons souvent une équipe existante en matière de procédures, de planification et de contrôle qualité, plutôt que de la remplacer." },
+        { "q": "Quels systèmes de réservation utilisez-vous ?", "a": "Nous exploitons notre propre logiciel de gestion immobilière, avec synchronisation des canaux et des calendriers, et pouvons travailler avec un système existant si nécessaire." },
+        { "q": "Gérez-vous le revenue management ?", "a": "Nous coordonnons tarifs et disponibilités sur l’ensemble des canaux en fonction de la demande et de la saison, et vous rendons compte des résultats. La politique tarifaire finale est convenue avec le propriétaire." },
+        { "q": "Pouvez-vous préparer l’établissement avant la saison ?", "a": "Oui. La préparation avant saison — inspections, réparations, grand ménage et mise en place des prestataires — fait partie de nos services essentiels." },
+        { "q": "Gérez-vous de petits complexes d’appartements ?", "a": "Oui. Les complexes d’appartements de vacances et les petits apparthôtels correspondent bien à notre modèle." }
+      ],
+      "seoTitle": "Gestion hôtelière en Crète | Sivan Management",
+      "seoDescription": "Soutien opérationnel pour hôtels de charme, appartements avec services et complexes de vacances en Crète : réservations, ménage, entretien et reporting."
+    },
+    "property-maintenance": {
+      "name": "Entretien immobilier et services techniques",
+      "short": "Entretien préventif, réparations et inspections pour préserver la valeur à long terme.",
+      "headline": "Un entretien fiable. Une valeur durable.",
+      "sub": "Entretien, inspections et services techniques pour maisons, villas et immeubles en Crète.",
+      "intro": [
+        "Soleil, sel, vent et longs mois d’hiver inoccupés mettent les biens crétois à rude épreuve. Sans entretien régulier, les petits problèmes deviennent coûteux.",
+        "Nous maintenons votre bien en état toute l’année, qu’il soit loué ou non. Vous bénéficiez de professionnels de confiance, de visites documentées et d’un interlocuteur unique."
+      ],
+      "audience": [
+        "Propriétaires de résidences secondaires absents pendant de longues périodes",
+        "Propriétaires bailleurs ayant besoin d’un soutien technique fiable",
+        "Propriétaires d’immeubles et de petits complexes",
+        "Toute personne qui rénove ou prépare un bien pour l’occuper"
+      ],
+      "scope": [
+        "Visites de contrôle programmées avec rapports photo",
+        "Plans d’entretien préventif",
+        "Réparations et petits travaux",
+        "Climatisation, électricité et plomberie par des professionnels agréés",
+        "Entretien de la piscine et du jardin",
+        "Ouverture et fermeture saisonnières du bien",
+        "Contrôle des dégâts et des fuites après les intempéries",
+        "Gardiennage des clés et accès pour les entreprises",
+        "Suivi des rénovations validées",
+        "Gestion des prestataires et des devis"
+      ],
+      "benefits": [
+        { "title": "Tranquillité d’esprit", "body": "Une personne de confiance veille sur votre bien pendant votre absence." },
+        { "title": "Des coûts réduits sur la durée", "body": "L’entretien préventif coûte moins cher que les réparations d’urgence." },
+        { "title": "Des interventions documentées", "body": "Photos, factures et notes pour chaque visite et chaque réparation." },
+        { "title": "Des professionnels sélectionnés", "body": "Des techniciens locaux avec qui nous travaillons et que nous tenons à nos standards." }
+      ],
+      "workflow": [
+        "Inspection initiale et rapport sur l’état du bien",
+        "Plan d’entretien et calendrier des visites",
+        "Contrôles réguliers et entretien préventif",
+        "Réparations à la demande, avec accord au-delà des plafonds",
+        "Rapports et révision annuelle du plan"
+      ],
+      "faq": [
+        { "q": "Puis-je recourir aux services d’entretien sans gestion complète ?", "a": "Oui. L’entretien et les visites de contrôle sont proposés comme un service à part entière." },
+        { "q": "À quelle fréquence viendrez-vous voir mon bien ?", "a": "Cela dépend du bien et de la saison. Nos formules courantes vont de visites hebdomadaires à mensuelles, avec des passages supplémentaires après les tempêtes." },
+        { "q": "Réalisez-vous vous-mêmes les réparations ?", "a": "Les petites tâches peuvent être prises en charge par notre équipe. Les travaux spécialisés, comme l’électricité, le gaz ou la climatisation, sont réalisés par des professionnels agréés que nous coordonnons et supervisons." },
+        { "q": "Comment les coûts de réparation sont-ils validés ?", "a": "En dessous d’un plafond convenu, nous intervenons immédiatement. Au-delà, vous recevez d’abord un devis à valider." },
+        { "q": "Pouvez-vous superviser une rénovation ?", "a": "Oui. Nous supervisons sur place les travaux validés, rendons compte de l’avancement en photos et assurons la coordination entre vous et les entreprises." },
+        { "q": "Surveillez-vous les biens inoccupés en hiver ?", "a": "Oui. Les contrôles hivernaux — fuites, humidité, sécurité et dégâts dus aux tempêtes — sont au cœur du service." }
+      ],
+      "seoTitle": "Entretien de maison et villa à Chania et en Crète | Sivan",
+      "seoDescription": "Entretien préventif, inspections, réparations, piscine et jardin, suivi de rénovation pour maisons, villas et immeubles en Crète."
+    },
+    "asset-management": {
+      "name": "Gestion patrimoniale et représentation du propriétaire",
+      "short": "Vos intérêts représentés sur place, avec des décisions fondées sur des données.",
+      "headline": "Vos intérêts, représentés avec professionnalisme.",
+      "sub": "Représentation locale, supervision et planification pour les propriétaires qui ne sont pas sur place.",
+      "intro": [
+        "Posséder un bien dans un autre pays implique des décisions, des démarches administratives et des intervenants à coordonner, souvent dans une langue que vous ne parlez pas.",
+        "Nous sommes votre représentant local : nous supervisons le bien et ses prestataires, préparons budgets et rapports, nous coordonnons avec vos conseillers et vous aidons à évaluer les différentes options d’usage du bien. Il s’agit de gestion patrimoniale opérationnelle, et non de conseil financier ou en investissement réglementé."
+      ],
+      "audience": [
+        "Propriétaires vivant hors de Grèce",
+        "Familles ayant hérité d’un bien en Crète",
+        "Investisseurs détenant plusieurs biens ou un portefeuille mixte",
+        "Propriétaires envisageant un changement d’usage ou de stratégie"
+      ],
+      "scope": [
+        "Représentation locale auprès des prestataires, des locataires et du voisinage",
+        "Supervision opérationnelle de tous les prestataires du bien",
+        "Budgets annuels et planification des dépenses",
+        "Rapports consolidés au propriétaire",
+        "Coordination avec votre avocat, votre comptable et vos ingénieurs",
+        "Contrats de fourniture, factures et gestion administrative courante",
+        "Étude des usages possibles et des alternatives locatives",
+        "Aide pour les documents liés au bien"
+      ],
+      "benefits": [
+        { "title": "Un interlocuteur de confiance", "body": "Un point de responsabilité unique sur le terrain." },
+        { "title": "De meilleures décisions", "body": "Des rapports réguliers et l’analyse des options pour des choix éclairés." },
+        { "title": "Moins de démarches", "body": "Nous assurons la coordination courante : vous ne vous occupez que des décisions." },
+        { "title": "Des intérêts alignés", "body": "Nous travaillons pour le propriétaire et rendons compte au propriétaire." }
+      ],
+      "workflow": [
+        "Analyse du patrimoine et des objectifs",
+        "Périmètre de représentation et autorisations",
+        "Supervision et coordination continues",
+        "Budgets et rapports périodiques",
+        "Revue stratégique annuelle"
+      ],
+      "faq": [
+        { "q": "S’agit-il de conseil en investissement ?", "a": "Non. Nous assurons une gestion patrimoniale opérationnelle et une représentation. Pour tout conseil financier, juridique ou fiscal, nous nous coordonnons avec vos conseillers agréés." },
+        { "q": "Dois-je vous donner une procuration ?", "a": "Pas nécessairement. Les autorisations dépendent des tâches. Lorsqu’un mandat formel est nécessaire, il est préparé par un avocat et limité au périmètre convenu." },
+        { "q": "Pouvez-vous traiter avec les fournisseurs d’énergie et la municipalité ?", "a": "Oui. Nous gérons pour votre compte les démarches courantes auprès des fournisseurs et des autorités locales, dans la limite des autorisations que vous nous accordez." },
+        { "q": "Pouvez-vous gérer plusieurs biens ensemble ?", "a": "Oui. Nous pouvons consolider le reporting de vos biens résidentiels, locatifs et commerciaux." },
+        { "q": "M’aiderez-vous à choisir entre location courte et longue durée ?", "a": "Oui. Nous comparons des options réalistes pour votre bien, coûts, efforts et risques compris, afin que vous puissiez décider." },
+        { "q": "Accompagnez-vous l’achat ou la vente ?", "a": "Nous accompagnons les propriétaires pour la préparation, la commercialisation et la coordination, et travaillons aux côtés d’agents immobiliers agréés et d’avocats pour la transaction elle-même." }
+      ],
+      "seoTitle": "Gestion patrimoniale et représentation en Grèce | Sivan",
+      "seoDescription": "Représentation locale pour propriétaires à l’étranger : supervision des prestataires, budgets, rapports, coordination avec avocats et comptables en Crète."
+    },
+    "property-marketing-sales": {
+      "name": "Commercialisation et accompagnement à la vente",
+      "short": "Mise en valeur, marketing et coordination pour louer ou vendre en toute confiance.",
+      "headline": "Bien présenté. Bien commercialisé.",
+      "sub": "Préparation professionnelle, marketing en ligne et coordination de la vente pour les propriétaires en Crète.",
+      "intro": [
+        "Que vous souhaitiez louer ou vendre votre bien, le résultat dépend de sa préparation, de sa présentation et de votre capacité à toucher le bon public.",
+        "Nous préparons le bien, réalisons photos professionnelles et annonces, menons le marketing en ligne sur les plateformes et réseaux sociaux pertinents et coordonnons les visites. Pour les ventes, nous travaillons aux côtés d’agents immobiliers agréés et d’avocats, qui se chargent de la transaction elle-même."
+      ],
+      "audience": [
+        "Propriétaires qui préparent la vente d’un bien",
+        "Propriétaires qui lancent une nouvelle location",
+        "Promoteurs qui commercialisent des lots livrés",
+        "Propriétaires souhaitant repositionner un bien peu performant"
+      ],
+      "scope": [
+        "Conseils de préparation et de mise en valeur",
+        "Photographie et vidéo professionnelles",
+        "Rédaction d’annonces en plusieurs langues",
+        "Annonces en ligne sur les plateformes immobilières et locatives pertinentes",
+        "Promotion sur les réseaux sociaux et campagnes payantes",
+        "Traitement des demandes et visites",
+        "Coordination avec agents agréés, notaires et avocats",
+        "Passage en gestion après une vente ou une mise en location"
+      ],
+      "benefits": [
+        { "title": "Une première impression forte", "body": "Des visuels et des textes professionnels qui rendent justice au bien." },
+        { "title": "Une portée internationale", "body": "Des annonces multilingues pour acheteurs et voyageurs, en Europe et au-delà." },
+        { "title": "Un processus coordonné", "body": "Une seule équipe pour faire avancer marketing, visites et conseillers." },
+        { "title": "La continuité", "body": "Après une vente ou une mise en location, nous pouvons poursuivre en tant que gestionnaire du bien." }
+      ],
+      "workflow": [
+        "Échange sur les objectifs et le prix avec vos conseillers",
+        "Préparation et production des supports",
+        "Annonces et campagnes marketing",
+        "Demandes et visites",
+        "Coordination de la transaction et passation"
+      ],
+      "faq": [
+        { "q": "Êtes-vous une agence immobilière agréée ?", "a": "En Grèce, les transactions de vente doivent être réalisées par des professionnels agréés. Nous assurons la préparation, le marketing et la coordination, et travaillons aux côtés d’agents agréés et d’avocats pour la transaction." },
+        { "q": "Réalisez-vous des photos et des vidéos ?", "a": "Oui. Nous organisons des séances photo et vidéo professionnelles pour les annonces et les campagnes." },
+        { "q": "Dans quelles langues commercialisez-vous les biens ?", "a": "Les annonces peuvent être rédigées en plusieurs langues, dont l’anglais, le grec et l’hébreu, selon votre public cible." },
+        { "q": "Gérez-vous de la publicité payante ?", "a": "Oui, lorsque cela convient au bien et à votre budget, nous menons des campagnes ciblées sur les réseaux sociaux et les moteurs de recherche." },
+        { "q": "Pouvez-vous m’aider à fixer le bon prix ?", "a": "Nous partageons nos observations du marché et des annonces comparables. Une estimation officielle est réalisée par un expert agréé ou un agent immobilier agréé." },
+        { "q": "Que se passe-t-il une fois le bien loué ou vendu ?", "a": "S’il est loué, nous pouvons gérer la location longue durée ou l’exploitation en courte durée. S’il est vendu, nous pouvons proposer nos services de gestion au nouveau propriétaire." }
+      ],
+      "seoTitle": "Commercialisation et vente immobilière en Crète | Sivan",
+      "seoDescription": "Préparation, photos professionnelles, annonces multilingues, marketing en ligne et coordination de la vente pour propriétaires à Chania et en Crète."
+    }
+  }
+}

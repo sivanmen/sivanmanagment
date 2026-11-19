@@ -1,0 +1,109 @@
+---
+import Logo from './Logo.astro';
+import Icon from './Icon.astro';
+import { getDict } from '~/i18n';
+import { localizePath, type Locale } from '~/i18n/config';
+import { COMPANY, SERVICE_SLUGS, LOCATION_SLUGS } from '~/lib/company';
+
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const t = getDict(locale);
+const f = t.common.footer;
+const n = t.common.nav;
+const L = (p: string) => localizePath(p, locale);
+const year = new Date().getFullYear();
+---
+<footer class="site-footer section--ink grain">
+  <div class="aurora" aria-hidden="true"></div>
+  <div class="container relative">
+    <div class="footer-cta">
+      <h2 class="h-1" data-reveal>{f.headline}</h2>
+      <div class="footer-cta-side" data-reveal style="--d:120ms">
+        <p class="lead">{f.body}</p>
+        <div class="btn-row">
+          <a href={L('/contact/')} class="btn btn--violet">{t.common.common.requestAssessment}<Icon name="arrow" size={18} class="arrow" /></a>
+          <a href={`https://wa.me/${COMPANY.whatsapp}`} class="btn btn--glass" rel="noopener"><Icon name="whatsapp" size={18} />{t.common.common.whatsapp}</a>
+        </div>
+      </div>
+    </div>
+
+    <hr class="hairline" />
+
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href={L('/')}><Logo /></a>
+        <p class="muted">{f.builtWith}</p>
+        <ul class="contact-list">
+          <li><Icon name="pin" size={18} /><a href={COMPANY.mapsUrl} rel="noopener">{COMPANY.address.street}, {COMPANY.address.postalCode} {COMPANY.address.city}, {COMPANY.address.country}</a></li>
+          <li><Icon name="phone" size={18} /><a href={`tel:${COMPANY.phone}`} dir="ltr">{COMPANY.phoneDisplay}</a></li>
+          <li><Icon name="mail" size={18} /><a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="footer-h">{f.services}</h3>
+        <ul class="footer-links">
+          {SERVICE_SLUGS.map((s) => <li><a href={L(`/services/${s}/`)}>{t.services.items[s].name}</a></li>)}
+        </ul>
+      </div>
+      <div>
+        <h3 class="footer-h">{f.company}</h3>
+        <ul class="footer-links">
+          <li><a href={L('/about-us/')}>{n.about}</a></li>
+          <li><a href={L('/our-team/')}>{n.team}</a></li>
+          <li><a href={L('/portfolio/')}>{n.portfolio}</a></li>
+          <li><a href={L('/insights/')}>{n.insights}</a></li>
+          <li><a href={L('/faq/')}>{n.faq}</a></li>
+          <li><a href={L('/contact/')}>{n.contact}</a></li>
+          <li><a href={COMPANY.ownerPortalUrl} rel="noopener">{n.ownerLogin}</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="footer-h">{n.locations}</h3>
+        <ul class="footer-links">
+          {LOCATION_SLUGS.map((s) => <li><a href={L(`/locations/${s}/`)}>{t.locations.items[s].name}</a></li>)}
+        </ul>
+        <h3 class="footer-h" style="margin-top:1.75rem">{f.legal}</h3>
+        <ul class="footer-links">
+          <li><a href={L('/legal/privacy-policy/')}>{f.privacy}</a></li>
+          <li><a href={L('/legal/cookie-policy/')}>{f.cookies}</a></li>
+          <li><a href={L('/legal/terms/')}>{f.terms}</a></li>
+          <li><a href={L('/legal/company-information/')}>{f.imprint}</a></li>
+          <li><a href={L('/legal/accessibility-statement/')}>{f.accessibility}</a></li>
+          <li><a href={L('/legal/image-credits/')}>{f.credits}</a></li>
+          <li><button type="button" class="linklike" data-cookie-open>{t.common.cookie.settings}</button></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-legal">
+      <p>© {year} {COMPANY.legalName}. {f.rights}</p>
+      <p class="legal-ids">
+        <span>{f.vat}: {COMPANY.vat}</span>
+        <span>{f.gemi}: {COMPANY.gemi}</span>
+        <span>{f.taxOffice}: {f.taxOfficeName}</span>
+      </p>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .site-footer { position: relative; overflow: hidden; padding-block: var(--section) 2rem; }
+  .footer-cta { display: grid; gap: 2rem; padding-bottom: clamp(3rem, 2rem + 4vw, 6rem); align-items: end; }
+  @media (min-width: 960px) { .footer-cta { grid-template-columns: 7fr 5fr; } }
+  .footer-cta-side { display: grid; gap: 1.5rem; }
+  .footer-grid { display: grid; gap: 2.5rem; padding-block: 3.5rem; }
+  @media (min-width: 720px) { .footer-grid { grid-template-columns: 1fr 1fr; } }
+  @media (min-width: 1024px) { .footer-grid { grid-template-columns: 1.5fr 1.2fr 1fr 1fr; } }
+  .footer-brand { display: grid; gap: 1.25rem; align-content: start; }
+  .contact-list { display: grid; gap: 0.75rem; font-size: 0.9375rem; }
+  .contact-list li { display: flex; gap: 0.65rem; align-items: flex-start; color: var(--text-inverse-muted); }
+  .contact-list :global(svg) { flex: none; margin-top: 0.2rem; color: var(--lavender); }
+  .contact-list a:hover { color: #fff; }
+  .footer-h { font-family: var(--font-label); font-size: var(--fs-xs); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; color: var(--lavender); margin-bottom: 1rem; }
+  .footer-links { display: grid; gap: 0.55rem; font-size: 0.9375rem; }
+  .footer-links a { color: var(--text-inverse-muted); transition: color 0.2s; }
+  .footer-links a:hover, .linklike:hover { color: #fff; }
+  .linklike { background: none; border: 0; padding: 0; font: inherit; color: var(--text-inverse-muted); cursor: pointer; text-align: start; }
+  .footer-legal { display: flex; flex-wrap: wrap; gap: 0.75rem 2rem; justify-content: space-between; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 1.5rem; font-size: 0.8125rem; color: var(--text-inverse-muted); }
+  .legal-ids { display: flex; flex-wrap: wrap; gap: 0.4rem 1.25rem; }
+</style>

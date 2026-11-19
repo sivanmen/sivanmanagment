@@ -1,0 +1,29 @@
+---
+import { getDict } from '~/i18n';
+import type { Locale } from '~/i18n/config';
+interface Props { locale: Locale }
+const s = getDict(Astro.props.locale).home.statement;
+const words = `${s.line1} ${s.line2}`.split(/\s+/);
+const split = s.line1.split(/\s+/).length;
+---
+<section class="section section--ink statement grain" aria-label={s.line1}>
+  <div class="aurora" aria-hidden="true"></div>
+  <div class="container-narrow relative">
+    <p class="statement-text" data-progress aria-hidden="true">
+      {words.map((w, i) => (
+        <span class:list={['sw', { strong: i >= split }]} style={`--k:${(i / words.length).toFixed(3)}`}>{w} </span>
+      ))}
+    </p>
+    <p class="sr-only">{s.line1} {s.line2}</p>
+  </div>
+</section>
+
+<style>
+  .statement { padding-block: clamp(6rem, 4rem + 10vw, 13rem); overflow: hidden; }
+  .statement-text { font-family: var(--font-display); font-size: clamp(1.8rem, 1rem + 3.4vw, 3.6rem); font-weight: 520; line-height: 1.18; letter-spacing: -0.03em; --p: 0; }
+  :global(:lang(zh-CN)) .statement-text { letter-spacing: 0; line-height: 1.4; }
+  .sw { opacity: calc(0.16 + clamp(0, (var(--p) * 1.25 - var(--k)) * 8, 1) * 0.84); transition: opacity 0.2s linear; }
+  .sw.strong { color: #fff; }
+  .sw:not(.strong) { color: var(--lavender); }
+  @media (prefers-reduced-motion: reduce) { .sw { opacity: 1; } }
+</style>

@@ -1,0 +1,31 @@
+---
+import Icon from './Icon.astro';
+interface Item { q: string; a: string }
+interface Props { items: Item[]; dark?: boolean }
+const { items, dark = false } = Astro.props;
+---
+<div class:list={['faq', { 'faq--dark': dark }]}>
+  {items.map((it, i) => (
+    <details class="faq-item" data-reveal style={`--d:${i * 50}ms`}>
+      <summary>
+        <span>{it.q}</span>
+        <span class="faq-icon" aria-hidden="true"><Icon name="plus" size={18} /></span>
+      </summary>
+      <div class="faq-a"><p>{it.a}</p></div>
+    </details>
+  ))}
+</div>
+
+<style>
+  .faq { display: grid; gap: 0.75rem; }
+  .faq-item { background: var(--white); border-radius: var(--radius); border: 1px solid rgba(12, 11, 20, 0.06); transition: box-shadow 0.3s, border-color 0.3s; }
+  .faq-item[open] { box-shadow: var(--shadow-soft); border-color: rgba(103, 84, 233, 0.25); }
+  .faq--dark .faq-item { background: var(--ink-3); border-color: rgba(255, 255, 255, 0.08); }
+  summary { list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 1.5rem; padding: 1.25rem 1.4rem; cursor: pointer; font-family: var(--font-display); font-weight: 520; font-size: 1.075rem; letter-spacing: -0.01em; }
+  summary::-webkit-details-marker { display: none; }
+  .faq-icon { flex: none; width: 2.1rem; height: 2.1rem; border-radius: 50%; display: grid; place-items: center; background: var(--lilac); color: var(--violet); transition: transform 0.4s var(--ease-out), background-color 0.3s, color 0.3s; }
+  .faq--dark .faq-icon { background: rgba(176, 167, 239, 0.14); color: var(--lavender); }
+  [open] .faq-icon { transform: rotate(45deg); background: var(--violet); color: #fff; }
+  .faq-a { padding: 0 1.4rem 1.35rem; color: var(--text-muted); max-width: 70ch; }
+  .faq--dark .faq-a { color: var(--text-inverse-muted); }
+</style>

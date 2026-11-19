@@ -76,6 +76,18 @@ _(No remaining CRITICAL issues. P0 security batch resolved 2026-05-25 — see FI
 
 ## LOW
 
+### W1. Website not deployed (apps/web)
+- **Needs:** one manual ZIP upload in cPanel (WordPress moved aside first), an FTP account + 3 GitHub secrets for auto-deploy. No DNS change needed (same host).
+- **Docs:** `docs/website/DEPLOYMENT.md`, `docs/website/LAUNCH_CHECKLIST.md` (owner facts to verify, legal review, native-speaker review).
+
+### W2. Company IBAN/BIC hard-coded as defaults in a public repo
+- **File:** `apps/admin/src/pages/SystemSettingsPage.tsx` (lines ~161–208, `bankIban`/`bankBic` defaults).
+- **Why it matters:** the repo is public, and the P0 batch of 2026-05-25 treated a public IBAN as a leak. Defaults should be empty and loaded from system settings. (Found while scanning the website commit for secrets; not changed.)
+
+### W3. WordPress admin credentials shared in chat (2026-11-16)
+- **Action:** change the `admin` password on sivanmanagment.com/wp-admin and revoke the application password created for Claude. Credentials were not stored anywhere in the repo.
+
+
 ### 18. 10 Admin pages fully hardcoded
 - **Pages:** IoT Dashboard, Task Automations, Templates, Direct Booking Config, Marketing, Onboarding Wizard, Guest Portal Preview, Owner Portal Config, Guest Experience, Guest Screening
 - **Impact:** Pages exist but show fake data
@@ -113,8 +125,8 @@ _(No remaining CRITICAL issues. P0 security batch resolved 2026-05-25 — see FI
 | CRITICAL | 0 (3 resolved) |
 | HIGH | 4 (1 resolved) |
 | MEDIUM | 9 |
-| LOW | 5 |
-| **Total** | **18 open (4 resolved)** |
+| LOW | 8 (incl. W1–W3 website/security) |
+| **Total** | **21 open (4 resolved)** |
 
 ---
 

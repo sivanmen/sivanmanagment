@@ -1,0 +1,78 @@
+{
+  "seoTitle": "Immobilienbewertung anfragen | Kontakt Sivan Management, Chania",
+  "seoDescription": "Erzählen Sie uns von Ihrer Immobilie auf Kreta. Fordern Sie eine Bewertung und ein individuelles Verwaltungsangebot von Sivan Management in Chania an.",
+  "eyebrow": "Kontakt",
+  "title": "Immobilienbewertung anfragen.",
+  "lead": "Vier kurze Schritte. Wir antworten persönlich, in der Regel innerhalb eines Werktags.",
+  "directTitle": "Lieber persönlich?",
+  "directBody": "Rufen Sie uns an, schreiben Sie per WhatsApp oder E-Mail, oder besuchen Sie unser Büro im Zentrum von Chania.",
+  "hours": "Montag bis Freitag, 09:00–17:00 Uhr (griechische Zeit)",
+  "mapLink": "In Google Maps öffnen",
+  "form": {
+    "steps": [
+      "Immobilie",
+      "Lage",
+      "Leistungen",
+      "Kontakt"
+    ],
+    "stepOf": "Schritt {n} von {total}",
+    "back": "Zurück",
+    "next": "Weiter",
+    "submit": "Anfrage senden",
+    "sending": "Wird gesendet…",
+    "propertyType": "Um welche Art von Immobilie geht es?",
+    "types": {
+      "short-term": "Ferienimmobilie / Villa",
+      "long-term": "Langzeitvermietung (Wohnen)",
+      "commercial": "Gewerbe",
+      "hospitality": "Hotel oder Hospitality",
+      "not-sure": "Noch unsicher"
+    },
+    "units": "Anzahl der Einheiten",
+    "unitsHint": "Für eine einzelne Villa oder Wohnung geben Sie 1 ein.",
+    "location": "Wo befindet sich die Immobilie?",
+    "locations": {
+      "chania": "Chania",
+      "rethymno": "Rethymno",
+      "heraklion": "Heraklion",
+      "other": "Anderswo"
+    },
+    "area": "Gegend oder Ort (optional)",
+    "status": "Aktueller Status",
+    "statuses": {
+      "rented": "Derzeit vermietet",
+      "vacant": "Leerstehend / bezugsfertig",
+      "renovation": "In Renovierung oder im Bau",
+      "managed": "Wird von jemand anderem verwaltet"
+    },
+    "services": "Welche Leistungen interessieren Sie?",
+    "servicesHint": "Mehrfachauswahl möglich.",
+    "goals": "Was möchten Sie erreichen? (optional)",
+    "goalsPlaceholder": "Zum Beispiel: ab nächster Saison vermieten, weniger Aufwand für mich, bessere Ergebnisse…",
+    "name": "Vollständiger Name",
+    "email": "E-Mail",
+    "phone": "Telefon / WhatsApp",
+    "phoneHint": "Bitte mit Ländervorwahl, z. B. +49…",
+    "preferred": "Bevorzugter Kontaktweg",
+    "preferredOptions": {
+      "email": "E-Mail",
+      "phone": "Telefon",
+      "whatsapp": "WhatsApp"
+    },
+    "consent": "Ich bin damit einverstanden, dass Sivan Management meine Angaben zur Beantwortung dieser Anfrage verarbeitet, wie in der Datenschutzerklärung beschrieben.",
+    "consentLink": "Datenschutzerklärung",
+    "required": "Bitte füllen Sie dieses Feld aus.",
+    "invalidEmail": "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
+    "errorGeneric": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut oder kontaktieren Sie uns direkt per E-Mail oder Telefon.",
+    "successTitle": "Vielen Dank, wir haben Ihre Anfrage erhalten.",
+    "successBody": "Wir prüfen Ihre Angaben und melden uns in Kürze. Eine Bestätigung wurde in unserem System vermerkt.",
+    "privacyNotice": "Die Angabe Ihrer Daten ist freiwillig. Wir verwenden sie ausschließlich, um Ihre Anfrage zu beantworten und ein Angebot zu erstellen; sie werden per E-Mail an unser Team gesendet und auf unserem Server in Israel gespeichert und nicht für Werbezwecke weitergegeben. Sie können jederzeit Auskunft, Berichtigung oder Löschung verlangen. Einzelheiten in unserer Datenschutzerklärung."
+  },
+  "thanks": {
+    "seoTitle": "Vielen Dank | Sivan Management",
+    "title": "Vielen Dank.",
+    "body": "Ihre Anfrage ist bei uns eingegangen. Ein Mitglied unseres Teams meldet sich persönlich bei Ihnen, in der Regel innerhalb eines Werktags.",
+    "next": "In der Zwischenzeit: Lesen Sie unsere Ratgeber für Immobilieneigentümer.",
+    "cta": "Ratgeber ansehen"
+  }
+}

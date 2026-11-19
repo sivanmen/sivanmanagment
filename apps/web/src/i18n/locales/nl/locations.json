@@ -1,0 +1,86 @@
+{
+  "overview": {
+    "seoTitle": "Waar wij werken: Chania, Rethymnon, Heraklion | Sivan Management",
+    "seoDescription": "Vastgoedbeheer op heel Kreta, met de focus op Chania, Rethymnon en Heraklion. Lokale kennis, betrouwbare leveranciers en één aanspreekpunt.",
+    "eyebrow": "Locaties",
+    "title": "Lokale kennis op heel Kreta.",
+    "lead": "Ons kantoor staat in Chania en wij werken in West- en Midden-Kreta. Elk gebied heeft zijn eigen markt, seizoenen en regelgeving, en wij beheren daarnaar.",
+    "mapLabel": "Gestileerde kaart van Kreta met Chania, Rethymnon en Heraklion",
+    "officeLabel": "Ons kantoor",
+    "otherTitle": "Vastgoed elders op Kreta of in Griekenland?",
+    "otherBody": "Neem contact op. Wij vertellen u eerlijk of wij uw vastgoed goed kunnen bedienen, of adviseren u een andere oplossing."
+  },
+  "labels": {
+    "propertyTypes": "Vastgoed dat wij hier beheren",
+    "whyTitle": "Waarom eigenaren hier investeren",
+    "servicesHere": "Beschikbare diensten"
+  },
+  "items": {
+    "chania": {
+      "name": "Chania",
+      "headline": "Vastgoedbeheer in Chania.",
+      "lead": "Onze thuisbasis. Van de Venetiaanse haven en de oude stad tot Akrotiri, Platanias, Kissamos en Apokoronas.",
+      "body": [
+        "Chania combineert een historisch stadscentrum met enkele van de meest gewilde kustgebieden van Griekenland. De vraag komt van internationale vakantiegangers, gasten die langer blijven en een groeiende gemeenschap van buitenlandse inwoners.",
+        "Omdat ons kantoor aan het Plateia Eleftherias in het centrum van Chania ligt, kunnen wij snel reageren, persoonlijk toezicht houden en werken met een goed ingevoerd lokaal netwerk van schoonmakers, technici en leveranciers."
+      ],
+      "propertyTypes": ["Villa’s met zwembad", "Appartementen in de oude stad", "Strandappartementen", "Langetermijnverhuur van woningen", "Commerciële units"],
+      "highlights": [
+        "Sterke internationale vakantievraag van voorjaar tot najaar",
+        "Stad en oude stad zijn het hele jaar aantrekkelijk",
+        "Ruim aanbod aan villa’s in Apokoronas, Akrotiri en Platanias"
+      ],
+      "faq": [
+        { "q": "Welke gebieden rond Chania bestrijkt u?", "a": "Chania-stad en de oude stad, Akrotiri, Platanias en Agia Marina, Kissamos, Apokoronas (waaronder Kalyves en Almyrida) en de omliggende dorpen. Neem contact met ons op voor andere locaties." },
+        { "q": "Kunt u mijn woning snel bezoeken?", "a": "Ja. Met ons kantoor in het centrum van Chania kunnen wij meestal binnen enkele dagen een bezoek inplannen." },
+        { "q": "Beheert u appartementen in de oude stad?", "a": "Ja. Woningen in de oude stad hebben hun eigen aandachtspunten, zoals bereikbaarheid, geluid en gebouwregels, en wij beheren ze daarnaar." }
+      ],
+      "seoTitle": "Vastgoedbeheer Chania | Villa- & verhuurbeheer | Sivan Management",
+      "seoDescription": "Vastgoedbeheer in Chania vanuit ons kantoor in het centrum: villa’s, vakantiewoningen, langetermijnverhuur, onderhoud en commercieel vastgoed."
+    },
+    "rethymno": {
+      "name": "Rethymnon",
+      "headline": "Vastgoedbeheer in Rethymnon.",
+      "lead": "Van de Venetiaanse oude stad en de lange zandstranden tot de dorpen in het achterland.",
+      "body": [
+        "Rethymnon biedt een levendige oude stad, een lange kustlijn en charmante dorpen in het binnenland, met een mix van vakantiehuizen, appartementen en familiebedrijven in de hospitality.",
+        "Wij ondersteunen eigenaren in de regio Rethymnon met verhuur, onderhoud en vertegenwoordiging, gecoördineerd vanuit ons kantoor in Chania en via betrouwbare lokale partners."
+      ],
+      "propertyTypes": ["Vakantievilla’s", "Strandappartementen", "Dorpshuizen", "Huurwoningen", "Kleine hospitalityobjecten"],
+      "highlights": [
+        "Lange zandstranden met gevestigde toeristische vraag",
+        "Authentieke dorpen die aantrekkelijk zijn voor villagasten",
+        "Universiteitsstad met vraag naar langetermijnverhuur"
+      ],
+      "faq": [
+        { "q": "Welke delen van Rethymnon bestrijkt u?", "a": "De stad Rethymnon en de kuststrook, plus bereikbare dorpen. Laat ons de locatie weten en wij bevestigen het." },
+        { "q": "Heeft u personeel in Rethymnon?", "a": "Wij coördineren de werkzaamheden vanuit Chania en werken met betrouwbare lokale professionals in de regio Rethymnon." },
+        { "q": "Kunt u een dorpshuis als vakantiewoning beheren?", "a": "Ja, na een beoordeling van de woning, de bereikbaarheid en de lokale registratievereisten." }
+      ],
+      "seoTitle": "Vastgoedbeheer Rethymnon | Vakantiewoningen | Sivan Management",
+      "seoDescription": "Vakantieverhuur, langetermijnverhuur en onderhoud voor vastgoedeigenaren in Rethymnon en omgeving."
+    },
+    "heraklion": {
+      "name": "Heraklion",
+      "headline": "Vastgoedbeheer in Heraklion.",
+      "lead": "De hoofdstad en grootste stad van Kreta, met het hele jaar door vraag vanuit zakelijk verkeer, toerisme en bewoning.",
+      "body": [
+        "Heraklion is het economische centrum van het eiland, met een internationale luchthaven, een drukke haven, een universiteit en een gevarieerde vastgoedmarkt, van stadsappartementen tot commerciële gebouwen en badplaatsen aan de kust.",
+        "Wij werken met eigenaren in Heraklion aan residentieel, commercieel en hospitalityvastgoed, gecoördineerd vanuit ons kantoor in Chania met lokale partners. Welke dienstverlening wij kunnen bieden, hangt af van het object en de ligging."
+      ],
+      "propertyTypes": ["Stadsappartementen", "Langetermijnverhuur van woningen", "Commerciële en kantoorunits", "Vakantiewoningen aan de kust", "Serviced apartments"],
+      "highlights": [
+        "Het hele jaar door vraag vanuit bedrijven, studenten en bewoners",
+        "Sterke markt voor commercieel vastgoed en kantoren",
+        "Toegangsluchthaven voor een groot deel van het eiland"
+      ],
+      "faq": [
+        { "q": "Beheert u commercieel vastgoed in Heraklion?", "a": "Ja. Commercieel vastgoed en kantoren in Heraklion passen goed bij onze dienst voor commercieel beheer." },
+        { "q": "Heeft Sivan Management een kantoor in Heraklion?", "a": "Ons kantoor staat in Chania. In Heraklion werken wij met betrouwbare lokale partners en komen wij langs wanneer het object dat vraagt." },
+        { "q": "Welke diensten zijn beschikbaar in Heraklion?", "a": "Langetermijnverhuur, commercieel beheer en assetmanagement zijn in de hele stad beschikbaar. Of vakantieverhuur mogelijk is, hangt af van de locatie; dat bevestigen wij na een beoordeling." }
+      ],
+      "seoTitle": "Vastgoedbeheer Heraklion | Wonen & commercieel | Sivan Management",
+      "seoDescription": "Beheer van residentieel, commercieel en hospitalityvastgoed voor eigenaren in Heraklion, Kreta."
+    }
+  }
+}

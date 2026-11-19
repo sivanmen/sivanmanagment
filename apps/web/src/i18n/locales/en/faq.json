@@ -1,0 +1,51 @@
+{
+  "seoTitle": "FAQ — Property Management in Crete | Sivan Management",
+  "seoDescription": "Answers to common questions about property management fees, reporting, maintenance, short-term rental rules and managing property in Greece from abroad.",
+  "eyebrow": "FAQ",
+  "title": "Questions owners ask us.",
+  "lead": "Can't find your answer? Send us a message and we will reply personally.",
+  "groups": [
+    {
+      "title": "Getting started",
+      "items": [
+        { "q": "How do we get started?", "a": "Request a property assessment through the form. We arrange a call, visit the property and send you a written proposal with scope and fees." },
+        { "q": "Is the assessment free?", "a": "The initial call and property assessment are without obligation. You only pay once you have agreed a written proposal." },
+        { "q": "Do I have to sign a long contract?", "a": "Agreements are typically annual with a reasonable notice period. Terms are discussed and agreed with you in advance." },
+        { "q": "What documents will you need?", "a": "Typically proof of ownership, the property's registration details, existing certificates and any current leases or rental registrations. We give you a checklist." }
+      ]
+    },
+    {
+      "title": "Fees & money",
+      "items": [
+        { "q": "How are management fees structured?", "a": "A percentage of rental income, a fixed monthly fee, per-service pricing, or a combination, depending on the property and scope. Everything is set out in writing." },
+        { "q": "How do I receive my income?", "a": "Income is paid to your bank account according to the schedule in your agreement, together with an itemised statement." },
+        { "q": "How are expenses approved?", "a": "Routine costs within an agreed limit are handled directly. Anything above that limit is sent to you for approval with a quote." },
+        { "q": "Do you guarantee rental income?", "a": "No. Rental income depends on the market. We provide realistic estimates and work to optimise results, but we never promise guaranteed income or occupancy." }
+      ]
+    },
+    {
+      "title": "Reporting & communication",
+      "items": [
+        { "q": "How will I know what is happening at my property?", "a": "Through our online owner portal, periodic statements and direct contact with your property manager." },
+        { "q": "In which languages can we communicate?", "a": "English and Hebrew, with Greek and other languages supported through our team and partners." },
+        { "q": "What does a report include?", "a": "Bookings or rent received, itemised expenses, maintenance carried out, issues and recommendations." }
+      ]
+    },
+    {
+      "title": "Operations & maintenance",
+      "items": [
+        { "q": "What happens in an emergency?", "a": "Guests and tenants have a contact number. Urgent issues are handled immediately by our team and trusted professionals, and you are informed." },
+        { "q": "Who carries out maintenance?", "a": "Our team handles routine tasks. Specialist work is carried out by licensed professionals we coordinate and supervise." },
+        { "q": "Do you look after the property in winter?", "a": "Yes. We offer winter checks, storm inspections and seasonal opening and closing." }
+      ]
+    },
+    {
+      "title": "Rules, registration & taxes",
+      "items": [
+        { "q": "Does a short-term rental in Greece need registration?", "a": "Yes. Short-term rental properties must be registered and display a registration number (AMA), and specific tax and reporting rules apply. We guide you and coordinate with your accountant." },
+        { "q": "Do you provide legal or tax advice?", "a": "No. We coordinate with qualified lawyers, accountants and engineers. Our role is operational management." },
+        { "q": "What about insurance?", "a": "We recommend appropriate property and liability insurance and can coordinate with your insurer. The policy remains in the owner's name." }
+      ]
+    }
+  ]
+}

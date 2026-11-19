@@ -1,0 +1,78 @@
+{
+  "seoTitle": "申请物业评估｜联系哈尼亚 Sivan Management",
+  "seoDescription": "告诉我们您在克里特岛的物业情况，向哈尼亚 Sivan Management 申请评估及定制管理方案。",
+  "eyebrow": "联系我们",
+  "title": "申请物业评估。",
+  "lead": "只需四个简单步骤。我们会亲自回复，通常在一个工作日内。",
+  "directTitle": "更想直接沟通？",
+  "directBody": "欢迎致电、通过 WhatsApp 或电子邮件联系我们，也可以前往我们位于哈尼亚市中心的办公室。",
+  "hours": "周一至周五 09:00–17:00（希腊时间）",
+  "mapLink": "在 Google 地图中打开",
+  "form": {
+    "steps": [
+      "物业",
+      "位置",
+      "服务",
+      "联系方式"
+    ],
+    "stepOf": "第 {n} 步，共 {total} 步",
+    "back": "返回",
+    "next": "继续",
+    "submit": "提交申请",
+    "sending": "正在发送…",
+    "propertyType": "物业类型是？",
+    "types": {
+      "short-term": "度假租赁／别墅",
+      "long-term": "长期住宅租赁",
+      "commercial": "商业物业",
+      "hospitality": "酒店或民宿",
+      "not-sure": "尚未确定"
+    },
+    "units": "单元数量",
+    "unitsHint": "如为单栋别墅或单套公寓，请填写 1。",
+    "location": "物业位于何处？",
+    "locations": {
+      "chania": "哈尼亚",
+      "rethymno": "雷西姆农",
+      "heraklion": "伊拉克利翁",
+      "other": "其他地区"
+    },
+    "area": "区域或村庄（选填）",
+    "status": "当前状态",
+    "statuses": {
+      "rented": "目前已出租",
+      "vacant": "空置／可随时使用",
+      "renovation": "正在装修或建造中",
+      "managed": "由他人管理中"
+    },
+    "services": "您对哪些服务感兴趣？",
+    "servicesHint": "可多选。",
+    "goals": "您希望实现什么目标？（选填）",
+    "goalsPlaceholder": "例如：下个季度开始出租、减少亲力亲为、提升收益……",
+    "name": "姓名",
+    "email": "电子邮件",
+    "phone": "电话／WhatsApp",
+    "phoneHint": "请包含国家区号，例如 +86…",
+    "preferred": "首选联系方式",
+    "preferredOptions": {
+      "email": "电子邮件",
+      "phone": "电话",
+      "whatsapp": "WhatsApp"
+    },
+    "consent": "我同意 Sivan Management 按照《隐私政策》所述，处理我的信息以回复本次申请。",
+    "consentLink": "隐私政策",
+    "required": "请填写此项。",
+    "invalidEmail": "请输入有效的电子邮件地址。",
+    "errorGeneric": "出现了一些问题。请重试，或直接通过电子邮件或电话联系我们。",
+    "successTitle": "感谢您，我们已收到您的申请。",
+    "successBody": "我们将审阅相关信息并尽快与您联系。系统已记录本次申请的确认信息。",
+    "privacyNotice": "提供个人信息完全自愿。我们仅将其用于答复您的咨询并准备方案；这些信息会通过电子邮件发送给我们的团队，并保存在我们位于以色列的服务器上，不会用于营销目的。您可随时要求查阅、更正或删除。详情请参阅隐私政策。"
+  },
+  "thanks": {
+    "seoTitle": "感谢您｜Sivan Management",
+    "title": "感谢您。",
+    "body": "我们已收到您的申请。团队成员将亲自与您联系，通常在一个工作日内。",
+    "next": "在等待期间，不妨阅读我们为业主准备的指南。",
+    "cta": "浏览洞察文章"
+  }
+}

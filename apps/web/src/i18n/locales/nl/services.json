@@ -1,0 +1,379 @@
+{
+  "overview": {
+    "seoTitle": "Diensten vastgoedbeheer op Kreta | Sivan Management",
+    "seoDescription": "Beheer van korte en lange verhuur, commercieel vastgoed, hotels, onderhoud, marketing en vertegenwoordiging van eigenaren in Chania, Rethymnon en Heraklion.",
+    "eyebrow": "Diensten",
+    "title": "Alles wat uw vastgoed nodig heeft. Onder één dak.",
+    "sub": "Kies voor een volledig beheermandaat of voor de specifieke diensten die u nodig heeft. Elke samenwerking begint met een heldere, schriftelijke afbakening.",
+    "labels": {
+      "audience": "Voor wie",
+      "scope": "Omvang van de dienstverlening",
+      "benefits": "Wat het u oplevert",
+      "workflow": "Zo werkt het",
+      "includes": "Inbegrepen"
+    },
+    "modelsTitle": "Flexibele samenwerkingsvormen",
+    "models": [
+      { "title": "Volledig beheer", "body": "Wij beheren het vastgoed van begin tot eind: marketing, exploitatie, onderhoud en rapportage." },
+      { "title": "Losse diensten", "body": "Kies wat u nodig heeft: housekeeping, onderhoud, gastenservice of vertegenwoordiging." },
+      { "title": "Projectmatig", "body": "Voorbereiding op het seizoen, toezicht op een renovatie of de onboarding van een nieuw object." }
+    ],
+    "pricingNote": "Vergoedingen zijn gebaseerd op een percentage van de inkomsten, een vast bedrag, een prijs per dienst of een combinatie daarvan, schriftelijk vastgelegd na de beoordeling. Wij beloven nooit gegarandeerde inkomsten of bezetting."
+  },
+  "items": {
+    "short-term-rental-management": {
+      "name": "Beheer van vakantieverhuur",
+      "short": "Villa’s, vakantiehuizen en appartementen, beheerd van advertentie tot check-out.",
+      "headline": "Uitzonderlijke verblijven. Professioneel beheerd.",
+      "sub": "Volledig beheer van vakantieverhuur voor villa’s, vakantiehuizen en appartementen op heel Kreta.",
+      "intro": [
+        "Een succesvolle vakantiewoning staat of valt met honderden kleine details: de foto’s die gasten als eerste zien, de prijs op een dinsdag in mei, een snel antwoord om middernacht, smetteloos linnengoed, een zwembad dat altijd helderblauw is.",
+        "Wij zorgen voor al die details. Uw woning wordt professioneel voorbereid, gepresenteerd en gedistribueerd, en elk verblijf verloopt volgens hotelstandaard, terwijl u volledig zicht houdt op boekingen, inkomsten en kosten."
+      ],
+      "audience": [
+        "Eigenaren van villa’s en vakantiehuizen op Kreta",
+        "Eigenaren van appartementen die hun vakantieverhuur professioneel willen laten verzorgen",
+        "Eigenaren in het buitenland die een betrouwbaar lokaal team nodig hebben",
+        "Investeerders die een woning omvormen tot vakantiewoning"
+      ],
+      "scope": [
+        "Analyse van het verhuurpotentieel en positionering",
+        "Voorbereiding van de woning, inventaris en advies over voorzieningen",
+        "Professionele fotografie en advertentieteksten",
+        "Distributie via Airbnb, Booking.com, Vrbo en andere relevante kanalen",
+        "Dynamische prijsstelling en agendabeheer",
+        "Reserveringen en gastcommunicatie, zeven dagen per week",
+        "Check-in, check-out en lokale ondersteuning van gasten",
+        "Housekeeping, wasserij en linnenbeheer",
+        "Coördinatie van zwembad- en tuinonderhoud",
+        "Reparaties, verbruiksartikelen en kostenbeheersing",
+        "Begeleiding bij de registratie voor vakantieverhuur (AMA) en de verplichtingen rond toeristenbelasting",
+        "Maandelijkse overzichten voor de eigenaar en toegang tot het online portaal"
+      ],
+      "benefits": [
+        { "title": "Zorgeloos eigenaarschap", "body": "Wij regelen gasten, schoonmakers, leveranciers en problemen, zodat u dat niet hoeft te doen." },
+        { "title": "Constante kwaliteit", "body": "Checklists en inspecties na elk verblijf houden de woning klaar voor de volgende gast." },
+        { "title": "Onderbouwde prijzen", "body": "Tarieven worden getoetst aan seizoen, vraag en vergelijkbare woningen." },
+        { "title": "Volledige transparantie", "body": "Elke boeking, factuur en uitgave is zichtbaar in uw eigenarenportaal." }
+      ],
+      "workflow": [
+        "Bezoek aan de woning en beoordeling van het verhuurpotentieel",
+        "Overeenkomst en onboardingplan",
+        "Voorbereiding, fotografie en livegang van de advertenties",
+        "Dagelijkse exploitatie gedurende het seizoen",
+        "Maandelijkse rapportage en jaarlijkse evaluatie"
+      ],
+      "faq": [
+        { "q": "Op welke platforms adverteert u?", "a": "Doorgaans op Airbnb, Booking.com en Vrbo, aangevuld met andere kanalen als die bij de woning passen. Alle agenda’s worden gesynchroniseerd om dubbele boekingen te voorkomen." },
+        { "q": "Kan ik de woning zelf nog gebruiken?", "a": "Ja. U blokkeert uw eigen data vooraf via het eigenarenportaal of door het ons te laten weten, en wij plannen de verhuur daaromheen." },
+        { "q": "Garandeert u bezetting of inkomsten?", "a": "Nee. Een verantwoordelijke beheerder kan geen resultaten garanderen die van de markt afhangen. Wij geven u een realistische inschatting op basis van de woning, de ligging en vergelijkbare gegevens, en wij werken eraan de prestaties te optimaliseren." },
+        { "q": "Wie betaalt de schoonmaak en de verbruiksartikelen?", "a": "De schoonmaak wordt meestal gedekt door de schoonmaakvergoeding die de gast betaalt. Verbruiksartikelen en reparaties worden tegen kostprijs doorberekend en op uw overzicht vermeld. De precieze afspraken worden vastgelegd in uw overeenkomst." },
+        { "q": "Hoe zit het met registratie en belastingen voor vakantieverhuur?", "a": "Voor vakantieverhuur in Griekenland is een registratienummer van de woning (AMA) vereist, en er gelden specifieke fiscale en meldingsregels. Wij begeleiden u door het proces en stemmen af met uw boekhouder. Zelf geven wij geen fiscaal advies." },
+        { "q": "Hoe screent u gasten?", "a": "Wij bekijken gastprofielen, verificatie via het platform en beoordelingen, hanteren duidelijke huisregels en waar nodig een borg, en blijven gedurende het hele verblijf in contact." }
+      ],
+      "seoTitle": "Vakantiewoning & villabeheer op Kreta | Sivan Management",
+      "seoDescription": "Beheer van vakantiewoningen in Chania, Rethymnon en Heraklion: advertenties, prijzen, gastenzorg, housekeeping, onderhoud en transparante rapportage."
+    },
+    "long-term-rental-management": {
+      "name": "Beheer van langetermijnverhuur",
+      "short": "Stabiele huurrelaties, zorgvuldig beheer en betrouwbare huurinning.",
+      "headline": "Stabiele huurrelaties. Zorgvuldig beheer.",
+      "sub": "Professionele langetermijnverhuur en huurbeheer voor woningen op Kreta.",
+      "intro": [
+        "Langetermijnverhuur hoort u voorspelbare inkomsten te bieden, zonder de stress van verhuurder zijn op afstand.",
+        "Wij brengen de woning op de markt, helpen u geschikte huurders te kiezen, coördineren de huurovereenkomst via de juiste professionals en beheren daarna de huurrelatie van dag tot dag: huur, verzoeken, reparaties en verlengingen."
+      ],
+      "audience": [
+        "Eigenaren van appartementen en huizen die stabiele huurinkomsten zoeken",
+        "Eigenaren die naar het buitenland zijn verhuisd of niet meer lokaal wonen",
+        "Investeerders met meerdere woningen",
+        "Eigenaren die overstappen van korte naar lange verhuur"
+      ],
+      "scope": [
+        "Huurwaardebepaling en marktpositionering",
+        "Marketing, advertenties en bezichtigingen",
+        "Huurderscontroles binnen de grenzen van de wet",
+        "Opstellen van de huurovereenkomst in afstemming met gekwalificeerde professionals",
+        "Inspectie bij intrek, inventaris en sleuteloverdracht",
+        "Bewaking van huurbetalingen en opvolging van achterstanden",
+        "Afhandeling van huurdersverzoeken en coördinatie van reparaties",
+        "Periodieke inspecties met fotorapportages",
+        "Verlenging van huurovereenkomsten, huurherzieningen en inspecties bij vertrek",
+        "Rapportage aan de eigenaar en archivering van documenten"
+      ],
+      "benefits": [
+        { "title": "Minder leegstand", "body": "Goed gepresenteerde woningen en snelle reacties verkorten de tijd tussen huurders." },
+        { "title": "Beschermde staat", "body": "Regelmatige inspecties brengen kleine problemen aan het licht voordat ze kostbaar worden." },
+        { "title": "Heldere administratie", "body": "Inventarislijsten, foto’s en correspondentie worden voor elke huurperiode vastgelegd." },
+        { "title": "Eén aanspreekpunt", "body": "Huurders bellen ons, niet u. Wij leggen u alleen voor wat uw beslissing vraagt." }
+      ],
+      "workflow": [
+        "Waardebepaling en verhuurstrategie",
+        "Marketing en bezichtigingen",
+        "Huurdersselectie en coördinatie van de huurovereenkomst",
+        "Intrek en doorlopend huurbeheer",
+        "Verlenging of vertrek en nieuwe verhuur"
+      ],
+      "faq": [
+        { "q": "Stelt u de huurovereenkomst op?", "a": "Huurovereenkomsten worden opgesteld en geregistreerd via de juiste gekwalificeerde professionals, zoals een advocaat of boekhouder. Wij coördineren het proces en zorgen ervoor dat de voorwaarden weergeven wat is afgesproken." },
+        { "q": "Hoe controleert u huurders?", "a": "Wij verifiëren de identiteit en vragen waar passend om referenties en een inkomensbewijs, altijd binnen de Griekse en Europese wetgeving inzake gegevensbescherming." },
+        { "q": "Wat gebeurt er als de huur te laat wordt betaald?", "a": "Wij volgen dit direct op en houden u op de hoogte. Blijft de achterstand bestaan, dan stemmen wij de volgende stappen af met uw advocaat." },
+        { "q": "Wie regelt reparaties?", "a": "Wij ontvangen het verzoek van de huurder, beoordelen het en schakelen een betrouwbare vakman in. Kosten boven een afgesproken limiet keurt u eerst zelf goed." },
+        { "q": "Hoe vaak inspecteert u de woning?", "a": "Doorgaans een- of tweemaal per jaar, plus inspecties bij intrek en vertrek. De frequentie wordt in uw overeenkomst vastgelegd." },
+        { "q": "Kunt u een woning beheren die al verhuurd is?", "a": "Ja. Wij beoordelen de bestaande huurovereenkomst en de staat van de woning, stellen ons voor aan de huurder en nemen het beheer soepel over." }
+      ],
+      "seoTitle": "Verhuurbeheer Kreta: langetermijnverhuur | Sivan Management",
+      "seoDescription": "Langetermijnverhuur en huurbeheer in Chania, Rethymnon en Heraklion: huurdersselectie, huurbewaking, reparaties, inspecties en rapportage."
+    },
+    "commercial-property-management": {
+      "name": "Beheer van commercieel vastgoed",
+      "short": "Kantoren, winkels en gemengde objecten, gedisciplineerd beheerd.",
+      "headline": "Het bezit beschermen. Het bedrijf ondersteunen.",
+      "sub": "Operationeel en technisch beheer van commercieel vastgoed op Kreta.",
+      "intro": [
+        "Commercieel vastgoed vraagt om een ander soort beheer: gepland onderhoud, technische installaties, naleving van regelgeving, budgetten en huurders van wie het bedrijf ervan afhangt dat het gebouw elke dag functioneert.",
+        "Wij fungeren als het operationele team van de eigenaar ter plaatse: wij houden het bezit in goede staat, ondersteunen de huurders en houden de kosten onder controle."
+      ],
+      "audience": [
+        "Eigenaren van kantoren, winkels en gemengde gebouwen",
+        "Investeerders met commerciële units op Kreta",
+        "Eigenaren van gebouwen met meerdere commerciële huurders",
+        "Ontwikkelaars die na oplevering een beheerder nodig hebben"
+      ],
+      "scope": [
+        "Huurdersrelaties en dagelijkse communicatie",
+        "Programma’s voor gepland en preventief onderhoud",
+        "Coördinatie van technische installaties: klimaatbeheersing, elektra, sanitair, liften",
+        "Beheer van leveranciers en aannemers",
+        "Bewaking van servicekosten en exploitatiebudget",
+        "Periodieke inspecties en conditierapporten",
+        "Coördinatie van verplichte veiligheidscertificaten en keuringen met erkende professionals",
+        "Toezicht op inrichting en renovatie",
+        "Ondersteuning bij de marketing van leegstaande ruimten",
+        "Rapportage aan de eigenaar en analyse van budgetafwijkingen"
+      ],
+      "benefits": [
+        { "title": "Gepland, niet reactief", "body": "Preventief onderhoud verlaagt noodkosten en stilstand." },
+        { "title": "Budgetdiscipline", "body": "Exploitatiekosten worden afgezet tegen het budget, met toelichting op afwijkingen." },
+        { "title": "Tevreden huurders", "body": "Snelle, professionele reacties helpen goede huurders te behouden." },
+        { "title": "Waarde van het bezit", "body": "Een goed onderhouden gebouw ondersteunt het huurniveau en de toekomstige waardering." }
+      ],
+      "workflow": [
+        "Technische en operationele audit",
+        "Beheerplan en jaarbudget",
+        "Leverancierscontracten en onderhoudsschema",
+        "Doorlopende exploitatie en ondersteuning van huurders",
+        "Kwartaalrapportage en evaluatie"
+      ],
+      "faq": [
+        { "q": "Welke soorten commercieel vastgoed beheert u?", "a": "Kantoren, winkelunits, gemengde gebouwen en kleine commerciële portefeuilles op Kreta. Wij beoordelen elk object voordat wij de omvang van de dienstverlening afspreken." },
+        { "q": "Int u huur en servicekosten?", "a": "Waar afgesproken bewaken wij de betaling van huur en servicekosten en volgen wij dit op bij de huurders. De afspraken over inning worden vastgelegd in de beheerovereenkomst." },
+        { "q": "Kunt u technische certificeringen regelen?", "a": "Wij plannen en coördineren de keuringen en certificaten die het gebouw nodig heeft met erkende ingenieurs en technici, en houden de administratie actueel." },
+        { "q": "Hoe kiest u aannemers?", "a": "Wij werken met gescreende lokale professionals en vragen voor grotere werkzaamheden vergelijkbare offertes aan. Grote uitgaven keurt u zelf goed." },
+        { "q": "Ontvang ik een budget?", "a": "Ja. Wij stellen een jaarlijks exploitatiebudget op en rapporteren de werkelijke kosten daartegen, met een toelichting op eventuele verschillen." },
+        { "q": "Kunt u helpen huurders te vinden voor leegstaande ruimten?", "a": "Wij ondersteunen de marketing van leegstaande ruimten en coördineren bezichtigingen. Waar een erkende makelaar vereist is, werken wij met een makelaar samen." }
+      ],
+      "seoTitle": "Beheer van commercieel vastgoed in Griekenland | Sivan Management",
+      "seoDescription": "Kantoren, winkels en gemengde gebouwen op Kreta: huurdersrelaties, preventief onderhoud, leveranciersbeheer, budgetten en rapportage aan de eigenaar."
+    },
+    "hotel-hospitality-management": {
+      "name": "Hotel- & hospitalitybeheer",
+      "short": "Boetiekhotels, serviced apartments en pensions met operationele discipline.",
+      "headline": "Uitstekende gastvrijheid. Operationele discipline.",
+      "sub": "Operationele ondersteuning en coördinatie voor boetiekhotels, serviced apartments en complexen met vakantieaccommodaties.",
+      "intro": [
+        "Kleine hospitalitybedrijven worden aan dezelfde verwachtingen gehouden als grote hotels, meestal met slechts een fractie van het personeel.",
+        "Wij ondersteunen eigenaren met de operationele ruggengraat: reserveringen en distributie, gastbeleving, housekeepingstandaarden, onderhoud, leveranciers en rapportage. De omvang wordt per overeenkomst vastgelegd en blijft altijd binnen de vergunningen en toestemmingen van het object."
+      ],
+      "audience": [
+        "Eigenaren van boetiekhotels en pensions",
+        "Exploitanten van serviced apartments en aparthotels",
+        "Eigenaren van complexen met vakantieaccommodaties",
+        "Investeerders die een hospitalityobject verwerven of herpositioneren"
+      ],
+      "scope": [
+        "Reserveringen, kanaalbeheer en tariefcoördinatie",
+        "Standaarden voor gastbeleving en communicatie",
+        "Housekeepingprocedures en kwaliteitsinspecties",
+        "Ondersteuning bij personeelsplanning en coördinatie van leveranciers",
+        "Preventief onderhoud en voorbereiding op het seizoen",
+        "Inkoop van verbruiksartikelen en gastvoorzieningen",
+        "Bewaking van online reputatie en beoordelingen",
+        "Rapportage van omzet en kosten",
+        "Coördinatie van compliance met erkende adviseurs"
+      ],
+      "benefits": [
+        { "title": "Systemen die meegroeien", "body": "Heldere procedures en een PMS achter elke handeling." },
+        { "title": "Betere gastbeleving", "body": "Constante standaarden leiden tot sterkere beoordelingen en terugkerende gasten." },
+        { "title": "Kostenbeheersing", "body": "Inkoop, personeel en onderhoud worden afgezet tegen het plan." },
+        { "title": "Inzicht voor de eigenaar", "body": "Prestaties en kosten gerapporteerd in een vorm waarop u kunt handelen." }
+      ],
+      "workflow": [
+        "Operationele doorlichting van het object",
+        "Afspraken over omvang, verantwoordelijkheden en KPI’s",
+        "Inrichting van systemen, procedures en leveranciers",
+        "Exploitatie tijdens het seizoen en kwaliteitscontrole",
+        "Rapportage en planning voor het laagseizoen"
+      ],
+      "faq": [
+        { "q": "Neemt u de hotelvergunning over?", "a": "Nee. De exploitatievergunning blijft bij de eigenaar of de vergunninghoudende exploitant. Wij bieden beheer en operationele ondersteuning binnen de afgesproken omvang." },
+        { "q": "Kunt u met mijn huidige personeel werken?", "a": "Ja. Vaak ondersteunen wij een bestaand team met procedures, planning en kwaliteitscontrole, in plaats van het te vervangen." },
+        { "q": "Welke boekingssystemen gebruikt u?", "a": "Wij werken met ons eigen vastgoedbeheersysteem met kanaal- en agendasynchronisatie, en kunnen waar nodig met een bestaand systeem werken." },
+        { "q": "Verzorgt u revenue management?", "a": "Wij coördineren tarieven en beschikbaarheid over alle kanalen op basis van vraag en seizoen, en rapporteren de resultaten aan u. Het uiteindelijke prijsbeleid wordt met de eigenaar afgestemd." },
+        { "q": "Kunt u het object voorbereiden op het seizoen?", "a": "Ja. Voorbereiding op het seizoen, inclusief inspecties, reparaties, dieptereiniging en het inrichten van leveranciers, is een van onze kerndiensten." },
+        { "q": "Beheert u kleine appartementencomplexen?", "a": "Ja. Complexen met vakantieappartementen en kleine aparthotels passen goed bij ons model." }
+      ],
+      "seoTitle": "Hotel- & hospitalitybeheer op Kreta | Sivan Management",
+      "seoDescription": "Operationele ondersteuning voor boetiekhotels, serviced apartments en vakantiecomplexen op Kreta: reserveringen, housekeeping, onderhoud en rapportage."
+    },
+    "property-maintenance": {
+      "name": "Vastgoedonderhoud & facilitaire diensten",
+      "short": "Preventieve zorg, reparaties en inspecties die de waarde op lange termijn beschermen.",
+      "headline": "Betrouwbare zorg. Blijvende waarde.",
+      "sub": "Onderhoud, inspecties en facilitaire diensten voor woningen, villa’s en gebouwen op Kreta.",
+      "intro": [
+        "Zon, zout, wind en lege wintermaanden eisen hun tol van Kretenzisch vastgoed. Zonder regelmatige zorg worden kleine problemen kostbare problemen.",
+        "Wij houden uw woning het hele jaar in goede staat, of deze nu verhuurd wordt of niet. U krijgt betrouwbare professionals, gedocumenteerde bezoeken en één aanspreekpunt."
+      ],
+      "audience": [
+        "Eigenaren van tweede woningen die langere tijd afwezig zijn",
+        "Verhuurders die betrouwbare technische ondersteuning nodig hebben",
+        "Eigenaren van gebouwen en kleine complexen",
+        "Iedereen die een woning renoveert of gebruiksklaar maakt"
+      ],
+      "scope": [
+        "Geplande controles van de woning met fotorapportages",
+        "Preventieve onderhoudsplannen",
+        "Reparaties en klusdiensten",
+        "Werkzaamheden aan airconditioning, elektra en sanitair door erkende professionals",
+        "Zwembadonderhoud en tuinverzorging",
+        "Seizoensgebonden openen en afsluiten van de woning",
+        "Controle op storm- en lekkageschade na zwaar weer",
+        "Sleutelbeheer en toegang voor aannemers",
+        "Toezicht op goedgekeurde renovaties",
+        "Leveranciersbeheer en offertes"
+      ],
+      "benefits": [
+        { "title": "Gemoedsrust", "body": "Iemand die u vertrouwt, zorgt voor uw woning terwijl u weg bent." },
+        { "title": "Lagere kosten op lange termijn", "body": "Preventief onderhoud is goedkoper dan spoedreparaties." },
+        { "title": "Gedocumenteerd werk", "body": "Foto’s, facturen en notities bij elk bezoek en elke reparatie." },
+        { "title": "Gescreende professionals", "body": "Lokale technici met wie wij werken en die wij aan onze standaarden houden." }
+      ],
+      "workflow": [
+        "Eerste inspectie en conditierapport",
+        "Onderhoudsplan en bezoekschema",
+        "Routinecontroles en preventief onderhoud",
+        "Reparaties op verzoek, met goedkeuring boven de limieten",
+        "Rapportages en jaarlijkse evaluatie van het plan"
+      ],
+      "faq": [
+        { "q": "Kan ik onderhoudsdiensten afnemen zonder volledig beheer?", "a": "Ja. Onderhoud en controles van de woning zijn ook als losse dienst beschikbaar." },
+        { "q": "Hoe vaak bezoekt u mijn woning?", "a": "Dat hangt af van de woning en het seizoen. Gangbare plannen variëren van wekelijkse tot maandelijkse controles, met extra bezoeken na stormen." },
+        { "q": "Voert u de reparaties zelf uit?", "a": "Kleine klussen kunnen door ons team worden uitgevoerd. Specialistisch werk, zoals elektra, gas of airconditioning, wordt uitgevoerd door erkende professionals die wij coördineren en waarop wij toezien." },
+        { "q": "Hoe worden reparatiekosten goedgekeurd?", "a": "Onder een afgesproken limiet handelen wij direct. Daarboven ontvangt u eerst een offerte ter goedkeuring." },
+        { "q": "Kunt u toezicht houden op een renovatie?", "a": "Ja. Wij houden ter plaatse toezicht op goedgekeurde werkzaamheden, rapporteren de voortgang met foto’s en coördineren tussen u en de aannemers." },
+        { "q": "Zorgt u in de winter voor leegstaande woningen?", "a": "Ja. Wintercontroles op lekkages, vocht, beveiliging en stormschade vormen een kernonderdeel van de dienst." }
+      ],
+      "seoTitle": "Vastgoedonderhoud in Chania & op Kreta | Sivan Management",
+      "seoDescription": "Preventief onderhoud, inspecties, reparaties, zwembad- en tuinonderhoud en renovatietoezicht voor woningen, villa’s en gebouwen op Kreta."
+    },
+    "asset-management": {
+      "name": "Assetmanagement & vertegenwoordiging van eigenaren",
+      "short": "Uw belangen lokaal behartigd, met beslissingen onderbouwd door data.",
+      "headline": "Uw belangen, professioneel behartigd.",
+      "sub": "Lokale vertegenwoordiging, toezicht en planning voor eigenaren die niet ter plaatse zijn.",
+      "intro": [
+        "Vastgoed bezitten in een ander land betekent beslissingen, papierwerk en mensen om te coördineren, vaak in een taal die u niet spreekt.",
+        "Wij treden op als uw lokale vertegenwoordiger: wij houden toezicht op het vastgoed en de dienstverleners, stellen budgetten en rapportages op, stemmen af met uw adviseurs en helpen u de mogelijkheden voor het gebruik van het vastgoed te beoordelen. Dit is operationeel assetmanagement, geen gereguleerd financieel of beleggingsadvies."
+      ],
+      "audience": [
+        "Eigenaren die buiten Griekenland wonen",
+        "Families die vastgoed op Kreta hebben geërfd",
+        "Investeerders met meerdere objecten of gemengde portefeuilles",
+        "Eigenaren die een andere bestemming of strategie overwegen"
+      ],
+      "scope": [
+        "Lokale vertegenwoordiging richting leveranciers, huurders en buren",
+        "Operationeel toezicht op alle dienstverleners rond het vastgoed",
+        "Jaarbudgetten en kostenplanning",
+        "Geconsolideerde rapportages voor de eigenaar",
+        "Afstemming met uw advocaat, boekhouder en ingenieurs",
+        "Nutsaansluitingen, rekeningen en routinematige administratie",
+        "Evaluatie van gebruiks- en verhuuralternatieven",
+        "Ondersteuning bij vastgoedgerelateerde documentatie"
+      ],
+      "benefits": [
+        { "title": "Eén vertrouwd aanspreekpunt", "body": "Eén verantwoordelijke partij ter plaatse." },
+        { "title": "Betere beslissingen", "body": "Regelmatige rapportages en analyses van opties ondersteunen weloverwogen keuzes." },
+        { "title": "Minder administratie", "body": "Wij regelen de routinematige coördinatie, zodat u zich alleen met de beslissingen bezighoudt." },
+        { "title": "Gelijkgerichte belangen", "body": "Wij werken voor de eigenaar en rapporteren aan de eigenaar." }
+      ],
+      "workflow": [
+        "Evaluatie van portefeuille en doelstellingen",
+        "Omvang van de vertegenwoordiging en machtigingen",
+        "Doorlopend toezicht en coördinatie",
+        "Budgetten en periodieke rapportages",
+        "Jaarlijkse strategische evaluatie"
+      ],
+      "faq": [
+        { "q": "Is dit beleggingsadvies?", "a": "Nee. Wij bieden operationeel assetmanagement en vertegenwoordiging. Voor financieel, juridisch of fiscaal advies stemmen wij af met uw erkende adviseurs." },
+        { "q": "Moet ik u een volmacht geven?", "a": "Niet per se. Welke machtigingen nodig zijn, hangt af van de taken. Waar een formele volmacht vereist is, wordt die opgesteld door een advocaat en beperkt tot de afgesproken omvang." },
+        { "q": "Kunt u zaken regelen met nutsbedrijven en de gemeente?", "a": "Ja. Wij coördineren namens u routinezaken met nutsbedrijven en lokale overheden, binnen de machtigingen die u ons geeft." },
+        { "q": "Kunt u meerdere objecten tegelijk beheren?", "a": "Ja. Wij kunnen de rapportage over woningen, verhuurobjecten en commercieel vastgoed consolideren." },
+        { "q": "Helpt u mij kiezen tussen korte en lange verhuur?", "a": "Ja. Wij vergelijken realistische opties voor uw vastgoed, inclusief kosten, inspanning en risico’s, zodat u kunt beslissen." },
+        { "q": "Helpt u bij aan- of verkoop?", "a": "Wij ondersteunen eigenaren met voorbereiding, marketing en coördinatie, en werken voor de transactie zelf samen met erkende makelaars en advocaten." }
+      ],
+      "seoTitle": "Assetmanagement & vertegenwoordiging | Sivan Management",
+      "seoDescription": "Lokale vertegenwoordiging voor eigenaren in het buitenland: toezicht op leveranciers, budgetten, rapportages en overleg met advocaten en boekhouders op Kreta."
+    },
+    "property-marketing-sales": {
+      "name": "Vastgoedmarketing & verkoopondersteuning",
+      "short": "Presentatie, marketing en coördinatie om met vertrouwen te verhuren of te verkopen.",
+      "headline": "Goed gepresenteerd. Professioneel op de markt gebracht.",
+      "sub": "Professionele voorbereiding, online marketing en verkoopcoördinatie voor vastgoedeigenaren op Kreta.",
+      "intro": [
+        "Of u uw woning nu wilt verhuren of verkopen: het resultaat hangt af van hoe die wordt voorbereid en gepresenteerd, en of u het juiste publiek bereikt.",
+        "Wij bereiden de woning voor, verzorgen professionele fotografie en advertenties, voeren online marketing via relevante platforms en sociale kanalen en coördineren bezichtigingen. Bij verkoop werken wij samen met erkende makelaars en advocaten, die de transactie zelf afhandelen."
+      ],
+      "audience": [
+        "Eigenaren die een woning klaarmaken voor verkoop",
+        "Eigenaren die met een nieuwe verhuur starten",
+        "Ontwikkelaars die opgeleverde units op de markt brengen",
+        "Eigenaren die een onderpresterende woning willen herpositioneren"
+      ],
+      "scope": [
+        "Advies over voorbereiding en presentatie",
+        "Professionele fotografie en video",
+        "Advertentieteksten in meerdere talen",
+        "Online advertenties op relevante verhuur- en vastgoedplatforms",
+        "Promotie via sociale media en betaalde campagnes",
+        "Afhandeling van aanvragen en bezichtigingen",
+        "Coördinatie met erkende makelaars, notarissen en advocaten",
+        "Overdracht naar beheer na verkoop of verhuur"
+      ],
+      "benefits": [
+        { "title": "Sterke eerste indruk", "body": "Professionele beelden en teksten die de woning recht doen." },
+        { "title": "Internationaal bereik", "body": "Meertalige advertenties voor kopers en gasten in heel Europa en daarbuiten." },
+        { "title": "Gecoördineerd proces", "body": "Eén team dat marketing, bezichtigingen en adviseurs in beweging houdt." },
+        { "title": "Continuïteit", "body": "Na verkoop of verhuur kunnen wij het beheer van de woning voortzetten." }
+      ],
+      "workflow": [
+        "Bespreking van doelen en prijs met uw adviseurs",
+        "Voorbereiding en mediaproductie",
+        "Advertenties en marketingcampagnes",
+        "Aanvragen en bezichtigingen",
+        "Coördinatie van de transactie en overdracht"
+      ],
+      "faq": [
+        { "q": "Bent u een erkend makelaarskantoor?", "a": "Vastgoedtransacties in Griekenland moeten worden afgehandeld door erkende professionals. Wij verzorgen voorbereiding, marketing en coördinatie, en werken voor de transactie samen met erkende makelaars en advocaten." },
+        { "q": "Verzorgt u foto’s en video?", "a": "Ja. Wij regelen professionele fotografie en video voor advertenties en campagnes." },
+        { "q": "In welke talen voert u marketing?", "a": "Advertenties kunnen in meerdere talen worden opgesteld, waaronder Engels, Grieks en Hebreeuws, afhankelijk van uw doelgroep." },
+        { "q": "Voert u betaalde advertentiecampagnes?", "a": "Ja. Waar het bij de woning en uw budget past, voeren wij gerichte campagnes op sociale media en zoekplatforms." },
+        { "q": "Kunt u mij helpen de juiste prijs te bepalen?", "a": "Wij delen marktobservaties en vergelijkbare aanbiedingen. Een formele taxatie wordt verzorgd door een gecertificeerde taxateur of erkende makelaar." },
+        { "q": "Wat gebeurt er nadat de woning is verhuurd of verkocht?", "a": "Bij verhuur kunnen wij de huurrelatie of de vakantieverhuur beheren. Bij verkoop kunnen wij de nieuwe eigenaar beheer aanbieden." }
+      ],
+      "seoTitle": "Vastgoedmarketing & verkoop op Kreta | Sivan Management",
+      "seoDescription": "Voorbereiding, professionele fotografie, meertalige advertenties, online marketing en verkoopcoördinatie voor vastgoedeigenaren in Chania en op Kreta."
+    }
+  }
+}

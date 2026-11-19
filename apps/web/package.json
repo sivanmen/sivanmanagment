@@ -1,0 +1,29 @@
+{
+  "name": "web",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Sivan Management \u2014 public multilingual marketing website (Astro)",
+  "scripts": {
+    "dev": "astro dev --port 4321",
+    "build": "astro build",
+    "preview": "astro preview",
+    "start": "astro preview --port 4321",
+    "typecheck": "astro check",
+    "check:i18n": "node scripts/check-i18n.mjs",
+    "package": "node scripts/package-zip.mjs"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "3.7.5",
+    "@fontsource-variable/heebo": "5.2.5",
+    "@fontsource-variable/inter-tight": "5.2.5",
+    "@fontsource/kanit": "5.2.5",
+    "@fontsource/syne": "5.2.5",
+    "astro": "5.18.2",
+    "sharp": "0.34.5"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.4",
+    "typescript": "5.9.3"
+  }
+}
