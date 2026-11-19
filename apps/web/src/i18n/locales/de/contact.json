@@ -9,7 +9,12 @@
   "hours": "Montag bis Freitag, 09:00–17:00 Uhr (griechische Zeit)",
   "mapLink": "In Google Maps öffnen",
   "form": {
-    "steps": ["Immobilie", "Lage", "Leistungen", "Kontakt"],
+    "steps": [
+      "Immobilie",
+      "Lage",
+      "Leistungen",
+      "Kontakt"
+    ],
     "stepOf": "Schritt {n} von {total}",
     "back": "Zurück",
     "next": "Weiter",
@@ -49,14 +54,19 @@
     "phone": "Telefon / WhatsApp",
     "phoneHint": "Bitte mit Ländervorwahl, z. B. +49…",
     "preferred": "Bevorzugter Kontaktweg",
-    "preferredOptions": { "email": "E-Mail", "phone": "Telefon", "whatsapp": "WhatsApp" },
+    "preferredOptions": {
+      "email": "E-Mail",
+      "phone": "Telefon",
+      "whatsapp": "WhatsApp"
+    },
     "consent": "Ich bin damit einverstanden, dass Sivan Management meine Angaben zur Beantwortung dieser Anfrage verarbeitet, wie in der Datenschutzerklärung beschrieben.",
     "consentLink": "Datenschutzerklärung",
     "required": "Bitte füllen Sie dieses Feld aus.",
     "invalidEmail": "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
     "errorGeneric": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut oder kontaktieren Sie uns direkt per E-Mail oder Telefon.",
     "successTitle": "Vielen Dank, wir haben Ihre Anfrage erhalten.",
-    "successBody": "Wir prüfen Ihre Angaben und melden uns in Kürze. Eine Bestätigung wurde in unserem System vermerkt."
+    "successBody": "Wir prüfen Ihre Angaben und melden uns in Kürze. Eine Bestätigung wurde in unserem System vermerkt.",
+    "privacyNotice": "Die Angabe Ihrer Daten ist freiwillig. Wir verwenden sie ausschließlich, um Ihre Anfrage zu beantworten und ein Angebot zu erstellen; sie werden per E-Mail an unser Team gesendet und auf unserem Server in Israel gespeichert und nicht für Werbezwecke weitergegeben. Sie können jederzeit Auskunft, Berichtigung oder Löschung verlangen. Einzelheiten in unserer Datenschutzerklärung."
   },
   "thanks": {
     "seoTitle": "Vielen Dank | Sivan Management",

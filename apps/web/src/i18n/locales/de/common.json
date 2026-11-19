@@ -70,14 +70,34 @@
     "accessibility": "Erklärung zur Barrierefreiheit"
   },
   "cookie": {
-    "text": "Wir verwenden nur technisch notwendige Cookies, um diese Website zu betreiben. Mit Ihrer Einwilligung nutzen wir gegebenenfalls auch datenschutzfreundliche Analysen, um sie zu verbessern.",
-    "accept": "Analysen zulassen",
-    "decline": "Nur notwendige",
-    "more": "Cookie-Richtlinie"
+    "text": "Diese Website verwendet keine Cookies und kein Tracking. Datenschutzfreundliche, anonyme Statistiken möchten wir nur nutzen, wenn Sie zustimmen. Wenn Sie ablehnen, wird in Ihrem Browser nichts gespeichert.",
+    "accept": "Statistiken erlauben",
+    "decline": "Ablehnen",
+    "more": "Cookie-Richtlinie",
+    "settings": "Cookie-Einstellungen",
+    "title": "Ihre Datenschutz-Auswahl"
   },
   "notFound": {
     "title": "Seite nicht gefunden",
     "body": "Die gesuchte Seite wurde verschoben oder existiert nicht mehr.",
     "cta": "Zurück zur Startseite"
+  },
+  "a11y": {
+    "open": "Menü Barrierefreiheit",
+    "title": "Barrierefreiheit",
+    "close": "Menü Barrierefreiheit schließen",
+    "textBigger": "Text vergrößern",
+    "textSmaller": "Text verkleinern",
+    "contrast": "Hoher Kontrast",
+    "links": "Links hervorheben",
+    "font": "Gut lesbare Schrift",
+    "motion": "Animationen und Videos stoppen",
+    "spacing": "Zeilenabstand vergrößern",
+    "cursor": "Großer Mauszeiger",
+    "reset": "Einstellungen zurücksetzen",
+    "statement": "Erklärung zur Barrierefreiheit",
+    "pause": "Hintergrundvideo anhalten",
+    "play": "Hintergrundvideo abspielen",
+    "note": "Die Einstellungen gelten bis zum Schließen des Browsers und werden nicht dauerhaft gespeichert."
   }
 }

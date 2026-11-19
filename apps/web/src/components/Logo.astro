@@ -16,8 +16,8 @@ const onDark = pick('logo-on-dark');
 const official = onLight && onDark;
 ---
 {official ? (
-  <span class:list={['logo-official', `tone-${tone}`, cls]}>
-    <img class="on-light" src={`/brand/${onLight}`} alt="Sivan Management" width="170" height="50" />
+  <span class:list={['logo-official', `tone-${tone}`, cls]} role="img" aria-label="Sivan Management Group">
+    <img class="on-light" src={`/brand/${onLight}`} alt="" aria-hidden="true" width="170" height="50" />
     <img class="on-dark" src={`/brand/${onDark}`} alt="" aria-hidden="true" width="170" height="50" />
   </span>
 ) : (

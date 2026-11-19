@@ -44,6 +44,22 @@
       {
         "h": "Gebruikers in Israël",
         "p": "Als u zich in Israël bevindt, zijn op de verwerking van uw gegevens ook de Israëlische wet op de bescherming van de privacy (Protection of Privacy Law), 5741-1981, en de bijbehorende regelgeving van toepassing. U hebt het recht de gegevens die wij over u bewaren in te zien en om rectificatie of verwijdering ervan te verzoeken, door te schrijven naar support@sivanmanagment.com. U kunt ook contact opnemen met de Israëlische Autoriteit voor Privacybescherming (www.gov.il/en/departments/the_privacy_protection_authority)."
+      },
+      {
+        "h": "Geautomatiseerde besluiten",
+        "p": "We nemen geen besluiten over u die uitsluitend op geautomatiseerde verwerking zijn gebaseerd en maken geen marketingprofielen."
+      },
+      {
+        "h": "Marketingberichten",
+        "p": "We sturen geen marketing-e-mails, sms’jes of WhatsApp-berichten zonder uw voorafgaande toestemming. U kunt die op elk moment intrekken door ‘stop’ te antwoorden of ons te schrijven."
+      },
+      {
+        "h": "Kinderen",
+        "p": "Onze diensten zijn bedoeld voor volwassenen. We verzamelen niet bewust gegevens van kinderen jonger dan 16 jaar."
+      },
+      {
+        "h": "Wijzigingen in dit beleid",
+        "p": "We kunnen dit beleid bijwerken. De datum van de laatste wijziging staat bovenaan deze pagina; belangrijke wijzigingen worden op de website aangegeven."
       }
     ]
   },
@@ -52,16 +68,24 @@
     "title": "Cookiebeleid",
     "sections": [
       {
-        "h": "Essentiële opslag",
-        "p": "Wij slaan uw cookiekeuze en taalvoorkeur op in uw browser. Deze zijn noodzakelijk voor de werking van de site en volgen u niet."
+        "h": "Geen cookies",
+        "p": "Deze website plaatst geen cookies en gebruikt geen advertentie- of trackingtools en geen pixels van sociale media. Lettertypen, afbeeldingen en video’s komen van onze eigen server, zodat er tijdens het surfen geen gegevens naar derden gaan."
       },
       {
-        "h": "Analytics (optioneel)",
-        "p": "Alleen als u dat accepteert, laden wij mogelijk privacyvriendelijke analytics om te begrijpen hoe de site wordt gebruikt. Er worden geen advertentiecookies gebruikt."
+        "h": "Wat we in uw browser opslaan",
+        "p": "sm-consent (local storage, 12 maanden): alleen opgeslagen als u op ‘Statistieken toestaan’ klikt, om uw keuze te onthouden. Klikt u op ‘Weigeren’, dan wordt uw keuze alleen in de sessieopslag bewaard en verwijderd zodra u de browser sluit – er wordt niets blijvend opgeslagen. sm-a11y (sessieopslag, tot u de browser sluit): uw instellingen in het toegankelijkheidsmenu, alleen als u het menu gebruikt."
+      },
+      {
+        "h": "Statistieken",
+        "p": "Op dit moment is er geen statistiektool actief. Als we er een toevoegen, is die anoniem en privacyvriendelijk en wordt die pas geladen nadat u op ‘Statistieken toestaan’ hebt geklikt."
+      },
+      {
+        "h": "Serverlogboeken",
+        "p": "Zoals elke webserver registreert onze hostingprovider (JetServer, Israël) technische toegangslogs (IP-adres, browsertype, pagina en tijdstip) voor beveiliging. Ze worden kort bewaard en niet gebruikt om u te identificeren."
       },
       {
         "h": "Uw keuze wijzigen",
-        "p": "U kunt uw keuze op elk moment wijzigen door de gegevens van deze site in uw browser te wissen; de banner verschijnt dan opnieuw."
+        "p": "U kunt uw keuze op elk moment wijzigen of intrekken via de link ‘Cookie-instellingen’ onderaan elke pagina, of door de gegevens van deze website in uw browser te wissen."
       }
     ]
   },
@@ -125,7 +149,11 @@
       },
       {
         "h": "Wat wij hebben gedaan",
-        "p": "Een semantische paginastructuur met duidelijke koppen; volledige bediening met het toetsenbord, met een zichtbare focusindicator en een link “Naar de inhoud”; tekstalternatieven voor betekenisvolle afbeeldingen, terwijl decoratieve afbeeldingen en achtergrondvideo’s verborgen zijn voor schermlezers; kleurcontrast ontworpen voor niveau AA; animaties en achtergrondvideo’s die automatisch worden uitgeschakeld wanneer “beweging verminderen” op uw apparaat is ingeschakeld; een responsieve lay-out die zoomen tot 200% ondersteunt; formuliervelden met labels, duidelijke foutmeldingen en zonder tijdslimieten; en de juiste taal en leesrichting op elke pagina in alle acht talen, inclusief het van rechts naar links geschreven Hebreeuws."
+        "p": "Semantische paginastructuur met duidelijke koppen; volledige bediening met het toetsenbord met zichtbare focus en een link ‘Naar inhoud’; een toegankelijkheidsmenu op elke pagina (tekstgrootte, hoog contrast, gemarkeerde links, leesbaar lettertype, regelafstand, grote cursor, animaties stoppen); achtergrondvideo’s kunnen worden gepauzeerd en stoppen automatisch als ‘beweging verminderen’ is ingeschakeld; tekstalternatieven voor betekenisvolle afbeeldingen, terwijl decoratieve afbeeldingen en video’s verborgen zijn voor schermlezers; kleurcontrast ontworpen voor niveau AA; een responsieve opmaak die zoomen tot 200% ondersteunt; formuliervelden met labels, duidelijke foutmeldingen en zonder tijdslimiet; en de juiste taal en leesrichting op elke pagina in alle acht talen, inclusief Hebreeuws van rechts naar links."
+      },
+      {
+        "h": "Hoe we hebben gecontroleerd",
+        "p": "De website is op 18 november 2026 gecontroleerd met geautomatiseerde tests (axe-core, regels volgens WCAG 2.1 AA) op de belangrijkste pagina’s in het Engels en Hebreeuws, aangevuld met een handmatige controle van de toetsenbordbediening en de structuur voor schermlezers. Gevonden problemen zijn opgelost. We controleren opnieuw na elke belangrijke wijziging en minstens één keer per jaar."
       },
       {
         "h": "Bekende beperkingen",

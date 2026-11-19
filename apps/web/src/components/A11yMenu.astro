@@ -48,10 +48,10 @@ const toggles = [
 </div>
 
 <style>
-  .a11y { position: fixed; z-index: 80; bottom: var(--gutter); inset-inline-start: var(--gutter); }
+  .a11y { position: fixed; z-index: 80; top: calc(50% - 26px); inset-inline-start: 10px; }
   .a11y-btn { width: 52px; height: 52px; border-radius: 50%; border: 2px solid #fff; background: var(--violet-700); color: #fff; display: grid; place-items: center; cursor: pointer; box-shadow: 0 10px 30px rgba(18, 15, 36, 0.35); }
   .a11y-btn:hover { background: var(--ink); }
-  .a11y-panel { position: absolute; bottom: 64px; inset-inline-start: 0; width: min(320px, calc(100vw - 2 * var(--gutter))); max-height: min(78vh, 640px); overflow: auto; background: #fff; color: var(--ink); border-radius: 20px; padding: 1rem; box-shadow: 0 24px 70px rgba(18, 15, 36, 0.3); border: 1px solid var(--line); font-size: 1rem; }
+  .a11y-panel { position: fixed; top: 50%; transform: translateY(-50%); inset-inline-start: 72px; width: min(320px, calc(100vw - 88px)); max-height: min(78vh, 640px); overflow: auto; background: #fff; color: var(--ink); border-radius: 20px; padding: 1rem; box-shadow: 0 24px 70px rgba(18, 15, 36, 0.3); border: 1px solid var(--line); font-size: 1rem; }
   .a11y-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
   .a11y-head h2 { font-size: 1.15rem; letter-spacing: 0; }
   .a11y-x { width: 40px; height: 40px; border-radius: 12px; border: 0; background: var(--paper); cursor: pointer; display: grid; place-items: center; color: var(--ink); }

@@ -10,6 +10,7 @@ import Seo from '~/components/Seo.astro';
 import Header from '~/components/Header.astro';
 import Footer from '~/components/Footer.astro';
 import CookieBanner from '~/components/CookieBanner.astro';
+import A11yMenu from '~/components/A11yMenu.astro';
 import { LOCALE_META, LOCALES, type Locale } from '~/i18n/config';
 import { getDict } from '~/i18n';
 
@@ -40,7 +41,7 @@ const t = getDict(locale);
     <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="sitemap" href="/sitemap-index.xml" />
-    <script is:inline>document.documentElement.classList.replace('no-js', 'js');</script>
+    <script is:inline>document.documentElement.classList.replace('no-js', 'js');try{var s=JSON.parse(sessionStorage.getItem('sm-a11y')||'{}');var h=document.documentElement;if(s.size&&s.size!==100)h.style.fontSize=s.size+'%';['contrast','links','font','spacing','cursor','motion'].forEach(function(k){if(s[k])h.classList.add('a11y-'+k)})}catch(e){}</script>
     <Seo locale={locale} path={path} alternates={alternates} {...seo} />
   </head>
   <body>
@@ -51,6 +52,7 @@ const t = getDict(locale);
     </main>
     <Footer locale={locale} />
     <CookieBanner locale={locale} />
+    <A11yMenu locale={locale} />
     <script>
       import '~/lib/motion';
     </script>

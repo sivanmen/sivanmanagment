@@ -9,7 +9,12 @@
   "hours": "Maandag t/m vrijdag, 09:00–17:00 (Griekse tijd)",
   "mapLink": "Openen in Google Maps",
   "form": {
-    "steps": ["Vastgoed", "Locatie", "Diensten", "Contact"],
+    "steps": [
+      "Vastgoed",
+      "Locatie",
+      "Diensten",
+      "Contact"
+    ],
     "stepOf": "Stap {n} van {total}",
     "back": "Terug",
     "next": "Verder",
@@ -49,14 +54,19 @@
     "phone": "Telefoon / WhatsApp",
     "phoneHint": "Vermeld uw landcode, bijv. +31…",
     "preferred": "Voorkeur voor contact",
-    "preferredOptions": { "email": "E-mail", "phone": "Telefoon", "whatsapp": "WhatsApp" },
+    "preferredOptions": {
+      "email": "E-mail",
+      "phone": "Telefoon",
+      "whatsapp": "WhatsApp"
+    },
     "consent": "Ik ga ermee akkoord dat Sivan Management mijn gegevens verwerkt om op deze aanvraag te reageren, zoals beschreven in het Privacybeleid.",
     "consentLink": "Privacybeleid",
     "required": "Vul dit veld in.",
     "invalidEmail": "Vul een geldig e-mailadres in.",
     "errorGeneric": "Er is iets misgegaan. Probeer het opnieuw, of neem rechtstreeks contact met ons op per e-mail of telefoon.",
     "successTitle": "Dank u wel, wij hebben uw aanvraag ontvangen.",
-    "successBody": "Wij bekijken de gegevens en nemen spoedig contact met u op. Uw aanvraag is in ons systeem geregistreerd."
+    "successBody": "Wij bekijken de gegevens en nemen spoedig contact met u op. Uw aanvraag is in ons systeem geregistreerd.",
+    "privacyNotice": "Het verstrekken van uw gegevens is vrijwillig. We gebruiken ze alleen om uw aanvraag te beantwoorden en een voorstel op te stellen; ze worden per e-mail naar ons team gestuurd en op onze server in Israël bewaard, en niet gedeeld voor marketing. U kunt ze op elk moment inzien, laten corrigeren of laten verwijderen. Meer informatie in ons privacybeleid."
   },
   "thanks": {
     "seoTitle": "Dank u wel | Sivan Management",

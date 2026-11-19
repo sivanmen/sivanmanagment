@@ -82,10 +82,11 @@ const privacy = localizePath('/legal/privacy-policy/', locale);
         <label class="tile tile--sm"><input type="radio" name="preferred" value={v} checked={i === 0} /><span>{label}</span></label>
       ))}
     </div>
-    <label class="consent"><input type="checkbox" name="consent" value="yes" required /><span>{f.consent} <a href={privacy} target="_blank">{f.consentLink}</a></span></label>
+    <p class="notice" id="privacy-notice">{f.privacyNotice}</p>
+    <label class="consent"><input type="checkbox" name="consent" value="yes" required aria-describedby="privacy-notice" /><span>{f.consent} <a href={privacy} target="_blank" rel="noopener">{f.consentLink}</a></span></label>
   </fieldset>
 
-  <p class="af-error" role="alert" hidden data-error></p>
+  <p class="af-error" role="alert" hidden data-error id="af-error"></p>
 
   <div class="af-nav">
     <button type="button" class="btn btn--ghost" data-back hidden>{f.back}</button>
@@ -125,9 +126,10 @@ const privacy = localizePath('/legal/privacy-policy/', locale);
   .field input[aria-invalid='true'] { border-color: #d64545; }
   .row-2 { display: grid; gap: 1rem; }
   @media (min-width: 640px) { .row-2 { grid-template-columns: 1fr 1fr; } }
+  .notice { font-size: 0.82rem; color: var(--text-muted); background: var(--paper); border-radius: 12px; padding: 0.75rem 0.9rem; }
   .consent { display: flex; gap: 0.75rem; align-items: flex-start; font-size: 0.9rem; color: var(--text-muted); }
   .consent input { width: 1.2rem; height: 1.2rem; margin-top: 0.15rem; accent-color: var(--violet); flex: none; }
-  .consent a { color: var(--violet); text-decoration: underline; }
+  .consent a { color: var(--violet-text); text-decoration: underline; }
   .af-error { color: #b42318; background: #fef3f2; border-radius: 12px; padding: 0.75rem 1rem; font-size: 0.9rem; }
   .af-nav { display: flex; justify-content: space-between; gap: 0.75rem; }
   .af-nav [data-next], .af-nav [data-submit] { margin-inline-start: auto; }

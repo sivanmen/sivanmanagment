@@ -70,14 +70,34 @@
     "accessibility": "无障碍声明"
   },
   "cookie": {
-    "text": "本网站仅使用运行所必需的 Cookie。经您同意后，我们还可能使用注重隐私的分析工具来改进网站。",
-    "accept": "接受分析",
-    "decline": "仅限必要",
-    "more": "Cookie 政策"
+    "text": "本网站不使用 Cookie，也不进行任何跟踪。只有在您同意的情况下，我们才会使用匿名、注重隐私的统计。如您拒绝，您的浏览器中不会保存任何内容。",
+    "accept": "允许统计",
+    "decline": "拒绝",
+    "more": "Cookie 政策",
+    "settings": "Cookie 设置",
+    "title": "您的隐私选择"
   },
   "notFound": {
     "title": "页面未找到",
     "body": "您访问的页面已移动或不再存在。",
     "cta": "返回首页"
+  },
+  "a11y": {
+    "open": "无障碍菜单",
+    "title": "无障碍",
+    "close": "关闭无障碍菜单",
+    "textBigger": "放大文字",
+    "textSmaller": "缩小文字",
+    "contrast": "高对比度",
+    "links": "突出显示链接",
+    "font": "易读字体",
+    "motion": "停止动画和视频",
+    "spacing": "增加行距",
+    "cursor": "大号光标",
+    "reset": "重置设置",
+    "statement": "无障碍声明",
+    "pause": "暂停背景视频",
+    "play": "播放背景视频",
+    "note": "设置仅在关闭浏览器前有效，不会被永久保存。"
   }
 }

@@ -1,14 +1,25 @@
 ---
+/**
+ * Consent banner (GDPR / ePrivacy art. 5(3), Israeli Privacy Protection Law).
+ * - The site sets NO cookies. The only optional purpose is anonymous statistics (none active yet).
+ * - "Decline" is as prominent as "Allow"; declining stores the choice only in sessionStorage,
+ *   which the browser deletes on close — nothing persistent is written.
+ * - "Allow" stores { v: 'analytics', t: timestamp } in localStorage for 12 months, then asks again.
+ * - Any element with [data-cookie-open] (footer "Cookie settings") reopens the banner.
+ * - Analytics code must only run after window event `sm:consent` with detail === 'analytics'
+ *   or when window.smConsent() returns 'analytics'.
+ */
 import { getDict } from '~/i18n';
 import { localizePath, type Locale } from '~/i18n/config';
 interface Props { locale: Locale }
 const { locale } = Astro.props;
 const c = getDict(locale).common.cookie;
 ---
-<div class="cookie glass-light" role="dialog" aria-live="polite" aria-label={c.more} hidden data-cookie>
-  <p>{c.text} <a href={localizePath('/legal/cookie-policy/', locale)}>{c.more}</a></p>
-  <div class="btn-row">
-    <button type="button" class="btn btn--sm btn--ghost" data-consent="essential">{c.decline}</button>
+<div class="cookie glass-light" role="dialog" aria-modal="false" aria-labelledby="cookie-title" aria-describedby="cookie-text" hidden data-cookie>
+  <h2 id="cookie-title" class="cookie-title">{c.title}</h2>
+  <p id="cookie-text">{c.text} <a href={localizePath('/legal/cookie-policy/', locale)}>{c.more}</a></p>
+  <div class="btn-row cookie-btns">
+    <button type="button" class="btn btn--sm" data-consent="essential">{c.decline}</button>
     <button type="button" class="btn btn--sm" data-consent="analytics">{c.accept}</button>
   </div>
 </div>
@@ -16,26 +27,46 @@ const c = getDict(locale).common.cookie;
 <style>
   .cookie {
     position: fixed; z-index: 70; inset-inline-start: var(--gutter); inset-inline-end: var(--gutter); bottom: var(--gutter); max-width: 440px; margin-inline-start: auto;
-    padding: 1rem 1.15rem; display: grid; gap: 0.8rem; font-size: 0.85rem; color: var(--ink);
+    padding: 1rem 1.15rem; display: grid; gap: 0.7rem; font-size: 0.875rem; color: var(--ink);
     box-shadow: 0 24px 60px rgba(18, 15, 36, 0.18);
   }
-  .cookie a { color: var(--violet); text-decoration: underline; text-underline-offset: 3px; }
-  .cookie .btn--ghost { color: var(--ink); }
+  .cookie[hidden] { display: none; }
+  .cookie-title { font-size: 1rem; letter-spacing: 0; }
+  .cookie a { color: var(--violet-700); text-decoration: underline; text-underline-offset: 3px; }
+  .cookie-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+  .cookie-btns .btn { width: 100%; white-space: normal; }
 </style>
 
 <script>
-  // Consent state lives in localStorage ("sm-consent" = essential | analytics).
-  // Analytics scripts must only be injected after `sm:consent` fires with "analytics".
+  const KEY = 'sm-consent';
+  const YEAR = 365 * 24 * 3600 * 1000;
+  type Choice = 'analytics' | 'essential' | null;
+  function read(): Choice {
+    try {
+      const s = sessionStorage.getItem(KEY);
+      if (s === 'essential') return 'essential';
+      const raw = localStorage.getItem(KEY);
+      if (!raw) return null;
+      const v = JSON.parse(raw) as { v: string; t: number };
+      if (v.v === 'analytics' && Date.now() - v.t < YEAR) return 'analytics';
+      localStorage.removeItem(KEY); // expired or malformed → ask again
+    } catch {}
+    return null;
+  }
+  (window as unknown as { smConsent: () => Choice }).smConsent = read;
   const el = document.querySelector<HTMLElement>('[data-cookie]');
-  let stored: string | null = null;
-  try { stored = localStorage.getItem('sm-consent'); } catch {}
-  if (el && !stored) el.hidden = false;
+  const show = () => { if (el) { el.hidden = false; el.querySelector<HTMLButtonElement>('button')?.focus({ preventScroll: true }); } };
+  if (el && !read()) el.hidden = false;
   el?.querySelectorAll<HTMLButtonElement>('[data-consent]').forEach((b) =>
     b.addEventListener('click', () => {
-      const v = b.dataset.consent || 'essential';
-      try { localStorage.setItem('sm-consent', v); } catch {}
+      const v = b.dataset.consent === 'analytics' ? 'analytics' : 'essential';
+      try {
+        if (v === 'analytics') { localStorage.setItem(KEY, JSON.stringify({ v, t: Date.now() })); sessionStorage.removeItem(KEY); }
+        else { localStorage.removeItem(KEY); sessionStorage.setItem(KEY, 'essential'); }
+      } catch {}
       el.hidden = true;
       window.dispatchEvent(new CustomEvent('sm:consent', { detail: v }));
     }),
   );
+  document.querySelectorAll<HTMLElement>('[data-cookie-open]').forEach((b) => b.addEventListener('click', (e) => { e.preventDefault(); show(); }));
 </script>

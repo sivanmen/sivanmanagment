@@ -9,14 +9,15 @@ import { localizePath, type Locale } from '~/i18n/config';
 interface Props { locale: Locale }
 const { locale } = Astro.props;
 const h = getDict(locale).home.hero;
+const a11y = getDict(locale).common.a11y;
 const L = (p: string) => localizePath(p, locale);
 const hero = IMAGES['chania-lighthouse'];
 ---
 <section class="hero section--dark grain" aria-labelledby="hero-title">
-  <div class="hero-media" aria-hidden="true">
+  <div class="hero-media">
     <div class="hero-img" data-parallax="-0.12">
       <Image src={hero.src} alt="" widths={[768, 1280, 1920]} sizes="100vw" loading="eager" fetchpriority="high" />
-      <BgVideo name="heroChania" class="hero-video" />
+      <BgVideo name="heroChania" class="hero-video" pauseLabel={a11y.pause} playLabel={a11y.play} />
     </div>
     <div class="hero-shade"></div>
     <div class="orb orb-a"></div>

@@ -22,8 +22,8 @@ const crumbLd = {
 ---
 <section class:list={['page-hero section--dark grain', { 'has-image': !!image }]}>
   {image && (
-    <div class="ph-media" aria-hidden="true">
-      <div data-parallax="-0.08" class="ph-img"><Image src={image.src} alt="" widths={[768, 1280, 1920]} sizes="100vw" loading="eager" fetchpriority="high" />{video && <BgVideo name={video} />}</div>
+    <div class="ph-media">
+      <div data-parallax="-0.08" class="ph-img"><Image src={image.src} alt="" widths={[768, 1280, 1920]} sizes="100vw" loading="eager" fetchpriority="high" />{video && <BgVideo name={video} pauseLabel={t.common.a11y.pause} playLabel={t.common.a11y.play} />}</div>
     </div>
   )}
   <div class="aurora" aria-hidden="true"></div>

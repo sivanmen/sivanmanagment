@@ -70,14 +70,34 @@
     "accessibility": "Toegankelijkheidsverklaring"
   },
   "cookie": {
-    "text": "Wij gebruiken alleen essentiële cookies om deze website te laten werken. Met uw toestemming gebruiken wij mogelijk ook privacyvriendelijke analytics om de site te verbeteren.",
-    "accept": "Analytics accepteren",
-    "decline": "Alleen essentieel",
-    "more": "Cookiebeleid"
+    "text": "Deze website gebruikt geen cookies en geen tracking. Privacyvriendelijke, anonieme statistieken gebruiken we alleen als u daarvoor toestemming geeft. Als u weigert, wordt er niets in uw browser opgeslagen.",
+    "accept": "Statistieken toestaan",
+    "decline": "Weigeren",
+    "more": "Cookiebeleid",
+    "settings": "Cookie-instellingen",
+    "title": "Uw privacykeuze"
   },
   "notFound": {
     "title": "Pagina niet gevonden",
     "body": "De pagina die u zoekt is verplaatst of bestaat niet meer.",
     "cta": "Terug naar de homepage"
+  },
+  "a11y": {
+    "open": "Toegankelijkheidsmenu",
+    "title": "Toegankelijkheid",
+    "close": "Toegankelijkheidsmenu sluiten",
+    "textBigger": "Tekst vergroten",
+    "textSmaller": "Tekst verkleinen",
+    "contrast": "Hoog contrast",
+    "links": "Links markeren",
+    "font": "Leesbaar lettertype",
+    "motion": "Animaties en video’s stoppen",
+    "spacing": "Regelafstand vergroten",
+    "cursor": "Grote cursor",
+    "reset": "Instellingen herstellen",
+    "statement": "Toegankelijkheidsverklaring",
+    "pause": "Achtergrondvideo pauzeren",
+    "play": "Achtergrondvideo afspelen",
+    "note": "De instellingen gelden tot u de browser sluit en worden niet blijvend opgeslagen."
   }
 }

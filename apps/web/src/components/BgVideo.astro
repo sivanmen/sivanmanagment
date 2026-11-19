@@ -6,8 +6,8 @@
  *   so the video never blocks the first paint.
  */
 import { VIDEOS, type VideoKey } from '~/lib/images';
-interface Props { name: VideoKey; class?: string }
-const { name, class: cls } = Astro.props;
+interface Props { name: VideoKey; class?: string; pauseLabel?: string; playLabel?: string }
+const { name, class: cls, pauseLabel = 'Pause background video', playLabel = 'Play background video' } = Astro.props;
 const v = VIDEOS[name];
 const small = 'srcSmall' in v ? v.srcSmall : v.src;
 ---
@@ -25,6 +25,9 @@ const small = 'srcSmall' in v ? v.srcSmall : v.src;
   data-src={v.src}
   data-src-small={small}
 ></video>
+<button type="button" class="bgv-toggle" hidden data-bgv-toggle data-pause={pauseLabel} data-play={playLabel} aria-label={pauseLabel}>
+  <svg class="i-pause" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+</button>
 
 <style>
   .bgv { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
@@ -33,15 +36,33 @@ const small = 'srcSmall' in v ? v.srcSmall : v.src;
 <script>
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData;
+  const html = document.documentElement;
+  const PAUSE_ICON = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
+  const PLAY_ICON = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
+  let userPaused = false;
+  const videos = () => [...document.querySelectorAll<HTMLVideoElement>('[data-bgv]')];
+  const setBtn = (playing: boolean) => document.querySelectorAll<HTMLButtonElement>('[data-bgv-toggle]').forEach((b) => {
+    b.innerHTML = playing ? PAUSE_ICON : PLAY_ICON;
+    b.setAttribute('aria-label', playing ? b.dataset.pause! : b.dataset.play!);
+    b.setAttribute('aria-pressed', String(!playing));
+  });
+  const allowed = () => !reduce && !saveData && !html.classList.contains('a11y-motion') && !userPaused;
+  const start = () => videos().forEach((v) => {
+    if (!allowed()) return;
+    if (!v.src) {
+      v.src = window.innerWidth < 900 ? v.dataset.srcSmall! : v.dataset.src!;
+      new IntersectionObserver(([e]) => { if (allowed()) (e.isIntersecting ? v.play().catch(() => {}) : v.pause()); }).observe(v);
+    }
+    v.play().catch(() => {});
+    v.nextElementSibling?.removeAttribute('hidden');
+    setBtn(true);
+  });
+  const stop = () => { videos().forEach((v) => v.pause()); setBtn(false); };
+  document.querySelectorAll<HTMLButtonElement>('[data-bgv-toggle]').forEach((b) => b.addEventListener('click', () => {
+    userPaused = !userPaused; userPaused ? stop() : start();
+  }));
+  window.addEventListener('sm:motion', (e) => ((e as CustomEvent<boolean>).detail ? start() : stop()));
   if (!reduce && !saveData) {
-    const start = () =>
-      document.querySelectorAll<HTMLVideoElement>('[data-bgv]').forEach((v) => {
-        if (v.src) return;
-        v.src = window.innerWidth < 900 ? v.dataset.srcSmall! : v.dataset.src!;
-        v.play().catch(() => {});
-        // Pause when off-screen to save battery
-        new IntersectionObserver(([e]) => (e.isIntersecting ? v.play().catch(() => {}) : v.pause())).observe(v);
-      });
     if (document.readyState === 'complete') start();
     else window.addEventListener('load', start, { once: true });
   }

@@ -9,7 +9,12 @@
   "hours": "Du lundi au vendredi, de 9 h à 17 h (heure grecque)",
   "mapLink": "Ouvrir dans Google Maps",
   "form": {
-    "steps": ["Bien", "Localisation", "Services", "Coordonnées"],
+    "steps": [
+      "Bien",
+      "Localisation",
+      "Services",
+      "Coordonnées"
+    ],
     "stepOf": "Étape {n} sur {total}",
     "back": "Retour",
     "next": "Continuer",
@@ -49,14 +54,19 @@
     "phone": "Téléphone / WhatsApp",
     "phoneHint": "Indiquez l’indicatif de votre pays, par ex. +33…",
     "preferred": "Moyen de contact préféré",
-    "preferredOptions": { "email": "E-mail", "phone": "Téléphone", "whatsapp": "WhatsApp" },
+    "preferredOptions": {
+      "email": "E-mail",
+      "phone": "Téléphone",
+      "whatsapp": "WhatsApp"
+    },
     "consent": "J’accepte que Sivan Management traite mes données afin de répondre à cette demande, conformément à la Politique de confidentialité.",
     "consentLink": "Politique de confidentialité",
     "required": "Veuillez remplir ce champ.",
     "invalidEmail": "Veuillez saisir une adresse e-mail valide.",
     "errorGeneric": "Une erreur est survenue. Veuillez réessayer, ou nous contacter directement par e-mail ou par téléphone.",
     "successTitle": "Merci, nous avons bien reçu votre demande.",
-    "successBody": "Nous allons étudier les informations transmises et vous recontacter très prochainement. Votre demande a bien été enregistrée dans notre système."
+    "successBody": "Nous allons étudier les informations transmises et vous recontacter très prochainement. Votre demande a bien été enregistrée dans notre système.",
+    "privacyNotice": "La communication de vos coordonnées est facultative. Nous les utilisons uniquement pour répondre à votre demande et préparer une proposition ; elles sont envoyées par e-mail à notre équipe et conservées sur notre serveur en Israël, et ne sont pas partagées à des fins de marketing. Vous pouvez à tout moment demander à y accéder, à les corriger ou à les supprimer. Détails dans notre Politique de confidentialité."
   },
   "thanks": {
     "seoTitle": "Merci | Sivan Management",

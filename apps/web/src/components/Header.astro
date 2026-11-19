@@ -180,6 +180,9 @@ const serviceIcons: Record<string, string> = {
   };
   window.addEventListener('scroll', onScroll, { passive: true });
   onScroll();
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && burger?.getAttribute('aria-expanded') === 'true') { burger.click(); burger.focus(); }
+  });
   burger?.addEventListener('click', () => {
     const open = burger.getAttribute('aria-expanded') === 'true';
     burger.setAttribute('aria-expanded', String(!open));

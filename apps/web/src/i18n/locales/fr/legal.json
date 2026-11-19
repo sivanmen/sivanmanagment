@@ -44,6 +44,22 @@
       {
         "h": "Utilisateurs en Israël",
         "p": "Si vous vous trouvez en Israël, la loi israélienne sur la protection de la vie privée (Protection of Privacy Law), 5741-1981, et ses règlements d’application s’appliquent également au traitement de vos informations. Vous avez le droit de consulter les informations que nous détenons à votre sujet et d’en demander la rectification ou la suppression, en écrivant à support@sivanmanagment.com. Vous pouvez également contacter l’Autorité israélienne de protection de la vie privée (www.gov.il/en/departments/the_privacy_protection_authority)."
+      },
+      {
+        "h": "Décisions automatisées",
+        "p": "Nous ne prenons aucune décision vous concernant fondée exclusivement sur un traitement automatisé et ne créons pas de profils marketing."
+      },
+      {
+        "h": "Messages marketing",
+        "p": "Nous n’envoyons pas d’e-mails, de SMS ou de messages WhatsApp marketing sans votre consentement préalable. Vous pouvez le retirer à tout moment en répondant « stop » ou en nous écrivant."
+      },
+      {
+        "h": "Enfants",
+        "p": "Nos services s’adressent aux adultes. Nous ne collectons pas sciemment de données concernant des enfants de moins de 16 ans."
+      },
+      {
+        "h": "Modifications de la présente politique",
+        "p": "Nous pouvons mettre à jour cette politique. La date de la dernière mise à jour figure en haut de cette page ; les modifications importantes seront signalées sur le site."
       }
     ]
   },
@@ -52,16 +68,24 @@
     "title": "Politique relative aux cookies",
     "sections": [
       {
-        "h": "Stockage essentiel",
-        "p": "Nous enregistrons votre choix en matière de cookies et votre langue préférée dans votre navigateur. Ces éléments sont nécessaires au fonctionnement du site et ne vous pistent pas."
+        "h": "Aucun cookie",
+        "p": "Ce site ne dépose aucun cookie et n’utilise ni outils publicitaires, ni traceurs, ni pixels de réseaux sociaux. Les polices, images et vidéos sont servies depuis notre propre serveur : aucune information n’est transmise à des tiers lors de votre navigation."
       },
       {
-        "h": "Mesure d’audience (facultative)",
-        "p": "Uniquement si vous l’acceptez, nous pouvons charger un outil de mesure d’audience respectueux de la vie privée afin de comprendre l’utilisation du site. Aucun cookie publicitaire n’est utilisé."
+        "h": "Ce que nous enregistrons dans votre navigateur",
+        "p": "sm-consent (stockage local, 12 mois) : enregistré uniquement si vous cliquez sur « Autoriser les statistiques », afin de mémoriser votre choix. Si vous cliquez sur « Refuser », votre choix est conservé uniquement dans le stockage de session et supprimé à la fermeture du navigateur — rien n’est enregistré durablement. sm-a11y (stockage de session, jusqu’à la fermeture du navigateur) : vos réglages du menu d’accessibilité, uniquement si vous utilisez le menu."
+      },
+      {
+        "h": "Statistiques",
+        "p": "Aucun outil de statistiques n’est actif pour le moment. Si nous en ajoutons un, il sera anonyme et respectueux de la vie privée, et ne se chargera qu’après que vous aurez cliqué sur « Autoriser les statistiques »."
+      },
+      {
+        "h": "Journaux du serveur",
+        "p": "Comme tout serveur web, notre hébergeur (JetServer, Israël) enregistre des journaux techniques d’accès (adresse IP, type de navigateur, page et heure) à des fins de sécurité. Ils sont conservés peu de temps et ne servent pas à vous identifier."
       },
       {
         "h": "Modifier votre choix",
-        "p": "Vous pouvez modifier votre choix à tout moment en effaçant les données de ce site dans votre navigateur ; le bandeau s’affichera alors de nouveau."
+        "p": "Vous pouvez modifier ou retirer votre choix à tout moment via le lien « Paramètres des cookies » en bas de chaque page, ou en effaçant les données de ce site dans votre navigateur."
       }
     ]
   },
@@ -125,7 +149,11 @@
       },
       {
         "h": "Ce que nous avons fait",
-        "p": "Une structure de page sémantique avec des titres clairs ; une navigation complète au clavier avec un indicateur de focus visible et un lien « Aller au contenu » ; des alternatives textuelles pour les images porteuses de sens, tandis que les images décoratives et les vidéos d’arrière-plan sont masquées aux lecteurs d’écran ; des contrastes de couleurs conçus pour le niveau AA ; des animations et vidéos d’arrière-plan qui se désactivent automatiquement lorsque l’option « réduire les animations » est activée sur votre appareil ; une mise en page adaptative qui prend en charge un zoom jusqu’à 200 % ; des champs de formulaire dotés d’étiquettes et de messages d’erreur clairs, sans limite de temps ; ainsi que la langue et le sens de lecture corrects sur chaque page, dans les huit langues, y compris l’hébreu, qui se lit de droite à gauche."
+        "p": "Structure sémantique des pages avec des titres clairs ; navigation complète au clavier avec un indicateur de focus visible et un lien « Aller au contenu » ; un menu d’accessibilité sur chaque page (taille du texte, contraste élevé, liens mis en évidence, police lisible, interligne, grand curseur, arrêt des animations) ; les vidéos de fond peuvent être mises en pause et s’arrêtent automatiquement lorsque l’option « réduire les animations » est activée ; des alternatives textuelles pour les images porteuses de sens, les images et vidéos décoratives étant masquées aux lecteurs d’écran ; un contraste des couleurs conçu pour le niveau AA ; une mise en page adaptative compatible avec un zoom jusqu’à 200 % ; des champs de formulaire avec étiquettes, messages d’erreur clairs et sans limite de temps ; et la bonne langue et le bon sens de lecture sur chaque page dans les huit langues, y compris l’hébreu de droite à gauche."
+      },
+      {
+        "h": "Comment nous avons vérifié",
+        "p": "Le site a été vérifié le 18 novembre 2026 par des tests automatisés (axe-core, règles WCAG 2.1 AA) sur les pages principales en anglais et en hébreu, complétés par un contrôle manuel de la navigation au clavier et de la structure pour les lecteurs d’écran. Les problèmes relevés ont été corrigés. Nous vérifions à nouveau après chaque modification importante et au moins une fois par an."
       },
       {
         "h": "Limites connues",

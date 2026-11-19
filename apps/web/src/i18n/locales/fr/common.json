@@ -70,14 +70,34 @@
     "accessibility": "Déclaration d’accessibilité"
   },
   "cookie": {
-    "text": "Nous utilisons uniquement les cookies essentiels au fonctionnement de ce site. Avec votre accord, nous pouvons aussi recourir à une mesure d’audience respectueuse de la vie privée pour l’améliorer.",
-    "accept": "Accepter la mesure d’audience",
-    "decline": "Essentiels uniquement",
-    "more": "Politique relative aux cookies"
+    "text": "Ce site n’utilise ni cookies ni traçage. Nous aimerions utiliser des statistiques anonymes et respectueuses de la vie privée, uniquement si vous l’autorisez. Si vous refusez, rien n’est enregistré dans votre navigateur.",
+    "accept": "Autoriser les statistiques",
+    "decline": "Refuser",
+    "more": "Politique de cookies",
+    "settings": "Paramètres des cookies",
+    "title": "Votre choix de confidentialité"
   },
   "notFound": {
     "title": "Page introuvable",
     "body": "La page que vous recherchez a été déplacée ou n’existe plus.",
     "cta": "Retour à l’accueil"
+  },
+  "a11y": {
+    "open": "Menu d’accessibilité",
+    "title": "Accessibilité",
+    "close": "Fermer le menu d’accessibilité",
+    "textBigger": "Agrandir le texte",
+    "textSmaller": "Réduire le texte",
+    "contrast": "Contraste élevé",
+    "links": "Mettre en évidence les liens",
+    "font": "Police lisible",
+    "motion": "Arrêter animations et vidéos",
+    "spacing": "Augmenter l’interligne",
+    "cursor": "Grand curseur",
+    "reset": "Réinitialiser",
+    "statement": "Déclaration d’accessibilité",
+    "pause": "Mettre en pause la vidéo de fond",
+    "play": "Lire la vidéo de fond",
+    "note": "Les réglages restent actifs jusqu’à la fermeture du navigateur et ne sont pas conservés durablement."
   }
 }

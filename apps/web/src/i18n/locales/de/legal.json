@@ -44,6 +44,22 @@
       {
         "h": "Nutzer in Israel",
         "p": "Wenn Sie sich in Israel befinden, gelten für die Verarbeitung Ihrer Informationen zusätzlich das Datenschutzgesetz Israels (Protection of Privacy Law), 5741-1981, und die dazu erlassenen Verordnungen. Sie haben das Recht, die über Sie gespeicherten Informationen einzusehen und deren Berichtigung oder Löschung zu verlangen, indem Sie an support@sivanmanagment.com schreiben. Sie können sich auch an die israelische Datenschutzbehörde (www.gov.il/en/departments/the_privacy_protection_authority) wenden."
+      },
+      {
+        "h": "Automatisierte Entscheidungen",
+        "p": "Wir treffen keine ausschließlich auf automatisierter Verarbeitung beruhenden Entscheidungen über Sie und erstellen keine Marketingprofile."
+      },
+      {
+        "h": "Werbenachrichten",
+        "p": "Wir versenden keine Werbe-E-Mails, -SMS oder -WhatsApp-Nachrichten ohne Ihre vorherige Einwilligung. Sie können sie jederzeit widerrufen, indem Sie „stop“ antworten oder uns schreiben."
+      },
+      {
+        "h": "Kinder",
+        "p": "Unsere Leistungen richten sich an Erwachsene. Wir erheben wissentlich keine Daten von Kindern unter 16 Jahren."
+      },
+      {
+        "h": "Änderungen dieser Erklärung",
+        "p": "Wir können diese Erklärung aktualisieren. Das Datum der letzten Aktualisierung steht oben auf dieser Seite; wesentliche Änderungen werden auf der Website hervorgehoben."
       }
     ]
   },
@@ -52,16 +68,24 @@
     "title": "Cookie-Richtlinie",
     "sections": [
       {
-        "h": "Notwendige Speicherung",
-        "p": "Wir speichern Ihre Cookie-Auswahl und Ihre Spracheinstellung in Ihrem Browser. Diese sind für den Betrieb der Website erforderlich und verfolgen Sie nicht."
+        "h": "Keine Cookies",
+        "p": "Diese Website setzt keine Cookies und verwendet keine Werbe- oder Tracking-Tools und keine Social-Media-Pixel. Schriften, Bilder und Videos werden von unserem eigenen Server geladen, sodass beim Surfen keine Daten an Dritte übermittelt werden."
       },
       {
-        "h": "Analysen (optional)",
-        "p": "Nur wenn Sie zustimmen, laden wir gegebenenfalls datenschutzfreundliche Analysen, um zu verstehen, wie die Website genutzt wird. Werbe-Cookies werden nicht verwendet."
+        "h": "Was in Ihrem Browser gespeichert wird",
+        "p": "sm-consent (Local Storage, 12 Monate): wird nur gespeichert, wenn Sie auf „Statistiken erlauben“ klicken, um Ihre Wahl zu speichern. Wenn Sie auf „Ablehnen“ klicken, wird Ihre Wahl nur im Session Storage gehalten und beim Schließen des Browsers gelöscht – dauerhaft wird nichts gespeichert. sm-a11y (Session Storage, bis zum Schließen des Browsers): Ihre Einstellungen im Menü Barrierefreiheit, nur wenn Sie das Menü nutzen."
       },
       {
-        "h": "Ihre Auswahl ändern",
-        "p": "Sie können Ihre Auswahl jederzeit ändern, indem Sie die Daten dieser Website in Ihrem Browser löschen; das Banner erscheint dann erneut."
+        "h": "Statistiken",
+        "p": "Derzeit ist kein Statistik-Tool aktiv. Falls wir eines einführen, ist es anonym und datenschutzfreundlich und wird erst geladen, nachdem Sie auf „Statistiken erlauben“ geklickt haben."
+      },
+      {
+        "h": "Server-Logs",
+        "p": "Wie jeder Webserver protokolliert unser Hosting-Anbieter (JetServer, Israel) technische Zugriffsdaten (IP-Adresse, Browsertyp, Seite und Uhrzeit) zu Sicherheitszwecken. Sie werden kurzzeitig gespeichert und nicht zu Ihrer Identifizierung verwendet."
+      },
+      {
+        "h": "Ihre Wahl ändern",
+        "p": "Sie können Ihre Wahl jederzeit über den Link „Cookie-Einstellungen“ am Ende jeder Seite ändern oder widerrufen oder die Daten dieser Website in Ihrem Browser löschen."
       }
     ]
   },
@@ -125,7 +149,11 @@
       },
       {
         "h": "Was wir umgesetzt haben",
-        "p": "Eine semantische Seitenstruktur mit klaren Überschriften; vollständige Bedienbarkeit per Tastatur mit sichtbarer Fokusanzeige und einem Link „Zum Inhalt springen“; Textalternativen für aussagekräftige Bilder, während dekorative Bilder und Hintergrundvideos vor Screenreadern verborgen sind; Farbkontraste, die auf Stufe AA ausgelegt sind; Animationen und Hintergrundvideos, die sich automatisch abschalten, wenn auf Ihrem Gerät „Bewegung reduzieren“ aktiviert ist; ein responsives Layout, das eine Vergrößerung bis 200 % unterstützt; Formularfelder mit Beschriftungen, klaren Fehlermeldungen und ohne Zeitlimits; sowie die korrekte Sprache und Leserichtung auf jeder Seite in allen acht Sprachen, einschließlich des von rechts nach links geschriebenen Hebräisch."
+        "p": "Semantische Seitenstruktur mit klaren Überschriften; vollständige Tastaturbedienung mit sichtbarem Fokus und einem Link „Zum Inhalt springen“; ein Menü für Barrierefreiheit auf jeder Seite (Textgröße, hoher Kontrast, hervorgehobene Links, gut lesbare Schrift, Zeilenabstand, großer Mauszeiger, Animationen stoppen); Hintergrundvideos lassen sich anhalten und stoppen automatisch, wenn „Bewegung reduzieren“ aktiviert ist; Textalternativen für bedeutungstragende Bilder, während dekorative Bilder und Videos für Screenreader ausgeblendet sind; Farbkontraste für Stufe AA ausgelegt; ein responsives Layout, das Zoom bis 200 % unterstützt; Formularfelder mit Beschriftungen, klaren Fehlermeldungen und ohne Zeitlimit; sowie die richtige Sprache und Leserichtung auf jeder Seite in allen acht Sprachen, einschließlich Hebräisch von rechts nach links."
+      },
+      {
+        "h": "Wie wir geprüft haben",
+        "p": "Die Website wurde am 18. November 2026 mit automatisierten Tests (axe-core, Regeln nach WCAG 2.1 AA) auf den Hauptseiten auf Englisch und Hebräisch geprüft, ergänzt durch eine manuelle Prüfung der Tastaturbedienung und der Struktur für Screenreader. Gefundene Mängel wurden behoben. Wir prüfen nach jeder wesentlichen Änderung und mindestens einmal jährlich erneut."
       },
       {
         "h": "Bekannte Einschränkungen",
