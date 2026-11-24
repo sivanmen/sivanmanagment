@@ -21,7 +21,7 @@ const [rcB, rcC] = rcRest.split('{terms}');
   <input type="hidden" name="locale" value={locale} />
   <input type="hidden" name="source" value="" data-source />
   <input type="hidden" name="startedAt" value="" data-started />
-  <div class="hp" aria-hidden="true"><label>Company website<input type="text" name="website" tabindex="-1" autocomplete="off" /></label></div>
+  <div class="hp" aria-hidden="true"><label>Leave this field empty<input type="text" name="hp_note" tabindex="-1" autocomplete="new-password" data-lpignore="true" data-1p-ignore data-form-type="other" /></label></div>
 
   <div class="af-progress" aria-hidden="true">
     {steps.map((s, i) => <span class:list={['af-dot', { 'is-on': i === 0 }]} data-dot={i}><b>{i + 1}</b><em>{s}</em></span>)}

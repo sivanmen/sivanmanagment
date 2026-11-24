@@ -8,7 +8,7 @@ ErrorDocument 404 /404.html
 
   # Force HTTPS and the canonical host (no www)
   RewriteCond %{HTTPS} !=on [OR]
-  RewriteCond %{HTTP_HOST} ^www\. [NC]
+  RewriteCond %{HTTP_HOST} ^(www|mail)\. [NC]
   RewriteRule ^ https://sivanmanagment.com%{REQUEST_URI} [L,R=301]
 
   # Old WordPress endpoints: gone

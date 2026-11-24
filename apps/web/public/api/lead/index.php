@@ -114,11 +114,18 @@ if ($lead['phone'] !== '' && !preg_match('/^[+()\d\s.\-]*$/', $lead['phone'])) $
 if (($in['consent'] ?? '') !== 'yes') $errors[] = 'consent';
 if ($errors) respond(422, ['ok' => false, 'error' => 'VALIDATION_ERROR', 'fields' => $errors]);
 
-// Bots: honeypot filled or implausibly fast submission → pretend success.
+// Bot signals: honeypot filled or implausibly fast submission. Browsers' autofill can fill a honeypot,
+// so with reCAPTCHA active a good score overrides these signals; without reCAPTCHA they drop the lead
+// (kept in the spam log, never silently lost).
 $startedAt = (int) ($in['startedAt'] ?? 0);
-if (($in['website'] ?? '') !== '' || ($startedAt > 0 && (int) (microtime(true) * 1000) - $startedAt < 2500)) {
-    respond(200, ['ok' => true]);
-}
+$suspect = '';
+if (($in['hp_note'] ?? '') !== '' || ($in['website'] ?? '') !== '') $suspect = 'honeypot';
+elseif ($startedAt > 0 && (int) (microtime(true) * 1000) - $startedAt < 2500) $suspect = 'too-fast';
+$logSpam = function (string $reason) use ($config, $lead): void {
+    if (!$config['SPAM_LOG_FILE']) return;
+    @file_put_contents($config['SPAM_LOG_FILE'], json_encode(['at' => gmdate('c'), 'reason' => $reason, 'lead' => $lead], JSON_UNESCAPED_UNICODE) . "\n", FILE_APPEND | LOCK_EX);
+    @chmod($config['SPAM_LOG_FILE'], 0600);
+};
 
 // reCAPTCHA v3 (only when a secret is configured).
 // - no token (script blocked / failed)  → 400 so the visitor sees "contact us directly"; the lead is kept in the spam log.
@@ -127,12 +134,7 @@ if (($in['website'] ?? '') !== '' || ($startedAt > 0 && (int) (microtime(true) *
 $rcScore = null;
 if ($config['RECAPTCHA_SECRET'] !== '') {
     $token = is_string($in['recaptcha'] ?? null) ? substr($in['recaptcha'], 0, 4000) : '';
-    $spam = function (string $reason) use ($config, $lead): void {
-        if ($config['SPAM_LOG_FILE']) {
-            @file_put_contents($config['SPAM_LOG_FILE'], json_encode(['at' => gmdate('c'), 'reason' => $reason, 'lead' => $lead], JSON_UNESCAPED_UNICODE) . "\n", FILE_APPEND | LOCK_EX);
-            @chmod($config['SPAM_LOG_FILE'], 0600);
-        }
-    };
+    $spam = $logSpam;
     if ($token === '') { $spam('no-token'); respond(400, ['ok' => false, 'error' => 'CAPTCHA_REQUIRED']); }
     $query = http_build_query(['secret' => $config['RECAPTCHA_SECRET'], 'response' => $token, 'remoteip' => $_SERVER['REMOTE_ADDR'] ?? '']);
     $reply = false;
@@ -154,6 +156,7 @@ if ($config['RECAPTCHA_SECRET'] !== '') {
     }
     if (is_array($v) && isset($v['score'])) $rcScore = (float) $v['score'];
 }
+if ($suspect !== '' && $rcScore === null) { $logSpam($suspect); respond(200, ['ok' => true]); }
 
 $record = [
     'Name' => $lead['name'], 'Email' => $lead['email'], 'Phone' => $lead['phone'],

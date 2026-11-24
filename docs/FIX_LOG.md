@@ -408,6 +408,16 @@ Until these are set, each service stays in "skipped/degraded" mode and the UI sh
 
 ---
 
+## 2026-11-24 — Website: owner's real form submissions silently dropped (honeypot autofilled)
+
+**Problem:** Owner submitted the form twice (Chrome, macOS); access log showed `POST /api/lead/ 200` and a redirect to /thank-you/, but no e-mail and no log entry. The hidden honeypot field (`name="website"`, label "Company website") was filled by Chrome autofill, and the endpoint answered "ok" without delivering or logging.
+
+**Fix:** Honeypot renamed to `hp_note` with a neutral label and autofill opt-outs; honeypot/too-fast are now only *signals* — with reCAPTCHA active a passing score delivers the lead anyway; otherwise the lead is kept in `~/sivanmanagment-leads-spam.jsonl` (never silently lost). `mail.sivanmanagment.com` web requests now 301 to the main domain (crawlers were indexing the site on that host).
+
+**How Verified:** Live POST with honeypot filled + real reCAPTCHA token → delivered to support@; honeypot + fake token → spam log; diagnostic removed afterwards.
+
+---
+
 ## 2026-11-24 — Website: contact form never submitted complete data
 
 **Problem:** Owner's enquiry via /contact/ produced no e-mail. Component CSS (`display:grid/flex`) overrode the `hidden` attribute, so all four wizard steps and the "Send" button were visible from the start; pressing Send validated only step 1 and posted an incomplete form → HTTP 422, nothing delivered.
