@@ -227,7 +227,11 @@ const [rcB, rcC] = rcRest.split('{terms}');
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      if (!validate(i)) return;
+      // Validate every step, not only the visible one; jump to the first incomplete step.
+      for (let n = 0; n < steps.length; n++) {
+        if (n !== i) { const prev = i; show(n); if (!validate(n)) return; show(prev); }
+        else if (!validate(n)) return;
+      }
       const label = submit.innerHTML;
       submit.disabled = true;
       submit.textContent = ds.msgSending!;
@@ -236,6 +240,13 @@ const [rcB, rcC] = rcRest.split('{terms}');
       body.recaptcha = await rcToken();
       try {
         const res = await fetch(form.action, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        if (res.status === 422) {
+          const data = await res.json().catch(() => ({}));
+          const bad: string[] = data.fields || [];
+          const k = steps.findIndex((s) => bad.some((name) => s.querySelector(`[name="${name}"]`)));
+          if (k >= 0) { show(k); validate(k); }
+          throw new Error('422');
+        }
         if (!res.ok) throw new Error(String(res.status));
         location.href = ds.thanks!;
       } catch {

@@ -408,6 +408,16 @@ Until these are set, each service stays in "skipped/degraded" mode and the UI sh
 
 ---
 
+## 2026-11-24 — Website: contact form never submitted complete data
+
+**Problem:** Owner's enquiry via /contact/ produced no e-mail. Component CSS (`display:grid/flex`) overrode the `hidden` attribute, so all four wizard steps and the "Send" button were visible from the start; pressing Send validated only step 1 and posted an incomplete form → HTTP 422, nothing delivered.
+
+**Fix:** Global `[hidden] { display: none !important; }`; submit now validates every step and jumps to the first incomplete one (also on a 422 from the server). Lead e-mail rebuilt as branded multipart HTML (`mailer.php`, Hebrew RTL default) with human-readable labels generated from i18n.
+
+**How Verified:** Playwright run of the full wizard on the live site (he) → redirect to /he/thank-you/; token-protected temporary diagnostic confirmed the message in the cPanel `support` inbox (then removed); local render checks of the HTML e-mail (he/en).
+
+---
+
 ## 2026-11-24 — Website: reCAPTCHA v3 on the lead form, WCAG contrast fixes, WordPress removed
 
 **Problem:** Lead form protected only by honeypot + timing; axe-core found contrast and link-name issues; WordPress leftovers on the server.

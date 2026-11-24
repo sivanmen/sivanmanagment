@@ -6,7 +6,7 @@
   "description": "Sivan Management \u2014 public multilingual marketing website (Astro)",
   "scripts": {
     "dev": "astro dev --port 4321",
-    "build": "astro build",
+    "build": "node scripts/gen-lead-labels.mjs && astro build",
     "preview": "astro preview",
     "start": "astro preview --port 4321",
     "typecheck": "astro check",

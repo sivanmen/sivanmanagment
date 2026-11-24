@@ -29,6 +29,7 @@ $privateDir = dirname($docRoot); // e.g. /home/<user> — not web-accessible
 $config = [
     'LEAD_EMAIL_TO'   => 'support@sivanmanagment.com',
     'LEAD_EMAIL_FROM' => 'website@sivanmanagment.com',
+    'LEAD_EMAIL_LANG' => 'he', // language of the notification e-mail: 'he' or 'en'
     'ALLOWED_ORIGINS' => ['https://sivanmanagment.com', 'https://www.sivanmanagment.com'],
     'AIRTABLE_TOKEN'  => '',
     'AIRTABLE_BASE_ID'=> '',
@@ -114,6 +115,7 @@ if (($in['website'] ?? '') !== '' || ($startedAt > 0 && (int) (microtime(true) *
 // - no token (script blocked / failed)  → 400 so the visitor sees "contact us directly"; the lead is kept in the spam log.
 // - invalid token, wrong action or score below the threshold → silently accepted but NOT delivered; kept in the spam log.
 // - Google unreachable → fail open (the lead is delivered) so real enquiries are never lost.
+$rcScore = null;
 if ($config['RECAPTCHA_SECRET'] !== '') {
     $token = is_string($in['recaptcha'] ?? null) ? substr($in['recaptcha'], 0, 4000) : '';
     $spam = function (string $reason) use ($config, $lead): void {
@@ -141,6 +143,7 @@ if ($config['RECAPTCHA_SECRET'] !== '') {
         $spam('recaptcha:' . json_encode(['success' => $v['success'] ?? null, 'score' => $v['score'] ?? null, 'action' => $v['action'] ?? null, 'host' => $v['hostname'] ?? null, 'errors' => $v['error-codes'] ?? null]));
         respond(200, ['ok' => true]);
     }
+    if (is_array($v) && isset($v['score'])) $rcScore = (float) $v['score'];
 }
 
 $record = [
@@ -156,18 +159,21 @@ $delivered = false;
 
 // ---------- 1. e-mail ----------
 if ($config['LEAD_EMAIL_TO']) {
-    $lines = [];
-    foreach ($record as $k => $v) $lines[] = str_pad($k . ':', 20) . (is_bool($v) ? ($v ? 'yes' : 'no') : (string) $v);
-    $body = "New property assessment request from sivanmanagment.com\n\n" . implode("\n", $lines) . "\n";
-    $subject = '=?UTF-8?B?' . base64_encode('New lead: ' . $lead['name'] . ' — ' . $lead['propertyType'] . ' / ' . $lead['location']) . '?=';
+    require_once __DIR__ . '/mailer.php';
+    $mail = sm_lead_email($lead, ['score' => $rcScore], (string) $config['LEAD_EMAIL_LANG']);
+    $boundary = 'sm-' . bin2hex(random_bytes(12));
+    $body = "--$boundary\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n" . chunk_split(base64_encode($mail['text']))
+          . "--$boundary\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n" . chunk_split(base64_encode($mail['html']))
+          . "--$boundary--\r\n";
     $replyTo = preg_replace('/[\r\n]/', '', $lead['email']);
     $headers = implode("\r\n", [
-        'From: Sivan Management Website <' . $config['LEAD_EMAIL_FROM'] . '>',
+        'From: =?UTF-8?B?' . base64_encode('Sivan Management Website') . '?= <' . $config['LEAD_EMAIL_FROM'] . '>',
         'Reply-To: ' . $replyTo,
         'MIME-Version: 1.0',
-        'Content-Type: text/plain; charset=UTF-8',
-        'Content-Transfer-Encoding: 8bit',
+        'Content-Type: multipart/alternative; boundary="' . $boundary . '"',
+        'X-Sivan-Lead: 1',
     ]);
+    $subject = '=?UTF-8?B?' . base64_encode($mail['subject']) . '?=';
     if (@mail($config['LEAD_EMAIL_TO'], $subject, $body, $headers, '-f' . $config['LEAD_EMAIL_FROM'])) $delivered = true;
     else error_log('[lead] mail() failed');
 }
