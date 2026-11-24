@@ -78,7 +78,11 @@ _(No remaining CRITICAL issues. P0 security batch resolved 2026-05-25 — see FI
 
 ### ~~W1. Website not deployed (apps/web)~~ — RESOLVED 2026-11-24 (live on sivanmanagment.com, WordPress removed)
 
-### W4. sivanmanagment.com e-mail DNS incomplete (GoDaddy DNS)
+### W4. sivanmanagment.com e-mail DNS — partly fixed 2026-11-24
+- **Done (owner, GoDaddy):** MX `mail.sivanmanagment.com`, A `mail` → 81.218.79.204, SPF, DKIM key published (2048-bit, valid). Outbound test to Gmail: SPF pass, DMARC pass, inbox.
+- **Open:** messages are not DKIM-signed yet (enable/repair DKIM in cPanel → Email Deliverability); an external test mail Gmail → support@ had not arrived after 10 min with no bounce — check cPanel → Email Routing = "Local Mail Exchanger".
+- *Original finding below.*
+#### W4. sivanmanagment.com e-mail DNS incomplete (GoDaddy DNS)
 - **Found 2026-11-24:** no MX record, no SPF, no DKIM, while DMARC is `p=reject`.
 - **Effect:** website lead e-mails reach `support@` only because the mailbox is on the same cPanel server (local delivery — verified). Mail from outside to `@sivanmanagment.com` cannot arrive, and mail sent *from* the domain to Gmail/Outlook will be rejected — so auto-replies to visitors are not possible yet.
 - **Fix (owner, in GoDaddy DNS):** MX → the cPanel mail server (or the chosen mail provider), SPF `v=spf1 +a +mx ~all` (+ provider includes), publish the DKIM key from cPanel → Email Deliverability.
