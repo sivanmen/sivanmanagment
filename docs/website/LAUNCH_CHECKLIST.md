@@ -19,9 +19,9 @@ Status legend: ✅ done · ⬜ open · 🟡 needs the owner
 - 🟡 **Accessibility coordinator name** — set `COMPANY.accessibility.name` in `apps/web/src/lib/company.ts` (currently shows "accessibility team" + contact details).
 - ✅ Privacy policy extended (storage in Israel/JetServer, security, cookies, users in Israel / Protection of Privacy Law) in all 8 languages; Hebrew written for the Israeli public.
 - ✅ Internal compliance documents (NOT in this public repo): Google Drive → "Sivan Management — Compliance (internal)": *Record of Processing Activities (GDPR Art. 30)* and *נוהל אבטחת מידע* (Israeli Data Security Regulations 2017). Review the [TO VERIFY] items and sign.
-- ✅ G.E.MI. corrected to 178690758000 (18 Nov 2026).
+- ✅ G.E.MI. confirmed as 178525658000 by the owner (24 Nov 2026).
 - ⬜ Privacy, Cookie and Terms pages reviewed by a Greek lawyer (currently marked "must be reviewed").
-- ✅ Company information page: legal name, address, VAT/AFM EL802555027, G.E.MI. 178690758000 (corrected 18 Nov 2026), Δ.Ο.Υ. Χανίων, phone, email.
+- ✅ Company information page: legal name, address, VAT/AFM EL802555027, G.E.MI. 178525658000 (confirmed 24 Nov 2026), Δ.Ο.Υ. Χανίων, phone, email.
 - ✅ No IBAN/SWIFT published.
 - ⬜ Short-term-rental article checked by the accountant (rules change; no figures are quoted).
 

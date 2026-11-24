@@ -11,7 +11,7 @@ export const COMPANY = {
   founder: 'Sivan Menahem',
   vat: 'EL802555027',
   afm: '802555027',
-  gemi: '178690758000', // corrected by the owner on 18 Nov 2026 (earlier value 178525658000 was wrong)
+  gemi: '178525658000', // confirmed by the owner on 24 Nov 2026 (from the G.E.MI. certificate; 178690758000 was a mistake)
   taxOffice: 'Δ.Ο.Υ. Χανίων',
   address: {
     street: 'Plateia Eleftherias 2',
