@@ -18,6 +18,14 @@ header('Cache-Control: no-store');
 header('X-Content-Type-Options: nosniff');
 
 function respond(int $status, array $data): void {
+    // Every refused request (validation, origin, rate limit, captcha) is recorded for troubleshooting.
+    if ($status >= 400 && !empty($GLOBALS['REJECT_LOG'])) {
+        $in = $GLOBALS['in'] ?? [];
+        @file_put_contents($GLOBALS['REJECT_LOG'], json_encode(['at' => gmdate('c'), 'status' => $status, 'error' => $data['error'] ?? '', 'fields' => $data['fields'] ?? null,
+            'origin' => $_SERVER['HTTP_ORIGIN'] ?? '', 'ua' => substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 160),
+            'email' => is_array($in) ? substr((string) ($in['email'] ?? ''), 0, 160) : ''], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n", FILE_APPEND | LOCK_EX);
+        @chmod($GLOBALS['REJECT_LOG'], 0600);
+    }
     http_response_code($status);
     echo json_encode($data, JSON_UNESCAPED_UNICODE);
     exit;
@@ -42,6 +50,7 @@ $config = [
     'RECAPTCHA_ACTION'    => 'lead',
     'SPAM_LOG_FILE'   => $privateDir . '/sivanmanagment-leads-spam.jsonl',
 ];
+$REJECT_LOG = $privateDir . '/sivanmanagment-leads-rejected.jsonl';
 $configFile = $privateDir . '/sivanmanagment-config.php';
 if (is_readable($configFile)) {
     $local = include $configFile;

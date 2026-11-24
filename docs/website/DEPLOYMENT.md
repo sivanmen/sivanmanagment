@@ -84,7 +84,8 @@ and fill in the keys. Nothing secret is stored in the repository or in the web r
 - `public/api/lead/mailer.php` builds a branded HTML + plain-text e-mail (RTL Hebrew by default; set
   `'LEAD_EMAIL_LANG' => 'en'` in the private config for English). Option/service names come from
   `public/api/lead/labels.php`, generated from the i18n JSON by `scripts/gen-lead-labels.mjs` on every build.
-- Delivery to `support@` is local to the cPanel server (see OPEN_ISSUES W4 for the missing MX/SPF/DKIM).
+- Delivery to `support@` is local to the cPanel server (MX/SPF/DKIM/DMARC valid since 24 Nov 2026).
+- Troubleshooting logs (home folder, mode 600): `sivanmanagment-leads.jsonl` (delivered), `sivanmanagment-leads-spam.jsonl` (reCAPTCHA), `sivanmanagment-leads-rejected.jsonl` (every 4xx: validation, origin, rate limit, missing token).
 
 ### Spam protection — Google reCAPTCHA v3
 - Public site key: `apps/web/src/lib/integrations.ts`. The key (Google Cloud → Security → reCAPTCHA) must list

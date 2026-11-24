@@ -31,6 +31,7 @@ const cc = t.common.common;
           <ul class="ways">
             <li><a href={`tel:${COMPANY.phone}`}><span class="icon-badge"><Icon name="phone" /></span><span><small>{cc.call}</small><strong dir="ltr">{COMPANY.phoneDisplay}</strong></span></a></li>
             <li><a href={`https://wa.me/${COMPANY.whatsapp}`} rel="noopener"><span class="icon-badge"><Icon name="whatsapp" /></span><span><small>{cc.whatsapp}</small><strong dir="ltr">{COMPANY.phoneDisplay}</strong></span></a></li>
+            <li><a href={`https://wa.me/${COMPANY.whatsappAlt}`} rel="noopener"><span class="icon-badge"><Icon name="whatsapp" /></span><span><small>{cc.whatsapp}</small><strong dir="ltr">{COMPANY.whatsappAltDisplay}</strong></span></a></li>
             <li><a href={`mailto:${COMPANY.email}`}><span class="icon-badge"><Icon name="mail" /></span><span><small>{cc.email}</small><strong>{COMPANY.email}</strong></span></a></li>
             <li><a href={COMPANY.mapsUrl} rel="noopener"><span class="icon-badge"><Icon name="pin" /></span><span><small>{cc.office}</small><strong>{COMPANY.address.street}, {COMPANY.address.postalCode} {COMPANY.address.city}</strong></span></a></li>
           </ul>

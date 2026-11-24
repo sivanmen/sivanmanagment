@@ -27,6 +27,9 @@ export const COMPANY = {
   phone: '+306983924820',
   phoneDisplay: '+30 698 392 4820',
   whatsapp: '306983924820',
+  /** Second WhatsApp line (Israel), shown on the contact page — added by the owner 24 Nov 2026. */
+  whatsappAlt: '972524518134',
+  whatsappAltDisplay: '+972 52-451-8134',
   email: 'support@sivanmanagment.com',
   ownerPortalUrl: 'https://client.sivanmanagment.com',
   mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Plateia+Eleftherias+2,+73132+Chania,+Greece',
