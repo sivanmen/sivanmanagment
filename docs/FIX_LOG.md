@@ -408,6 +408,16 @@ Until these are set, each service stays in "skipped/degraded" mode and the UI sh
 
 ---
 
+## 2026-11-24 — Website: reCAPTCHA v3 on the lead form, WCAG contrast fixes, WordPress removed
+
+**Problem:** Lead form protected only by honeypot + timing; axe-core found contrast and link-name issues; WordPress leftovers on the server.
+
+**Fix:** Lazy-loaded Google reCAPTCHA v3 (client token + server `siteverify`, score ≥ 0.5, fail-open on Google outage or misconfiguration, rejected leads kept in `~/sivanmanagment-leads-spam.jsonl`); privacy/cookie policies and form notice updated in 8 languages. `--violet-text` token and darker `--text-muted` for AA contrast; logo links named via `role="img"` wrapper; `.cookie[hidden]` CSS fix. Site deployed via `sm-deploy.php`; WordPress files and server backups deleted.
+
+**How Verified:** `astro check` 0 errors, i18n check, axe-core 4.10 on 18 pages (0 violations), storage/third-party audit (0 requests before form use), local PHP tests of the lead endpoint (no token → 400, bad token → spam log, no secret → delivered), secret and site key validated against Google.
+
+---
+
 ## 2026-05-25 — Owner Portal rewrite: mock → real (0 → 12 Prisma calls)
 
 **Problem:** `owner-portal.service.ts` (508 lines) returned hardcoded demo statements for "owner-1/owner-2/owner-3" — Sivan's actual paying customers (the property owners) were seeing fabricated revenue numbers when logging into client.sivanmanagment.com. The trust-destroying mock listed in OPEN_ISSUES.

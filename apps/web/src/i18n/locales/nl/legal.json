@@ -22,6 +22,10 @@
         "p": "Formulierinzendingen worden per e-mail naar ons team gestuurd en bewaard op onze webserver, die wordt gehost door JetServer in Israël, een land waarvan de Europese Commissie heeft erkend dat het een passend niveau van gegevensbescherming biedt. Wanneer wij aanvullende tools gebruiken, zoals ons klantbeheersysteem (bijvoorbeeld Airtable) of ons vastgoedbeheersysteem, treden deze op als verwerkers die gebonden zijn aan verwerkersovereenkomsten. Wij verkopen uw gegevens niet en gebruiken ze niet voor advertentiedoeleinden."
       },
       {
+        "h": "Spambeveiliging (Google reCAPTCHA)",
+        "p": "Om ons contactformulier te beschermen tegen spam en misbruik gebruiken we Google reCAPTCHA v3 van Google Ireland Limited. Het wordt pas geladen wanneer u het formulier begint in te vullen en beoordeelt technische informatie zoals uw IP-adres, browsergegevens en de interactie met de pagina. De rechtsgrond is ons gerechtvaardigd belang bij beveiliging (art. 6, lid 1, onder f AVG). Google kan deze gegevens in de Verenigde Staten verwerken onder het EU–US Data Privacy Framework. Het privacybeleid en de servicevoorwaarden van Google zijn van toepassing."
+      },
+      {
         "h": "Internationale doorgifte",
         "p": "Sommige verwerkers kunnen gegevens buiten de Europese Economische Ruimte opslaan. Wanneer dat gebeurt, berust de doorgifte op een adequaatheidsbesluit of op passende waarborgen, zoals de modelcontractbepalingen van de EU."
       },
@@ -70,6 +74,10 @@
       {
         "h": "Geen cookies",
         "p": "Deze website plaatst geen cookies en gebruikt geen advertentie- of trackingtools en geen pixels van sociale media. Lettertypen, afbeeldingen en video’s komen van onze eigen server, zodat er tijdens het surfen geen gegevens naar derden gaan."
+      },
+      {
+        "h": "Spambeveiliging van het contactformulier",
+        "p": "Alleen op het contactformulier, en pas wanneer u het begint in te vullen, laden we Google reCAPTCHA v3 om spam en geautomatiseerde inzendingen te blokkeren. Vanaf dat moment kan Google cookies en vergelijkbare gegevens in uw browser plaatsen of uitlezen (bijvoorbeeld een item met de naam _grecaptcha) en ontvangt het technische informatie zoals uw IP-adres, browsergegevens en het gebruik van de pagina. Wij baseren ons op ons gerechtvaardigd belang bij een veilig formulier. Gebruikt u het formulier niet, dan wordt reCAPTCHA nooit geladen. U kunt ons altijd ook per e-mail, telefoon of WhatsApp bereiken."
       },
       {
         "h": "Wat we in uw browser opslaan",

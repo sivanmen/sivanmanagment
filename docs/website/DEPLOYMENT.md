@@ -80,6 +80,17 @@ To change addresses or add Airtable / n8n, copy `apps/web/server-config.example.
 **`/home/<cpanel-user>/sivanmanagment-config.php`** (one level above the site folder, never inside it)
 and fill in the keys. Nothing secret is stored in the repository or in the web root.
 
+### Spam protection — Google reCAPTCHA v3
+- Public site key: `apps/web/src/lib/integrations.ts`. The key (Google Cloud → Security → reCAPTCHA) must list
+  `sivanmanagment.com` and `www.sivanmanagment.com` in its domain list.
+- Secret key: **only** in `~/sivanmanagment-config.php` as `'RECAPTCHA_SECRET'` (optional `'RECAPTCHA_MIN_SCORE'`, default 0.5).
+  Without it, server-side verification is off and the form works as before.
+- Privacy: the Google script loads only after the visitor starts using the form (no Google request on any page load);
+  the form shows Google's required notice and the badge is hidden. Disclosed in the privacy and cookie policies.
+- Server behaviour (`public/api/lead/index.php`): no token → HTTP 400 (visitor is told to contact us directly);
+  invalid token / wrong action / low score → answered "ok" but not delivered; Google unreachable or secret
+  misconfigured → lead delivered (fail open). Every rejected submission is kept in `~/sivanmanagment-leads-spam.jsonl` (mode 600).
+
 ### Airtable schema (optional)
 Base "Sivan Management — Website Leads", table **`Leads`** (names must match; `typecast` is on):
 Name (text, primary) · Email · Phone · Preferred Contact · Property Type · Units (number) · Location ·

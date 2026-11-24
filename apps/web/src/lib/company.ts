@@ -35,11 +35,11 @@ export const COMPANY = {
    * Accessibility coordinator (Israeli Service Accessibility Regulations, reg. 35).
    * Set `name` once the owner designates a person; until then the statement shows the contact channels only.
    */
-  accessibility: { name: null as string | null, email: 'support@sivanmanagment.com', phone: '+306983924820', phoneDisplay: '+30 698 392 4820' },
+  accessibility: { name: 'Sivan Menahem' as string | null, email: 'support@sivanmanagment.com', phone: '+306983924820', phoneDisplay: '+30 698 392 4820' },
   /** Date the accessibility statement was last reviewed (ISO). */
   accessibilityReviewed: '2026-11-18',
   /** Date the privacy policy was last updated (ISO). */
-  privacyUpdated: '2026-11-18',
+  privacyUpdated: '2026-11-24',
 } as const;
 
 export const SERVICE_SLUGS = [

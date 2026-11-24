@@ -22,6 +22,10 @@
         "p": "Form submissions are sent by e-mail to our team and kept on our web server, which is hosted by JetServer in Israel, a country recognised by the European Commission as providing an adequate level of data protection. Where we use additional tools, such as our customer-management system (for example Airtable) or our property-management system, they act as processors bound by data-processing agreements. We do not sell your data and do not use it for advertising."
       },
       {
+        "h": "Spam protection (Google reCAPTCHA)",
+        "p": "To protect our contact form from spam and abuse, we use Google reCAPTCHA v3, provided by Google Ireland Limited. It loads only when you start filling in the form and evaluates technical information such as your IP address, browser details and interaction with the page. The legal basis is our legitimate interest in security (GDPR art. 6(1)(f)). Google may process this data in the United States under the EU–US Data Privacy Framework. Google's Privacy Policy and Terms of Service apply."
+      },
+      {
         "h": "International transfers",
         "p": "Some processors may store data outside the European Economic Area. Where this happens, transfers rely on an adequacy decision or on appropriate safeguards such as the EU Standard Contractual Clauses."
       },
@@ -70,6 +74,10 @@
       {
         "h": "No cookies",
         "p": "This website does not set any cookies and does not use advertising, tracking or social-media pixels. Fonts, images and videos are served from our own server, so no information is sent to third parties when you browse."
+      },
+      {
+        "h": "Spam protection on the contact form",
+        "p": "Only on the contact form, and only once you start filling it in, we load Google reCAPTCHA v3 to block spam and automated submissions. From that moment Google may set or read cookies and similar data in your browser (for example an item named _grecaptcha) and receives technical information such as your IP address, browser details and how the page is used. We rely on our legitimate interest in keeping the form secure. If you do not use the form, reCAPTCHA is never loaded. You can always contact us by e-mail, phone or WhatsApp instead."
       },
       {
         "h": "What we store in your browser",

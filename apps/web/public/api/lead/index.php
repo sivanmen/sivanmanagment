@@ -35,6 +35,11 @@ $config = [
     'AIRTABLE_TABLE'  => 'Leads',
     'LEAD_WEBHOOK_URL'=> '',
     'LOG_FILE'        => $privateDir . '/sivanmanagment-leads.jsonl',
+    // Google reCAPTCHA v3 — verification is active only when RECAPTCHA_SECRET is set in the private config.
+    'RECAPTCHA_SECRET'    => '',
+    'RECAPTCHA_MIN_SCORE' => 0.5,
+    'RECAPTCHA_ACTION'    => 'lead',
+    'SPAM_LOG_FILE'   => $privateDir . '/sivanmanagment-leads-spam.jsonl',
 ];
 $configFile = $privateDir . '/sivanmanagment-config.php';
 if (is_readable($configFile)) {
@@ -103,6 +108,39 @@ if ($errors) respond(422, ['ok' => false, 'error' => 'VALIDATION_ERROR', 'fields
 $startedAt = (int) ($in['startedAt'] ?? 0);
 if (($in['website'] ?? '') !== '' || ($startedAt > 0 && (int) (microtime(true) * 1000) - $startedAt < 2500)) {
     respond(200, ['ok' => true]);
+}
+
+// reCAPTCHA v3 (only when a secret is configured).
+// - no token (script blocked / failed)  → 400 so the visitor sees "contact us directly"; the lead is kept in the spam log.
+// - invalid token, wrong action or score below the threshold → silently accepted but NOT delivered; kept in the spam log.
+// - Google unreachable → fail open (the lead is delivered) so real enquiries are never lost.
+if ($config['RECAPTCHA_SECRET'] !== '') {
+    $token = is_string($in['recaptcha'] ?? null) ? substr($in['recaptcha'], 0, 4000) : '';
+    $spam = function (string $reason) use ($config, $lead): void {
+        if ($config['SPAM_LOG_FILE']) {
+            @file_put_contents($config['SPAM_LOG_FILE'], json_encode(['at' => gmdate('c'), 'reason' => $reason, 'lead' => $lead], JSON_UNESCAPED_UNICODE) . "\n", FILE_APPEND | LOCK_EX);
+            @chmod($config['SPAM_LOG_FILE'], 0600);
+        }
+    };
+    if ($token === '') { $spam('no-token'); respond(400, ['ok' => false, 'error' => 'CAPTCHA_REQUIRED']); }
+    $query = http_build_query(['secret' => $config['RECAPTCHA_SECRET'], 'response' => $token, 'remoteip' => $_SERVER['REMOTE_ADDR'] ?? '']);
+    $reply = false;
+    if (function_exists('curl_init')) {
+        $ch = curl_init('https://www.google.com/recaptcha/api/siteverify');
+        curl_setopt_array($ch, [CURLOPT_POST => true, CURLOPT_POSTFIELDS => $query, CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 8]);
+        $reply = curl_exec($ch);
+        curl_close($ch);
+    } else {
+        $reply = @file_get_contents('https://www.google.com/recaptcha/api/siteverify', false, stream_context_create(['http' => ['method' => 'POST', 'header' => 'Content-Type: application/x-www-form-urlencoded', 'content' => $query, 'timeout' => 8]]));
+    }
+    $v = is_string($reply) ? json_decode($reply, true) : null;
+    $codes = is_array($v) ? (array) ($v['error-codes'] ?? []) : [];
+    if (!is_array($v) || array_intersect($codes, ['missing-input-secret', 'invalid-input-secret'])) {
+        error_log('[lead] reCAPTCHA verification unavailable or misconfigured (' . implode(',', $codes) . ') — accepting');
+    } elseif (empty($v['success']) || ($v['action'] ?? '') !== $config['RECAPTCHA_ACTION'] || (float) ($v['score'] ?? 0) < (float) $config['RECAPTCHA_MIN_SCORE']) {
+        $spam('recaptcha:' . json_encode(['success' => $v['success'] ?? null, 'score' => $v['score'] ?? null, 'action' => $v['action'] ?? null, 'host' => $v['hostname'] ?? null, 'errors' => $v['error-codes'] ?? null]));
+        respond(200, ['ok' => true]);
+    }
 }
 
 $record = [

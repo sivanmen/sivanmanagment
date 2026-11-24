@@ -22,6 +22,10 @@
         "p": "Les formulaires envoyés sont transmis par e-mail à notre équipe et conservés sur notre serveur web, hébergé par JetServer en Israël, pays reconnu par la Commission européenne comme assurant un niveau adéquat de protection des données. Lorsque nous utilisons des outils supplémentaires, tels que notre outil de gestion de la relation client (par exemple Airtable) ou notre logiciel de gestion immobilière, ceux-ci agissent en qualité de sous-traitants liés par des accords de traitement des données. Nous ne vendons pas vos données et ne les utilisons pas à des fins publicitaires."
       },
       {
+        "h": "Protection anti-spam (Google reCAPTCHA)",
+        "p": "Pour protéger notre formulaire de contact contre le spam et les abus, nous utilisons Google reCAPTCHA v3, fourni par Google Ireland Limited. Il ne se charge que lorsque vous commencez à remplir le formulaire et analyse des informations techniques telles que votre adresse IP, les données de votre navigateur et l’interaction avec la page. La base juridique est notre intérêt légitime en matière de sécurité (art. 6, par. 1, f) du RGPD). Google peut traiter ces données aux États-Unis dans le cadre de l’EU–US Data Privacy Framework. Les règles de confidentialité et les conditions d’utilisation de Google s’appliquent."
+      },
+      {
         "h": "Transferts internationaux",
         "p": "Certains sous-traitants peuvent stocker des données en dehors de l’Espace économique européen. Le cas échéant, ces transferts reposent sur une décision d’adéquation ou sur des garanties appropriées, telles que les clauses contractuelles types de l’UE."
       },
@@ -70,6 +74,10 @@
       {
         "h": "Aucun cookie",
         "p": "Ce site ne dépose aucun cookie et n’utilise ni outils publicitaires, ni traceurs, ni pixels de réseaux sociaux. Les polices, images et vidéos sont servies depuis notre propre serveur : aucune information n’est transmise à des tiers lors de votre navigation."
+      },
+      {
+        "h": "Protection anti-spam du formulaire de contact",
+        "p": "Uniquement sur le formulaire de contact, et seulement lorsque vous commencez à le remplir, nous chargeons Google reCAPTCHA v3 afin de bloquer le spam et les envois automatisés. Dès ce moment, Google peut déposer ou lire des cookies et des données similaires dans votre navigateur (par exemple un élément nommé _grecaptcha) et reçoit des informations techniques telles que votre adresse IP, les données de votre navigateur et l’utilisation de la page. Nous nous fondons sur notre intérêt légitime à sécuriser le formulaire. Si vous n’utilisez pas le formulaire, reCAPTCHA n’est jamais chargé. Vous pouvez toujours nous contacter par e-mail, téléphone ou WhatsApp."
       },
       {
         "h": "Ce que nous enregistrons dans votre navigateur",

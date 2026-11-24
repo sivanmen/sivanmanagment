@@ -3,6 +3,7 @@ import Icon from './Icon.astro';
 import { getDict, fmt } from '~/i18n';
 import { localizePath, type Locale } from '~/i18n/config';
 import { SERVICE_SLUGS } from '~/lib/company';
+import { RECAPTCHA_SITE_KEY, RECAPTCHA_ACTION } from '~/lib/integrations';
 
 interface Props { locale: Locale }
 const { locale } = Astro.props;
@@ -11,9 +12,12 @@ const f = t.contact.form;
 const steps = f.steps;
 const thanks = localizePath('/thank-you/', locale);
 const privacy = localizePath('/legal/privacy-policy/', locale);
+const rc = f.recaptcha;
+const [rcA, rcRest] = rc.text.split('{privacy}');
+const [rcB, rcC] = rcRest.split('{terms}');
 ---
 <form class="af card" method="post" action="/api/lead/" novalidate data-af data-thanks={thanks}
-  data-msg-required={f.required} data-msg-email={f.invalidEmail} data-msg-error={f.errorGeneric} data-msg-sending={f.sending}>
+  data-msg-required={f.required} data-msg-email={f.invalidEmail} data-msg-error={f.errorGeneric} data-msg-sending={f.sending} data-rc-key={RECAPTCHA_SITE_KEY} data-rc-action={RECAPTCHA_ACTION}>
   <input type="hidden" name="locale" value={locale} />
   <input type="hidden" name="source" value="" data-source />
   <input type="hidden" name="startedAt" value="" data-started />
@@ -84,6 +88,7 @@ const privacy = localizePath('/legal/privacy-policy/', locale);
     </div>
     <p class="notice" id="privacy-notice">{f.privacyNotice}</p>
     <label class="consent"><input type="checkbox" name="consent" value="yes" required aria-describedby="privacy-notice" /><span>{f.consent} <a href={privacy} target="_blank" rel="noopener">{f.consentLink}</a></span></label>
+    <p class="rc-note">{rcA}<a href="https://policies.google.com/privacy" target="_blank" rel="noopener">{rc.privacy}</a>{rcB}<a href="https://policies.google.com/terms" target="_blank" rel="noopener">{rc.terms}</a>{rcC}</p>
   </fieldset>
 
   <p class="af-error" role="alert" hidden data-error id="af-error"></p>
@@ -126,6 +131,9 @@ const privacy = localizePath('/legal/privacy-policy/', locale);
   .field input[aria-invalid='true'] { border-color: #d64545; }
   .row-2 { display: grid; gap: 1rem; }
   @media (min-width: 640px) { .row-2 { grid-template-columns: 1fr 1fr; } }
+  .rc-note { font-size: 0.75rem; color: var(--text-muted); }
+  .rc-note a { text-decoration: underline; text-underline-offset: 2px; }
+  :global(.grecaptcha-badge) { visibility: hidden; } /* allowed by Google when the notice above is shown */
   .notice { font-size: 0.82rem; color: var(--text-muted); background: var(--paper); border-radius: 12px; padding: 0.75rem 0.9rem; }
   .consent { display: flex; gap: 0.75rem; align-items: flex-start; font-size: 0.9rem; color: var(--text-muted); }
   .consent input { width: 1.2rem; height: 1.2rem; margin-top: 0.15rem; accent-color: var(--violet); flex: none; }
@@ -147,6 +155,30 @@ const privacy = localizePath('/legal/privacy-policy/', locale);
     const count = form.querySelector<HTMLElement>('[data-count]')!;
     const ds = form.dataset;
     let i = 0;
+
+    // Google reCAPTCHA v3 — loaded only after the visitor starts using the form (privacy-by-default).
+    let rc: Promise<boolean> | null = null;
+    const rcLoad = () => (rc ??= new Promise<boolean>((resolve) => {
+      if (!ds.rcKey) return resolve(false);
+      const s = document.createElement('script');
+      s.src = `https://www.google.com/recaptcha/api.js?render=${encodeURIComponent(ds.rcKey)}`;
+      s.async = true;
+      s.onload = () => (window as any).grecaptcha.ready(() => resolve(true));
+      s.onerror = () => resolve(false);
+      document.head.appendChild(s);
+      setTimeout(() => resolve(false), 8000);
+    }));
+    form.addEventListener('focusin', () => { rcLoad(); }, { once: true });
+    form.addEventListener('pointerdown', () => { rcLoad(); }, { once: true });
+    const rcToken = async (): Promise<string> => {
+      try {
+        if (!(await rcLoad())) return '';
+        return await Promise.race([
+          (window as any).grecaptcha.execute(ds.rcKey, { action: ds.rcAction || 'lead' }) as Promise<string>,
+          new Promise<string>((r) => setTimeout(() => r(''), 8000)),
+        ]);
+      } catch { return ''; }
+    };
 
     // Attribution metadata (UTM + referrer) for the CRM.
     const params = new URLSearchParams(location.search);
@@ -200,7 +232,8 @@ const privacy = localizePath('/legal/privacy-policy/', locale);
       submit.disabled = true;
       submit.textContent = ds.msgSending!;
       const fd = new FormData(form);
-      const body = Object.fromEntries([...fd.keys()].map((k) => [k, k === 'services' ? fd.getAll(k) : fd.get(k)]));
+      const body: Record<string, unknown> = Object.fromEntries([...fd.keys()].map((k) => [k, k === 'services' ? fd.getAll(k) : fd.get(k)]));
+      body.recaptcha = await rcToken();
       try {
         const res = await fetch(form.action, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
         if (!res.ok) throw new Error(String(res.status));
