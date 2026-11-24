@@ -156,7 +156,8 @@ const serviceIcons: Record<string, string> = {
     .portal { display: inline-flex; }
     .actions { margin-inline-start: 0; }
   }
-  .drawer { position: fixed; inset: 76px 0 0; background: var(--paper); color: var(--ink); overflow-y: auto; z-index: 49; }
+  /* explicit height: the header gets backdrop-filter when scrolled, which makes it the containing block of this fixed drawer */
+  .drawer { position: fixed; top: 76px; inset-inline: 0; height: calc(100vh - 76px); height: calc(100dvh - 76px); background: var(--paper); color: var(--ink); overflow-y: auto; z-index: 49; }
   .drawer-inner { padding-block: 1.5rem 3rem; }
   .drawer-list > li { border-bottom: 1px solid var(--line); }
   .drawer-list > li > a { display: block; padding: 1rem 0; font-family: var(--font-display); font-size: 1.5rem; font-weight: 560; letter-spacing: -0.02em; }
