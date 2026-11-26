@@ -68,7 +68,7 @@
     "successBody": "Nous allons étudier les informations transmises et vous recontacter très prochainement. Votre demande a bien été enregistrée dans notre système.",
     "privacyNotice": "La communication de vos coordonnées est facultative. Nous les utilisons uniquement pour répondre à votre demande et préparer une proposition ; elles sont envoyées par e-mail à notre équipe et conservées sur notre serveur en Israël, et ne sont pas partagées à des fins de marketing. Vous pouvez à tout moment demander à y accéder, à les corriger ou à les supprimer. Détails dans notre Politique de confidentialité.",
     "recaptcha": {
-      "text": "Ce formulaire est protégé contre le spam par Google reCAPTCHA. Les {privacy} et les {terms} de Google s’appliquent.",
+      "text": "Lorsque vous cliquez sur Envoyer, Google reCAPTCHA vérifie que vous n’êtes pas un robot (Google peut déposer un cookie à cet effet). Les {privacy} et les {terms} de Google s’appliquent.",
       "privacy": "Règles de confidentialité",
       "terms": "Conditions d’utilisation"
     }

@@ -23,7 +23,7 @@
       },
       {
         "h": "Spam protection (Google reCAPTCHA)",
-        "p": "To protect our contact form from spam and abuse, we use Google reCAPTCHA v3, provided by Google Ireland Limited. It loads only when you start filling in the form and evaluates technical information such as your IP address, browser details and interaction with the page. The legal basis is our legitimate interest in security (GDPR art. 6(1)(f)). Google may process this data in the United States under the EU–US Data Privacy Framework. Google's Privacy Policy and Terms of Service apply."
+        "p": "To protect our contact form from spam and abuse, we use Google reCAPTCHA v3, provided by Google Ireland Limited. It is loaded only when you click Send and evaluates technical information such as your IP address, browser details and interaction with the page. The legal basis is our legitimate interest in security (GDPR art. 6(1)(f)). Google may process this data in the United States under the EU–US Data Privacy Framework. Google's Privacy Policy and Terms of Service apply."
       },
       {
         "h": "International transfers",
@@ -77,7 +77,7 @@
       },
       {
         "h": "Spam protection on the contact form",
-        "p": "Only on the contact form, and only once you start filling it in, we load Google reCAPTCHA v3 to block spam and automated submissions. From that moment Google may set or read cookies and similar data in your browser (for example an item named _grecaptcha) and receives technical information such as your IP address, browser details and how the page is used. We rely on our legitimate interest in keeping the form secure. If you do not use the form, reCAPTCHA is never loaded. You can always contact us by e-mail, phone or WhatsApp instead."
+        "p": "Nothing from Google is loaded while you browse or fill in the contact form. Only when you click Send do we load Google reCAPTCHA v3, which checks that the request does not come from a robot. At that moment Google may set or read a security cookie (_GRECAPTCHA) and similar data in your browser, and receives technical information such as your IP address and browser details. We rely on our legitimate interest in protecting the form from abuse; the form shows this notice next to the Send button. You can always contact us by e-mail, phone or WhatsApp instead."
       },
       {
         "h": "What we store in your browser",

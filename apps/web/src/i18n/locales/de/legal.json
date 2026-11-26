@@ -23,7 +23,7 @@
       },
       {
         "h": "Spamschutz (Google reCAPTCHA)",
-        "p": "Zum Schutz unseres Kontaktformulars vor Spam und Missbrauch nutzen wir Google reCAPTCHA v3 der Google Ireland Limited. Es wird erst geladen, wenn Sie mit dem Ausfüllen beginnen, und wertet technische Informationen wie IP-Adresse, Browserdaten und die Interaktion mit der Seite aus. Rechtsgrundlage ist unser berechtigtes Interesse an Sicherheit (Art. 6 Abs. 1 lit. f DSGVO). Google kann diese Daten im Rahmen des EU–US Data Privacy Framework in den USA verarbeiten. Es gelten die Datenschutzerklärung und die Nutzungsbedingungen von Google."
+        "p": "Zum Schutz unseres Kontaktformulars vor Spam und Missbrauch nutzen wir Google reCAPTCHA v3 der Google Ireland Limited. Es wird erst geladen, wenn Sie auf Senden klicken, und wertet technische Informationen wie IP-Adresse, Browserdaten und die Interaktion mit der Seite aus. Rechtsgrundlage ist unser berechtigtes Interesse an Sicherheit (Art. 6 Abs. 1 lit. f DSGVO). Google kann diese Daten im Rahmen des EU–US Data Privacy Framework in den USA verarbeiten. Es gelten die Datenschutzerklärung und die Nutzungsbedingungen von Google."
       },
       {
         "h": "Übermittlungen in Drittländer",
@@ -77,7 +77,7 @@
       },
       {
         "h": "Spamschutz im Kontaktformular",
-        "p": "Nur im Kontaktformular und erst, wenn Sie mit dem Ausfüllen beginnen, laden wir Google reCAPTCHA v3, um Spam und automatisierte Einsendungen zu blockieren. Ab diesem Moment kann Google Cookies und ähnliche Daten in Ihrem Browser setzen oder auslesen (zum Beispiel einen Eintrag namens _grecaptcha) und erhält technische Informationen wie IP-Adresse, Browserdaten und die Nutzung der Seite. Grundlage ist unser berechtigtes Interesse an der Sicherheit des Formulars. Wenn Sie das Formular nicht nutzen, wird reCAPTCHA nie geladen. Sie können uns jederzeit auch per E-Mail, Telefon oder WhatsApp erreichen."
+        "p": "Während Sie die Website besuchen oder das Kontaktformular ausfüllen, wird nichts von Google geladen. Erst wenn Sie auf Senden klicken, laden wir Google reCAPTCHA v3, das prüft, dass die Anfrage nicht von einem Roboter stammt. In diesem Moment kann Google ein Sicherheits-Cookie (_GRECAPTCHA) und ähnliche Daten in Ihrem Browser setzen oder auslesen und erhält technische Informationen wie IP-Adresse und Browserdaten. Grundlage ist unser berechtigtes Interesse, das Formular vor Missbrauch zu schützen; das Formular zeigt diesen Hinweis neben der Schaltfläche Senden. Sie können uns jederzeit auch per E-Mail, Telefon oder WhatsApp erreichen."
       },
       {
         "h": "Was in Ihrem Browser gespeichert wird",

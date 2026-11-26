@@ -68,7 +68,7 @@
     "successBody": "我们将审阅相关信息并尽快与您联系。系统已记录本次申请的确认信息。",
     "privacyNotice": "提供个人信息完全自愿。我们仅将其用于答复您的咨询并准备方案；这些信息会通过电子邮件发送给我们的团队，并保存在我们位于以色列的服务器上，不会用于营销目的。您可随时要求查阅、更正或删除。详情请参阅隐私政策。",
     "recaptcha": {
-      "text": "本表单由 Google reCAPTCHA 提供防垃圾信息保护，适用 Google 的{privacy}和{terms}。",
+      "text": "点击“发送”时，Google reCAPTCHA 会验证您不是机器人（Google 可能为此设置一个 Cookie）。适用 Google 的{privacy}和{terms}。",
       "privacy": "隐私权政策",
       "terms": "服务条款"
     }

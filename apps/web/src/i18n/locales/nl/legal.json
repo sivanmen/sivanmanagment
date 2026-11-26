@@ -23,7 +23,7 @@
       },
       {
         "h": "Spambeveiliging (Google reCAPTCHA)",
-        "p": "Om ons contactformulier te beschermen tegen spam en misbruik gebruiken we Google reCAPTCHA v3 van Google Ireland Limited. Het wordt pas geladen wanneer u het formulier begint in te vullen en beoordeelt technische informatie zoals uw IP-adres, browsergegevens en de interactie met de pagina. De rechtsgrond is ons gerechtvaardigd belang bij beveiliging (art. 6, lid 1, onder f AVG). Google kan deze gegevens in de Verenigde Staten verwerken onder het EU–US Data Privacy Framework. Het privacybeleid en de servicevoorwaarden van Google zijn van toepassing."
+        "p": "Om ons contactformulier te beschermen tegen spam en misbruik gebruiken we Google reCAPTCHA v3 van Google Ireland Limited. Het wordt pas geladen wanneer u op Verzenden klikt en beoordeelt technische informatie zoals uw IP-adres, browsergegevens en de interactie met de pagina. De rechtsgrond is ons gerechtvaardigd belang bij beveiliging (art. 6, lid 1, onder f AVG). Google kan deze gegevens in de Verenigde Staten verwerken onder het EU–US Data Privacy Framework. Het privacybeleid en de servicevoorwaarden van Google zijn van toepassing."
       },
       {
         "h": "Internationale doorgifte",
@@ -77,7 +77,7 @@
       },
       {
         "h": "Spambeveiliging van het contactformulier",
-        "p": "Alleen op het contactformulier, en pas wanneer u het begint in te vullen, laden we Google reCAPTCHA v3 om spam en geautomatiseerde inzendingen te blokkeren. Vanaf dat moment kan Google cookies en vergelijkbare gegevens in uw browser plaatsen of uitlezen (bijvoorbeeld een item met de naam _grecaptcha) en ontvangt het technische informatie zoals uw IP-adres, browsergegevens en het gebruik van de pagina. Wij baseren ons op ons gerechtvaardigd belang bij een veilig formulier. Gebruikt u het formulier niet, dan wordt reCAPTCHA nooit geladen. U kunt ons altijd ook per e-mail, telefoon of WhatsApp bereiken."
+        "p": "Tijdens het surfen en het invullen van het contactformulier wordt niets van Google geladen. Pas wanneer u op Verzenden klikt, laden we Google reCAPTCHA v3, dat controleert of het verzoek niet van een robot komt. Op dat moment kan Google een beveiligingscookie (_GRECAPTCHA) en vergelijkbare gegevens in uw browser plaatsen of uitlezen en ontvangt het technische informatie zoals uw IP-adres en browsergegevens. Wij baseren ons op ons gerechtvaardigd belang om het formulier tegen misbruik te beschermen; het formulier toont deze melding naast de knop Verzenden. U kunt ons altijd ook per e-mail, telefoon of WhatsApp bereiken."
       },
       {
         "h": "Wat we in uw browser opslaan",

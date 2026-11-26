@@ -68,7 +68,7 @@
     "successBody": "Wij bekijken de gegevens en nemen spoedig contact met u op. Uw aanvraag is in ons systeem geregistreerd.",
     "privacyNotice": "Het verstrekken van uw gegevens is vrijwillig. We gebruiken ze alleen om uw aanvraag te beantwoorden en een voorstel op te stellen; ze worden per e-mail naar ons team gestuurd en op onze server in Israël bewaard, en niet gedeeld voor marketing. U kunt ze op elk moment inzien, laten corrigeren of laten verwijderen. Meer informatie in ons privacybeleid.",
     "recaptcha": {
-      "text": "Dit formulier wordt met Google reCAPTCHA tegen spam beschermd. Het {privacy} en de {terms} van Google zijn van toepassing.",
+      "text": "Wanneer u op Verzenden klikt, controleert Google reCAPTCHA dat u geen robot bent (Google kan hiervoor een cookie plaatsen). Het {privacy} en de {terms} van Google zijn van toepassing.",
       "privacy": "privacybeleid",
       "terms": "servicevoorwaarden"
     }

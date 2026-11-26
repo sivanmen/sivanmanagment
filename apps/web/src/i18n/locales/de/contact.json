@@ -68,7 +68,7 @@
     "successBody": "Wir prüfen Ihre Angaben und melden uns in Kürze. Eine Bestätigung wurde in unserem System vermerkt.",
     "privacyNotice": "Die Angabe Ihrer Daten ist freiwillig. Wir verwenden sie ausschließlich, um Ihre Anfrage zu beantworten und ein Angebot zu erstellen; sie werden per E-Mail an unser Team gesendet und auf unserem Server in Israel gespeichert und nicht für Werbezwecke weitergegeben. Sie können jederzeit Auskunft, Berichtigung oder Löschung verlangen. Einzelheiten in unserer Datenschutzerklärung.",
     "recaptcha": {
-      "text": "Dieses Formular ist durch Google reCAPTCHA vor Spam geschützt. Es gelten die {privacy} und die {terms} von Google.",
+      "text": "Wenn Sie auf Senden klicken, prüft Google reCAPTCHA, dass Sie kein Roboter sind (Google kann dafür ein Cookie setzen). Es gelten die {privacy} und die {terms} von Google.",
       "privacy": "Datenschutzerklärung",
       "terms": "Nutzungsbedingungen"
     }

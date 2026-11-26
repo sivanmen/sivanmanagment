@@ -68,7 +68,7 @@
     "successBody": "We will review the details and contact you shortly. A confirmation has been noted in our system.",
     "privacyNotice": "Providing your details is voluntary. We use them only to answer your request and prepare a proposal; they are e-mailed to our team and stored on our server in Israel, and are not shared for marketing. You can ask to see, correct or delete them at any time. Details in our Privacy Policy.",
     "recaptcha": {
-      "text": "This form is protected against spam by Google reCAPTCHA. The Google {privacy} and {terms} apply.",
+      "text": "When you click Send, Google reCAPTCHA checks that you are not a robot (Google may set a cookie for this). The Google {privacy} and {terms} apply.",
       "privacy": "Privacy Policy",
       "terms": "Terms of Service"
     }

@@ -156,7 +156,7 @@ const [rcB, rcC] = rcRest.split('{terms}');
     const ds = form.dataset;
     let i = 0;
 
-    // Google reCAPTCHA v3 — loaded only after the visitor starts using the form (privacy-by-default).
+    // Google reCAPTCHA v3 — loaded only at the moment the visitor clicks Send (privacy-by-default).
     let rc: Promise<boolean> | null = null;
     const rcLoad = () => (rc ??= new Promise<boolean>((resolve) => {
       if (!ds.rcKey) return resolve(false);
@@ -168,8 +168,7 @@ const [rcB, rcC] = rcRest.split('{terms}');
       document.head.appendChild(s);
       setTimeout(() => resolve(false), 8000);
     }));
-    form.addEventListener('focusin', () => { rcLoad(); }, { once: true });
-    form.addEventListener('pointerdown', () => { rcLoad(); }, { once: true });
+    // Loaded only when the visitor actively sends the form (see rcToken below) — nothing from Google before that.
     const rcToken = async (): Promise<string> => {
       try {
         if (!(await rcLoad())) return '';
