@@ -39,7 +39,7 @@
       },
       {
         "h": "Cookies and local storage",
-        "p": "We store only your cookie choice and language preference in your browser. Analytics are loaded only if you accept them. See our Cookie Policy for details."
+        "p": "We store only your cookie choice and accessibility preferences in your browser. Google Analytics cookies are set only if you click “Allow statistics”, and you can withdraw at any time. See our Cookie Policy for details."
       },
       {
         "h": "Your rights",
@@ -72,8 +72,8 @@
     "title": "Cookie Policy",
     "sections": [
       {
-        "h": "No cookies",
-        "p": "This website does not set any cookies and does not use advertising, tracking or social-media pixels. Fonts, images and videos are served from our own server, so no information is sent to third parties when you browse."
+        "h": "Cookies only with your consent",
+        "p": "Without your consent this website sets no cookies and loads no tracking, advertising or social-media pixels. Fonts, images and videos are served from our own server."
       },
       {
         "h": "Spam protection on the contact form",
@@ -85,7 +85,7 @@
       },
       {
         "h": "Statistics",
-        "p": "No statistics tool is active at present. If we add one, it will be privacy-friendly and anonymous, and it will load only after you have clicked “Allow statistics”."
+        "p": "If you click “Allow statistics”, we load Google Tag Manager and Google Analytics 4 (Google Ireland Limited) to measure visits and how pages are used. Google then sets cookies such as _ga and _ga_<ID> for up to 2 years. Google Analytics does not store IP addresses; data may be processed in the United States under the EU–US Data Privacy Framework. Advertising features are switched off (Google Consent Mode: advertising storage denied). The legal basis is your consent (GDPR art. 6(1)(a)). If you decline, none of this is loaded."
       },
       {
         "h": "Server logs",
@@ -93,7 +93,7 @@
       },
       {
         "h": "Changing your choice",
-        "p": "You can change or withdraw your choice at any time through the “Cookie settings” link at the bottom of every page, or by clearing this website's data in your browser."
+        "p": "You can change or withdraw your choice at any time through the “Cookie settings” link at the bottom of every page, or by clearing this website's data in your browser. If you withdraw your consent, we delete the Google Analytics cookies on this website."
       }
     ]
   },

@@ -42,7 +42,7 @@ export const COMPANY = {
   /** Date the accessibility statement was last reviewed (ISO). */
   accessibilityReviewed: '2026-11-18',
   /** Date the privacy policy was last updated (ISO). */
-  privacyUpdated: '2026-11-24',
+  privacyUpdated: '2026-11-26',
 } as const;
 
 export const SERVICE_SLUGS = [

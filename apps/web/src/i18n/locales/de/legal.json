@@ -39,7 +39,7 @@
       },
       {
         "h": "Cookies und lokale Speicherung",
-        "p": "Wir speichern in Ihrem Browser nur Ihre Cookie-Auswahl und Ihre Spracheinstellung. Analysedienste werden nur geladen, wenn Sie ihnen zustimmen. Einzelheiten finden Sie in unserer Cookie-Richtlinie."
+        "p": "Wir speichern in Ihrem Browser nur Ihre Cookie-Auswahl und Ihre Barrierefreiheits-Einstellungen. Google-Analytics-Cookies werden nur gesetzt, wenn Sie auf „Statistiken erlauben“ klicken, und Sie können jederzeit widerrufen. Details in unserer Cookie-Richtlinie."
       },
       {
         "h": "Ihre Rechte",
@@ -72,8 +72,8 @@
     "title": "Cookie-Richtlinie",
     "sections": [
       {
-        "h": "Keine Cookies",
-        "p": "Diese Website setzt keine Cookies und verwendet keine Werbe- oder Tracking-Tools und keine Social-Media-Pixel. Schriften, Bilder und Videos werden von unserem eigenen Server geladen, sodass beim Surfen keine Daten an Dritte übermittelt werden."
+        "h": "Cookies nur mit Ihrer Einwilligung",
+        "p": "Ohne Ihre Einwilligung setzt diese Website keine Cookies und lädt keine Tracking-, Werbe- oder Social-Media-Pixel. Schriften, Bilder und Videos werden von unserem eigenen Server ausgeliefert."
       },
       {
         "h": "Spamschutz im Kontaktformular",
@@ -85,7 +85,7 @@
       },
       {
         "h": "Statistiken",
-        "p": "Derzeit ist kein Statistik-Tool aktiv. Falls wir eines einführen, ist es anonym und datenschutzfreundlich und wird erst geladen, nachdem Sie auf „Statistiken erlauben“ geklickt haben."
+        "p": "Wenn Sie auf „Statistiken erlauben“ klicken, laden wir den Google Tag Manager und Google Analytics 4 (Google Ireland Limited), um Besuche und die Nutzung der Seiten zu messen. Google setzt dann Cookies wie _ga und _ga_<ID> für bis zu 2 Jahre. Google Analytics speichert keine IP-Adressen; die Daten können im Rahmen des EU–US Data Privacy Framework in den USA verarbeitet werden. Werbefunktionen sind deaktiviert (Google Consent Mode: Werbespeicherung abgelehnt). Rechtsgrundlage ist Ihre Einwilligung (Art. 6 Abs. 1 lit. a DSGVO). Wenn Sie ablehnen, wird nichts davon geladen."
       },
       {
         "h": "Server-Logs",
@@ -93,7 +93,7 @@
       },
       {
         "h": "Ihre Wahl ändern",
-        "p": "Sie können Ihre Wahl jederzeit über den Link „Cookie-Einstellungen“ am Ende jeder Seite ändern oder widerrufen oder die Daten dieser Website in Ihrem Browser löschen."
+        "p": "Sie können Ihre Wahl jederzeit über den Link „Cookie-Einstellungen“ am Ende jeder Seite ändern oder widerrufen oder die Daten dieser Website in Ihrem Browser löschen. Wenn Sie Ihre Einwilligung widerrufen, löschen wir die Google-Analytics-Cookies auf dieser Website."
       }
     ]
   },

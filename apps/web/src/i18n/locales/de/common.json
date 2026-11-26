@@ -70,7 +70,7 @@
     "accessibility": "Erklärung zur Barrierefreiheit"
   },
   "cookie": {
-    "text": "Diese Website verwendet keine Cookies und kein Tracking. Datenschutzfreundliche, anonyme Statistiken möchten wir nur nutzen, wenn Sie zustimmen. Wenn Sie ablehnen, wird in Ihrem Browser nichts gespeichert.",
+    "text": "Diese Website setzt ohne Ihre Zustimmung keine Cookies. Mit Ihrer Erlaubnis nutzen wir Google Analytics (über den Google Tag Manager), um zu verstehen, wie die Website genutzt wird. Wenn Sie ablehnen, wird nichts in Ihrem Browser gespeichert.",
     "accept": "Statistiken erlauben",
     "decline": "Ablehnen",
     "more": "Cookie-Richtlinie",

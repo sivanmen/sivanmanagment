@@ -39,7 +39,7 @@
       },
       {
         "h": "Cookies en lokale opslag",
-        "p": "Wij slaan in uw browser alleen uw cookiekeuze en taalvoorkeur op. Analytics worden alleen geladen als u ze accepteert. Zie ons Cookiebeleid voor meer informatie."
+        "p": "We slaan in uw browser alleen uw cookiekeuze en toegankelijkheidsvoorkeuren op. Google Analytics-cookies worden alleen geplaatst als u op ‘Statistieken toestaan’ klikt, en u kunt dit altijd intrekken. Details in ons cookiebeleid."
       },
       {
         "h": "Uw rechten",
@@ -72,8 +72,8 @@
     "title": "Cookiebeleid",
     "sections": [
       {
-        "h": "Geen cookies",
-        "p": "Deze website plaatst geen cookies en gebruikt geen advertentie- of trackingtools en geen pixels van sociale media. Lettertypen, afbeeldingen en video’s komen van onze eigen server, zodat er tijdens het surfen geen gegevens naar derden gaan."
+        "h": "Cookies alleen met uw toestemming",
+        "p": "Zonder uw toestemming plaatst deze website geen cookies en laadt ze geen tracking-, advertentie- of socialemediapixels. Lettertypen, afbeeldingen en video’s komen van onze eigen server."
       },
       {
         "h": "Spambeveiliging van het contactformulier",
@@ -85,7 +85,7 @@
       },
       {
         "h": "Statistieken",
-        "p": "Op dit moment is er geen statistiektool actief. Als we er een toevoegen, is die anoniem en privacyvriendelijk en wordt die pas geladen nadat u op ‘Statistieken toestaan’ hebt geklikt."
+        "p": "Als u op ‘Statistieken toestaan’ klikt, laden we Google Tag Manager en Google Analytics 4 (Google Ireland Limited) om bezoeken en het gebruik van pagina’s te meten. Google plaatst dan cookies zoals _ga en _ga_<ID> voor maximaal 2 jaar. Google Analytics slaat geen IP-adressen op; gegevens kunnen in de Verenigde Staten worden verwerkt onder het EU–US Data Privacy Framework. Advertentiefuncties staan uit (Google Consent Mode: advertentieopslag geweigerd). De rechtsgrond is uw toestemming (art. 6, lid 1, onder a AVG). Als u weigert, wordt niets hiervan geladen."
       },
       {
         "h": "Serverlogboeken",
@@ -93,7 +93,7 @@
       },
       {
         "h": "Uw keuze wijzigen",
-        "p": "U kunt uw keuze op elk moment wijzigen of intrekken via de link ‘Cookie-instellingen’ onderaan elke pagina, of door de gegevens van deze website in uw browser te wissen."
+        "p": "U kunt uw keuze op elk moment wijzigen of intrekken via de link ‘Cookie-instellingen’ onderaan elke pagina, of door de gegevens van deze website in uw browser te wissen. Als u uw toestemming intrekt, verwijderen we de Google Analytics-cookies op deze website."
       }
     ]
   },

@@ -70,7 +70,7 @@
     "accessibility": "Déclaration d’accessibilité"
   },
   "cookie": {
-    "text": "Ce site n’utilise ni cookies ni traçage. Nous aimerions utiliser des statistiques anonymes et respectueuses de la vie privée, uniquement si vous l’autorisez. Si vous refusez, rien n’est enregistré dans votre navigateur.",
+    "text": "Ce site ne dépose aucun cookie sans votre accord. Avec votre permission, nous utilisons Google Analytics (via Google Tag Manager) pour comprendre l’utilisation du site. Si vous refusez, rien n’est enregistré dans votre navigateur.",
     "accept": "Autoriser les statistiques",
     "decline": "Refuser",
     "more": "Politique de cookies",

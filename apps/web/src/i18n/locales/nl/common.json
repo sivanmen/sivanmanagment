@@ -70,7 +70,7 @@
     "accessibility": "Toegankelijkheidsverklaring"
   },
   "cookie": {
-    "text": "Deze website gebruikt geen cookies en geen tracking. Privacyvriendelijke, anonieme statistieken gebruiken we alleen als u daarvoor toestemming geeft. Als u weigert, wordt er niets in uw browser opgeslagen.",
+    "text": "Deze website plaatst geen cookies zonder uw toestemming. Met uw toestemming gebruiken we Google Analytics (via Google Tag Manager) om te begrijpen hoe de site wordt gebruikt. Als u weigert, wordt er niets in uw browser opgeslagen.",
     "accept": "Statistieken toestaan",
     "decline": "Weigeren",
     "more": "Cookiebeleid",

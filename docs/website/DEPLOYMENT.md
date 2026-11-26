@@ -87,6 +87,13 @@ and fill in the keys. Nothing secret is stored in the repository or in the web r
 - Delivery to `support@` is local to the cPanel server (MX/SPF/DKIM/DMARC valid since 24 Nov 2026).
 - Troubleshooting logs (home folder, mode 600): `sivanmanagment-leads.jsonl` (delivered), `sivanmanagment-leads-spam.jsonl` (reCAPTCHA), `sivanmanagment-leads-rejected.jsonl` (every 4xx: validation, origin, rate limit, missing token).
 
+### Analytics — Google Tag Manager / GA4 (consent-gated)
+- Containers in `apps/web/src/lib/integrations.ts`: `GTM-P792GRPP` (contains GA4 `G-NCRQXW2F4J`) and `GTM-MTRMM4LP`.
+- `src/components/Analytics.astro`: Consent Mode v2 defaults to *denied*; GTM is injected only after "Allow statistics"
+  (cookie banner → `sm:consent` event / `sm-consent` in localStorage, 12 months). Ads storage always denied.
+  Declining later sets consent to denied and deletes `_ga*` cookies. No `<noscript>` GTM iframe (it would bypass consent).
+- In GTM, keep tags on Consent Mode (built-in consent checks) — do not add tags that fire without consent.
+
 ### Spam protection — Google reCAPTCHA v3
 - Public site key: `apps/web/src/lib/integrations.ts`. The key (Google Cloud → Security → reCAPTCHA) must list
   `sivanmanagment.com` and `www.sivanmanagment.com` in its domain list.

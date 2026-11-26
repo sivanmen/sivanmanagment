@@ -39,7 +39,7 @@
       },
       {
         "h": "Cookies et stockage local",
-        "p": "Nous enregistrons dans votre navigateur uniquement votre choix en matière de cookies et votre préférence de langue. Les outils de mesure d’audience ne sont chargés que si vous les acceptez. Pour plus de détails, consultez notre Politique relative aux cookies."
+        "p": "Nous enregistrons dans votre navigateur uniquement votre choix concernant les cookies et vos préférences d’accessibilité. Les cookies Google Analytics ne sont déposés que si vous cliquez sur « Autoriser les statistiques », et vous pouvez retirer votre accord à tout moment. Détails dans notre Politique en matière de cookies."
       },
       {
         "h": "Vos droits",
@@ -72,8 +72,8 @@
     "title": "Politique relative aux cookies",
     "sections": [
       {
-        "h": "Aucun cookie",
-        "p": "Ce site ne dépose aucun cookie et n’utilise ni outils publicitaires, ni traceurs, ni pixels de réseaux sociaux. Les polices, images et vidéos sont servies depuis notre propre serveur : aucune information n’est transmise à des tiers lors de votre navigation."
+        "h": "Des cookies uniquement avec votre consentement",
+        "p": "Sans votre consentement, ce site ne dépose aucun cookie et ne charge aucun pixel de suivi, de publicité ou de réseau social. Les polices, images et vidéos sont servies depuis notre propre serveur."
       },
       {
         "h": "Protection anti-spam du formulaire de contact",
@@ -85,7 +85,7 @@
       },
       {
         "h": "Statistiques",
-        "p": "Aucun outil de statistiques n’est actif pour le moment. Si nous en ajoutons un, il sera anonyme et respectueux de la vie privée, et ne se chargera qu’après que vous aurez cliqué sur « Autoriser les statistiques »."
+        "p": "Si vous cliquez sur « Autoriser les statistiques », nous chargeons Google Tag Manager et Google Analytics 4 (Google Ireland Limited) pour mesurer les visites et l’utilisation des pages. Google dépose alors des cookies tels que _ga et _ga_<ID> pour une durée maximale de 2 ans. Google Analytics n’enregistre pas les adresses IP ; les données peuvent être traitées aux États-Unis dans le cadre de l’EU–US Data Privacy Framework. Les fonctions publicitaires sont désactivées (Google Consent Mode : stockage publicitaire refusé). La base juridique est votre consentement (art. 6, par. 1, a) du RGPD). Si vous refusez, rien de tout cela n’est chargé."
       },
       {
         "h": "Journaux du serveur",
@@ -93,7 +93,7 @@
       },
       {
         "h": "Modifier votre choix",
-        "p": "Vous pouvez modifier ou retirer votre choix à tout moment via le lien « Paramètres des cookies » en bas de chaque page, ou en effaçant les données de ce site dans votre navigateur."
+        "p": "Vous pouvez modifier ou retirer votre choix à tout moment via le lien « Paramètres des cookies » en bas de chaque page, ou en effaçant les données de ce site dans votre navigateur. Si vous retirez votre consentement, nous supprimons les cookies Google Analytics de ce site."
       }
     ]
   },

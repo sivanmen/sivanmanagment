@@ -1,0 +1,52 @@
+---
+/**
+ * Google Tag Manager / Google Analytics — consent-gated (GDPR art. 6(1)(a), ePrivacy art. 5(3)).
+ * - Google Consent Mode v2 defaults to "denied" for everything.
+ * - GTM is injected only when the visitor has chosen "Allow statistics" (now or earlier, within 12 months).
+ * - Advertising storage stays denied; only analytics_storage is granted.
+ * - On withdrawal ("Decline" later), consent is updated to denied and GA cookies are deleted.
+ */
+import { GTM_IDS } from '~/lib/integrations';
+---
+<script is:inline define:vars={{ ids: GTM_IDS }}>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { window.dataLayer.push(arguments); }
+  window.gtag = gtag;
+  gtag('consent', 'default', { ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied', analytics_storage: 'denied', functionality_storage: 'denied', personalization_storage: 'denied', security_storage: 'granted', wait_for_update: 500 });
+  gtag('set', 'ads_data_redaction', true);
+  var loaded = false;
+  function granted() {
+    try {
+      if (sessionStorage.getItem('sm-consent') === 'essential') return false;
+      var raw = localStorage.getItem('sm-consent');
+      if (!raw) return false;
+      var v = JSON.parse(raw);
+      return v.v === 'analytics' && Date.now() - v.t < 365 * 864e5;
+    } catch (e) { return false; }
+  }
+  function load() {
+    gtag('consent', 'update', { analytics_storage: 'granted' });
+    if (loaded) return;
+    loaded = true;
+    window.dataLayer.push({ 'gtm.start': Date.now(), event: 'gtm.js' });
+    ids.forEach(function (id) {
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtm.js?id=' + encodeURIComponent(id);
+      document.head.appendChild(s);
+    });
+  }
+  function revoke() {
+    gtag('consent', 'update', { analytics_storage: 'denied' });
+    var host = location.hostname, parts = host.split('.');
+    document.cookie.split(';').forEach(function (c) {
+      var name = c.split('=')[0].trim();
+      if (!/^(_ga|_gid|_gat|_gcl)/.test(name)) return;
+      ['', host, '.' + host, '.' + parts.slice(-2).join('.')].forEach(function (d) {
+        document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/' + (d ? '; domain=' + d : '');
+      });
+    });
+  }
+  if (granted()) load();
+  window.addEventListener('sm:consent', function (e) { if (e.detail === 'analytics') load(); else revoke(); });
+</script>

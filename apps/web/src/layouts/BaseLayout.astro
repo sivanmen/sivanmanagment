@@ -11,6 +11,7 @@ import Header from '~/components/Header.astro';
 import Footer from '~/components/Footer.astro';
 import CookieBanner from '~/components/CookieBanner.astro';
 import A11yMenu from '~/components/A11yMenu.astro';
+import Analytics from '~/components/Analytics.astro';
 import { LOCALE_META, LOCALES, type Locale } from '~/i18n/config';
 import { getDict } from '~/i18n';
 
@@ -43,6 +44,7 @@ const t = getDict(locale);
     <link rel="sitemap" href="/sitemap-index.xml" />
     <script is:inline>document.documentElement.classList.replace('no-js', 'js');try{var s=JSON.parse(sessionStorage.getItem('sm-a11y')||'{}');var h=document.documentElement;if(s.size&&s.size!==100)h.style.fontSize=s.size+'%';['contrast','links','font','spacing','cursor','motion'].forEach(function(k){if(s[k])h.classList.add('a11y-'+k)})}catch(e){}</script>
     <Seo locale={locale} path={path} alternates={alternates} {...seo} />
+    <Analytics />
   </head>
   <body>
     <a href="#main" class="skip-link">{t.common.nav.skip}</a>

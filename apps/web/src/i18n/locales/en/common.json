@@ -70,7 +70,7 @@
     "accessibility": "Accessibility"
   },
   "cookie": {
-    "text": "This website uses no cookies and no tracking. We would like to use privacy-friendly, anonymous statistics only if you allow it. If you decline, nothing is saved in your browser.",
+    "text": "This website sets no cookies unless you agree. With your permission we use Google Analytics (via Google Tag Manager) to understand how the site is used. If you decline, nothing is saved in your browser.",
     "accept": "Allow statistics",
     "decline": "Decline",
     "more": "Cookie Policy",
