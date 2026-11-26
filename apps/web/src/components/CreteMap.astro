@@ -1,0 +1,55 @@
+---
+/** Simplified outline of Crete (generated from approximate coastline coordinates) with the three focus cities. */
+import { localizePath, type Locale } from '~/i18n/config';
+import { getDict } from '~/i18n';
+interface Props { locale: Locale; active?: 'chania' | 'rethymno' | 'heraklion' }
+const { locale, active } = Astro.props;
+const t = getDict(locale);
+const pins: { key: 'chania' | 'rethymno' | 'heraklion'; x: number; y: number; office: boolean }[] = [
+  { key: 'chania', x: 193, y: 97, office: true },
+  { key: 'rethymno', x: 346, y: 158, office: false },
+  { key: 'heraklion', x: 570, y: 170, office: false },
+];
+---
+<figure class="map" aria-label={t.locations.overview.mapLabel}>
+  <svg viewBox="0 0 1000 370" role="img" aria-hidden="true">
+    <defs>
+      <linearGradient id="crete-fill" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#2a2547" />
+        <stop offset="1" stop-color="#1a1630" />
+      </linearGradient>
+      <radialGradient id="pin-glow"><stop offset="0" stop-color="#6754e9" stop-opacity=".7" /><stop offset="1" stop-color="#6754e9" stop-opacity="0" /></radialGradient>
+    </defs>
+    <path class="island" d="M44.1 62.2C46.9 60.2 53.1 84.4 57.6 91.3C62.2 98.2 65.5 105.8 71.2 103.8C76.8 101.7 86.4 88.5 91.5 78.8C96.6 69.2 97.7 45.0 101.7 45.6C105.7 46.3 105.7 74.7 115.3 83.0C124.9 91.3 146.3 93.0 159.3 95.4C172.3 97.9 184.8 99.6 193.2 97.5C201.7 95.5 204.5 87.8 210.2 83.0C215.8 78.2 220.4 68.5 227.1 68.5C233.9 68.5 250.3 77.1 250.9 83.0C251.4 88.9 231.6 97.5 230.5 103.8C229.4 110.0 237.9 117.9 244.1 120.3C250.3 122.8 262.2 112.4 267.8 118.3C273.5 124.2 265.0 149.1 278.0 155.6C291.0 162.2 321.5 160.5 345.8 157.7C370.1 154.9 405.1 141.4 423.8 139.0C442.4 136.6 443.0 141.8 457.7 143.2C472.3 144.6 493.2 142.8 511.9 147.3C530.5 151.8 545.2 165.0 569.5 170.1C593.8 175.3 637.9 175.0 657.7 178.4C677.4 181.9 675.2 188.8 688.2 190.9C701.2 193.0 723.2 193.0 735.6 190.9C748.1 188.8 755.4 178.4 762.8 178.4C770.1 178.4 778.6 181.9 779.7 190.9C780.8 199.9 766.7 220.6 769.5 232.4C772.4 244.2 775.2 262.1 796.7 261.5C818.1 260.8 875.8 235.5 898.4 228.2C921.0 221.0 921.0 224.1 932.3 217.9C943.5 211.6 961.6 189.2 966.2 190.9C970.7 192.6 961.6 215.1 959.4 228.2C957.1 241.4 961.6 253.8 952.6 269.7C943.6 285.7 922.6 316.8 905.1 323.7C887.6 330.6 869.0 313.3 847.5 311.3C826.0 309.2 801.7 310.2 776.3 311.3C750.9 312.3 721.5 316.1 695.0 317.5C668.4 318.9 649.2 316.1 617.0 319.6C584.8 323.0 528.3 334.8 501.7 338.2C475.2 341.7 467.8 344.8 457.7 340.3C447.5 335.8 445.2 320.9 440.7 311.3C436.2 301.6 435.6 289.1 430.5 282.2C425.4 275.3 428.8 277.4 410.2 269.7C391.5 262.1 343.0 242.1 318.7 236.6C294.4 231.0 281.9 237.9 264.4 236.6C246.9 235.2 228.8 231.7 213.6 228.2C198.3 224.8 188.1 218.9 172.9 215.8C157.6 212.7 137.9 209.6 122.0 209.6C106.2 209.6 92.7 217.5 78.0 215.8C63.3 214.1 40.7 212.3 33.9 199.2C27.1 186.1 36.2 152.9 37.3 136.9C38.4 121.0 39.6 116.2 40.7 103.8C41.8 91.3 41.2 64.3 44.1 62.2Z" fill="url(#crete-fill)" stroke="rgba(176,167,239,.45)" stroke-width="1.5" />
+    {pins.map((p) => (
+      <g class:list={['pin', { 'is-active': !active || active === p.key }]} transform={`translate(${p.x} ${p.y})`}>
+        <circle r="34" fill="url(#pin-glow)" class="pulse" />
+        <circle r={p.office ? 9 : 7} fill={p.office ? '#ffbe11' : '#b0a7ef'} />
+        <circle r={p.office ? 9 : 7} fill="none" stroke="#fff" stroke-width="2" opacity=".9" />
+      </g>
+    ))}
+  </svg>
+  <div class="labels">
+    {pins.map((p) => (
+      <a href={localizePath(`/locations/${p.key}/`, locale)} class:list={['label', { 'is-active': active === p.key }]} style={`--x:${p.x / 10}%;--y:${(p.y / 370) * 100}%`}>
+        <strong>{t.locations.items[p.key].name}</strong>
+        {p.office && <small>{t.locations.overview.officeLabel}</small>}
+      </a>
+    ))}
+  </div>
+</figure>
+
+<style>
+  .map { position: relative; margin: 0 auto; direction: ltr; max-width: 1100px; }
+  svg { width: 100%; height: auto; overflow: visible; }
+  .island { filter: drop-shadow(0 30px 60px rgba(67, 48, 184, 0.35)); }
+  .pin { opacity: 0.45; transition: opacity 0.4s; }
+  .pin.is-active { opacity: 1; }
+  .pulse { transform-origin: center; animation: pulse 2.8s var(--ease-out) infinite; }
+  @keyframes pulse { 0% { transform: scale(0.4); opacity: 1; } 100% { transform: scale(1.6); opacity: 0; } }
+  .labels { position: absolute; inset: 0; }
+  .label { position: absolute; left: var(--x); top: var(--y); translate: -50% calc(-100% - 22px); display: grid; justify-items: center; padding: 0.35rem 0.7rem; border-radius: 12px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.14); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); color: #fff; font-size: 0.85rem; white-space: nowrap; transition: background-color 0.3s; }
+  .label:hover, .label.is-active { background: var(--violet); border-color: var(--violet); }
+  .label strong { font-family: var(--font-display); font-weight: 560; }
+  .label small { font-size: 0.68rem; color: var(--gold); }
+</style>

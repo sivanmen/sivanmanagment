@@ -1,0 +1,120 @@
+{
+  "seoTitle": "Gestion locative en Crète — Chania, Réthymnon, Héraklion | Sivan",
+  "seoDescription": "Gestion immobilière, patrimoniale et hôtelière en Crète : location courte et longue durée, commerces, hôtels, entretien. Un partenaire local, un reporting complet.",
+  "hero": {
+    "eyebrow": "Gestion immobilière · patrimoniale · hôtelière — Crète, Grèce",
+    "titleA": "Votre bien.",
+    "titleB": "Notre responsabilité.",
+    "sub": "Gestion immobilière, patrimoniale et hôtelière complète en Grèce.",
+    "body": "De l’exploitation locative et de l’accueil des voyageurs à l’entretien et au reporting propriétaire, nous aidons les propriétaires grecs et internationaux à gérer leur patrimoine immobilier en toute confiance.",
+    "cta1": "Demander une évaluation de votre bien",
+    "cta2": "Découvrir nos services",
+    "chipLocal": "Bureau local à Chania",
+    "chipPortal": "Espace propriétaire en ligne",
+    "chipAssets": "Résidentiel · Location · Commercial · Hôtels",
+    "scroll": "Défiler"
+  },
+  "intro": {
+    "eyebrow": "Pourquoi les propriétaires nous choisissent",
+    "title": "Posséder un bien en Grèce devrait être une opportunité, pas une charge opérationnelle.",
+    "body1": "Sivan Management assure la gestion complète, l’exploitation locative et l’entretien de biens résidentiels, commerciaux et hôteliers dans toute la Crète, en particulier à Chania, Réthymnon et Héraklion.",
+    "body2": "De la préparation de votre bien pour sa mise sur le marché et la recherche des bons locataires ou voyageurs jusqu’aux opérations quotidiennes, à l’entretien et au reporting, nous réunissons tous les services essentiels dans une approche unique et coordonnée.",
+    "closing": "Un bien. Un partenaire de confiance. Une sérénité totale.",
+    "pillars": [
+      { "title": "Responsabilité", "body": "Nous considérons chaque bien comme un patrimoine à protéger, pas seulement comme un calendrier à remplir." },
+      { "title": "Transparence", "body": "Des contrats clairs, des dépenses détaillées et des rapports réguliers, réellement lisibles." },
+      { "title": "Expertise locale", "body": "Une connaissance concrète du marché crétois, de ses prestataires et de sa réglementation." },
+      { "title": "Le propriétaire d’abord", "body": "Vos objectifs fixent la stratégie. Nous la mettons en œuvre et vous tenons informé." }
+    ]
+  },
+  "manage": {
+    "eyebrow": "Ce que nous gérons",
+    "title": "Quatre types de biens. Une même exigence de gestion.",
+    "sub": "Que vous possédiez une villa privée, un appartement, un local commercial ou un établissement hôtelier, nous adaptons notre service au bien et à votre stratégie d’investissement.",
+    "items": [
+      { "key": "short-term-rental-management", "title": "Locations saisonnières et villas", "body": "Mise en valeur, diffusion internationale, tarification, réservations, accueil des voyageurs et ménage — l’expérience locative complète." },
+      { "key": "long-term-rental-management", "title": "Locations résidentielles", "body": "Mise en location structurée, relation avec les locataires, suivi des loyers et supervision du bien, pour des locations stables et bien gérées." },
+      { "key": "commercial-property-management", "title": "Immobilier commercial", "body": "Relations locataires, planification de l’entretien, contrôle des prestataires et suivi budgétaire pour bureaux, commerces et immeubles mixtes." },
+      { "key": "hotel-hospitality-management", "title": "Hôtels et hébergement", "body": "Soutien opérationnel pour hôtels de charme, appartements avec services et portefeuilles d’hébergements de vacances." }
+    ]
+  },
+  "statement": {
+    "line1": "Bien gérer un bien immobilier, ce n’est pas seulement remplir un calendrier ou encaisser des loyers.",
+    "line2": "C’est préserver le patrimoine, maîtriser les coûts, maintenir un haut niveau d’exigence et prendre des décisions éclairées — année après année."
+  },
+  "process": {
+    "eyebrow": "Une gestion complète, de A à Z",
+    "title": "De la première visite au rapport mensuel.",
+    "sub": "Un processus clair et reproductible relie la stratégie à l’exécution au quotidien.",
+    "steps": [
+      { "title": "Découverte", "body": "Nous apprenons à connaître votre bien, vos objectifs et le degré d’implication que vous souhaitez." },
+      { "title": "Évaluation et stratégie", "body": "Examen sur place de l’état, de la conformité et du potentiel. Nous recommandons l’usage le plus adapté : courte durée, longue durée, commercial ou hôtelier." },
+      { "title": "Proposition et contrat", "body": "Un périmètre écrit : responsabilités, honoraires, validation des dépenses, autorisations et reporting." },
+      { "title": "Préparation", "body": "Réparations, conseils d’ameublement, photographie professionnelle, inventaire et contrôles de sécurité." },
+      { "title": "Commercialisation", "body": "Annonces, canaux de diffusion, tarification et sélection des locataires ou des voyageurs." },
+      { "title": "Exploitation et entretien", "body": "Voyageurs, locataires, ménage, prestataires, entretien préventif et réactivité face aux imprévus." },
+      { "title": "Reporting propriétaire", "body": "Relevés des recettes et des dépenses, problèmes signalés et mesures prises, ainsi que nos recommandations." }
+    ]
+  },
+  "control": {
+    "eyebrow": "Gestion et contrôle",
+    "title": "Une visibilité totale, où que vous viviez.",
+    "body": "Chaque propriétaire accède à notre espace propriétaire en ligne, relié au logiciel de gestion immobilière sur lequel repose notre activité. Réservations, relevés, demandes d’intervention et documents sont réunis au même endroit : vous n’avez jamais à courir après une information.",
+    "features": [
+      { "title": "Réservations et occupation", "body": "Les réservations de tous les canaux dans un seul calendrier." },
+      { "title": "Relevés des recettes et des dépenses", "body": "Détaillés, avec justificatifs et validations pour les dépenses importantes." },
+      { "title": "Suivi de l’entretien", "body": "Chaque intervention, de la demande à sa réalisation, photos à l’appui." },
+      { "title": "Tous vos documents au même endroit", "body": "Contrats, certificats, factures et rapports." }
+    ],
+    "cta": "Ouvrir l’espace propriétaire",
+    "dashboard": {
+      "title": "Vue d’ensemble propriétaire",
+      "period": "Ce mois-ci",
+      "revenue": "Recettes brutes",
+      "expenses": "Dépenses",
+      "net": "Net propriétaire",
+      "occupancy": "Taux d’occupation",
+      "tasks": "Interventions en cours",
+      "next": "Prochaine arrivée",
+      "report": "Rapport mensuel disponible",
+      "taskA": "Entretien de la pompe de piscine",
+      "taskB": "Remplacement d’un luminaire de terrasse",
+      "statusDone": "Terminé",
+      "statusOpen": "Planifié"
+    }
+  },
+  "local": {
+    "eyebrow": "Expertise locale",
+    "title": "Ancrés en Crète. Proches des propriétaires du monde entier.",
+    "body": "Notre bureau se trouve au centre de Chania. Nous connaissons les quartiers, les saisons, les prestataires et les démarches administratives, et nous accompagnons les propriétaires vivant en Grèce comme à l’étranger avec un interlocuteur local unique.",
+    "cta": "Voir où nous intervenons"
+  },
+  "platforms": {
+    "title": "Nous diffusons et gérons votre bien sur les plateformes qu’utilisent les voyageurs",
+    "note": "Le choix des canaux dépend du type de bien et de votre stratégie. Les marques citées appartiennent à leurs propriétaires respectifs."
+  },
+  "insights": {
+    "eyebrow": "Conseils et guides",
+    "title": "Le savoir utile aux propriétaires en Grèce.",
+    "cta": "Tous les articles"
+  },
+  "faq": {
+    "eyebrow": "Les questions des propriétaires",
+    "title": "Les bonnes questions méritent des réponses claires.",
+    "items": [
+      { "q": "Que comprend exactement votre gestion ?", "a": "Cela dépend du bien et du contrat. Un mandat de gestion complète couvre généralement la commercialisation, la tarification, la communication avec les voyageurs ou les locataires, les arrivées et les départs, le ménage, la coordination de l’entretien, la gestion des prestataires, le contrôle des dépenses et un reporting régulier au propriétaire. Nous définissons le périmètre par écrit avant de commencer." },
+      { "q": "Comment sont structurés vos honoraires de gestion ?", "a": "Nous travaillons au pourcentage des revenus locatifs, au forfait mensuel, à la prestation, ou selon une combinaison de ces formules. Le bon modèle dépend du type de bien, de sa taille et de l’étendue de notre gestion. Vous recevez une proposition écrite après l’évaluation, sans frais cachés." },
+      { "q": "Comment recevrai-je les rapports ?", "a": "Via notre espace propriétaire en ligne et par e-mail. Vous pouvez consulter à tout moment les réservations, les recettes, les dépenses et l’entretien, et vous recevez un relevé périodique détaillé." },
+      { "q": "Comment gérez-vous les réparations et les urgences ?", "a": "Les petits problèmes urgents sont traités immédiatement, dans la limite d’un plafond de dépenses convenu. Les travaux plus importants font l’objet d’un devis qui vous est d’abord soumis pour accord. Chaque intervention est consignée avec photos et factures." },
+      { "q": "Pouvez-vous gérer mon bien si je vis à l’étranger ?", "a": "Oui. Beaucoup de nos propriétaires vivent hors de Grèce. Nous agissons comme votre représentant local, communiquons en plusieurs langues et vous tenons informé en ligne." },
+      { "q": "Comment démarrer ?", "a": "Demandez une évaluation de votre bien. Nous organisons un appel, visitons le bien et vous adressons une proposition de gestion sur mesure." }
+    ],
+    "cta": "Toutes les questions"
+  },
+  "cta": {
+    "eyebrow": "Commencer",
+    "title": "Parlons de votre bien.",
+    "body": "Parlez-nous de votre bien, de sa localisation et de vos objectifs. Nous étudierons vos besoins et vous proposerons une approche de gestion adaptée à votre bien.",
+    "button": "Recevoir une proposition de gestion sur mesure"
+  }
+}

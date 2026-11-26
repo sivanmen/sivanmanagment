@@ -1,0 +1,28 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import Icon from '~/components/Icon.astro';
+import { getDict } from '~/i18n';
+import { localePaths, localizePath, type Locale } from '~/i18n/config';
+
+export const getStaticPaths = localePaths;
+const { locale } = Astro.props as { locale: Locale };
+const th = getDict(locale).contact.thanks;
+---
+<BaseLayout locale={locale} path="/thank-you/" title={th.seoTitle} description={th.body} noindex>
+  <section class="section section--dark grain thanks">
+    <div class="aurora" aria-hidden="true"></div>
+    <div class="container-narrow relative stack center" style="--stack:1.25rem">
+      <span class="ok" data-reveal="scale"><Icon name="check" size={40} /></span>
+      <h1 class="h-1" data-split>{th.title}</h1>
+      <p class="lead" data-reveal>{th.body}</p>
+      <p class="muted" data-reveal>{th.next}</p>
+      <div data-reveal><a href={localizePath('/insights/', locale)} class="btn btn--light">{th.cta}<Icon name="arrow" size={18} class="arrow" /></a></div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .thanks { min-height: 80svh; display: grid; align-items: center; padding-top: 9rem; }
+  .center { text-align: center; display: grid; justify-items: center; }
+  .ok { width: 5rem; height: 5rem; border-radius: 50%; display: grid; place-items: center; background: var(--violet); box-shadow: var(--glow); color: #fff; }
+</style>

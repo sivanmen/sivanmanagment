@@ -1,0 +1,15 @@
+---
+interface Props { eyebrow?: string; title: string; sub?: string; align?: 'start' | 'center'; as?: 'h1' | 'h2'; size?: 'h-1' | 'h-2'; id?: string }
+const { eyebrow, title, sub, align = 'start', as: Tag = 'h2', size = 'h-2', id } = Astro.props;
+---
+<div class:list={['section-head', `align-${align}`]}>
+  {eyebrow && <p class="eyebrow" data-reveal="fade">{eyebrow}</p>}
+  <Tag class={size} id={id} data-split>{title}</Tag>
+  {sub && <p class="lead" data-reveal style="--d:150ms">{sub}</p>}
+  <slot />
+</div>
+
+<style>
+  .section-head { display: grid; gap: 1.1rem; margin-bottom: clamp(2.5rem, 1.5rem + 3vw, 4.5rem); max-width: 860px; }
+  .align-center { margin-inline: auto; text-align: center; justify-items: center; }
+</style>

@@ -1,0 +1,92 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import PageHero from '~/components/PageHero.astro';
+import CreteMap from '~/components/CreteMap.astro';
+import ServiceCard from '~/components/ServiceCard.astro';
+import Faq from '~/components/Faq.astro';
+import CtaBand from '~/components/CtaBand.astro';
+import Icon from '~/components/Icon.astro';
+import { getDict } from '~/i18n';
+import { LOCALES, langParam, localizePath, type Locale } from '~/i18n/config';
+import { IMAGES, LOCATION_IMAGE, SERVICE_IMAGE } from '~/lib/images';
+import { COMPANY, LOCATION_SLUGS, SERVICE_SLUGS, type LocationSlug } from '~/lib/company';
+
+export function getStaticPaths() {
+  return LOCALES.flatMap((locale) => LOCATION_SLUGS.map((slug) => ({ params: { lang: langParam(locale), slug }, props: { locale, slug } })));
+}
+const { locale, slug } = Astro.props as { locale: Locale; slug: LocationSlug };
+const t = getDict(locale);
+const it = t.locations.items[slug];
+const lab = t.locations.labels;
+const L = (p: string) => localizePath(p, locale);
+const im = IMAGES[LOCATION_IMAGE[slug]];
+const services = slug === 'heraklion'
+  ? (['long-term-rental-management', 'commercial-property-management', 'asset-management'] as const)
+  : (['short-term-rental-management', 'long-term-rental-management', 'property-maintenance'] as const);
+const faqLd = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: it.faq.map((i) => ({ '@type': 'Question', name: i.q, acceptedAnswer: { '@type': 'Answer', text: i.a } })) };
+---
+<BaseLayout locale={locale} path={`/locations/${slug}/`} title={it.seoTitle} description={it.seoDescription} overlay jsonLd={[faqLd]}>
+  <PageHero locale={locale} eyebrow={t.common.nav.locations} title={it.headline} lead={it.lead} image={im} video={slug === 'chania' ? 'chaniaLighthouse' : undefined}
+    crumbs={[{ label: t.common.nav.locations, href: L('/locations/') }, { label: it.name }]}>
+    <div class="btn-row" data-reveal style="--d:300ms">
+      <a href={L('/contact/')} class="btn btn--violet">{t.common.common.requestAssessment}<Icon name="arrow" size={18} class="arrow" /></a>
+      {slug === 'chania' && <a href={COMPANY.mapsUrl} class="btn btn--glass" rel="noopener"><Icon name="pin" size={18} />{t.contact.mapLink}</a>}
+    </div>
+  </PageHero>
+
+  <section class="section">
+    <div class="container split">
+      <div class="stack" style="--stack:1.25rem">
+        {it.body.map((p, i) => <p class={i === 0 ? 'lead' : 'muted'} data-reveal style={`--d:${i * 100}ms`}>{p}</p>)}
+      </div>
+      <div class="grid side">
+        <div class="card" data-reveal>
+          <p class="eyebrow">{lab.propertyTypes}</p>
+          <ul class="ticks">{it.propertyTypes.map((p) => <li><Icon name="check" size={18} />{p}</li>)}</ul>
+        </div>
+        <div class="card" data-reveal style="--d:100ms">
+          <p class="eyebrow">{lab.whyTitle}</p>
+          <ul class="ticks">{it.highlights.map((p) => <li><Icon name="sparkle" size={18} />{p}</li>)}</ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--ink grain">
+    <div class="container relative"><CreteMap locale={locale} active={slug} /></div>
+  </section>
+
+  <section class="section section--lilac">
+    <div class="container">
+      <h2 class="h-2 title" data-split>{lab.servicesHere}</h2>
+      <div class="grid grid-3">
+        {services.map((s, i) => (
+          <ServiceCard href={L(`/services/${s}/`)} title={t.services.items[s].name} body={t.services.items[s].short} image={IMAGES[SERVICE_IMAGE[s]]} index={i} cta={t.common.common.learnMore} />
+        ))}
+      </div>
+      <p class="all"><a class="link-arrow" href={L('/services/')}>{t.common.nav.allServices} ({SERVICE_SLUGS.length})<Icon name="arrow" size={18} class="arrow" /></a></p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container split">
+      <div class="stack" style="--stack:1rem">
+        <p class="eyebrow" data-reveal="fade">{t.common.common.faqTitle}</p>
+        <h2 class="h-2" data-split>{it.name}</h2>
+      </div>
+      <Faq items={it.faq} />
+    </div>
+  </section>
+
+  <CtaBand locale={locale} />
+</BaseLayout>
+
+<style>
+  .side { align-content: start; }
+  .card { display: grid; gap: 1rem; }
+  .ticks { display: grid; gap: 0.7rem; }
+  .ticks li { display: flex; gap: 0.7rem; align-items: flex-start; }
+  .ticks :global(svg) { flex: none; color: var(--violet); margin-top: 0.2rem; }
+  .title { margin-bottom: 2.5rem; }
+  .all { margin-top: 2rem; }
+</style>

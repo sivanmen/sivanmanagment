@@ -1,0 +1,88 @@
+---
+import { Image } from 'astro:assets';
+import { render } from 'astro:content';
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import CtaBand from '~/components/CtaBand.astro';
+import ArticleCard from '~/components/ArticleCard.astro';
+import Icon from '~/components/Icon.astro';
+import { getDict } from '~/i18n';
+import { langParam, localizePath, LOCALES, type Locale } from '~/i18n/config';
+import { allInsights, parseId, formatDate, readingMinutes, insightsFor, coverOf, type Insight } from '~/lib/insights';
+import { img } from '~/lib/images';
+import { COMPANY } from '~/lib/company';
+
+export async function getStaticPaths() {
+  const all = await allInsights();
+  return all.map((entry) => {
+    const { locale, slug } = parseId(entry);
+    const alternates = LOCALES.filter((l) => all.some((e) => e.data.translationKey === entry.data.translationKey && parseId(e).locale === l && parseId(e).slug === slug));
+    return { params: { lang: langParam(locale), slug }, props: { entry, locale, slug, alternates } };
+  });
+}
+const { entry, locale, slug, alternates } = Astro.props as { entry: Insight; locale: Locale; slug: string; alternates: Locale[] };
+const t = getDict(locale);
+const { Content } = await render(entry);
+const d = entry.data;
+const coverKey = coverOf(entry);
+const isUpload = coverKey.startsWith('/');
+const cover = img(coverKey);
+const more = (await insightsFor(locale)).filter((e) => e.id !== entry.id).slice(0, 3);
+const site = Astro.site!;
+const url = new URL(localizePath(`/insights/${slug}/`, locale), site).href;
+const articleLd = {
+  '@context': 'https://schema.org', '@type': 'Article',
+  headline: d.title, description: d.description, inLanguage: locale === 'zh-cn' ? 'zh-CN' : locale,
+  datePublished: d.date.toISOString(), dateModified: (d.updated ?? d.date).toISOString(),
+  author: { '@type': 'Organization', name: d.author }, publisher: { '@id': new URL('/#organization', site).href },
+  mainEntityOfPage: url,
+};
+const cat = (t.insights.categories as Record<string, string>)[d.category] ?? d.category;
+---
+<BaseLayout locale={locale} path={`/insights/${slug}/`} title={`${d.title} | ${COMPANY.brand}`} description={d.description} type="article" alternates={alternates} jsonLd={[articleLd]}>
+  <article>
+    <header class="art-hero section--dark grain">
+      <div class="aurora" aria-hidden="true"></div>
+      <div class="container-narrow relative stack" style="--stack:1.25rem">
+        <a href={localizePath('/insights/', locale)} class="link-arrow back" data-reveal="fade"><Icon name="arrow" size={18} class="arrow flip" />{t.insights.back}</a>
+        <p class="meta" data-reveal="fade"><span class="chip">{cat}</span><time datetime={d.date.toISOString()}>{formatDate(d.date, locale)}</time><span>· {readingMinutes(entry.body)} {t.common.common.minutesRead}</span></p>
+        <h1 class="h-1" data-split>{d.title}</h1>
+        <p class="lead" data-reveal>{d.description}</p>
+        <p class="muted" data-reveal>{t.insights.author} {d.author}</p>
+      </div>
+    </header>
+    <div class="container cover-wrap">
+      <div class="media cover" data-reveal="scale">
+        {isUpload
+          ? <img src={coverKey} alt={d.coverAlt ?? ''} loading="eager" />
+          : <Image src={cover.src} alt={d.coverAlt ?? cover.alt} widths={[768, 1280, 1600]} sizes="(min-width: 1280px) 1280px, 100vw" loading="eager" />}
+      </div>
+    </div>
+    <div class="container-narrow prose body">
+      <Content />
+      <p class="disclaimer"><Icon name="shield" size={18} />{t.insights.disclaimer}</p>
+    </div>
+  </article>
+
+  {more.length > 0 && (
+    <section class="section section--white">
+      <div class="container">
+        <h2 class="h-2 more-title" data-split>{t.home.insights.title}</h2>
+        <div class="grid grid-3">{more.map((p, k) => <ArticleCard entry={p} locale={locale} index={k} />)}</div>
+      </div>
+    </section>
+  )}
+  <CtaBand locale={locale} title={t.insights.ctaTitle} body={t.insights.ctaBody} />
+</BaseLayout>
+
+<style>
+  .art-hero { position: relative; overflow: hidden; padding-block: 9rem 9rem; }
+  .meta { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; color: var(--text-inverse-muted); font-size: 0.9rem; }
+  .back :global(.flip) { transform: scaleX(-1); }
+  :global([dir='rtl']) .back :global(.flip) { transform: none; }
+  .cover-wrap { margin-top: -6rem; position: relative; z-index: 2; }
+  .cover { aspect-ratio: 21 / 9; box-shadow: var(--shadow-lift); }
+  .body { padding-block: clamp(3rem, 2rem + 3vw, 5rem); }
+  .disclaimer { display: flex; gap: 0.75rem; margin-top: 3rem; padding: 1.1rem 1.25rem; border-radius: var(--radius); background: var(--lilac); font-size: 0.9rem; color: var(--violet-700); }
+  .disclaimer :global(svg) { flex: none; margin-top: 0.2rem; }
+  .more-title { margin-bottom: 2.5rem; }
+</style>

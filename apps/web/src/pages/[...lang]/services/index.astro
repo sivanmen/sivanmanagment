@@ -1,0 +1,55 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import PageHero from '~/components/PageHero.astro';
+import ServiceCard from '~/components/ServiceCard.astro';
+import SectionHead from '~/components/SectionHead.astro';
+import CtaBand from '~/components/CtaBand.astro';
+import Icon from '~/components/Icon.astro';
+import { getDict } from '~/i18n';
+import { localePaths, localizePath, type Locale } from '~/i18n/config';
+import { IMAGES, SERVICE_IMAGE } from '~/lib/images';
+import { SERVICE_SLUGS } from '~/lib/company';
+
+export const getStaticPaths = localePaths;
+const { locale } = Astro.props as { locale: Locale };
+const t = getDict(locale);
+const o = t.services.overview;
+const icons = ['villa', 'home', 'building', 'hotel', 'wrench', 'shield', 'megaphone'];
+const modelIcons = ['layers', 'sparkle', 'calendar'];
+---
+<BaseLayout locale={locale} path="/services/" title={o.seoTitle} description={o.seoDescription} overlay>
+  <PageHero locale={locale} eyebrow={o.eyebrow} title={o.title} lead={o.sub} image={IMAGES['villa-pool']} crumbs={[{ label: t.common.nav.services }]} />
+
+  <section class="section">
+    <div class="container grid grid-3">
+      {SERVICE_SLUGS.map((s, i) => (
+        <ServiceCard href={localizePath(`/services/${s}/`, locale)} title={t.services.items[s].name} body={t.services.items[s].short} image={IMAGES[SERVICE_IMAGE[s]]} index={i % 3} cta={t.common.common.learnMore} icon={icons[i]} />
+      ))}
+    </div>
+  </section>
+
+  <section class="section section--dark grain">
+    <div class="aurora" aria-hidden="true"></div>
+    <div class="container relative">
+      <SectionHead title={o.modelsTitle} />
+      <div class="grid grid-3">
+        {o.models.map((m, i) => (
+          <div class="dark-card model" data-reveal style={`--d:${i * 90}ms`}>
+            <span class="icon-badge"><Icon name={modelIcons[i]} /></span>
+            <h3 class="h-3">{m.title}</h3>
+            <p class="muted">{m.body}</p>
+          </div>
+        ))}
+      </div>
+      <p class="note" data-reveal><Icon name="shield" size={18} />{o.pricingNote}</p>
+    </div>
+  </section>
+
+  <CtaBand locale={locale} />
+</BaseLayout>
+
+<style>
+  .model { display: grid; gap: 0.9rem; align-content: start; }
+  .note { display: flex; gap: 0.75rem; align-items: flex-start; margin-top: 2.5rem; color: var(--text-inverse-muted); max-width: 75ch; }
+  .note :global(svg) { flex: none; margin-top: 0.25rem; color: var(--gold); }
+</style>

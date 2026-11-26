@@ -1,0 +1,65 @@
+---
+import { Image } from 'astro:assets';
+import type { SiteImage, VideoKey } from '~/lib/images';
+import BgVideo from './BgVideo.astro';
+import { getDict } from '~/i18n';
+import { localizePath, type Locale } from '~/i18n/config';
+
+interface Crumb { label: string; href?: string }
+interface Props { locale: Locale; eyebrow?: string; title: string; lead?: string; image?: SiteImage; video?: VideoKey; crumbs?: Crumb[] }
+const { locale, eyebrow, title, lead, image, video, crumbs = [] } = Astro.props;
+const t = getDict(locale);
+const site = Astro.site!;
+const all: Crumb[] = [{ label: t.common.nav.breadcrumbHome, href: localizePath('/', locale) }, ...crumbs];
+const crumbLd = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: all.map((c, i) => ({
+    '@type': 'ListItem', position: i + 1, name: c.label,
+    ...(c.href ? { item: new URL(c.href, site).href } : {}),
+  })),
+};
+---
+<section class:list={['page-hero section--dark grain', { 'has-image': !!image }]}>
+  {image && (
+    <div class="ph-media">
+      <div data-parallax="-0.08" class="ph-img"><Image src={image.src} alt="" widths={[768, 1280, 1920]} sizes="100vw" loading="eager" fetchpriority="high" />{video && <BgVideo name={video} pauseLabel={t.common.a11y.pause} playLabel={t.common.a11y.play} />}</div>
+    </div>
+  )}
+  <div class="aurora" aria-hidden="true"></div>
+  <div class="container relative ph-inner">
+    <nav aria-label="Breadcrumb" class="crumbs" data-reveal="fade">
+      <ol>
+        {all.map((c, i) => (
+          <li>{c.href && i < all.length - 1 ? <a href={c.href}>{c.label}</a> : <span aria-current="page">{c.label}</span>}</li>
+        ))}
+      </ol>
+    </nav>
+    {eyebrow && <p class="eyebrow" data-reveal="fade">{eyebrow}</p>}
+    <h1 class="h-1 ph-title" data-split>{title}</h1>
+    {lead && <p class="lead ph-lead" data-reveal style="--d:200ms">{lead}</p>}
+    <slot />
+  </div>
+  <script type="application/ld+json" is:inline set:html={JSON.stringify(crumbLd)} />
+</section>
+
+<style>
+  .page-hero { position: relative; overflow: hidden; padding-block: clamp(9rem, 7rem + 6vw, 13rem) clamp(4rem, 3rem + 4vw, 7rem); isolation: isolate; }
+  .page-hero.has-image { min-height: min(86svh, 820px); display: flex; align-items: flex-end; }
+  .ph-media { position: absolute; inset: 0; z-index: -1; }
+  .ph-img { position: absolute; inset: -6% 0; }
+  .ph-img :global(img) { width: 100%; height: 100%; object-fit: cover; }
+  .ph-media::after { content: ''; position: absolute; inset: 0; background:
+    linear-gradient(90deg, rgba(18, 15, 36, 0.78) 0%, rgba(18, 15, 36, 0.45) 45%, rgba(18, 15, 36, 0.1) 80%),
+    linear-gradient(180deg, rgba(18, 15, 36, 0.6) 0%, rgba(18, 15, 36, 0.2) 35%, rgba(18, 15, 36, 0.94) 100%); }
+  :global([dir='rtl']) .ph-media::after { background:
+    linear-gradient(270deg, rgba(18, 15, 36, 0.78) 0%, rgba(18, 15, 36, 0.45) 45%, rgba(18, 15, 36, 0.1) 80%),
+    linear-gradient(180deg, rgba(18, 15, 36, 0.6) 0%, rgba(18, 15, 36, 0.2) 35%, rgba(18, 15, 36, 0.94) 100%); }
+  .has-image .aurora { opacity: 0.6; }
+  .ph-inner { display: grid; gap: 1.25rem; width: min(100% - 2 * var(--gutter), var(--max)); }
+  .ph-title { max-width: 20ch; }
+  .ph-lead { max-width: 60ch; }
+  .crumbs ol { display: flex; flex-wrap: wrap; gap: 0.35rem; list-style: none; margin: 0; padding: 0; font-size: 0.85rem; color: var(--text-inverse-muted); }
+  .crumbs li + li::before { content: '/'; margin-inline-end: 0.35rem; opacity: 0.5; }
+  .crumbs a:hover { color: #fff; }
+</style>

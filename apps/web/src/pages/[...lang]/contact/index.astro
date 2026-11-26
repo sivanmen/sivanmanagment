@@ -1,0 +1,59 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import PageHero from '~/components/PageHero.astro';
+import AssessmentForm from '~/components/AssessmentForm.astro';
+import Icon from '~/components/Icon.astro';
+import { getDict } from '~/i18n';
+import { localePaths, type Locale } from '~/i18n/config';
+import { COMPANY } from '~/lib/company';
+import { Image } from 'astro:assets';
+import { IMAGES } from '~/lib/images';
+
+export const getStaticPaths = localePaths;
+const { locale } = Astro.props as { locale: Locale };
+const t = getDict(locale);
+const c = t.contact;
+const cc = t.common.common;
+---
+<BaseLayout locale={locale} path="/contact/" title={c.seoTitle} description={c.seoDescription}>
+  <PageHero locale={locale} eyebrow={c.eyebrow} title={c.title} lead={c.lead} crumbs={[{ label: t.common.nav.contact }]} />
+  <section class="section contact">
+    <div class="container layout">
+      <AssessmentForm locale={locale} />
+      <aside class="side">
+        <div class="card stack" style="--stack:1rem">
+          <div class="person">
+            <Image src={IMAGES['founder-evening'].src} alt={IMAGES['founder-evening'].alt} widths={[160, 320]} sizes="80px" class="avatar" />
+            <div><strong>{COMPANY.founder}</strong><small>{t.about.team.founderRole}</small></div>
+          </div>
+          <h2 class="h-3">{c.directTitle}</h2>
+          <p class="muted">{c.directBody}</p>
+          <ul class="ways">
+            <li><a href={`tel:${COMPANY.phone}`}><span class="icon-badge"><Icon name="phone" /></span><span><small>{cc.call}</small><strong dir="ltr">{COMPANY.phoneDisplay}</strong></span></a></li>
+            <li><a href={`https://wa.me/${COMPANY.whatsapp}`} rel="noopener"><span class="icon-badge"><Icon name="whatsapp" /></span><span><small>{cc.whatsapp}</small><strong dir="ltr">{COMPANY.phoneDisplay}</strong></span></a></li>
+            <li><a href={`https://wa.me/${COMPANY.whatsappAlt}`} rel="noopener"><span class="icon-badge"><Icon name="whatsapp" /></span><span><small>{cc.whatsapp}</small><strong dir="ltr">{COMPANY.whatsappAltDisplay}</strong></span></a></li>
+            <li><a href={`mailto:${COMPANY.email}`}><span class="icon-badge"><Icon name="mail" /></span><span><small>{cc.email}</small><strong>{COMPANY.email}</strong></span></a></li>
+            <li><a href={COMPANY.mapsUrl} rel="noopener"><span class="icon-badge"><Icon name="pin" /></span><span><small>{cc.office}</small><strong>{COMPANY.address.street}, {COMPANY.address.postalCode} {COMPANY.address.city}</strong></span></a></li>
+          </ul>
+          <p class="hours"><Icon name="clock" size={16} />{c.hours}</p>
+        </div>
+      </aside>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .contact { padding-top: calc(var(--section) * 0.6); }
+  .layout { display: grid; gap: 2rem; align-items: start; }
+  @media (min-width: 1024px) { .layout { grid-template-columns: 1.6fr 1fr; gap: 3rem; } .side { position: sticky; top: 100px; } }
+  .ways { display: grid; gap: 0.5rem; }
+  .ways a { display: flex; gap: 0.9rem; align-items: center; padding: 0.6rem; border-radius: 16px; transition: background-color 0.2s; }
+  .ways a:hover { background: var(--paper); }
+  .ways small { display: block; color: var(--text-muted); font-size: 0.8rem; }
+  .ways strong { font-weight: 400; word-break: break-word; }
+  .person { display: flex; gap: 0.9rem; align-items: center; }
+  .person :global(.avatar) { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; object-position: center 20%; }
+  .person strong { display: block; font-family: var(--font-display); font-weight: 560; }
+  .person small { color: var(--text-muted); font-size: 0.85rem; }
+  .hours { display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: var(--text-muted); }
+</style>

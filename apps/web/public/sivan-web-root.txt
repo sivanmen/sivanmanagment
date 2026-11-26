@@ -1,0 +1,1 @@
+Sivan Management website root. Automated deployment (GitHub Actions) only writes to a folder containing this file.

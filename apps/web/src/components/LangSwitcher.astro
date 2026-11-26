@@ -1,0 +1,53 @@
+---
+import Icon from './Icon.astro';
+import { LOCALES, LOCALE_META, localizePath, type Locale } from '~/i18n/config';
+import { getDict } from '~/i18n';
+
+interface Props { locale: Locale; path: string; alternates?: readonly Locale[] }
+const { locale, path, alternates = LOCALES } = Astro.props;
+const label = getDict(locale).common.nav.language;
+---
+<details class="lang" data-lang>
+  <summary aria-label={label}>
+    <Icon name="globe" size={18} /><span>{LOCALE_META[locale].short}</span><Icon name="chevron" size={14} />
+  </summary>
+  <ul class="lang-menu">
+    {LOCALES.map((l) => {
+      const href = alternates.includes(l) ? localizePath(path, l) : localizePath('/', l);
+      return (
+        <li>
+          <a href={href} hreflang={LOCALE_META[l].hreflang} lang={LOCALE_META[l].hreflang} aria-current={l === locale ? 'true' : undefined} data-set-lang={l}>
+            <span>{LOCALE_META[l].label}</span>
+            {l === locale && <Icon name="check" size={16} />}
+          </a>
+        </li>
+      );
+    })}
+  </ul>
+</details>
+
+<style>
+  .lang { position: relative; }
+  .lang summary {
+    list-style: none; display: inline-flex; align-items: center; gap: 0.35rem; cursor: pointer;
+    padding: 0.5rem 0.7rem; border-radius: 12px; font-family: var(--font-display); font-size: 0.875rem; font-weight: 560; opacity: 0.86;
+  }
+  .lang summary::-webkit-details-marker { display: none; }
+  .lang summary:hover, .lang[open] summary { opacity: 1; background: rgba(127, 127, 140, 0.12); }
+  .lang-menu {
+    position: absolute; top: calc(100% + 8px); inset-inline-end: 0; min-width: 190px; padding: 0.4rem; z-index: 60;
+    background: rgba(255, 255, 255, 0.96); color: var(--ink); border-radius: 18px;
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 24px 60px rgba(18, 15, 36, 0.18), 0 0 0 1px rgba(12, 11, 20, 0.05);
+  }
+  .lang-menu a { display: flex; justify-content: space-between; align-items: center; padding: 0.55rem 0.8rem; border-radius: 12px; font-size: 0.9375rem; }
+  .lang-menu a:hover { background: var(--paper); }
+  .lang-menu a[aria-current] { color: var(--violet-text); font-weight: 500; }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLDetailsElement>('[data-lang]').forEach((d) => {
+    document.addEventListener('click', (e) => { if (!d.contains(e.target as Node)) d.open = false; });
+    d.addEventListener('keydown', (e) => { if (e.key === 'Escape') d.open = false; });
+  });
+</script>

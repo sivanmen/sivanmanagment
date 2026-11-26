@@ -76,6 +76,24 @@ _(No remaining CRITICAL issues. P0 security batch resolved 2026-05-25 — see FI
 
 ## LOW
 
+### ~~W1. Website not deployed (apps/web)~~ — RESOLVED 2026-11-24 (live on sivanmanagment.com, WordPress removed)
+
+### ~~W4. sivanmanagment.com e-mail DNS~~ — RESOLVED 2026-11-24
+- MX/A mail/SPF/DKIM added in GoDaddy; cPanel Email Deliverability: DKIM, SPF, DMARC all **Valid**; Email Routing = Local Mail Exchanger.
+- Verified: outbound to Gmail (SPF + DMARC pass, inbox), inbound from Gmail to support@, and a live form lead reaching support@ and the owner's Gmail.
+#### W4. sivanmanagment.com e-mail DNS incomplete (GoDaddy DNS)
+- **Found 2026-11-24:** no MX record, no SPF, no DKIM, while DMARC is `p=reject`.
+- **Effect:** website lead e-mails reach `support@` only because the mailbox is on the same cPanel server (local delivery — verified). Mail from outside to `@sivanmanagment.com` cannot arrive, and mail sent *from* the domain to Gmail/Outlook will be rejected — so auto-replies to visitors are not possible yet.
+- **Fix (owner, in GoDaddy DNS):** MX → the cPanel mail server (or the chosen mail provider), SPF `v=spf1 +a +mx ~all` (+ provider includes), publish the DKIM key from cPanel → Email Deliverability.
+
+### W2. Company IBAN/BIC hard-coded as defaults in a public repo
+- **File:** `apps/admin/src/pages/SystemSettingsPage.tsx` (lines ~161–208, `bankIban`/`bankBic` defaults).
+- **Why it matters:** the repo is public, and the P0 batch of 2026-05-25 treated a public IBAN as a leak. Defaults should be empty and loaded from system settings. (Found while scanning the website commit for secrets; not changed.)
+
+### W3. WordPress admin credentials shared in chat (2026-11-16)
+- **Action:** change the `admin` password on sivanmanagment.com/wp-admin and revoke the application password created for Claude. Credentials were not stored anywhere in the repo.
+
+
 ### 18. 10 Admin pages fully hardcoded
 - **Pages:** IoT Dashboard, Task Automations, Templates, Direct Booking Config, Marketing, Onboarding Wizard, Guest Portal Preview, Owner Portal Config, Guest Experience, Guest Screening
 - **Impact:** Pages exist but show fake data
@@ -113,8 +131,8 @@ _(No remaining CRITICAL issues. P0 security batch resolved 2026-05-25 — see FI
 | CRITICAL | 0 (3 resolved) |
 | HIGH | 4 (1 resolved) |
 | MEDIUM | 9 |
-| LOW | 5 |
-| **Total** | **18 open (4 resolved)** |
+| LOW | 8 (incl. W1–W3 website/security) |
+| **Total** | **21 open (4 resolved)** |
 
 ---
 

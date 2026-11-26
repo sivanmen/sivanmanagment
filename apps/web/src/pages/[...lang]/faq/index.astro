@@ -1,0 +1,43 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import PageHero from '~/components/PageHero.astro';
+import Faq from '~/components/Faq.astro';
+import CtaBand from '~/components/CtaBand.astro';
+import { getDict } from '~/i18n';
+import { localePaths, type Locale } from '~/i18n/config';
+
+export const getStaticPaths = localePaths;
+const { locale } = Astro.props as { locale: Locale };
+const t = getDict(locale);
+const f = t.faq;
+const faqLd = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: f.groups.flatMap((g) => g.items).map((i) => ({ '@type': 'Question', name: i.q, acceptedAnswer: { '@type': 'Answer', text: i.a } })) };
+---
+<BaseLayout locale={locale} path="/faq/" title={f.seoTitle} description={f.seoDescription} jsonLd={[faqLd]}>
+  <PageHero locale={locale} eyebrow={f.eyebrow} title={f.title} lead={f.lead} crumbs={[{ label: t.common.nav.faq }]} />
+  <section class="section">
+    <div class="container groups">
+      <nav class="toc" aria-label={f.eyebrow}>
+        <ul>{f.groups.map((g, i) => <li><a href={`#g${i}`}>{g.title}</a></li>)}</ul>
+      </nav>
+      <div class="list">
+        {f.groups.map((g, i) => (
+          <section id={`g${i}`} class="group" aria-labelledby={`g${i}-t`}>
+            <h2 id={`g${i}-t`} class="h-3" data-reveal>{g.title}</h2>
+            <Faq items={g.items} />
+          </section>
+        ))}
+      </div>
+    </div>
+  </section>
+  <CtaBand locale={locale} />
+</BaseLayout>
+
+<style>
+  .groups { display: grid; gap: 3rem; }
+  @media (min-width: 960px) { .groups { grid-template-columns: 260px 1fr; gap: 5rem; } .toc { position: sticky; top: 110px; align-self: start; } }
+  .toc ul { display: grid; gap: 0.25rem; }
+  .toc a { display: block; padding: 0.6rem 0.9rem; border-radius: 12px; color: var(--text-muted); transition: background-color 0.2s, color 0.2s; }
+  .toc a:hover { background: var(--white); color: var(--violet); }
+  .list { display: grid; gap: 3.5rem; }
+  .group { display: grid; gap: 1.25rem; scroll-margin-top: 110px; }
+</style>

@@ -1,0 +1,54 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import PageHero from '~/components/PageHero.astro';
+import CtaBand from '~/components/CtaBand.astro';
+import Icon from '~/components/Icon.astro';
+import { getDict } from '~/i18n';
+import { localePaths, type Locale } from '~/i18n/config';
+import { IMAGES } from '~/lib/images';
+
+export const getStaticPaths = localePaths;
+const { locale } = Astro.props as { locale: Locale };
+const t = getDict(locale);
+const p = t.about.portfolio;
+const icons = ['villa', 'home', 'key', 'building', 'hotel'];
+---
+<BaseLayout locale={locale} path="/portfolio/" title={p.seoTitle} description={p.seoDescription} overlay>
+  <PageHero locale={locale} eyebrow={p.eyebrow} title={p.title} lead={p.lead} image={IMAGES['hero-coast']} crumbs={[{ label: t.common.nav.portfolio }]} />
+
+  <section class="section">
+    <div class="container">
+      <h2 class="h-2 title" data-split>{p.typesTitle}</h2>
+      <div class="types">
+        {p.types.map((ty, i) => (
+          <div class="card type" data-reveal style={`--d:${i * 70}ms`}>
+            <span class="icon-badge"><Icon name={icons[i]} /></span>
+            <h3 class="h-3">{ty.title}</h3>
+            <p class="muted">{ty.body}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--dark grain">
+    <div class="aurora" aria-hidden="true"></div>
+    <div class="container split relative">
+      <div class="stack" style="--stack:1rem">
+        <p class="eyebrow" data-reveal="fade"><Icon name="shield" size={16} /> {p.policyTitle}</p>
+        <h2 class="h-2" data-split>{p.comingSoon}</h2>
+      </div>
+      <p class="lead" data-reveal>{p.policyBody}</p>
+    </div>
+  </section>
+
+  <CtaBand locale={locale} title={p.ctaTitle} body={p.ctaBody} />
+</BaseLayout>
+
+<style>
+  .title { margin-bottom: 2.5rem; }
+  .types { display: grid; gap: 1rem; }
+  @media (min-width: 720px) { .types { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 1100px) { .types { grid-template-columns: repeat(5, 1fr); } }
+  .type { display: grid; gap: 0.85rem; align-content: start; }
+</style>

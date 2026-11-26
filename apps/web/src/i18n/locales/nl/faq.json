@@ -1,0 +1,51 @@
+{
+  "seoTitle": "Veelgestelde vragen — Vastgoedbeheer Kreta | Sivan Management",
+  "seoDescription": "Antwoorden over beheerkosten, rapportage, onderhoud, regels voor vakantieverhuur en het beheren van vastgoed in Griekenland vanuit het buitenland.",
+  "eyebrow": "Veelgestelde vragen",
+  "title": "Vragen die eigenaren ons stellen.",
+  "lead": "Staat uw vraag er niet bij? Stuur ons een bericht en wij antwoorden persoonlijk.",
+  "groups": [
+    {
+      "title": "Van start gaan",
+      "items": [
+        { "q": "Hoe gaan we van start?", "a": "Vraag via het formulier een vastgoedbeoordeling aan. Wij plannen een gesprek, bezoeken de woning en sturen u een schriftelijk voorstel met de omvang van de dienstverlening en de vergoedingen." },
+        { "q": "Is de beoordeling gratis?", "a": "Het eerste gesprek en de vastgoedbeoordeling zijn vrijblijvend. U betaalt pas zodra u akkoord bent gegaan met een schriftelijk voorstel." },
+        { "q": "Moet ik een langlopend contract tekenen?", "a": "Overeenkomsten gelden doorgaans voor een jaar, met een redelijke opzegtermijn. De voorwaarden worden vooraf met u besproken en overeengekomen." },
+        { "q": "Welke documenten heeft u nodig?", "a": "Doorgaans een eigendomsbewijs, de registratiegegevens van de woning, bestaande certificaten en eventuele lopende huurovereenkomsten of verhuurregistraties. U ontvangt van ons een checklist." }
+      ]
+    },
+    {
+      "title": "Vergoedingen & financiën",
+      "items": [
+        { "q": "Hoe zijn de beheervergoedingen opgebouwd?", "a": "Een percentage van de huurinkomsten, een vaste maandelijkse vergoeding, een prijs per dienst of een combinatie daarvan, afhankelijk van het vastgoed en de omvang van de dienstverlening. Alles wordt schriftelijk vastgelegd." },
+        { "q": "Hoe ontvang ik mijn inkomsten?", "a": "De inkomsten worden volgens het schema in uw overeenkomst op uw bankrekening gestort, samen met een gespecificeerd overzicht." },
+        { "q": "Hoe worden uitgaven goedgekeurd?", "a": "Routinekosten binnen een afgesproken limiet worden direct afgehandeld. Alles boven die limiet ontvangt u met een offerte ter goedkeuring." },
+        { "q": "Garandeert u huurinkomsten?", "a": "Nee. Huurinkomsten hangen af van de markt. Wij geven realistische inschattingen en werken eraan de resultaten te optimaliseren, maar wij beloven nooit gegarandeerde inkomsten of bezetting." }
+      ]
+    },
+    {
+      "title": "Rapportage & communicatie",
+      "items": [
+        { "q": "Hoe weet ik wat er bij mijn woning gebeurt?", "a": "Via ons online eigenarenportaal, periodieke overzichten en direct contact met uw vastgoedbeheerder." },
+        { "q": "In welke talen kunnen we communiceren?", "a": "Engels en Hebreeuws, met ondersteuning in het Grieks en andere talen via ons team en onze partners." },
+        { "q": "Wat staat er in een rapportage?", "a": "Boekingen of ontvangen huur, gespecificeerde uitgaven, uitgevoerd onderhoud, problemen en aanbevelingen." }
+      ]
+    },
+    {
+      "title": "Exploitatie & onderhoud",
+      "items": [
+        { "q": "Wat gebeurt er in een noodgeval?", "a": "Gasten en huurders hebben een contactnummer. Dringende problemen worden direct opgepakt door ons team en betrouwbare professionals, en u wordt op de hoogte gebracht." },
+        { "q": "Wie voert het onderhoud uit?", "a": "Ons team verzorgt routinetaken. Specialistisch werk wordt uitgevoerd door erkende professionals die wij coördineren en waarop wij toezien." },
+        { "q": "Zorgt u in de winter voor de woning?", "a": "Ja. Wij bieden wintercontroles, inspecties na stormen en het seizoensgebonden openen en afsluiten van de woning." }
+      ]
+    },
+    {
+      "title": "Regels, registratie & belastingen",
+      "items": [
+        { "q": "Moet een vakantiewoning in Griekenland geregistreerd worden?", "a": "Ja. Woningen voor vakantieverhuur moeten geregistreerd zijn en een registratienummer (AMA) vermelden, en er gelden specifieke fiscale en meldingsregels. Wij begeleiden u en stemmen af met uw boekhouder." },
+        { "q": "Geeft u juridisch of fiscaal advies?", "a": "Nee. Wij werken samen met gekwalificeerde advocaten, boekhouders en ingenieurs. Onze rol is operationeel beheer." },
+        { "q": "Hoe zit het met verzekeringen?", "a": "Wij adviseren een passende opstal- en aansprakelijkheidsverzekering en kunnen afstemmen met uw verzekeraar. De polis blijft op naam van de eigenaar." }
+      ]
+    }
+  ]
+}

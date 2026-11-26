@@ -1,0 +1,112 @@
+---
+/**
+ * Accessibility menu (Israeli Service Accessibility Regulations / WCAG 2.1 AA support tools).
+ * Preferences are kept in sessionStorage only ("sm-a11y"), never persistently, and applied as
+ * classes on <html> (see the "a11y-*" rules in global.css). Keyboard: Escape closes, focus returns.
+ */
+import Icon from './Icon.astro';
+import { getDict } from '~/i18n';
+import { localizePath, type Locale } from '~/i18n/config';
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const a = getDict(locale).common.a11y;
+const toggles = [
+  ['contrast', a.contrast, 'eye'],
+  ['links', a.links, 'arrow-up-right'],
+  ['font', a.font, 'file'],
+  ['spacing', a.spacing, 'layers'],
+  ['cursor', a.cursor, 'compass'],
+  ['motion', a.motion, 'clock'],
+] as const;
+---
+<div class="a11y" data-a11y>
+  <button type="button" class="a11y-btn" aria-expanded="false" aria-controls="a11y-panel" data-a11y-open>
+    <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true" fill="currentColor"><circle cx="12" cy="4" r="2.2"/><path d="M19.5 7.5c-2.4.6-4.9.9-7.5.9s-5.1-.3-7.5-.9a1 1 0 1 0-.5 2c1.9.5 3.9.8 5.9.9v3.2l-1.8 7a1 1 0 0 0 1.9.5L12 15.6l1.9 5.5a1 1 0 0 0 1.9-.5l-1.8-7v-3.2c2-.1 4-.4 5.9-.9a1 1 0 1 0-.4-2Z"/></svg>
+    <span class="sr-only">{a.open}</span>
+  </button>
+  <div id="a11y-panel" class="a11y-panel" role="dialog" aria-modal="false" aria-labelledby="a11y-title" hidden data-a11y-panel>
+    <div class="a11y-head">
+      <h2 id="a11y-title">{a.title}</h2>
+      <button type="button" class="a11y-x" data-a11y-close aria-label={a.close}><Icon name="close" size={20} /></button>
+    </div>
+    <div class="a11y-size" role="group" aria-label={`${a.textBigger} / ${a.textSmaller}`}>
+      <button type="button" data-a11y-size="-1" aria-label={a.textSmaller}>A−</button>
+      <output data-a11y-size-out aria-live="polite">100%</output>
+      <button type="button" data-a11y-size="1" aria-label={a.textBigger}>A+</button>
+    </div>
+    <ul class="a11y-list">
+      {toggles.map(([key, label, icon]) => (
+        <li><button type="button" class="a11y-toggle" aria-pressed="false" data-a11y-toggle={key}><Icon name={icon} size={18} /><span>{label}</span></button></li>
+      ))}
+    </ul>
+    <div class="a11y-foot">
+      <button type="button" class="a11y-reset" data-a11y-reset>{a.reset}</button>
+      <a href={localizePath('/legal/accessibility-statement/', locale)}>{a.statement}</a>
+    </div>
+    <p class="a11y-note">{a.note}</p>
+  </div>
+</div>
+
+<style>
+  .a11y { position: fixed; z-index: 80; top: calc(50% - 26px); inset-inline-start: 10px; }
+  .a11y-btn { width: 52px; height: 52px; border-radius: 50%; border: 2px solid #fff; background: var(--violet-700); color: #fff; display: grid; place-items: center; cursor: pointer; box-shadow: 0 10px 30px rgba(18, 15, 36, 0.35); }
+  .a11y-btn:hover { background: var(--ink); }
+  .a11y-panel { position: fixed; top: 50%; transform: translateY(-50%); inset-inline-start: 72px; width: min(320px, calc(100vw - 88px)); max-height: min(78vh, 640px); overflow: auto; background: #fff; color: var(--ink); border-radius: 20px; padding: 1rem; box-shadow: 0 24px 70px rgba(18, 15, 36, 0.3); border: 1px solid var(--line); font-size: 1rem; }
+  .a11y-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+  .a11y-head h2 { font-size: 1.15rem; letter-spacing: 0; }
+  .a11y-x { width: 40px; height: 40px; border-radius: 12px; border: 0; background: var(--paper); cursor: pointer; display: grid; place-items: center; color: var(--ink); }
+  .a11y-size { display: grid; grid-template-columns: 1fr auto 1fr; gap: 0.5rem; align-items: center; margin-bottom: 0.75rem; }
+  .a11y-size button { min-height: 44px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--paper); font-weight: 600; font-size: 1.05rem; cursor: pointer; color: var(--ink); }
+  .a11y-size output { min-width: 4ch; text-align: center; font-weight: 600; }
+  .a11y-list { display: grid; gap: 0.4rem; }
+  .a11y-toggle { width: 100%; min-height: 44px; display: flex; gap: 0.7rem; align-items: center; padding: 0.55rem 0.8rem; border-radius: 12px; border: 1.5px solid var(--line); background: #fff; cursor: pointer; text-align: start; color: var(--ink); font-size: 0.95rem; }
+  .a11y-toggle[aria-pressed='true'] { background: var(--lilac); border-color: var(--violet); color: var(--violet-700); font-weight: 500; }
+  .a11y-foot { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin-top: 0.9rem; flex-wrap: wrap; }
+  .a11y-reset { min-height: 40px; padding: 0 0.9rem; border-radius: 12px; border: 0; background: var(--ink); color: #fff; cursor: pointer; }
+  .a11y-foot a { color: var(--violet-700); text-decoration: underline; text-underline-offset: 3px; }
+  .a11y-note { margin-top: 0.75rem; font-size: 0.8rem; color: #555; }
+  @media print { .a11y { display: none; } }
+</style>
+
+<script>
+  type State = { size: number; contrast?: boolean; links?: boolean; font?: boolean; spacing?: boolean; cursor?: boolean; motion?: boolean };
+  const KEY = 'sm-a11y';
+  const SIZES = [100, 112, 125, 140, 160];
+  const html = document.documentElement;
+  const root = document.querySelector<HTMLElement>('[data-a11y]');
+  const panel = root?.querySelector<HTMLElement>('[data-a11y-panel]');
+  const openBtn = root?.querySelector<HTMLButtonElement>('[data-a11y-open]');
+  let state: State = { size: 100 };
+  try { state = { ...state, ...JSON.parse(sessionStorage.getItem(KEY) || '{}') }; } catch {}
+
+  const apply = () => {
+    html.style.fontSize = state.size === 100 ? '' : `${state.size}%`;
+    (['contrast', 'links', 'font', 'spacing', 'cursor', 'motion'] as const).forEach((k) => html.classList.toggle(`a11y-${k}`, !!state[k]));
+    root?.querySelectorAll<HTMLButtonElement>('[data-a11y-toggle]').forEach((b) => b.setAttribute('aria-pressed', String(!!state[b.dataset.a11yToggle as keyof State])));
+    const out = root?.querySelector('[data-a11y-size-out]'); if (out) out.textContent = `${state.size}%`;
+    window.dispatchEvent(new CustomEvent('sm:motion', { detail: !state.motion }));
+  };
+  const save = () => {
+    const isDefault = state.size === 100 && !['contrast', 'links', 'font', 'spacing', 'cursor', 'motion'].some((k) => state[k as keyof State]);
+    try { isDefault ? sessionStorage.removeItem(KEY) : sessionStorage.setItem(KEY, JSON.stringify(state)); } catch {}
+    apply();
+  };
+  apply();
+
+  const close = () => { if (!panel) return; panel.hidden = true; openBtn?.setAttribute('aria-expanded', 'false'); openBtn?.focus(); };
+  openBtn?.addEventListener('click', () => {
+    if (!panel) return;
+    const open = panel.hidden; panel.hidden = !open; openBtn.setAttribute('aria-expanded', String(open));
+    if (open) panel.querySelector<HTMLElement>('button')?.focus();
+  });
+  root?.querySelector('[data-a11y-close]')?.addEventListener('click', close);
+  panel?.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+  document.addEventListener('click', (e) => { if (panel && !panel.hidden && !root?.contains(e.target as Node)) { panel.hidden = true; openBtn?.setAttribute('aria-expanded', 'false'); } });
+  root?.querySelectorAll<HTMLButtonElement>('[data-a11y-size]').forEach((b) => b.addEventListener('click', () => {
+    const i = SIZES.indexOf(state.size); state.size = SIZES[Math.min(SIZES.length - 1, Math.max(0, i + Number(b.dataset.a11ySize)))]; save();
+  }));
+  root?.querySelectorAll<HTMLButtonElement>('[data-a11y-toggle]').forEach((b) => b.addEventListener('click', () => {
+    const k = b.dataset.a11yToggle as keyof State; (state as Record<string, unknown>)[k] = !state[k]; save();
+  }));
+  root?.querySelector('[data-a11y-reset]')?.addEventListener('click', () => { state = { size: 100 }; save(); });
+</script>

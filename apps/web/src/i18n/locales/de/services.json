@@ -1,0 +1,379 @@
+{
+  "overview": {
+    "seoTitle": "Leistungen der Immobilienverwaltung auf Kreta | Sivan Management",
+    "seoDescription": "Ferien- und Langzeitvermietung, Gewerbeverwaltung, Hotelbetrieb, Instandhaltung, Vermarktung und Eigentümervertretung in Chania, Rethymno und Heraklion.",
+    "eyebrow": "Leistungen",
+    "title": "Alles, was Ihre Immobilie braucht. Aus einer Hand.",
+    "sub": "Wählen Sie ein Komplettmandat oder genau die Leistungen, die Sie benötigen. Jede Zusammenarbeit beginnt mit einem klaren, schriftlichen Leistungsumfang.",
+    "labels": {
+      "audience": "Für wen",
+      "scope": "Leistungsumfang",
+      "benefits": "Ihre Vorteile",
+      "workflow": "So funktioniert es",
+      "includes": "Inklusive"
+    },
+    "modelsTitle": "Flexible Modelle der Zusammenarbeit",
+    "models": [
+      { "title": "Komplettverwaltung", "body": "Wir führen die Immobilie von A bis Z: Vermarktung, Betrieb, Instandhaltung und Reporting." },
+      { "title": "Ausgewählte Leistungen", "body": "Wählen Sie, was Sie brauchen: Housekeeping, Instandhaltung, Gästeservice oder Vertretung." },
+      { "title": "Projektbasiert", "body": "Vorbereitung vor der Saison, Bauüberwachung bei Renovierungen oder Onboarding eines neuen Objekts." }
+    ],
+    "pricingNote": "Die Gebühren basieren auf einem Prozentsatz der Einnahmen, einer Festgebühr, Preisen pro Leistung oder einer Kombination und werden nach der Bewertung schriftlich vereinbart. Garantierte Einnahmen oder Auslastung versprechen wir niemals."
+  },
+  "items": {
+    "short-term-rental-management": {
+      "name": "Ferienvermietung & Kurzzeitvermietung",
+      "short": "Villen, Ferienhäuser und Wohnungen – betreut vom Inserat bis zum Check-out.",
+      "headline": "Besondere Aufenthalte. Professionell betreut.",
+      "sub": "Komplette Ferienhausverwaltung für Villen, Ferienhäuser und Wohnungen auf ganz Kreta.",
+      "intro": [
+        "Eine erfolgreiche Ferienvermietung hängt von Hunderten kleiner Details ab: den Fotos, die Gäste zuerst sehen, dem Preis an einem Dienstag im Mai, einer schnellen Antwort um Mitternacht, makelloser Bettwäsche, einem Pool, der immer blau ist.",
+        "Wir kümmern uns um all das. Ihre Immobilie wird professionell vorbereitet, präsentiert und vertrieben, und jeder Aufenthalt läuft nach Hotelstandard – während Sie Buchungen, Einnahmen und Kosten jederzeit voll im Blick behalten."
+      ],
+      "audience": [
+        "Eigentümer von Villen und Ferienhäusern auf Kreta",
+        "Wohnungseigentümer, die eine professionelle Kurzzeitvermietung wünschen",
+        "Eigentümer im Ausland, die ein zuverlässiges Team vor Ort brauchen",
+        "Investoren, die eine Immobilie zur Ferienunterkunft umwandeln"
+      ],
+      "scope": [
+        "Prüfung des Vermietungspotenzials und Positionierung",
+        "Vorbereitung der Immobilie, Inventar und Beratung zur Ausstattung",
+        "Professionelle Fotografie und Inseratstexte",
+        "Vertrieb über Airbnb, Booking.com, Vrbo und weitere relevante Kanäle",
+        "Dynamische Preisgestaltung und Kalendermanagement",
+        "Reservierungen und Gästekommunikation an 7 Tagen pro Woche",
+        "Check-in, Check-out und Gästebetreuung vor Ort",
+        "Housekeeping, Wäscheservice und Wäschemanagement",
+        "Koordination von Pool- und Gartenpflege",
+        "Reparaturen, Verbrauchsmaterial und Ausgabenkontrolle",
+        "Begleitung bei der Registrierung für Kurzzeitvermietung (AMA) und den Pflichten zur Gästeabgabe",
+        "Monatliche Eigentümerabrechnungen und Zugang zum Online-Portal"
+      ],
+      "benefits": [
+        { "title": "Sorgenfreies Eigentum", "body": "Wir kümmern uns um Gäste, Reinigungskräfte, Dienstleister und Probleme – damit Sie es nicht müssen." },
+        { "title": "Gleichbleibende Standards", "body": "Checklisten und Kontrollen nach jedem Aufenthalt halten die Immobilie gästebereit." },
+        { "title": "Fundierte Preise", "body": "Die Preise werden anhand von Saison, Nachfrage und vergleichbaren Objekten überprüft." },
+        { "title": "Volle Transparenz", "body": "Jede Buchung, jede Rechnung und jede Ausgabe ist in Ihrem Eigentümerportal sichtbar." }
+      ],
+      "workflow": [
+        "Besichtigung und Vermietungsbewertung",
+        "Vereinbarung und Onboarding-Plan",
+        "Vorbereitung, Fotografie und Veröffentlichung der Inserate",
+        "Tagesgeschäft während der Saison",
+        "Monatliches Reporting und jährliche Überprüfung"
+      ],
+      "faq": [
+        { "q": "Auf welchen Plattformen inserieren Sie?", "a": "In der Regel auf Airbnb, Booking.com und Vrbo sowie auf weiteren Kanälen, wenn sie zur Immobilie passen. Alle Kalender werden synchronisiert, um Doppelbuchungen zu vermeiden." },
+        { "q": "Kann ich die Immobilie weiterhin selbst nutzen?", "a": "Ja. Sie blockieren Ihre eigenen Termine vorab über das Eigentümerportal oder teilen sie uns mit, und wir planen die Vermietung darum herum." },
+        { "q": "Garantieren Sie Auslastung oder Einnahmen?", "a": "Nein. Seriöse Verwalter können keine Ergebnisse garantieren, die vom Markt abhängen. Wir geben Ihnen eine realistische Einschätzung auf Basis der Immobilie, ihrer Lage und von Vergleichsdaten und arbeiten daran, die Ergebnisse zu optimieren." },
+        { "q": "Wer zahlt für Reinigung und Verbrauchsmaterial?", "a": "Die Reinigung wird in der Regel über die Reinigungsgebühr der Gäste gedeckt. Verbrauchsmaterial und Reparaturen werden zum Selbstkostenpreis berechnet und in Ihrer Abrechnung ausgewiesen. Die genaue Regelung ist in Ihrer Vereinbarung festgelegt." },
+        { "q": "Wie ist es mit Registrierung und Steuern bei der Kurzzeitvermietung?", "a": "Kurzzeitvermietungen in Griechenland benötigen eine Registrierungsnummer der Immobilie (AMA) und unterliegen besonderen Steuer- und Meldepflichten. Wir begleiten Sie durch den Prozess und stimmen uns mit Ihrem Steuerberater ab. Eine Steuerberatung bieten wir selbst nicht an." },
+        { "q": "Wie prüfen Sie Gäste?", "a": "Wir prüfen Gästeprofile, Plattform-Verifizierungen und Bewertungen, legen klare Hausregeln und gegebenenfalls Kautionen fest und bleiben während des gesamten Aufenthalts in Kontakt." }
+      ],
+      "seoTitle": "Ferienhausverwaltung & Villenverwaltung Kreta | Sivan Management",
+      "seoDescription": "Ferienvermietung in Chania, Rethymno und Heraklion: Inserate, Preise, Gästebetreuung, Housekeeping, Instandhaltung und transparentes Eigentümer-Reporting."
+    },
+    "long-term-rental-management": {
+      "name": "Langzeitvermietung",
+      "short": "Stabile Mietverhältnisse, aufmerksame Verwaltung und verlässlicher Mieteingang.",
+      "headline": "Stabile Mietverhältnisse. Aufmerksame Verwaltung.",
+      "sub": "Professionelle Langzeitvermietung und Mietverwaltung für Wohnimmobilien auf Kreta.",
+      "intro": [
+        "Eine Langzeitvermietung sollte Ihnen planbare Einnahmen bringen – ohne den Stress, aus der Ferne Vermieter zu sein.",
+        "Wir vermarkten die Immobilie, helfen Ihnen bei der Auswahl geeigneter Mieter, koordinieren den Mietvertrag über die zuständigen Fachleute und verwalten das Mietverhältnis anschließend im Alltag: Miete, Anliegen, Reparaturen und Verlängerungen."
+      ],
+      "audience": [
+        "Eigentümer von Wohnungen und Häusern, die stabile Mieteinnahmen suchen",
+        "Eigentümer, die ins Ausland gezogen sind oder nicht mehr vor Ort leben",
+        "Investoren mit mehreren Wohneinheiten",
+        "Eigentümer, die von Kurzzeit- auf Langzeitvermietung umstellen"
+      ],
+      "scope": [
+        "Mietpreiseinschätzung und Marktpositionierung",
+        "Vermarktung, Inserate und Besichtigungen",
+        "Mieterprüfung im gesetzlich zulässigen Rahmen",
+        "Mietvertragserstellung in Abstimmung mit qualifizierten Fachleuten",
+        "Einzugsabnahme, Inventar und Übergabe",
+        "Mietkontrolle und Verfolgung von Zahlungsrückständen",
+        "Mieteranliegen und Koordination von Reparaturen",
+        "Regelmäßige Inspektionen mit Fotoberichten",
+        "Vertragsverlängerungen, Mietanpassungen und Auszugsabnahmen",
+        "Eigentümer-Reporting und Dokumentenablage"
+      ],
+      "benefits": [
+        { "title": "Weniger Leerstand", "body": "Gut präsentierte Immobilien und schnelle Reaktionen verkürzen die Zeit zwischen zwei Mietern." },
+        { "title": "Geschützter Zustand", "body": "Regelmäßige Inspektionen erkennen kleine Probleme, bevor sie teuer werden." },
+        { "title": "Klare Dokumentation", "body": "Inventarlisten, Fotos und Korrespondenz werden für jedes Mietverhältnis dokumentiert." },
+        { "title": "Ein Ansprechpartner", "body": "Mieter rufen uns an, nicht Sie. Wir melden uns nur, wenn Ihre Entscheidung gefragt ist." }
+      ],
+      "workflow": [
+        "Mietpreiseinschätzung und Vermietungsstrategie",
+        "Vermarktung und Besichtigungen",
+        "Mieterauswahl und Koordination des Mietvertrags",
+        "Einzug und laufende Mietverwaltung",
+        "Verlängerung oder Auszug und Neuvermietung"
+      ],
+      "faq": [
+        { "q": "Erstellen Sie den Mietvertrag?", "a": "Mietverträge werden über die zuständigen qualifizierten Fachleute, etwa einen Anwalt oder Steuerberater, erstellt und registriert. Wir koordinieren den Prozess und stellen sicher, dass die Bedingungen dem Vereinbarten entsprechen." },
+        { "q": "Wie prüfen Sie Mieter?", "a": "Wir überprüfen die Identität und fordern gegebenenfalls Referenzen und Einkommensnachweise an – stets im Rahmen des griechischen und europäischen Datenschutzrechts." },
+        { "q": "Was passiert, wenn die Miete zu spät kommt?", "a": "Wir haken sofort nach und halten Sie auf dem Laufenden. Bleiben die Rückstände bestehen, stimmen wir die nächsten Schritte mit Ihrem Anwalt ab." },
+        { "q": "Wer kümmert sich um Reparaturen?", "a": "Wir nehmen die Anfrage des Mieters entgegen, prüfen sie und beauftragen einen vertrauenswürdigen Fachbetrieb. Kosten über einem vereinbarten Limit geben Sie zuvor frei." },
+        { "q": "Wie oft inspizieren Sie die Immobilie?", "a": "In der Regel ein- bis zweimal im Jahr, zusätzlich zu Einzugs- und Auszugsabnahmen. Die Häufigkeit wird in Ihrer Vereinbarung festgelegt." },
+        { "q": "Können Sie eine bereits vermietete Immobilie übernehmen?", "a": "Ja. Wir prüfen den bestehenden Mietvertrag und den Zustand, stellen uns dem Mieter vor und übernehmen die Verwaltung reibungslos." }
+      ],
+      "seoTitle": "Langzeitvermietung & Hausverwaltung Kreta | Sivan Management",
+      "seoDescription": "Langzeitvermietung und Mietverwaltung in Chania, Rethymno und Heraklion: Mieterauswahl, Mietkontrolle, Reparaturen, Inspektionen und Reporting."
+    },
+    "commercial-property-management": {
+      "name": "Gewerbeimmobilienverwaltung",
+      "short": "Büros, Einzelhandel und Mischobjekte – mit Disziplin betrieben.",
+      "headline": "Den Wert schützen. Das Geschäft unterstützen.",
+      "sub": "Operative und technische Verwaltung von Gewerbeimmobilien auf Kreta.",
+      "intro": [
+        "Gewerbeimmobilien brauchen eine andere Art der Verwaltung: geplante Instandhaltung, technische Anlagen, Vorschriften, Budgets und Mieter, deren Geschäft davon abhängt, dass das Gebäude jeden Tag funktioniert.",
+        "Wir agieren als operatives Team des Eigentümers vor Ort: Wir halten das Objekt in gutem Zustand, unterstützen die Mieter und behalten die Kosten im Griff."
+      ],
+      "audience": [
+        "Eigentümer von Büros, Läden und gemischt genutzten Gebäuden",
+        "Investoren mit Gewerbeeinheiten auf Kreta",
+        "Eigentümer von Gebäuden mit mehreren gewerblichen Mietern",
+        "Bauträger, die nach Fertigstellung einen Betreiber benötigen"
+      ],
+      "scope": [
+        "Mieterbeziehungen und laufende Kommunikation",
+        "Programme für geplante und vorbeugende Instandhaltung",
+        "Koordination technischer Anlagen: Klima/Lüftung, Elektrik, Sanitär, Aufzüge",
+        "Management von Dienstleistern und Handwerksbetrieben",
+        "Kontrolle von Nebenkosten und Betriebsbudget",
+        "Regelmäßige Inspektionen und Zustandsberichte",
+        "Koordination erforderlicher Sicherheitszertifikate und Prüfungen mit zugelassenen Fachleuten",
+        "Überwachung von Mieterausbau und Renovierungen",
+        "Unterstützung bei der Vermarktung leerstehender Flächen",
+        "Eigentümer-Reporting und Analyse von Budgetabweichungen"
+      ],
+      "benefits": [
+        { "title": "Geplant statt reaktiv", "body": "Vorbeugende Instandhaltung senkt Notfallkosten und Ausfallzeiten." },
+        { "title": "Budgetdisziplin", "body": "Betriebskosten werden gegen das Budget verfolgt, Abweichungen erläutert." },
+        { "title": "Zufriedene Mieter", "body": "Schnelle, professionelle Reaktionen helfen, gute Mieter zu halten." },
+        { "title": "Werterhalt", "body": "Ein gepflegtes Gebäude stützt das Mietniveau und den künftigen Wert." }
+      ],
+      "workflow": [
+        "Technisches und operatives Audit",
+        "Verwaltungsplan und Jahresbudget",
+        "Dienstleisterverträge und Wartungsplan",
+        "Laufender Betrieb und Mieterbetreuung",
+        "Quartalsweises Reporting und Überprüfung"
+      ],
+      "faq": [
+        { "q": "Welche Arten von Gewerbeimmobilien verwalten Sie?", "a": "Büros, Einzelhandelsflächen, gemischt genutzte Gebäude und kleine Gewerbeportfolios auf Kreta. Wir bewerten jedes Objekt, bevor wir einen Leistungsumfang vereinbaren." },
+        { "q": "Ziehen Sie Mieten und Nebenkosten ein?", "a": "Sofern vereinbart, überwachen wir die Zahlung von Mieten und Nebenkosten und haken bei Mietern nach. Die Inkasso-Regelungen werden im Verwaltungsvertrag festgelegt." },
+        { "q": "Kümmern Sie sich um technische Zertifizierungen?", "a": "Wir planen und koordinieren die Prüfungen und Zertifikate, die das Gebäude benötigt, mit zugelassenen Ingenieuren und Technikern und halten die Unterlagen aktuell." },
+        { "q": "Wie wählen Sie Handwerksbetriebe aus?", "a": "Wir arbeiten mit geprüften lokalen Fachleuten und holen für größere Arbeiten vergleichbare Angebote ein. Größere Ausgaben geben Sie frei." },
+        { "q": "Erhalte ich ein Budget?", "a": "Ja. Wir erstellen ein jährliches Betriebsbudget, berichten die tatsächlichen Kosten im Vergleich dazu und erläutern etwaige Abweichungen." },
+        { "q": "Können Sie Mieter für leerstehende Einheiten finden?", "a": "Wir unterstützen die Vermarktung leerstehender Flächen und koordinieren Besichtigungen. Wo ein zugelassener Immobilienmakler erforderlich ist, arbeiten wir mit einem zusammen." }
+      ],
+      "seoTitle": "Gewerbeimmobilienverwaltung in Griechenland | Sivan Management",
+      "seoDescription": "Büros, Einzelhandel und Mischobjekte auf Kreta: Mieterbetreuung, vorbeugende Instandhaltung, Dienstleistersteuerung, Budgets und Eigentümer-Reporting."
+    },
+    "hotel-hospitality-management": {
+      "name": "Hotel- & Hospitality-Management",
+      "short": "Boutique-Hotels, Serviced Apartments und Gästehäuser – mit operativer Disziplin.",
+      "headline": "Exzellente Gastfreundschaft. Operative Disziplin.",
+      "sub": "Operative Unterstützung und Koordination für Boutique-Hotels, Serviced Apartments und Ferienanlagen.",
+      "intro": [
+        "Kleine Gastbetriebe stehen vor denselben Erwartungen wie große Hotels – meist mit einem Bruchteil des Personals.",
+        "Wir unterstützen Eigentümer beim operativen Rückgrat: Reservierungen und Vertrieb, Gästeerlebnis, Housekeeping-Standards, Instandhaltung, Dienstleister und Reporting. Der Leistungsumfang wird in jeder Vereinbarung festgelegt und bewegt sich stets im Rahmen der Lizenzen und Genehmigungen der Immobilie."
+      ],
+      "audience": [
+        "Eigentümer von Boutique-Hotels und Gästehäusern",
+        "Betreiber von Serviced Apartments und Aparthotels",
+        "Eigentümer von Ferienanlagen",
+        "Investoren, die ein Hospitality-Objekt erwerben oder neu positionieren"
+      ],
+      "scope": [
+        "Reservierungen, Channel-Management und Ratenkoordination",
+        "Standards und Kommunikation für das Gästeerlebnis",
+        "Housekeeping-Abläufe und Qualitätskontrollen",
+        "Unterstützung bei der Personalplanung und Koordination von Dienstleistern",
+        "Vorbeugende Instandhaltung und Vorbereitung vor der Saison",
+        "Einkauf von Verbrauchsmaterial und Gästeartikeln",
+        "Online-Reputation und Monitoring von Bewertungen",
+        "Umsatz- und Kostenreporting",
+        "Koordination der Compliance mit zugelassenen Beratern"
+      ],
+      "benefits": [
+        { "title": "Skalierbare Systeme", "body": "Klare Abläufe und ein PMS hinter jedem Vorgang." },
+        { "title": "Besseres Gästeerlebnis", "body": "Gleichbleibende Standards führen zu besseren Bewertungen und Stammgästen." },
+        { "title": "Kostenkontrolle", "body": "Einkauf, Personal und Instandhaltung werden gegen den Plan verfolgt." },
+        { "title": "Transparenz für Eigentümer", "body": "Leistung und Kosten in einem Format, mit dem Sie arbeiten können." }
+      ],
+      "workflow": [
+        "Operative Prüfung der Immobilie",
+        "Vereinbarung von Leistungsumfang, Zuständigkeiten und KPIs",
+        "Einrichtung von Systemen, Abläufen und Dienstleistern",
+        "Saisonbetrieb und Qualitätskontrolle",
+        "Reporting und Planung für die Nebensaison"
+      ],
+      "faq": [
+        { "q": "Übernehmen Sie die Hotellizenz?", "a": "Nein. Die Betriebserlaubnis bleibt beim Eigentümer oder beim lizenzierten Betreiber. Wir leisten Management und operative Unterstützung im vereinbarten Umfang." },
+        { "q": "Können Sie mit meinem bestehenden Personal arbeiten?", "a": "Ja. Häufig unterstützen wir ein bestehendes Team mit Abläufen, Dienstplanung und Qualitätskontrolle, statt es zu ersetzen." },
+        { "q": "Welche Buchungssysteme nutzen Sie?", "a": "Wir betreiben unser eigenes Property-Management-System mit Kanal- und Kalendersynchronisation und können bei Bedarf mit einem bestehenden System arbeiten." },
+        { "q": "Übernehmen Sie das Revenue Management?", "a": "Wir koordinieren Preise und Verfügbarkeit über alle Kanäle nach Nachfrage und Saison und berichten Ihnen die Ergebnisse. Die finale Preispolitik wird mit dem Eigentümer abgestimmt." },
+        { "q": "Können Sie die Immobilie vor der Saison vorbereiten?", "a": "Ja. Die Vorbereitung vor der Saison – mit Inspektionen, Reparaturen, Grundreinigung und Einrichtung der Dienstleister – gehört zu unseren Kernleistungen." },
+        { "q": "Verwalten Sie kleine Apartmentanlagen?", "a": "Ja. Ferienapartmentanlagen und kleine Aparthotels passen gut zu unserem Modell." }
+      ],
+      "seoTitle": "Hotel- & Hospitality-Management auf Kreta | Sivan Management",
+      "seoDescription": "Operative Unterstützung für Boutique-Hotels, Serviced Apartments und Ferienanlagen auf Kreta: Reservierungen, Housekeeping, Instandhaltung und Reporting."
+    },
+    "property-maintenance": {
+      "name": "Instandhaltung & Facility Services",
+      "short": "Vorbeugende Pflege, Reparaturen und Inspektionen, die den Wert langfristig sichern.",
+      "headline": "Verlässliche Pflege. Dauerhafter Wert.",
+      "sub": "Instandhaltung, Inspektionen und Facility Services für Häuser, Villen und Gebäude auf Kreta.",
+      "intro": [
+        "Sonne, Salz, Wind und leere Wintermonate setzen kretischen Immobilien zu. Ohne regelmäßige Pflege werden aus kleinen Problemen teure.",
+        "Wir halten Ihre Immobilie das ganze Jahr über in Schuss, ob vermietet oder nicht. Sie erhalten vertrauenswürdige Fachleute, dokumentierte Besuche und einen Ansprechpartner."
+      ],
+      "audience": [
+        "Eigentümer von Zweitwohnsitzen, die lange abwesend sind",
+        "Vermieter, die verlässliche technische Unterstützung brauchen",
+        "Eigentümer von Gebäuden und kleinen Anlagen",
+        "Alle, die eine Immobilie renovieren oder für die Nutzung vorbereiten"
+      ],
+      "scope": [
+        "Planmäßige Objektkontrollen mit Fotoberichten",
+        "Pläne für vorbeugende Instandhaltung",
+        "Reparaturen und Hausmeisterservice",
+        "Klima-, Elektro- und Sanitärarbeiten durch zugelassene Fachleute",
+        "Poolwartung und Gartenpflege",
+        "Saisonales Öffnen und Schließen der Immobilie",
+        "Kontrollen auf Sturm- und Wasserschäden nach Unwettern",
+        "Schlüsselverwaltung und Zugang für Handwerker",
+        "Überwachung genehmigter Renovierungen",
+        "Dienstleistermanagement und Angebote"
+      ],
+      "benefits": [
+        { "title": "Sorgenfreiheit", "body": "Jemand, dem Sie vertrauen, kümmert sich um die Immobilie, während Sie fort sind." },
+        { "title": "Geringere Gesamtkosten", "body": "Vorbeugende Arbeiten sind günstiger als Notfallreparaturen." },
+        { "title": "Dokumentierte Arbeit", "body": "Fotos, Rechnungen und Notizen zu jedem Besuch und jeder Reparatur." },
+        { "title": "Geprüfte Fachleute", "body": "Lokale Techniker, mit denen wir arbeiten und die unseren Standards genügen." }
+      ],
+      "workflow": [
+        "Erstinspektion und Zustandsbericht",
+        "Instandhaltungsplan und Besuchsplan",
+        "Routinekontrollen und vorbeugende Arbeiten",
+        "Reparaturen auf Anfrage, mit Freigabe über dem Limit",
+        "Berichte und jährliche Überprüfung des Plans"
+      ],
+      "faq": [
+        { "q": "Kann ich die Instandhaltung ohne Komplettverwaltung nutzen?", "a": "Ja. Instandhaltung und Objektkontrollen sind als eigenständige Leistung verfügbar." },
+        { "q": "Wie oft besuchen Sie meine Immobilie?", "a": "Das hängt von der Immobilie und der Saison ab. Übliche Pläne reichen von wöchentlichen bis zu monatlichen Kontrollen, mit zusätzlichen Besuchen nach Unwettern." },
+        { "q": "Führen Sie die Reparaturen selbst aus?", "a": "Kleinere Aufgaben kann unser Team übernehmen. Facharbeiten wie Elektro, Gas oder Klimaanlagen werden von zugelassenen Fachleuten ausgeführt, die wir koordinieren und beaufsichtigen." },
+        { "q": "Wie werden Reparaturkosten freigegeben?", "a": "Unterhalb eines vereinbarten Limits handeln wir sofort. Darüber erhalten Sie zuerst ein Angebot zur Freigabe." },
+        { "q": "Können Sie eine Renovierung überwachen?", "a": "Ja. Wir überwachen genehmigte Arbeiten vor Ort, berichten den Fortschritt mit Fotos und koordinieren zwischen Ihnen und den Handwerksbetrieben." },
+        { "q": "Betreuen Sie leerstehende Immobilien im Winter?", "a": "Ja. Winterkontrollen auf Leckagen, Feuchtigkeit, Sicherheit und Sturmschäden sind ein zentraler Bestandteil der Leistung." }
+      ],
+      "seoTitle": "Instandhaltung in Chania & auf Kreta | Sivan Management",
+      "seoDescription": "Vorbeugende Instandhaltung, Inspektionen, Reparaturen, Pool- und Gartenpflege sowie Renovierungsüberwachung für Häuser, Villen und Gebäude auf Kreta."
+    },
+    "asset-management": {
+      "name": "Asset Management & Eigentümervertretung",
+      "short": "Ihre Interessen vor Ort vertreten – Entscheidungen auf Basis von Daten.",
+      "headline": "Ihre Interessen, professionell vertreten.",
+      "sub": "Vertretung, Aufsicht und Planung vor Ort für Eigentümer, die nicht selbst vor Ort sind.",
+      "intro": [
+        "Eine Immobilie in einem anderen Land bedeutet Entscheidungen, Papierkram und Menschen, die koordiniert werden müssen – oft in einer Sprache, die Sie nicht sprechen.",
+        "Wir handeln als Ihr Vertreter vor Ort: Wir beaufsichtigen die Immobilie und ihre Dienstleister, erstellen Budgets und Berichte, stimmen uns mit Ihren Beratern ab und helfen Ihnen, Optionen für die Nutzung der Immobilie zu bewerten. Dies ist operatives Asset Management, keine regulierte Finanz- oder Anlageberatung."
+      ],
+      "audience": [
+        "Eigentümer, die außerhalb Griechenlands leben",
+        "Familien, die eine Immobilie auf Kreta geerbt haben",
+        "Investoren mit mehreren Immobilien oder gemischten Portfolios",
+        "Eigentümer, die eine Nutzungs- oder Strategieänderung erwägen"
+      ],
+      "scope": [
+        "Vertretung vor Ort gegenüber Dienstleistern, Mietern und Nachbarn",
+        "Operative Aufsicht über alle Dienstleister der Immobilie",
+        "Jahresbudgets und Ausgabenplanung",
+        "Konsolidierte Eigentümerberichte",
+        "Abstimmung mit Ihrem Anwalt, Steuerberater und Ingenieuren",
+        "Versorgerkonten, Rechnungen und laufende Verwaltung",
+        "Prüfung von Nutzungs- und Vermietungsalternativen",
+        "Unterstützung bei immobilienbezogenen Unterlagen"
+      ],
+      "benefits": [
+        { "title": "Ein vertrauter Ansprechpartner", "body": "Eine zentrale Verantwortung direkt vor Ort." },
+        { "title": "Bessere Entscheidungen", "body": "Regelmäßige Berichte und Optionsanalysen unterstützen fundierte Entscheidungen." },
+        { "title": "Weniger Verwaltungsaufwand", "body": "Wir übernehmen die Routinekoordination, damit Sie sich nur um die Entscheidungen kümmern." },
+        { "title": "Gleiche Interessen", "body": "Wir arbeiten für den Eigentümer und berichten an den Eigentümer." }
+      ],
+      "workflow": [
+        "Prüfung von Portfolio und Zielen",
+        "Umfang der Vertretung und Befugnisse",
+        "Laufende Aufsicht und Koordination",
+        "Budgets und regelmäßige Berichte",
+        "Jährliche Strategieüberprüfung"
+      ],
+      "faq": [
+        { "q": "Ist das eine Anlageberatung?", "a": "Nein. Wir bieten operatives Asset Management und Vertretung. Für Finanz-, Rechts- oder Steuerberatung stimmen wir uns mit Ihren zugelassenen Beratern ab." },
+        { "q": "Muss ich Ihnen eine Vollmacht erteilen?", "a": "Nicht unbedingt. Die Befugnisse richten sich nach den Aufgaben. Wo eine formelle Vollmacht nötig ist, wird sie von einem Anwalt erstellt und auf den vereinbarten Umfang beschränkt." },
+        { "q": "Können Sie sich um Versorger und Gemeinde kümmern?", "a": "Ja. Wir koordinieren Routineangelegenheiten mit Versorgungsunternehmen und örtlichen Behörden in Ihrem Namen, im Rahmen der Befugnisse, die Sie uns erteilen." },
+        { "q": "Können Sie mehrere Immobilien gemeinsam verwalten?", "a": "Ja. Wir können das Reporting über Wohn-, Miet- und Gewerbeimmobilien hinweg konsolidieren." },
+        { "q": "Helfen Sie mir bei der Entscheidung zwischen Kurz- und Langzeitvermietung?", "a": "Ja. Wir vergleichen realistische Optionen für Ihre Immobilie, einschließlich Kosten, Aufwand und Risiken, damit Sie entscheiden können." },
+        { "q": "Helfen Sie beim Kauf oder Verkauf?", "a": "Wir unterstützen Eigentümer bei Vorbereitung, Vermarktung und Koordination und arbeiten für die eigentliche Transaktion mit zugelassenen Immobilienmaklern und Anwälten zusammen." }
+      ],
+      "seoTitle": "Asset Management & Eigentümervertretung | Sivan Management",
+      "seoDescription": "Vertretung vor Ort für Eigentümer im Ausland: Aufsicht über Dienstleister, Budgets, Berichte und Abstimmung mit Anwälten und Steuerberatern auf Kreta."
+    },
+    "property-marketing-sales": {
+      "name": "Immobilienvermarktung & Verkaufsunterstützung",
+      "short": "Präsentation, Vermarktung und Koordination, um mit Zuversicht zu vermieten oder zu verkaufen.",
+      "headline": "Gut präsentiert. Richtig vermarktet.",
+      "sub": "Professionelle Vorbereitung, Online-Marketing und Verkaufskoordination für Immobilieneigentümer auf Kreta.",
+      "intro": [
+        "Ob Sie Ihre Immobilie vermieten oder verkaufen möchten: Das Ergebnis hängt davon ab, wie sie vorbereitet und präsentiert wird – und ob Sie die richtige Zielgruppe erreichen.",
+        "Wir bereiten die Immobilie vor, erstellen professionelle Fotos und Inserate, betreiben Online-Marketing auf relevanten Plattformen und sozialen Kanälen und koordinieren Besichtigungen. Beim Verkauf arbeiten wir mit zugelassenen Immobilienmaklern und Anwälten zusammen, die die Transaktion selbst abwickeln."
+      ],
+      "audience": [
+        "Eigentümer, die eine Immobilie für den Verkauf vorbereiten",
+        "Eigentümer, die eine neue Vermietung starten",
+        "Bauträger, die fertiggestellte Einheiten vermarkten",
+        "Eigentümer, die eine unterdurchschnittlich laufende Immobilie neu positionieren möchten"
+      ],
+      "scope": [
+        "Beratung zu Vorbereitung und Präsentation",
+        "Professionelle Fotografie und Video",
+        "Inseratstexte in mehreren Sprachen",
+        "Online-Inserate auf relevanten Miet- und Immobilienplattformen",
+        "Social-Media-Promotion und bezahlte Kampagnen",
+        "Bearbeitung von Anfragen und Besichtigungen",
+        "Abstimmung mit zugelassenen Maklern, Notaren und Anwälten",
+        "Übergabe an die Verwaltung nach Verkauf oder Vermietung"
+      ],
+      "benefits": [
+        { "title": "Starker erster Eindruck", "body": "Professionelle Bilder und Texte, die der Immobilie gerecht werden." },
+        { "title": "Internationale Reichweite", "body": "Mehrsprachige Inserate für Käufer und Gäste in ganz Europa und darüber hinaus." },
+        { "title": "Koordinierter Ablauf", "body": "Ein Team, das Vermarktung, Besichtigungen und Berater in Bewegung hält." },
+        { "title": "Kontinuität", "body": "Nach Verkauf oder Vermietung können wir als Verwalter weitermachen." }
+      ],
+      "workflow": [
+        "Ziele und Preisfindung im Austausch mit Ihren Beratern",
+        "Vorbereitung und Medienproduktion",
+        "Inserate und Marketingkampagnen",
+        "Anfragen und Besichtigungen",
+        "Koordination der Transaktion und Übergabe"
+      ],
+      "faq": [
+        { "q": "Sind Sie eine zugelassene Immobilienagentur?", "a": "Immobilienverkäufe in Griechenland müssen von zugelassenen Fachleuten abgewickelt werden. Wir übernehmen Vorbereitung, Vermarktung und Koordination und arbeiten für die Transaktion mit zugelassenen Maklern und Anwälten zusammen." },
+        { "q": "Erstellen Sie Fotos und Videos?", "a": "Ja. Wir organisieren professionelle Fotografie und Videos für Inserate und Kampagnen." },
+        { "q": "In welchen Sprachen vermarkten Sie?", "a": "Inserate können je nach Zielgruppe in mehreren Sprachen erstellt werden, darunter Englisch, Griechisch und Hebräisch." },
+        { "q": "Schalten Sie bezahlte Werbung?", "a": "Ja – wo es zur Immobilie und Ihrem Budget passt, schalten wir gezielte Kampagnen auf sozialen Netzwerken und Suchplattformen." },
+        { "q": "Können Sie mir helfen, den richtigen Preis festzulegen?", "a": "Wir teilen Marktbeobachtungen und vergleichbare Inserate. Eine formelle Bewertung erfolgt durch einen zertifizierten Gutachter oder einen zugelassenen Makler." },
+        { "q": "Was passiert, nachdem die Immobilie vermietet oder verkauft ist?", "a": "Bei einer Vermietung können wir das Mietverhältnis oder die Kurzzeitvermietung verwalten. Bei einem Verkauf können wir dem neuen Eigentümer die Verwaltung anbieten." }
+      ],
+      "seoTitle": "Immobilienvermarktung & Verkauf auf Kreta | Sivan Management",
+      "seoDescription": "Vorbereitung, professionelle Fotografie, mehrsprachige Inserate, Online-Marketing und Verkaufskoordination für Immobilieneigentümer in Chania und auf Kreta."
+    }
+  }
+}

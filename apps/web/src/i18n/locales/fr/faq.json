@@ -1,0 +1,51 @@
+{
+  "seoTitle": "FAQ — Gestion locative en Crète | Sivan Management",
+  "seoDescription": "Honoraires de gestion, reporting, entretien, règles de la location courte durée, gestion d’un bien en Grèce depuis l’étranger : nos réponses à vos questions.",
+  "eyebrow": "FAQ",
+  "title": "Les questions que nous posent les propriétaires.",
+  "lead": "Vous ne trouvez pas votre réponse ? Envoyez-nous un message, nous vous répondrons personnellement.",
+  "groups": [
+    {
+      "title": "Pour commencer",
+      "items": [
+        { "q": "Comment démarrer ?", "a": "Demandez une évaluation de votre bien via le formulaire. Nous organisons un appel, visitons le bien et vous adressons une proposition écrite précisant le périmètre et les honoraires." },
+        { "q": "L’évaluation est-elle gratuite ?", "a": "L’appel initial et l’évaluation du bien sont sans engagement. Vous ne payez qu’une fois la proposition écrite acceptée." },
+        { "q": "Dois-je signer un contrat de longue durée ?", "a": "Les contrats sont généralement annuels, avec un préavis raisonnable. Les conditions sont discutées et convenues avec vous à l’avance." },
+        { "q": "De quels documents aurez-vous besoin ?", "a": "En général, un justificatif de propriété, les références d’enregistrement du bien, les certificats existants et, le cas échéant, les baux en cours ou les enregistrements de location. Nous vous remettons une liste de contrôle." }
+      ]
+    },
+    {
+      "title": "Honoraires et finances",
+      "items": [
+        { "q": "Comment sont structurés vos honoraires de gestion ?", "a": "Un pourcentage des revenus locatifs, un forfait mensuel, une tarification à la prestation, ou une combinaison, selon le bien et le périmètre. Tout est consigné par écrit." },
+        { "q": "Comment vais-je percevoir mes revenus ?", "a": "Les revenus sont versés sur votre compte bancaire selon le calendrier prévu dans votre contrat, accompagnés d’un relevé détaillé." },
+        { "q": "Comment les dépenses sont-elles validées ?", "a": "Les frais courants, dans la limite d’un plafond convenu, sont réglés directement. Toute dépense au-delà de ce plafond vous est soumise pour accord, devis à l’appui." },
+        { "q": "Garantissez-vous les revenus locatifs ?", "a": "Non. Les revenus locatifs dépendent du marché. Nous fournissons des estimations réalistes et travaillons à optimiser les résultats, mais nous ne promettons jamais de revenus ni de taux d’occupation garantis." }
+      ]
+    },
+    {
+      "title": "Reporting et communication",
+      "items": [
+        { "q": "Comment saurai-je ce qui se passe dans mon bien ?", "a": "Grâce à notre espace propriétaire en ligne, aux relevés périodiques et au contact direct avec votre gestionnaire." },
+        { "q": "Dans quelles langues pouvons-nous communiquer ?", "a": "En anglais et en hébreu, ainsi qu’en grec et dans d’autres langues grâce à notre équipe et à nos partenaires." },
+        { "q": "Que contient un rapport ?", "a": "Les réservations ou loyers perçus, le détail des dépenses, l’entretien réalisé, les problèmes rencontrés et nos recommandations." }
+      ]
+    },
+    {
+      "title": "Exploitation et entretien",
+      "items": [
+        { "q": "Que se passe-t-il en cas d’urgence ?", "a": "Voyageurs et locataires disposent d’un numéro de contact. Les problèmes urgents sont traités immédiatement par notre équipe et des professionnels de confiance, et vous en êtes informé." },
+        { "q": "Qui réalise l’entretien ?", "a": "Notre équipe se charge des tâches courantes. Les travaux spécialisés sont confiés à des professionnels agréés que nous coordonnons et supervisons." },
+        { "q": "Surveillez-vous le bien en hiver ?", "a": "Oui. Nous proposons des contrôles hivernaux, des inspections après tempête ainsi que l’ouverture et la fermeture saisonnières." }
+      ]
+    },
+    {
+      "title": "Réglementation, enregistrement et fiscalité",
+      "items": [
+        { "q": "Une location courte durée en Grèce doit-elle être enregistrée ?", "a": "Oui. Les biens loués en courte durée doivent être enregistrés et afficher un numéro d’enregistrement (AMA), et des règles fiscales et déclaratives spécifiques s’appliquent. Nous vous guidons et nous coordonnons avec votre comptable." },
+        { "q": "Fournissez-vous des conseils juridiques ou fiscaux ?", "a": "Non. Nous travaillons en coordination avec des avocats, comptables et ingénieurs qualifiés. Notre rôle est la gestion opérationnelle." },
+        { "q": "Et l’assurance ?", "a": "Nous recommandons une assurance habitation et responsabilité civile adaptée, et pouvons nous coordonner avec votre assureur. Le contrat reste au nom du propriétaire." }
+      ]
+    }
+  ]
+}

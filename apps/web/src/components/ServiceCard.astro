@@ -1,0 +1,38 @@
+---
+import { Image } from 'astro:assets';
+import Icon from './Icon.astro';
+import type { SiteImage } from '~/lib/images';
+interface Props { href: string; title: string; body: string; image?: SiteImage; index?: number; cta: string; icon?: string }
+const { href, title, body, image, index = 0, cta, icon } = Astro.props;
+---
+<a href={href} class="svc" data-reveal style={`--d:${index * 80}ms`} data-tilt>
+  {image && (
+    <div class="svc-media">
+      <Image src={image.src} alt="" widths={[480, 800]} sizes="(min-width: 1024px) 25vw, (min-width: 720px) 50vw, 100vw" />
+    </div>
+  )}
+  <div class="svc-body">
+    {icon && <span class="icon-badge"><Icon name={icon} /></span>}
+    <h3 class="h-3">{title}</h3>
+    <p class="muted">{body}</p>
+    <span class="link-arrow">{cta}<Icon name="arrow" size={18} class="arrow" /></span>
+  </div>
+  <span class="svc-shine" aria-hidden="true"></span>
+</a>
+
+<style>
+  .svc {
+    position: relative; display: flex; flex-direction: column; border-radius: var(--radius-lg); overflow: hidden;
+    background: var(--white); border: 1px solid rgba(12, 11, 20, 0.06); box-shadow: var(--shadow-soft);
+    transition: transform 0.5s var(--ease-out), box-shadow 0.5s var(--ease-out);
+  }
+  .svc:hover { box-shadow: var(--shadow-lift); }
+  .svc-media { aspect-ratio: 4 / 3; overflow: hidden; }
+  .svc-media :global(img) { width: 100%; height: 100%; object-fit: cover; transition: transform 1.2s var(--ease-out); }
+  .svc:hover .svc-media :global(img) { transform: scale(1.06); }
+  .svc-body { display: grid; gap: 0.75rem; padding: 1.5rem; flex: 1; align-content: start; }
+  .svc-body .link-arrow { margin-top: auto; padding-top: 0.5rem; }
+  .svc-shine { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(400px circle at var(--mx, 50%) var(--my, 0%), rgba(176, 167, 239, 0.18), transparent 45%); opacity: 0; transition: opacity 0.4s; }
+  .svc:hover .svc-shine { opacity: 1; }
+  :global(.section--dark) .svc, :global(.section--ink) .svc { background: var(--ink-3); border-color: rgba(255, 255, 255, 0.08); }
+</style>

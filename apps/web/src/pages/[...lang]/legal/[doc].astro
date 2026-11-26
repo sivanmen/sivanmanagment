@@ -1,0 +1,95 @@
+---
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import PageHero from '~/components/PageHero.astro';
+import { getDict } from '~/i18n';
+import { LOCALES, langParam, type Locale } from '~/i18n/config';
+import { COMPANY } from '~/lib/company';
+import { IMAGES, VIDEOS } from '~/lib/images';
+import { formatDate } from '~/lib/insights';
+
+import { LEGAL_DOCS as DOCS, type LegalSlug as DocSlug } from '~/lib/legal';
+
+export function getStaticPaths() {
+  return LOCALES.flatMap((locale) => (Object.keys(DOCS) as DocSlug[]).map((doc) => ({ params: { lang: langParam(locale), doc }, props: { locale, doc } })));
+}
+const { locale, doc } = Astro.props as { locale: Locale; doc: DocSlug };
+const t = getDict(locale);
+const lg = t.legal;
+const key = DOCS[doc];
+const title = lg[key].title;
+const seoTitle = lg[key].seoTitle;
+const sections = key !== 'accessibility' && 'sections' in lg[key] ? (lg[key] as { sections: { h: string; p: string }[] }).sections : [];
+const im = lg.imprint.labels;
+const credited = Object.values(IMAGES).filter((i) => 'credit' in i && i.credit);
+const ownMedia: { alt?: string; source: string }[] = [...Object.values(IMAGES), ...Object.values(VIDEOS)]
+  .filter((i) => !i.illustrative && 'source' in i && typeof i.source === 'string')
+  .map((i) => ({ alt: 'alt' in i ? i.alt : undefined, source: (i as { source: string }).source }));
+const acc = lg.accessibility;
+const coord = COMPANY.accessibility;
+---
+<BaseLayout locale={locale} path={`/legal/${doc}/`} title={seoTitle} description={title}>
+  <PageHero locale={locale} title={title} crumbs={[{ label: title }]} />
+  <section class="section">
+    <div class="container-narrow prose">
+      {(key === 'privacy' || key === 'terms' || key === 'cookies') && <p class="review">{lg.reviewNotice}</p>}
+      {key === 'privacy' && <p class="muted">{lg.lastUpdated}: {formatDate(new Date(COMPANY.privacyUpdated), locale)}</p>}
+
+      {key === 'accessibility' && (
+        <>
+          <p class="lead-p">{acc.intro}</p>
+          {acc.sections.map((s) => (<><h2>{s.h}</h2><p>{s.p}</p></>))}
+          <h2>{acc.coordinatorTitle}</h2>
+          <dl class="facts">
+            <dt>{acc.labels.name}</dt><dd>{coord.name ?? acc.coordinatorPending}</dd>
+            <dt>{acc.labels.email}</dt><dd><a href={`mailto:${coord.email}?subject=Accessibility`}>{coord.email}</a></dd>
+            <dt>{acc.labels.phone}</dt><dd><a href={`tel:${coord.phone}`} dir="ltr">{coord.phoneDisplay}</a></dd>
+          </dl>
+          <p class="muted">{acc.reviewed} {formatDate(new Date(COMPANY.accessibilityReviewed), locale)}.</p>
+        </>
+      )}
+
+      {sections.map((s) => (<><h2>{s.h}</h2><p>{s.p}</p></>))}
+
+      {key === 'imprint' && (
+        <>
+          <p>{lg.imprint.intro}</p>
+          <dl class="facts">
+            <dt>{im.name}</dt><dd>{COMPANY.legalName}</dd>
+            <dt>{im.brand}</dt><dd>{COMPANY.brand}</dd>
+            <dt>{im.address}</dt><dd>{COMPANY.address.street} ({COMPANY.address.streetGreek}), {COMPANY.address.postalCode} {COMPANY.address.city}, {COMPANY.address.country}</dd>
+            <dt>{im.vat}</dt><dd>{COMPANY.vat} ({COMPANY.afm})</dd>
+            <dt>{im.gemi}</dt><dd>{COMPANY.gemi}</dd>
+            <dt>{im.taxOffice}</dt><dd>{COMPANY.taxOffice}</dd>
+            <dt>{im.phone}</dt><dd><a href={`tel:${COMPANY.phone}`} dir="ltr">{COMPANY.phoneDisplay}</a></dd>
+            <dt>{im.email}</dt><dd><a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a></dd>
+          </dl>
+        </>
+      )}
+
+      {key === 'credits' && (
+        <>
+          <p>{lg.credits.intro}</p>
+          <h2>{lg.credits.photoLabel}</h2>
+          <ul>
+            {credited.map((c) => 'credit' in c && c.credit && (
+              <li lang="en">{c.alt} — {c.credit.author}, {c.credit.license}. <a href={c.credit.url} rel="noopener">Wikimedia Commons</a></li>
+            ))}
+          </ul>
+          <ul>
+            {ownMedia.map((m) => <li lang="en">{m.alt ?? 'Background video'} — {m.source}</li>)}
+          </ul>
+          <h2>{lg.credits.aiLabel}</h2>
+          <p>{lg.credits.aiBody}</p>
+        </>
+      )}
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .review { padding: 1rem 1.25rem; border-radius: var(--radius); background: #fff7e0; color: #7a5b00; font-size: 0.9rem; }
+  .facts { display: grid; grid-template-columns: minmax(140px, 0.6fr) 1fr; gap: 0.75rem 1.5rem; margin-top: 2rem; padding: 1.5rem; border-radius: var(--radius-lg); background: var(--white); box-shadow: var(--shadow-soft); }
+  .facts dt { color: var(--text-muted); }
+  .facts dd { margin: 0; }
+  .lead-p { font-size: var(--fs-lg); }
+</style>

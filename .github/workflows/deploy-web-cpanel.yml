@@ -1,0 +1,106 @@
+name: Deploy website (cPanel)
+
+# Builds apps/web (static Astro site + PHP lead endpoint) and uploads it to the
+# JetServer cPanel account over FTPS. Runs on every push to main that touches the
+# website (including articles published from the CMS at /admin/), or manually.
+#
+# Required repository secrets (Settings → Secrets and variables → Actions):
+#   WEB_FTP_HOST      e.g. israel69.jetserver.net
+#   WEB_FTP_USER      an FTP account restricted to the sivanmanagment.com folder
+#   WEB_FTP_PASSWORD
+# Optional:
+#   WEB_FTP_DIR       remote directory relative to the FTP account root (default "/")
+# Without the secrets the job builds and stops (no failure).
+
+on:
+  push:
+    branches: [main]
+    paths: ['apps/web/**', 'pnpm-lock.yaml', '.github/workflows/deploy-web-cpanel.yml']
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-web-cpanel
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.repository == 'sivanmen/sivanmanagment' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile --filter web
+
+      - name: Build website
+        run: pnpm --filter web build
+        env:
+          SITE_URL: https://sivanmanagment.com
+
+      - name: Check i18n completeness
+        run: pnpm --filter web check:i18n
+
+      - name: Check FTP secrets
+        id: secrets
+        env:
+          HOST: ${{ secrets.WEB_FTP_HOST }}
+        run: |
+          if [ -z "$HOST" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::WEB_FTP_* secrets not set — built only, nothing uploaded. See docs/website/DEPLOYMENT.md"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload to cPanel (FTPS)
+        if: steps.secrets.outputs.configured == 'true'
+        env:
+          FTP_HOST: ${{ secrets.WEB_FTP_HOST }}
+          FTP_USER: ${{ secrets.WEB_FTP_USER }}
+          FTP_PASSWORD: ${{ secrets.WEB_FTP_PASSWORD }}
+          FTP_DIR: ${{ secrets.WEB_FTP_DIR }}
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq lftp
+          # --delete removes files that no longer exist in the build (old pages/assets),
+          # but never touches SSL validation files, cPanel files or server-side config.
+          # Safety guard: only deploy into the folder that already holds this website
+          # (marker file arrives with the first manual ZIP upload). Prevents --delete
+          # from ever running against another site's folder.
+          if ! lftp -u "$FTP_USER","$FTP_PASSWORD" -e "set ftp:ssl-force true; cls ${FTP_DIR:-/}/sivan-web-root.txt; bye" "$FTP_HOST" | grep -q sivan-web-root.txt; then
+            echo "::error::sivan-web-root.txt not found in the remote directory — refusing to deploy. Upload the ZIP manually once (docs/website/DEPLOYMENT.md)."
+            exit 1
+          fi
+          lftp -u "$FTP_USER","$FTP_PASSWORD" "$FTP_HOST" <<EOF
+          set ftp:ssl-force true
+          set ftp:ssl-protect-data true
+          set net:max-retries 3
+          set net:timeout 30
+          mirror --reverse --delete --verbose --parallel=4 \
+            --exclude-glob .well-known/ \
+            --exclude-glob cgi-bin/ \
+            --exclude-glob .user.ini \
+            --exclude-glob php.ini \
+            --exclude-glob error_log \
+            --exclude-glob wp-old/ \
+            apps/web/dist/ "${FTP_DIR:-/}"
+          bye
+          EOF
+
+      - name: Smoke check
+        if: steps.secrets.outputs.configured == 'true'
+        run: |
+          sleep 5
+          for p in / /he/ /services/ /contact/ /sitemap-index.xml; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "https://sivanmanagment.com$p")
+            echo "$code $p"; [ "$code" = "200" ] || exit 1
+          done
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'content-type: application/json' -d '{}' https://sivanmanagment.com/api/lead/)
+          echo "$code /api/lead/ (expect 400 for an empty body)"; [ "$code" = "400" ] || exit 1

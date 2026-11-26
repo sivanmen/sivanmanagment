@@ -1,0 +1,83 @@
+{
+  "seoTitle": "Vastgoedbeoordeling aanvragen | Sivan Management, Chania",
+  "seoDescription": "Vertel ons over uw vastgoed op Kreta. Vraag een beoordeling en een beheervoorstel op maat aan bij Sivan Management in Chania.",
+  "eyebrow": "Contact",
+  "title": "Vraag een vastgoedbeoordeling aan.",
+  "lead": "Vier korte stappen. Wij reageren persoonlijk, doorgaans binnen één werkdag.",
+  "directTitle": "Liever persoonlijk contact?",
+  "directBody": "Bel, stuur een WhatsApp of e-mail, of bezoek ons kantoor in het centrum van Chania.",
+  "hours": "Maandag t/m vrijdag, 09:00–17:00 (Griekse tijd)",
+  "mapLink": "Openen in Google Maps",
+  "form": {
+    "steps": [
+      "Vastgoed",
+      "Locatie",
+      "Diensten",
+      "Contact"
+    ],
+    "stepOf": "Stap {n} van {total}",
+    "back": "Terug",
+    "next": "Verder",
+    "submit": "Aanvraag versturen",
+    "sending": "Bezig met versturen…",
+    "propertyType": "Om wat voor vastgoed gaat het?",
+    "types": {
+      "short-term": "Vakantiewoning / villa",
+      "long-term": "Woning voor langetermijnverhuur",
+      "commercial": "Commercieel",
+      "hospitality": "Hotel of hospitality",
+      "not-sure": "Nog niet zeker"
+    },
+    "units": "Aantal units",
+    "unitsHint": "Voor één villa of appartement vult u 1 in.",
+    "location": "Waar ligt het vastgoed?",
+    "locations": {
+      "chania": "Chania",
+      "rethymno": "Rethymnon",
+      "heraklion": "Heraklion",
+      "other": "Elders"
+    },
+    "area": "Gebied of dorp (optioneel)",
+    "status": "Huidige situatie",
+    "statuses": {
+      "rented": "Momenteel verhuurd",
+      "vacant": "Leeg / gebruiksklaar",
+      "renovation": "In renovatie of in aanbouw",
+      "managed": "Beheerd door een andere partij"
+    },
+    "services": "Welke diensten interesseren u?",
+    "servicesHint": "Selecteer alles wat van toepassing is.",
+    "goals": "Wat wilt u bereiken? (optioneel)",
+    "goalsPlaceholder": "Bijvoorbeeld: volgend seizoen beginnen met verhuren, minder zelf betrokken zijn, betere resultaten…",
+    "name": "Volledige naam",
+    "email": "E-mail",
+    "phone": "Telefoon / WhatsApp",
+    "phoneHint": "Vermeld uw landcode, bijv. +31…",
+    "preferred": "Voorkeur voor contact",
+    "preferredOptions": {
+      "email": "E-mail",
+      "phone": "Telefoon",
+      "whatsapp": "WhatsApp"
+    },
+    "consent": "Ik ga ermee akkoord dat Sivan Management mijn gegevens verwerkt om op deze aanvraag te reageren, zoals beschreven in het Privacybeleid.",
+    "consentLink": "Privacybeleid",
+    "required": "Vul dit veld in.",
+    "invalidEmail": "Vul een geldig e-mailadres in.",
+    "errorGeneric": "Er is iets misgegaan. Probeer het opnieuw, of neem rechtstreeks contact met ons op per e-mail of telefoon.",
+    "successTitle": "Dank u wel, wij hebben uw aanvraag ontvangen.",
+    "successBody": "Wij bekijken de gegevens en nemen spoedig contact met u op. Uw aanvraag is in ons systeem geregistreerd.",
+    "privacyNotice": "Het verstrekken van uw gegevens is vrijwillig. We gebruiken ze alleen om uw aanvraag te beantwoorden en een voorstel op te stellen; ze worden per e-mail naar ons team gestuurd en op onze server in Israël bewaard, en niet gedeeld voor marketing. U kunt ze op elk moment inzien, laten corrigeren of laten verwijderen. Meer informatie in ons privacybeleid.",
+    "recaptcha": {
+      "text": "Wanneer u op Verzenden klikt, controleert Google reCAPTCHA dat u geen robot bent (Google kan hiervoor een cookie plaatsen). Het {privacy} en de {terms} van Google zijn van toepassing.",
+      "privacy": "privacybeleid",
+      "terms": "servicevoorwaarden"
+    }
+  },
+  "thanks": {
+    "seoTitle": "Dank u wel | Sivan Management",
+    "title": "Dank u wel.",
+    "body": "Uw aanvraag is bij ons binnengekomen. Een van onze teamleden neemt persoonlijk contact met u op, doorgaans binnen één werkdag.",
+    "next": "Lees in de tussentijd onze gidsen voor vastgoedeigenaren.",
+    "cta": "Bekijk de kennisbank"
+  }
+}

@@ -1,0 +1,33 @@
+---
+import { getDict } from '~/i18n';
+import type { Locale } from '~/i18n/config';
+interface Props { locale: Locale }
+const p = getDict(Astro.props.locale).home.platforms;
+// Names only (no logos): channel availability depends on the property and strategy.
+const names = ['Airbnb', 'Booking.com', 'Vrbo', 'Expedia', 'Google Vacation Rentals', 'Direct booking', 'Spitogatos', 'Social media'];
+const row = [...names, ...names];
+---
+<section class="section--tight platforms" aria-labelledby="platforms-title">
+  <div class="container">
+    <p id="platforms-title" class="platforms-title" data-reveal="fade">{p.title}</p>
+  </div>
+  <div class="marquee" aria-hidden="true">
+    <div class="track">
+      {row.map((n) => <span class="item">{n}<i></i></span>)}
+    </div>
+  </div>
+  <ul class="sr-only">{names.map((n) => <li>{n}</li>)}</ul>
+  <div class="container"><p class="note">{p.note}</p></div>
+</section>
+
+<style>
+  .platforms { background: var(--paper); padding-block: 3.5rem; overflow: hidden; }
+  .platforms-title { text-align: center; color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.75rem; }
+  .marquee { mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); direction: ltr; }
+  .track { display: flex; width: max-content; animation: marquee 38s linear infinite; }
+  .marquee:hover .track { animation-play-state: paused; }
+  .item { display: inline-flex; align-items: center; gap: 2.5rem; padding-inline-end: 2.5rem; font-family: var(--font-display); font-weight: 600; font-size: clamp(1.4rem, 1rem + 1.4vw, 2.2rem); letter-spacing: -0.03em; color: rgba(12, 11, 20, 0.6); white-space: nowrap; }
+  .item i { width: 8px; height: 8px; border-radius: 50%; background: var(--lavender); }
+  @keyframes marquee { to { transform: translateX(-50%); } }
+  .note { margin-top: 1.5rem; text-align: center; font-size: 0.78rem; color: var(--text-muted); }
+</style>

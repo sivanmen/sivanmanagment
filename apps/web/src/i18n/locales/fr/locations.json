@@ -1,0 +1,86 @@
+{
+  "overview": {
+    "seoTitle": "Nos secteurs — Chania, Réthymnon et Héraklion | Sivan Management",
+    "seoDescription": "Gestion locative dans toute la Crète, à Chania, Réthymnon et Héraklion. Connaissance du terrain, prestataires de confiance et un interlocuteur unique.",
+    "eyebrow": "Nos secteurs",
+    "title": "Une connaissance locale dans toute la Crète.",
+    "lead": "Notre bureau est à Chania, et nous intervenons dans l’ouest et le centre de la Crète. Chaque secteur a son marché, ses saisons et sa réglementation, et nous gérons en conséquence.",
+    "mapLabel": "Carte stylisée de la Crète indiquant Chania, Réthymnon et Héraklion",
+    "officeLabel": "Notre bureau",
+    "otherTitle": "Un bien ailleurs en Crète ou en Grèce ?",
+    "otherBody": "Contactez-nous. Nous vous dirons honnêtement si nous pouvons bien servir votre bien, ou nous vous recommanderons une autre solution."
+  },
+  "labels": {
+    "propertyTypes": "Les biens que nous gérons ici",
+    "whyTitle": "Pourquoi investir ici",
+    "servicesHere": "Services disponibles"
+  },
+  "items": {
+    "chania": {
+      "name": "Chania",
+      "headline": "Gestion locative à Chania.",
+      "lead": "Notre port d’attache. Du port vénitien et de la vieille ville jusqu’à Akrotiri, Platanias, Kissamos et Apokoronas.",
+      "body": [
+        "Chania — La Canée pour les francophones — associe un centre historique à l’un des littoraux les plus recherchés de Grèce. La demande émane de vacanciers internationaux, de visiteurs en séjour prolongé et d’une communauté croissante de résidents étrangers.",
+        "Notre bureau étant situé place Eleftherias (Plateia Eleftherias), au centre de Chania, nous pouvons réagir rapidement, superviser en personne et nous appuyer sur un réseau local bien établi d’agents d’entretien, de techniciens et de fournisseurs."
+      ],
+      "propertyTypes": ["Villas avec piscine", "Appartements dans la vieille ville", "Appartements en bord de mer", "Locations résidentielles longue durée", "Locaux commerciaux"],
+      "highlights": [
+        "Une forte demande touristique internationale du printemps à l’automne",
+        "L’attrait de la ville et de sa vieille ville toute l’année",
+        "Un large choix de villas à Apokoronas, Akrotiri et Platanias"
+      ],
+      "faq": [
+        { "q": "Quels secteurs autour de Chania couvrez-vous ?", "a": "Chania et sa vieille ville, Akrotiri, Platanias et Agia Marina, Kissamos, Apokoronas (dont Kalyves et Almyrida) et les villages alentour. Contactez-nous pour d’autres localisations." },
+        { "q": "Pouvez-vous visiter mon bien rapidement ?", "a": "Oui. Avec notre bureau au centre de Chania, nous pouvons généralement organiser une visite sous quelques jours." },
+        { "q": "Gérez-vous des appartements dans la vieille ville ?", "a": "Oui. Les biens de la vieille ville ont leurs propres contraintes, comme l’accès, le bruit ou le règlement de l’immeuble, et nous les gérons en conséquence." }
+      ],
+      "seoTitle": "Conciergerie et gestion locative à Chania | Sivan Management",
+      "seoDescription": "Gestion locative à Chania depuis notre bureau du centre-ville : villas, locations saisonnières, locations longue durée, entretien et locaux commerciaux."
+    },
+    "rethymno": {
+      "name": "Réthymnon",
+      "headline": "Gestion locative à Réthymnon.",
+      "lead": "De la vieille ville vénitienne et des longues plages de sable aux villages de l’arrière-pays.",
+      "body": [
+        "Réthymnon offre une vieille ville animée, un long littoral et de charmants villages dans l’arrière-pays, avec un mélange de maisons de vacances, d’appartements et d’hébergements familiaux.",
+        "Nous accompagnons les propriétaires de la région de Réthymnon pour l’exploitation locative, l’entretien et la représentation, en coordination depuis notre bureau de Chania et avec des partenaires locaux de confiance."
+      ],
+      "propertyTypes": ["Villas de vacances", "Appartements en bord de mer", "Maisons de village", "Locations résidentielles", "Petits établissements hôteliers"],
+      "highlights": [
+        "De longues plages de sable à la demande touristique bien établie",
+        "Des villages authentiques qui séduisent les voyageurs en villa",
+        "Une ville universitaire avec une demande en location longue durée"
+      ],
+      "faq": [
+        { "q": "Quelles zones de Réthymnon couvrez-vous ?", "a": "La ville de Réthymnon et la bande côtière, ainsi que les villages accessibles. Indiquez-nous la localisation et nous vous le confirmerons." },
+        { "q": "Avez-vous du personnel à Réthymnon ?", "a": "Nous coordonnons les opérations depuis Chania et travaillons avec des professionnels locaux de confiance dans la région de Réthymnon." },
+        { "q": "Pouvez-vous gérer une maison de village en location saisonnière ?", "a": "Oui, sous réserve d’une évaluation du bien, de son accès et des obligations d’enregistrement locales." }
+      ],
+      "seoTitle": "Gestion locative à Réthymnon | Location saisonnière | Sivan",
+      "seoDescription": "Location saisonnière, location longue durée et entretien pour les propriétaires de biens à Réthymnon et dans ses environs."
+    },
+    "heraklion": {
+      "name": "Héraklion",
+      "headline": "Gestion locative à Héraklion.",
+      "lead": "Capitale et plus grande ville de Crète, avec une demande professionnelle, touristique et résidentielle toute l’année.",
+      "body": [
+        "Héraklion est le centre économique de l’île, avec un aéroport international, un port très actif, une université et un marché immobilier diversifié, des appartements en ville aux immeubles commerciaux et aux complexes balnéaires.",
+        "Nous accompagnons les propriétaires d’Héraklion pour leurs biens résidentiels, commerciaux et hôteliers, en coordination depuis notre bureau de Chania avec des partenaires locaux. Le périmètre que nous pouvons proposer dépend du bien et de sa localisation."
+      ],
+      "propertyTypes": ["Appartements en ville", "Locations résidentielles longue durée", "Locaux commerciaux et bureaux", "Locations de vacances en bord de mer", "Appartements avec services"],
+      "highlights": [
+        "Une demande toute l’année de la part des professionnels, des étudiants et des résidents",
+        "Un marché solide de locaux commerciaux et de bureaux",
+        "L’aéroport d’accès à une grande partie de l’île"
+      ],
+      "faq": [
+        { "q": "Gérez-vous des biens commerciaux à Héraklion ?", "a": "Oui. Les locaux commerciaux et les bureaux à Héraklion correspondent bien à notre service de gestion commerciale." },
+        { "q": "Sivan Management a-t-elle un bureau à Héraklion ?", "a": "Notre bureau est à Chania. À Héraklion, nous travaillons avec des partenaires locaux de confiance et nous nous déplaçons selon les besoins du bien." },
+        { "q": "Quels services sont disponibles à Héraklion ?", "a": "La location longue durée, la gestion commerciale et la gestion patrimoniale sont disponibles dans toute la ville. L’exploitation en location courte durée dépend de la localisation ; nous vous le confirmons après évaluation." }
+      ],
+      "seoTitle": "Gestion locative à Héraklion | Résidentiel et commercial | Sivan",
+      "seoDescription": "Gestion de biens résidentiels, commerciaux et hôteliers pour les propriétaires à Héraklion, en Crète."
+    }
+  }
+}

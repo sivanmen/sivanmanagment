@@ -1,0 +1,194 @@
+---
+import Logo from './Logo.astro';
+import Icon from './Icon.astro';
+import LangSwitcher from './LangSwitcher.astro';
+import { getDict } from '~/i18n';
+import { localizePath, type Locale } from '~/i18n/config';
+import { COMPANY, SERVICE_SLUGS, LOCATION_SLUGS } from '~/lib/company';
+
+interface Props { locale: Locale; path: string; overlay?: boolean; alternates?: readonly Locale[] }
+const { locale, path, overlay = false, alternates } = Astro.props;
+const t = getDict(locale);
+const n = t.common.nav;
+const L = (p: string) => localizePath(p, locale);
+const isActive = (p: string) => (p === '/' ? path === '/' : path.startsWith(p));
+const serviceIcons: Record<string, string> = {
+  'short-term-rental-management': 'villa',
+  'long-term-rental-management': 'home',
+  'commercial-property-management': 'building',
+  'hotel-hospitality-management': 'hotel',
+  'property-maintenance': 'wrench',
+  'asset-management': 'shield',
+  'property-marketing-sales': 'megaphone',
+};
+---
+<header class:list={['site-header', { 'is-overlay': overlay }]} data-header>
+  <div class="bar container">
+    <a href={L('/')} class="brand" aria-label={`${COMPANY.brand} — ${n.home}`}><Logo /></a>
+
+    <nav class="nav" aria-label="Main">
+      <ul class="nav-list">
+        <li class="has-menu">
+          <a href={L('/services/')} class:list={['nav-link', { active: isActive('/services/') }]} aria-haspopup="true">
+            {n.services}<Icon name="chevron" size={16} />
+          </a>
+          <div class="mega" role="menu">
+            <div class="mega-grid">
+              {SERVICE_SLUGS.map((s) => (
+                <a href={L(`/services/${s}/`)} class="mega-item" role="menuitem">
+                  <span class="icon-badge"><Icon name={serviceIcons[s]} /></span>
+                  <span>
+                    <strong>{t.services.items[s].name}</strong>
+                    <small>{t.services.items[s].short}</small>
+                  </span>
+                </a>
+              ))}
+              <a href={L('/services/')} class="mega-all link-arrow" role="menuitem">{n.allServices}<Icon name="arrow" size={18} class="arrow" /></a>
+            </div>
+          </div>
+        </li>
+        <li class="has-menu">
+          <a href={L('/locations/')} class:list={['nav-link', { active: isActive('/locations/') }]} aria-haspopup="true">
+            {n.locations}<Icon name="chevron" size={16} />
+          </a>
+          <div class="mega mega--small" role="menu">
+            {LOCATION_SLUGS.map((s) => (
+              <a href={L(`/locations/${s}/`)} class="mega-item" role="menuitem">
+                <span class="icon-badge"><Icon name="pin" /></span>
+                <span><strong>{t.locations.items[s].name}</strong></span>
+              </a>
+            ))}
+          </div>
+        </li>
+        <li><a href={L('/about-us/')} class:list={['nav-link', { active: isActive('/about-us/') }]}>{n.about}</a></li>
+        <li><a href={L('/insights/')} class:list={['nav-link', { active: isActive('/insights/') }]}>{n.insights}</a></li>
+        <li><a href={L('/faq/')} class:list={['nav-link', { active: isActive('/faq/') }]}>{n.faq}</a></li>
+      </ul>
+    </nav>
+
+    <div class="actions">
+      <LangSwitcher locale={locale} path={path} alternates={alternates} />
+      <a href={COMPANY.ownerPortalUrl} class="portal" rel="noopener" title={n.ownerLogin}>
+        <Icon name="key" size={18} /><span>{n.ownerLogin}</span>
+      </a>
+      <a href={L('/contact/')} class="btn btn--violet btn--sm cta">{n.cta}</a>
+      <button class="burger" type="button" aria-expanded="false" aria-controls="mobile-nav" data-burger>
+        <Icon name="menu" /><span class="sr-only">{n.menu}</span>
+      </button>
+    </div>
+  </div>
+
+  <div id="mobile-nav" class="drawer" hidden data-drawer>
+    <div class="drawer-inner container">
+      <ul class="drawer-list">
+        <li><a href={L('/services/')}>{n.services}</a>
+          <ul class="drawer-sub">
+            {SERVICE_SLUGS.map((s) => <li><a href={L(`/services/${s}/`)}>{t.services.items[s].name}</a></li>)}
+          </ul>
+        </li>
+        <li><a href={L('/locations/')}>{n.locations}</a>
+          <ul class="drawer-sub">
+            {LOCATION_SLUGS.map((s) => <li><a href={L(`/locations/${s}/`)}>{t.locations.items[s].name}</a></li>)}
+          </ul>
+        </li>
+        <li><a href={L('/about-us/')}>{n.about}</a></li>
+        <li><a href={L('/our-team/')}>{n.team}</a></li>
+        <li><a href={L('/portfolio/')}>{n.portfolio}</a></li>
+        <li><a href={L('/insights/')}>{n.insights}</a></li>
+        <li><a href={L('/faq/')}>{n.faq}</a></li>
+        <li><a href={L('/contact/')}>{n.contact}</a></li>
+      </ul>
+      <div class="drawer-foot">
+        <a href={L('/contact/')} class="btn btn--violet">{n.cta}</a>
+        <a href={COMPANY.ownerPortalUrl} class="btn btn--ghost" rel="noopener"><Icon name="key" size={18} />{n.ownerLogin}</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<style>
+  .site-header { position: sticky; top: 0; z-index: 50; transition: background-color 0.4s, color 0.4s, box-shadow 0.4s, backdrop-filter 0.4s; }
+  .site-header.is-overlay { position: fixed; inset-inline: 0; color: #fff; }
+  .site-header.is-scrolled, .site-header:not(.is-overlay) {
+    background: rgba(247, 247, 250, 0.78); color: var(--ink);
+    backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%);
+    box-shadow: 0 1px 0 rgba(12, 11, 20, 0.06);
+  }
+  .site-header.is-hidden { transform: translateY(-100%); }
+  .site-header { transition: transform 0.45s var(--ease-out), background-color 0.4s, color 0.4s, box-shadow 0.4s; }
+  .bar { display: flex; align-items: center; gap: 1.5rem; height: 76px; }
+  .brand { flex: none; }
+  .nav { margin-inline: auto; display: none; }
+  .nav-list { display: flex; gap: 0.25rem; }
+  .nav-link {
+    display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.55rem 0.85rem; border-radius: 12px;
+    font-family: var(--font-display); font-weight: 480; font-size: 0.9625rem; letter-spacing: -0.01em; opacity: 0.86;
+    transition: opacity 0.2s, background-color 0.2s;
+  }
+  .nav-link:hover, .nav-link.active { opacity: 1; background: rgba(127, 127, 140, 0.12); }
+  .has-menu { position: relative; }
+  .mega {
+    position: absolute; top: calc(100% + 10px); inset-inline-start: -1rem;
+    width: min(760px, 90vw); padding: 1rem; border-radius: var(--radius-lg); color: var(--ink);
+    background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%);
+    box-shadow: 0 30px 80px rgba(18, 15, 36, 0.18), 0 0 0 1px rgba(12, 11, 20, 0.05);
+    opacity: 0; visibility: hidden; transform: translateY(8px) scale(0.98); transform-origin: top center;
+    transition: opacity 0.3s var(--ease-out), transform 0.4s var(--ease-out), visibility 0.3s;
+  }
+  .mega--small { width: 280px; display: grid; gap: 0.25rem; }
+  .has-menu::after { content: ''; position: absolute; inset-inline: 0; top: 100%; height: 14px; }
+  .has-menu:hover .mega, .has-menu:focus-within .mega { opacity: 1; visibility: visible; transform: none; }
+  .mega-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.25rem; }
+  .mega-item { display: flex; gap: 0.85rem; align-items: center; padding: 0.75rem; border-radius: 16px; transition: background-color 0.2s; }
+  .mega-item:hover { background: var(--paper); }
+  .mega-item strong { display: block; font-family: var(--font-display); font-weight: 560; font-size: 0.95rem; letter-spacing: -0.01em; }
+  .mega-item small { display: block; color: var(--text-muted); font-size: 0.8125rem; line-height: 1.4; margin-top: 0.15rem; }
+  .mega-all { padding: 0.75rem; align-self: center; }
+  .actions { display: flex; align-items: center; gap: 0.5rem; margin-inline-start: auto; }
+  .portal { display: none; align-items: center; gap: 0.4rem; padding: 0.5rem 0.75rem; border-radius: 12px; font-family: var(--font-display); font-size: 0.9rem; font-weight: 480; opacity: 0.86; }
+  .portal:hover { opacity: 1; background: rgba(127, 127, 140, 0.12); }
+  .cta { display: none; }
+  .burger { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; border: 0; background: rgba(127, 127, 140, 0.14); cursor: pointer; }
+  @media (min-width: 640px) { .cta { display: inline-flex; } }
+  @media (min-width: 1100px) {
+    .nav { display: block; }
+    .burger { display: none; }
+    .portal { display: inline-flex; }
+    .actions { margin-inline-start: 0; }
+  }
+  /* explicit height: the header gets backdrop-filter when scrolled, which makes it the containing block of this fixed drawer */
+  .drawer { position: fixed; top: 76px; inset-inline: 0; height: calc(100vh - 76px); height: calc(100dvh - 76px); background: var(--paper); color: var(--ink); overflow-y: auto; z-index: 49; }
+  .drawer-inner { padding-block: 1.5rem 3rem; }
+  .drawer-list > li { border-bottom: 1px solid var(--line); }
+  .drawer-list > li > a { display: block; padding: 1rem 0; font-family: var(--font-display); font-size: 1.5rem; font-weight: 560; letter-spacing: -0.02em; }
+  .drawer-sub { padding-bottom: 1rem; display: grid; gap: 0.15rem; }
+  .drawer-sub a { display: block; padding: 0.35rem 0; color: var(--text-muted); }
+  .drawer-foot { display: grid; gap: 0.75rem; margin-top: 2rem; }
+</style>
+
+<script>
+  const header = document.querySelector<HTMLElement>('[data-header]');
+  const burger = document.querySelector<HTMLButtonElement>('[data-burger]');
+  const drawer = document.querySelector<HTMLElement>('[data-drawer]');
+  let lastY = window.scrollY;
+  const onScroll = () => {
+    const y = window.scrollY;
+    header?.classList.toggle('is-scrolled', y > 24);
+    const open = burger?.getAttribute('aria-expanded') === 'true';
+    header?.classList.toggle('is-hidden', !open && y > 400 && y > lastY + 4);
+    if (y < lastY - 4) header?.classList.remove('is-hidden');
+    lastY = y;
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && burger?.getAttribute('aria-expanded') === 'true') { burger.click(); burger.focus(); }
+  });
+  burger?.addEventListener('click', () => {
+    const open = burger.getAttribute('aria-expanded') === 'true';
+    burger.setAttribute('aria-expanded', String(!open));
+    if (drawer) drawer.hidden = open;
+    document.documentElement.style.overflow = open ? '' : 'hidden';
+    header?.classList.toggle('is-scrolled', !open || window.scrollY > 24);
+  });
+</script>

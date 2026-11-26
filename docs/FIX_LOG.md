@@ -408,6 +408,36 @@ Until these are set, each service stays in "skipped/degraded" mode and the UI sh
 
 ---
 
+## 2026-11-24 — Website: owner's real form submissions silently dropped (honeypot autofilled)
+
+**Problem:** Owner submitted the form twice (Chrome, macOS); access log showed `POST /api/lead/ 200` and a redirect to /thank-you/, but no e-mail and no log entry. The hidden honeypot field (`name="website"`, label "Company website") was filled by Chrome autofill, and the endpoint answered "ok" without delivering or logging.
+
+**Fix:** Honeypot renamed to `hp_note` with a neutral label and autofill opt-outs; honeypot/too-fast are now only *signals* — with reCAPTCHA active a passing score delivers the lead anyway; otherwise the lead is kept in `~/sivanmanagment-leads-spam.jsonl` (never silently lost). `mail.sivanmanagment.com` web requests now 301 to the main domain (crawlers were indexing the site on that host).
+
+**How Verified:** Live POST with honeypot filled + real reCAPTCHA token → delivered to support@; honeypot + fake token → spam log; diagnostic removed afterwards.
+
+---
+
+## 2026-11-24 — Website: contact form never submitted complete data
+
+**Problem:** Owner's enquiry via /contact/ produced no e-mail. Component CSS (`display:grid/flex`) overrode the `hidden` attribute, so all four wizard steps and the "Send" button were visible from the start; pressing Send validated only step 1 and posted an incomplete form → HTTP 422, nothing delivered.
+
+**Fix:** Global `[hidden] { display: none !important; }` (also fixed the mobile menu drawer, which had zero height once the header got `backdrop-filter`); submit now validates every step and jumps to the first incomplete one (also on a 422 from the server). Lead e-mail rebuilt as branded multipart HTML (`mailer.php`, Hebrew RTL default) with human-readable labels generated from i18n.
+
+**How Verified:** Playwright run of the full wizard on the live site (he) → redirect to /he/thank-you/; token-protected temporary diagnostic confirmed the message in the cPanel `support` inbox (then removed); local render checks of the HTML e-mail (he/en).
+
+---
+
+## 2026-11-24 — Website: reCAPTCHA v3 on the lead form, WCAG contrast fixes, WordPress removed
+
+**Problem:** Lead form protected only by honeypot + timing; axe-core found contrast and link-name issues; WordPress leftovers on the server.
+
+**Fix:** Lazy-loaded Google reCAPTCHA v3 (client token + server `siteverify`, score ≥ 0.5, fail-open on Google outage or misconfiguration, rejected leads kept in `~/sivanmanagment-leads-spam.jsonl`); privacy/cookie policies and form notice updated in 8 languages. `--violet-text` token and darker `--text-muted` for AA contrast; logo links named via `role="img"` wrapper; `.cookie[hidden]` CSS fix. Site deployed via `sm-deploy.php`; WordPress files and server backups deleted.
+
+**How Verified:** `astro check` 0 errors, i18n check, axe-core 4.10 on 18 pages (0 violations), storage/third-party audit (0 requests before form use), local PHP tests of the lead endpoint (no token → 400, bad token → spam log, no secret → delivered), secret and site key validated against Google.
+
+---
+
 ## 2026-05-25 — Owner Portal rewrite: mock → real (0 → 12 Prisma calls)
 
 **Problem:** `owner-portal.service.ts` (508 lines) returned hardcoded demo statements for "owner-1/owner-2/owner-3" — Sivan's actual paying customers (the property owners) were seeing fabricated revenue numbers when logging into client.sivanmanagment.com. The trust-destroying mock listed in OPEN_ISSUES.

@@ -1,0 +1,379 @@
+{
+  "overview": {
+    "seoTitle": "Property Management Services in Crete | Sivan Management",
+    "seoDescription": "Short-term and long-term rental management, commercial property management, hotel operations, maintenance, marketing and owner representation in Chania, Rethymno and Heraklion.",
+    "eyebrow": "Services",
+    "title": "Everything your property needs. Under one roof.",
+    "sub": "Choose a complete management mandate or the specific services you need. Every engagement starts with a clear written scope.",
+    "labels": {
+      "audience": "Who it is for",
+      "scope": "Scope of services",
+      "benefits": "What you gain",
+      "workflow": "How it works",
+      "includes": "Included"
+    },
+    "modelsTitle": "Flexible engagement models",
+    "models": [
+      { "title": "Full management", "body": "We run the property end to end: marketing, operations, maintenance and reporting." },
+      { "title": "Selected services", "body": "Pick what you need: housekeeping, maintenance, guest services, or representation." },
+      { "title": "Project-based", "body": "Pre-season preparation, renovation supervision or onboarding a new asset." }
+    ],
+    "pricingNote": "Fees are based on a percentage of income, a fixed fee, per-service pricing, or a combination, agreed in writing after the assessment. We never promise guaranteed income or occupancy."
+  },
+  "items": {
+    "short-term-rental-management": {
+      "name": "Short-Term Rental Management",
+      "short": "Villas, holiday homes and apartments, managed from listing to checkout.",
+      "headline": "Exceptional stays. Professionally managed.",
+      "sub": "Complete vacation-rental management for villas, holiday homes and apartments across Crete.",
+      "intro": [
+        "A successful holiday rental depends on hundreds of small details: the photos guests see first, the price on a Tuesday in May, a fast reply at midnight, spotless linen, a pool that is always blue.",
+        "We take care of all of them. Your property is prepared, presented and distributed professionally, and every stay is run to hotel standards, while you keep full visibility of bookings, income and costs."
+      ],
+      "audience": [
+        "Owners of villas and holiday homes in Crete",
+        "Apartment owners who want professional short-term rental operations",
+        "Owners living abroad who need a reliable local team",
+        "Investors converting a property into a holiday rental"
+      ],
+      "scope": [
+        "Rental potential review and positioning",
+        "Property preparation, inventory and amenities advice",
+        "Professional photography and listing copy",
+        "Distribution on Airbnb, Booking.com, Vrbo and other relevant channels",
+        "Dynamic pricing and calendar management",
+        "Reservations and 7-day guest communication",
+        "Check-in, check-out and local guest support",
+        "Housekeeping, laundry and linen management",
+        "Pool and garden care coordination",
+        "Repairs, consumables and expense control",
+        "Guidance on short-term rental registration (AMA) and guest-tax obligations",
+        "Monthly owner statements and online portal access"
+      ],
+      "benefits": [
+        { "title": "Hands-off ownership", "body": "We handle guests, cleaners, suppliers and issues so you do not have to." },
+        { "title": "Consistent standards", "body": "Checklists and inspections after every stay keep the property guest-ready." },
+        { "title": "Informed pricing", "body": "Rates are reviewed against season, demand and comparable properties." },
+        { "title": "Full transparency", "body": "Every booking, invoice and expense is visible in your owner portal." }
+      ],
+      "workflow": [
+        "Property visit and rental assessment",
+        "Agreement and onboarding plan",
+        "Preparation, photography and listings go live",
+        "Daily operations through the season",
+        "Monthly reporting and annual review"
+      ],
+      "faq": [
+        { "q": "Which platforms do you list on?", "a": "Typically Airbnb, Booking.com and Vrbo, plus other channels when they suit the property. All calendars are synchronised to avoid double bookings." },
+        { "q": "Can I still use the property myself?", "a": "Yes. You block your own dates in advance through the owner portal or by telling us, and we plan rentals around them." },
+        { "q": "Do you guarantee occupancy or income?", "a": "No. Responsible managers cannot guarantee results that depend on the market. We give you a realistic estimate based on the property, its location and comparable data, and we work to optimise performance." },
+        { "q": "Who pays for cleaning and consumables?", "a": "Cleaning is usually covered by the guest cleaning fee. Consumables and repairs are charged at cost and shown on your statement. The exact arrangement is defined in your agreement." },
+        { "q": "What about registration and taxes for short-term rentals?", "a": "Short-term rentals in Greece require a property registration number (AMA) and are subject to specific tax and reporting rules. We guide you through the process and coordinate with your accountant. We do not provide tax advice ourselves." },
+        { "q": "How do you screen guests?", "a": "We review guest profiles, platform verification and reviews, set clear house rules and security deposits where appropriate, and stay in contact throughout the stay." }
+      ],
+      "seoTitle": "Short-Term Rental & Villa Management in Crete | Sivan Management",
+      "seoDescription": "Holiday rental management in Chania, Rethymno and Heraklion: listings, pricing, guest care, housekeeping, maintenance and transparent owner reporting."
+    },
+    "long-term-rental-management": {
+      "name": "Long-Term Rental Management",
+      "short": "Stable tenancies, attentive management and reliable rent collection.",
+      "headline": "Stable tenancies. Attentive management.",
+      "sub": "Professional long-term letting and tenancy management for residential properties in Crete.",
+      "intro": [
+        "A long-term rental should give you predictable income without the stress of being a landlord from a distance.",
+        "We market the property, help you choose suitable tenants, coordinate the lease through the appropriate professionals and then manage the tenancy day to day: rent, requests, repairs and renewals."
+      ],
+      "audience": [
+        "Owners of apartments and houses seeking stable rental income",
+        "Owners who have moved abroad or no longer live locally",
+        "Investors with several residential units",
+        "Owners switching from short-term to long-term letting"
+      ],
+      "scope": [
+        "Rental valuation and market positioning",
+        "Marketing, listings and viewings",
+        "Tenant checks within the limits of the law",
+        "Lease preparation coordinated with qualified professionals",
+        "Move-in inspection, inventory and handover",
+        "Rent monitoring and arrears follow-up",
+        "Tenant requests and repair coordination",
+        "Periodic inspections with photo reports",
+        "Lease renewals, rent reviews and move-out inspections",
+        "Owner reporting and document storage"
+      ],
+      "benefits": [
+        { "title": "Fewer vacancies", "body": "Well-presented properties and fast responses shorten the time between tenants." },
+        { "title": "Protected condition", "body": "Regular inspections catch small issues before they become costly." },
+        { "title": "Clear records", "body": "Inventories, photos and correspondence are documented for every tenancy." },
+        { "title": "One contact", "body": "Tenants call us, not you. We escalate only what needs your decision." }
+      ],
+      "workflow": [
+        "Valuation and letting strategy",
+        "Marketing and viewings",
+        "Tenant selection and lease coordination",
+        "Move-in and ongoing tenancy management",
+        "Renewal or move-out and re-letting"
+      ],
+      "faq": [
+        { "q": "Do you draft the lease agreement?", "a": "Leases are prepared and registered through the appropriate qualified professionals, such as a lawyer or accountant. We coordinate the process and make sure the terms reflect what was agreed." },
+        { "q": "How do you check tenants?", "a": "We verify identity, ask for references and proof of income where appropriate, always within Greek and EU data-protection law." },
+        { "q": "What happens if rent is late?", "a": "We follow up immediately and keep you informed. If arrears persist, we coordinate with your lawyer on the next steps." },
+        { "q": "Who handles repairs?", "a": "We receive the tenant's request, assess it, and arrange a trusted professional. Costs above an agreed limit are approved by you first." },
+        { "q": "How often do you inspect the property?", "a": "Usually once or twice a year, plus move-in and move-out inspections. The frequency is set in your agreement." },
+        { "q": "Can you manage a property that is already rented?", "a": "Yes. We review the existing lease and condition, introduce ourselves to the tenant and take over management smoothly." }
+      ],
+      "seoTitle": "Long-Term Rental Management in Crete | Sivan Management",
+      "seoDescription": "Long-term letting and tenancy management in Chania, Rethymno and Heraklion: tenant selection, rent monitoring, repairs, inspections and owner reporting."
+    },
+    "commercial-property-management": {
+      "name": "Commercial Property Management",
+      "short": "Offices, retail and mixed-use assets, operated with discipline.",
+      "headline": "Protecting the asset. Supporting the business.",
+      "sub": "Operational and technical management for commercial real estate in Crete.",
+      "intro": [
+        "Commercial property needs a different kind of management: planned maintenance, technical systems, compliance, budgets, and tenants whose businesses depend on the building working every day.",
+        "We act as the owner's operational team on the ground, keeping the asset in good condition, the tenants supported and the costs under control."
+      ],
+      "audience": [
+        "Owners of offices, shops and mixed-use buildings",
+        "Investors holding commercial units in Crete",
+        "Owners of buildings with several commercial tenants",
+        "Developers who need an operator after completion"
+      ],
+      "scope": [
+        "Tenant relations and day-to-day communication",
+        "Planned and preventive maintenance programmes",
+        "Coordination of technical systems: HVAC, electrical, plumbing, lifts",
+        "Supplier and contractor management",
+        "Service-charge and operating-budget control",
+        "Periodic inspections and condition reports",
+        "Coordination of required safety certificates and inspections with licensed professionals",
+        "Fit-out and renovation supervision",
+        "Vacancy marketing support",
+        "Owner reporting and budget variance analysis"
+      ],
+      "benefits": [
+        { "title": "Planned, not reactive", "body": "Preventive maintenance lowers emergency costs and downtime." },
+        { "title": "Budget discipline", "body": "Operating costs tracked against budget, with variances explained." },
+        { "title": "Satisfied tenants", "body": "Fast, professional responses help retain good tenants." },
+        { "title": "Asset value", "body": "A well-kept building supports rent levels and future valuation." }
+      ],
+      "workflow": [
+        "Technical and operational audit",
+        "Management plan and annual budget",
+        "Supplier contracts and maintenance schedule",
+        "Ongoing operations and tenant support",
+        "Quarterly reporting and review"
+      ],
+      "faq": [
+        { "q": "What types of commercial property do you manage?", "a": "Offices, retail units, mixed-use buildings and small commercial portfolios in Crete. We assess each asset before agreeing a scope." },
+        { "q": "Do you collect rent and service charges?", "a": "Where agreed, we monitor rent and service-charge payments and follow up with tenants. Collection arrangements are defined in the management agreement." },
+        { "q": "Can you handle technical certifications?", "a": "We schedule and coordinate the inspections and certificates the building needs with licensed engineers and technicians, and keep records up to date." },
+        { "q": "How do you choose contractors?", "a": "We work with vetted local professionals and request comparable quotes for significant works. You approve major expenditure." },
+        { "q": "Will I receive a budget?", "a": "Yes. We prepare an annual operating budget and report actual costs against it, explaining any differences." },
+        { "q": "Can you help find tenants for vacant units?", "a": "We support vacancy marketing and coordinate viewings. Where a licensed real-estate agent is required, we work alongside one." }
+      ],
+      "seoTitle": "Commercial Property Management in Greece | Sivan Management",
+      "seoDescription": "Offices, retail and mixed-use buildings in Crete: tenant relations, preventive maintenance, supplier control, budgets and owner reporting."
+    },
+    "hotel-hospitality-management": {
+      "name": "Hotel & Hospitality Management",
+      "short": "Boutique hotels, serviced apartments and guesthouses with operational discipline.",
+      "headline": "Hospitality excellence. Operational discipline.",
+      "sub": "Operational support and coordination for boutique hotels, serviced apartments and holiday-accommodation complexes.",
+      "intro": [
+        "Small hospitality businesses carry the same expectations as large hotels, usually with a fraction of the team.",
+        "We support owners with the operational backbone: reservations and distribution, guest experience, housekeeping standards, maintenance, suppliers and reporting. The scope is defined in each agreement and always within the licensing and permissions of the property."
+      ],
+      "audience": [
+        "Boutique hotel and guesthouse owners",
+        "Serviced-apartment and aparthotel operators",
+        "Owners of holiday-accommodation complexes",
+        "Investors acquiring or repositioning a hospitality asset"
+      ],
+      "scope": [
+        "Reservations, channel management and rate coordination",
+        "Guest-experience standards and communication",
+        "Housekeeping procedures and quality inspections",
+        "Staff scheduling support and supplier coordination",
+        "Preventive maintenance and pre-season preparation",
+        "Purchasing of consumables and amenities",
+        "Online reputation and review monitoring",
+        "Revenue and cost reporting",
+        "Compliance coordination with licensed advisers"
+      ],
+      "benefits": [
+        { "title": "Systems that scale", "body": "Clear procedures and a PMS behind every operation." },
+        { "title": "Better guest experience", "body": "Consistent standards lead to stronger reviews and repeat guests." },
+        { "title": "Cost control", "body": "Purchasing, staffing and maintenance tracked against plan." },
+        { "title": "Owner visibility", "body": "Performance and costs reported in a format you can act on." }
+      ],
+      "workflow": [
+        "Operational review of the property",
+        "Scope, responsibilities and KPIs agreed",
+        "Systems, procedures and suppliers set up",
+        "Season operations and quality control",
+        "Reporting and off-season planning"
+      ],
+      "faq": [
+        { "q": "Do you take over the hotel licence?", "a": "No. The operating licence remains with the owner or licensed operator. We provide management and operational support within the agreed scope." },
+        { "q": "Can you work with my existing staff?", "a": "Yes. We often support an existing team with procedures, scheduling and quality control rather than replacing it." },
+        { "q": "Which booking systems do you use?", "a": "We operate our own property-management system with channel and calendar synchronisation, and can work with an existing system where needed." },
+        { "q": "Do you handle revenue management?", "a": "We coordinate rates and availability across channels based on demand and season, and report results to you. Final pricing policy is agreed with the owner." },
+        { "q": "Can you prepare the property before the season?", "a": "Yes. Pre-season preparation, including inspections, repairs, deep cleaning and supplier set-up, is one of our core services." },
+        { "q": "Do you manage small complexes of apartments?", "a": "Yes. Holiday-apartment complexes and small aparthotels are a good fit for our model." }
+      ],
+      "seoTitle": "Hotel & Hospitality Management in Crete | Sivan Management",
+      "seoDescription": "Operational support for boutique hotels, serviced apartments and holiday complexes in Crete: reservations, housekeeping, maintenance and reporting."
+    },
+    "property-maintenance": {
+      "name": "Property Maintenance & Facility Services",
+      "short": "Preventive care, repairs and inspections that protect long-term value.",
+      "headline": "Reliable care. Long-term property value.",
+      "sub": "Maintenance, inspections and facility services for homes, villas and buildings in Crete.",
+      "intro": [
+        "Sun, salt, wind and empty winter months are hard on Cretan properties. Without regular care, small problems become expensive ones.",
+        "We keep your property in working order all year, whether it is rented or not. You get trusted professionals, documented visits and one point of contact."
+      ],
+      "audience": [
+        "Owners of second homes who are away for long periods",
+        "Rental owners who need dependable technical support",
+        "Owners of buildings and small complexes",
+        "Anyone renovating or preparing a property for use"
+      ],
+      "scope": [
+        "Scheduled property checks with photo reports",
+        "Preventive maintenance plans",
+        "Repairs and handyman services",
+        "Air-conditioning, electrical and plumbing work through licensed professionals",
+        "Pool maintenance and garden care",
+        "Seasonal opening and closing of the property",
+        "Storm and leak checks after severe weather",
+        "Key holding and access for contractors",
+        "Supervision of approved renovations",
+        "Supplier management and quotes"
+      ],
+      "benefits": [
+        { "title": "Peace of mind", "body": "Someone you trust is looking after the property while you are away." },
+        { "title": "Lower lifetime costs", "body": "Preventive work is cheaper than emergency repairs." },
+        { "title": "Documented work", "body": "Photos, invoices and notes for every visit and repair." },
+        { "title": "Vetted professionals", "body": "Local technicians we work with and hold to our standards." }
+      ],
+      "workflow": [
+        "Initial inspection and condition report",
+        "Maintenance plan and visit schedule",
+        "Routine checks and preventive work",
+        "Repairs on request, with approval above limits",
+        "Reports and annual plan review"
+      ],
+      "faq": [
+        { "q": "Can I use maintenance services without full management?", "a": "Yes. Maintenance and property checks are available as a standalone service." },
+        { "q": "How often will you visit my property?", "a": "It depends on the property and season. Typical plans range from weekly to monthly checks, with extra visits after storms." },
+        { "q": "Do you do the repair work yourselves?", "a": "Minor tasks may be handled by our team. Specialist work such as electrical, gas or air-conditioning is carried out by licensed professionals we coordinate and supervise." },
+        { "q": "How are repair costs approved?", "a": "Below an agreed limit we act immediately. Above it, you receive a quote to approve first." },
+        { "q": "Can you supervise a renovation?", "a": "Yes. We supervise approved works on site, report progress with photos and coordinate between you and the contractors." },
+        { "q": "Do you look after empty properties in winter?", "a": "Yes. Winter checks for leaks, humidity, security and storm damage are a core part of the service." }
+      ],
+      "seoTitle": "Property Maintenance in Chania & Crete | Sivan Management",
+      "seoDescription": "Preventive maintenance, inspections, repairs, pool and garden care and renovation supervision for homes, villas and buildings in Crete."
+    },
+    "asset-management": {
+      "name": "Asset Management & Owner Representation",
+      "short": "Your interests represented locally, with decisions backed by data.",
+      "headline": "Your interests, professionally represented.",
+      "sub": "Local representation, oversight and planning for owners who are not on the ground.",
+      "intro": [
+        "Owning property in another country means decisions, paperwork and people to coordinate, often in a language you do not speak.",
+        "We act as your local representative: overseeing the property and its service providers, preparing budgets and reports, coordinating with your advisers and helping you evaluate options for how the property is used. This is operational asset management, not regulated financial or investment advice."
+      ],
+      "audience": [
+        "Owners living outside Greece",
+        "Families who inherited property in Crete",
+        "Investors with several properties or mixed portfolios",
+        "Owners considering a change of use or strategy"
+      ],
+      "scope": [
+        "Local representation with suppliers, tenants and neighbours",
+        "Operational oversight of all property service providers",
+        "Annual budgets and expense planning",
+        "Consolidated owner reports",
+        "Coordination with your lawyer, accountant and engineers",
+        "Utility accounts, bills and routine administration",
+        "Review of use and rental alternatives",
+        "Support with property-related documentation"
+      ],
+      "benefits": [
+        { "title": "One trusted contact", "body": "A single point of accountability on the ground." },
+        { "title": "Better decisions", "body": "Regular reports and options analysis support informed choices." },
+        { "title": "Less admin", "body": "We handle the routine coordination so you only deal with the decisions." },
+        { "title": "Aligned interests", "body": "We work for the owner and report to the owner." }
+      ],
+      "workflow": [
+        "Portfolio and objectives review",
+        "Representation scope and authorisations",
+        "Ongoing oversight and coordination",
+        "Budgets and periodic reports",
+        "Annual strategy review"
+      ],
+      "faq": [
+        { "q": "Is this investment advice?", "a": "No. We provide operational asset management and representation. For financial, legal or tax advice, we coordinate with your licensed advisers." },
+        { "q": "Do I need to give you power of attorney?", "a": "Not necessarily. The authorisations depend on the tasks. Where formal authority is needed, it is prepared by a lawyer and limited to the agreed scope." },
+        { "q": "Can you deal with utility companies and the municipality?", "a": "Yes. We coordinate routine matters with utility providers and local authorities on your behalf, within the authorisations you give us." },
+        { "q": "Can you manage several properties together?", "a": "Yes. We can consolidate reporting across residential, rental and commercial properties." },
+        { "q": "Will you help me decide between short- and long-term renting?", "a": "Yes. We compare realistic options for your property, including costs, effort and risks, so you can decide." },
+        { "q": "Do you help with buying or selling?", "a": "We support owners with preparation, marketing and coordination, and work alongside licensed real-estate agents and lawyers for the transaction itself." }
+      ],
+      "seoTitle": "Asset Management & Owner Representation in Greece | Sivan Management",
+      "seoDescription": "Local representation for owners abroad: oversight of suppliers, budgets, reports and coordination with lawyers and accountants in Crete."
+    },
+    "property-marketing-sales": {
+      "name": "Property Marketing & Sales Support",
+      "short": "Presentation, marketing and coordination to rent or sell with confidence.",
+      "headline": "Presented well. Marketed properly.",
+      "sub": "Professional preparation, online marketing and sale coordination for property owners in Crete.",
+      "intro": [
+        "Whether you want to let your property or sell it, the result depends on how it is prepared and presented, and on reaching the right audience.",
+        "We prepare the property, produce professional photography and listings, run online marketing across relevant platforms and social channels, and coordinate viewings. For sales, we work alongside licensed real-estate agents and lawyers, who handle the transaction itself."
+      ],
+      "audience": [
+        "Owners preparing a property for sale",
+        "Owners launching a new rental",
+        "Developers marketing completed units",
+        "Owners who want to reposition an under-performing property"
+      ],
+      "scope": [
+        "Preparation and presentation advice",
+        "Professional photography and video",
+        "Listing copy in several languages",
+        "Online listings on relevant rental and property platforms",
+        "Social-media promotion and paid campaigns",
+        "Enquiry handling and viewings",
+        "Coordination with licensed agents, notaries and lawyers",
+        "Handover to management after a sale or letting"
+      ],
+      "benefits": [
+        { "title": "Strong first impression", "body": "Professional visuals and copy that do the property justice." },
+        { "title": "International reach", "body": "Multilingual listings for buyers and guests across Europe and beyond." },
+        { "title": "Coordinated process", "body": "One team to keep marketing, viewings and advisers moving." },
+        { "title": "Continuity", "body": "After a sale or letting, we can continue as the property manager." }
+      ],
+      "workflow": [
+        "Goals and pricing discussion with your advisers",
+        "Preparation and media production",
+        "Listings and marketing campaigns",
+        "Enquiries and viewings",
+        "Transaction coordination and handover"
+      ],
+      "faq": [
+        { "q": "Are you a licensed real-estate agency?", "a": "Sales transactions in Greece must be handled by licensed professionals. We provide preparation, marketing and coordination, and work alongside licensed agents and lawyers for the transaction." },
+        { "q": "Do you produce photos and video?", "a": "Yes. We arrange professional photography and video for listings and campaigns." },
+        { "q": "Which languages do you market in?", "a": "Listings can be prepared in several languages, including English, Greek and Hebrew, depending on your target audience." },
+        { "q": "Do you run paid advertising?", "a": "Yes, where it suits the property and your budget, we run targeted campaigns on social and search platforms." },
+        { "q": "Can you help me set the right price?", "a": "We share market observations and comparable listings. A formal valuation is provided by a certified valuer or licensed agent." },
+        { "q": "What happens after the property is let or sold?", "a": "If it is let, we can manage the tenancy or the short-term operation. If it is sold, we can offer management to the new owner." }
+      ],
+      "seoTitle": "Property Marketing & Sales Support in Crete | Sivan Management",
+      "seoDescription": "Preparation, professional photography, multilingual listings, online marketing and sale coordination for property owners in Chania and Crete."
+    }
+  }
+}

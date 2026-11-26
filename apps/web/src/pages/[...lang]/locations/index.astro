@@ -1,0 +1,59 @@
+---
+import { Image } from 'astro:assets';
+import BaseLayout from '~/layouts/BaseLayout.astro';
+import PageHero from '~/components/PageHero.astro';
+import CreteMap from '~/components/CreteMap.astro';
+import CtaBand from '~/components/CtaBand.astro';
+import Icon from '~/components/Icon.astro';
+import { getDict } from '~/i18n';
+import { localePaths, localizePath, type Locale } from '~/i18n/config';
+import { IMAGES, LOCATION_IMAGE } from '~/lib/images';
+import { LOCATION_SLUGS } from '~/lib/company';
+
+export const getStaticPaths = localePaths;
+const { locale } = Astro.props as { locale: Locale };
+const t = getDict(locale);
+const o = t.locations.overview;
+const L = (p: string) => localizePath(p, locale);
+---
+<BaseLayout locale={locale} path="/locations/" title={o.seoTitle} description={o.seoDescription} overlay>
+  <PageHero locale={locale} eyebrow={o.eyebrow} title={o.title} lead={o.lead} crumbs={[{ label: t.common.nav.locations }]}>
+    <div class="map-wrap" data-reveal="scale" style="--d:300ms"><CreteMap locale={locale} /></div>
+  </PageHero>
+
+  <section class="section">
+    <div class="container locs">
+      {LOCATION_SLUGS.map((s, i) => {
+        const it = t.locations.items[s];
+        const im = IMAGES[LOCATION_IMAGE[s]];
+        return (
+          <article class:list={['loc-row', { flip: i % 2 === 1 }]}>
+            <a href={L(`/locations/${s}/`)} class="media loc-img" data-reveal="scale">
+              <Image src={im.src} alt={im.alt} widths={[640, 1000]} sizes="(min-width: 960px) 55vw, 100vw" />
+            </a>
+            <div class="stack loc-copy" style="--stack:1.1rem">
+              <p class="eyebrow" data-reveal="fade">0{i + 1}</p>
+              <h2 class="h-1" data-split>{it.name}</h2>
+              <p class="lead" data-reveal>{it.lead}</p>
+              <ul class="tags" data-reveal>{it.propertyTypes.map((p) => <li class="chip">{p}</li>)}</ul>
+              <div data-reveal><a href={L(`/locations/${s}/`)} class="btn">{t.common.common.discover} {it.name}<Icon name="arrow" size={18} class="arrow" /></a></div>
+            </div>
+          </article>
+        );
+      })}
+    </div>
+  </section>
+
+  <CtaBand locale={locale} title={o.otherTitle} body={o.otherBody} />
+</BaseLayout>
+
+<style>
+  .map-wrap { margin-top: 2rem; }
+  .locs { display: grid; gap: clamp(4rem, 3rem + 4vw, 8rem); }
+  .loc-row { display: grid; gap: 2rem; align-items: center; }
+  @media (min-width: 960px) { .loc-row { grid-template-columns: 1.2fr 1fr; gap: 4rem; } .loc-row.flip .loc-img { order: 2; } }
+  .loc-img { aspect-ratio: 4 / 3; display: block; }
+  .loc-img :global(img) { transition: transform 1.2s var(--ease-out); }
+  .loc-img:hover :global(img) { transform: scale(1.05); }
+  .tags { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+</style>

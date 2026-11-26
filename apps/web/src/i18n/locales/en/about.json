@@ -1,0 +1,75 @@
+{
+  "about": {
+    "seoTitle": "About Sivan Management — Property Management Company in Chania, Crete",
+    "seoDescription": "Sivan Management is a Chania-based property and hospitality management company serving residential, commercial and tourism property owners in Crete.",
+    "eyebrow": "About us",
+    "title": "Dedicated to your property. Committed to your peace of mind.",
+    "lead": "Sivan Management is a Greece-focused property and hospitality management company, based in Chania, serving residential, commercial and tourism property owners.",
+    "body": [
+      "Our approach is built around one principle: professional property ownership requires reliable local management, transparent communication and consistent attention to detail.",
+      "Owning property abroad brings real opportunities, and real responsibilities. An investment property needs regular oversight, reliable suppliers, ongoing maintenance, effective rental operations and informed decisions. Our purpose is to simplify that complexity for owners."
+    ],
+    "approachTitle": "A complete approach to property management",
+    "approachBody": "We bring property operations, rental management, hospitality coordination, maintenance and owner services together in one structured framework. Rather than solving each issue in isolation, we look at the whole lifecycle of the property: its condition, its operational needs, its commercial potential and the experience of the people who use it.",
+    "rootedTitle": "Rooted in Crete. Connected to international owners.",
+    "rootedBody": "We focus on Chania, Rethymno and Heraklion, where local market knowledge and dependable coordination make the difference. We serve Greek and international owners, investors and real-estate professionals who value accountability and proactive communication.",
+    "techTitle": "Built on our own management platform",
+    "techBody": "We run our operations on a property-management system we developed for our own needs, connecting bookings, maintenance, expenses, documents and owner reporting. Owners see the same information we work with, through the online owner portal.",
+    "philosophyTitle": "Our philosophy",
+    "values": [
+      { "title": "Responsibility", "body": "We treat every property with the attention and care it deserves." },
+      { "title": "Transparency", "body": "Owners should always understand how their property is managed and what it costs." },
+      { "title": "Consistency", "body": "Good management depends on reliable processes and regular follow-through." },
+      { "title": "Local expertise", "body": "Practical knowledge of the market, suppliers and operating environment." },
+      { "title": "Long-term thinking", "body": "We look beyond this season to the condition and value of the asset." }
+    ],
+    "commitmentTitle": "Our commitment",
+    "commitmentBody": "We aim to be more than a service provider: a long-term local partner for owners who want their property cared for, professionally operated and consistently supervised.",
+    "signature": "Sivan Management — Your Property. Our Responsibility."
+  },
+  "team": {
+    "seoTitle": "Our Team | Sivan Management, Chania",
+    "seoDescription": "Meet the founder and the operating structure behind Sivan Management: property management, hospitality, maintenance, owner relations and reporting.",
+    "eyebrow": "Our team",
+    "title": "People who take responsibility.",
+    "lead": "A local team organised around what your property needs, led by our founder and supported by a network of trusted professionals.",
+    "founderRole": "Founder & Managing Director",
+    "founderBio": "Sivan Menahem founded Sivan Management to give property owners in Crete what every owner wants: one accountable local partner, clear communication and full visibility of how the property is run.",
+    "departmentsTitle": "How we are organised",
+    "departmentsLead": "Each area of responsibility has a clear owner. Team profiles will be added here as our people join the website.",
+    "departments": [
+      { "title": "Operations", "body": "Coordinates daily activity across all properties and service providers." },
+      { "title": "Property Management", "body": "Owner relationships, tenancies and the overall condition of each asset." },
+      { "title": "Hospitality Operations", "body": "Guest communication, check-ins, standards and guest experience." },
+      { "title": "Revenue & Reservations", "body": "Pricing, availability and channel management." },
+      { "title": "Maintenance & Facilities", "body": "Preventive plans, repairs and technical coordination." },
+      { "title": "Commercial Assets", "body": "Tenant relations, budgets and building operations." },
+      { "title": "Owner Relations", "body": "Onboarding, communication and support for owners." },
+      { "title": "Housekeeping Quality", "body": "Cleaning procedures, inspections and linen standards." },
+      { "title": "Finance & Reporting", "body": "Statements, expense control and owner reports." }
+    ],
+    "joinTitle": "Work with us",
+    "joinBody": "We are always interested in hearing from reliable professionals in Crete: housekeeping, maintenance, hospitality and administration.",
+    "joinCta": "Get in touch"
+  },
+  "portfolio": {
+    "seoTitle": "Properties & Portfolio | Sivan Management",
+    "seoDescription": "The types of properties we manage in Crete: villas, holiday apartments, residential rentals, commercial units and hospitality assets.",
+    "eyebrow": "Properties & portfolio",
+    "title": "The properties we care for.",
+    "lead": "We manage a mix of holiday villas, apartments, residential rentals and commercial and hospitality assets in western and central Crete.",
+    "policyTitle": "Real properties only",
+    "policyBody": "Case studies appear here only with the owner's written approval, with real photography and verified figures. We do not publish illustrative or AI-generated images as managed properties.",
+    "typesTitle": "Property types we manage",
+    "types": [
+      { "title": "Villas with pools", "body": "Holiday villas operated for short-term rental, with pool and garden care." },
+      { "title": "Holiday apartments", "body": "City and beach apartments run as vacation rentals." },
+      { "title": "Residential rentals", "body": "Apartments and houses let to long-term tenants." },
+      { "title": "Commercial units", "body": "Offices and retail spaces with business tenants." },
+      { "title": "Hospitality assets", "body": "Guesthouses, serviced apartments and small hotels." }
+    ],
+    "comingSoon": "Owner-approved case studies are being prepared.",
+    "ctaTitle": "Would your property fit our portfolio?",
+    "ctaBody": "Request an assessment and we will tell you honestly what we think the property needs."
+  }
+}

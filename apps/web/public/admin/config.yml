@@ -1,0 +1,75 @@
+# Content Studio for sivanmanagment.com (Sveltia CMS, Decap-compatible)
+# Sign in with GitHub (personal access token, or OAuth once configured).
+# Every save creates a commit on the branch below; the deploy pipeline
+# rebuilds the site automatically. Guide: docs/website/CMS_GUIDE.md
+
+backend:
+  name: github
+  repo: sivanmen/sivanmanagment
+  branch: main
+  commit_messages:
+    create: 'content: create {{collection}} “{{slug}}”'
+    update: 'content: update {{collection}} “{{slug}}”'
+    delete: 'content: delete {{collection}} “{{slug}}”'
+    uploadMedia: 'content: upload “{{path}}”'
+    deleteMedia: 'content: delete “{{path}}”'
+
+site_url: https://sivanmanagment.com
+display_url: https://sivanmanagment.com
+logo_url: /favicon.svg
+
+media_folder: apps/web/public/uploads
+public_folder: /uploads
+
+i18n:
+  structure: multiple_folders
+  locales: [en, he, el, fr, de, nl, ru, zh-cn]
+  default_locale: en
+
+collections:
+  - name: insights
+    label: Insights & Articles
+    label_singular: Article
+    description: >
+      Articles for property owners. Write in English first, then add the
+      translations (each language tab). Keep the same "Translation key" in
+      every language so the versions are linked. Never invent figures,
+      clients or guarantees.
+    folder: apps/web/src/content/insights
+    create: true
+    slug: '{{slug}}'
+    identifier_field: title
+    extension: md
+    format: frontmatter
+    i18n: true
+    summary: '{{title}} — {{date | date("YYYY-MM-DD")}}{{draft | ternary(" (draft)", "")}}'
+    sortable_fields: [date, title]
+    fields:
+      - { name: title, label: Title, widget: string, i18n: true, hint: '5–140 characters' }
+      - { name: description, label: Summary (SEO description), widget: text, i18n: true, hint: 'One or two sentences, 20–300 characters' }
+      - { name: translationKey, label: Translation key, widget: string, i18n: duplicate, hint: 'Same value in all languages, e.g. the English URL slug' }
+      - { name: date, label: Publish date, widget: datetime, i18n: duplicate, date_format: 'YYYY-MM-DD', time_format: false, format: 'YYYY-MM-DD' }
+      - name: category
+        label: Category
+        widget: select
+        i18n: duplicate
+        options:
+          - { label: Guides, value: guides }
+          - { label: Rentals, value: rentals }
+          - { label: Maintenance, value: maintenance }
+          - { label: Market, value: market }
+          - { label: News, value: news }
+      - name: cover
+        label: Cover image
+        widget: string
+        i18n: duplicate
+        default: hero-coast
+        hint: >
+          Built-in image key (hero-coast, villa-pool, hospitality, inspection, commercial,
+          residential, chania, rethymno, heraklion) — or upload an image below and paste its
+          path here, e.g. /uploads/my-photo.jpg
+      - { name: coverUpload, label: Upload a cover (optional), widget: image, i18n: duplicate, required: false }
+      - { name: coverAlt, label: Cover description (alt text), widget: string, i18n: true, required: false }
+      - { name: author, label: Author, widget: string, i18n: duplicate, default: Sivan Management }
+      - { name: draft, label: Draft (hidden from the site), widget: boolean, i18n: duplicate, default: false }
+      - { name: body, label: Article, widget: markdown, i18n: true }
